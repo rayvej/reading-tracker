@@ -279,6 +279,9 @@ async function loadDatabaseData() {
     if (currentView === 'wishlist')  renderWishlist();
     if (currentView === 'library')   renderLibrary();
 
+    // Run background self-healing for any data status inconsistencies
+    healBookStatuses();
+
     // Check if database needs seeding
     const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
     if (booksSnap.empty) {
@@ -2328,7 +2331,7 @@ function renderCategoryPieChart(books, containerId) {
       transform: `rotate(${angle} 50 50)`,
       class: 'transition-all duration-300 hover:opacity-80'
     });
-    segment.style.transformOrigin = 'center';
+    // Remove transformOrigin to prevent browser offset-shifting bugs
     svg.appendChild(segment);
 
     const valLabel = categoryChartMode === 'pages' ? `${fmtNum(count)} pg` : `(${count})`;
@@ -2366,6 +2369,50 @@ function renderCategoryPieChart(books, containerId) {
 // =========================================================================
 // SECTION 4: RE-READ LOG STATUS EVALUATOR (Fixes multi-cycle progress bugs)
 // =========================================================================
+
+// =========================================================================
+// SELF-HEALING DATABASE INCONSISTENCY RUNNER
+// =========================================================================
+async function healBookStatuses() {
+  let updatedAny = false;
+  for (const b of booksCache) {
+    const bookLogs = logsCache.filter(l => l.book_title === b.title);
+    if (bookLogs.length === 0) continue;
+    
+    const maxLogCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
+    const rc = b.read_count || 0;
+    
+    if (maxLogCycle > rc) {
+      const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === maxLogCycle);
+      cycleLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const latestLog = cycleLogs[cycleLogs.length - 1];
+      const endPage = parseInt(latestLog.end_page || 0, 10);
+      const totalPages = parseInt(b.total_pages || 0, 10);
+      
+      const correctStatus = endPage >= totalPages ? 'Finished' : 'In Progress';
+      const currentPagesRead = b.total_pages * rc + endPage;
+      
+      if (b.status !== correctStatus || b.pages_read !== currentPagesRead) {
+        console.log(`[Self-Healing] Book "${b.title}": ${b.status} -> ${correctStatus}, pages_read ${b.pages_read} -> ${currentPagesRead}`);
+        await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+          status: correctStatus,
+          pages_read: currentPagesRead,
+          read_count: endPage >= totalPages ? rc + 1 : rc
+        });
+        b.status = correctStatus;
+        b.pages_read = currentPagesRead;
+        if (endPage >= totalPages) b.read_count = rc + 1;
+        updatedAny = true;
+      }
+    }
+  }
+  if (updatedAny) {
+    console.log("[Self-Healing] Database corrected. Refreshing dashboard.");
+    if (currentView === 'dashboard') renderDashboard();
+    if (currentView === 'library') renderLibrary();
+  }
+}
+
 function evaluateBookReadingProgress(book, logs) {
   const activeCycle = (book.read_count || 0) + 1;
   const bookLogs = logs.filter(l => l.book_title === book.title);
@@ -2435,16 +2482,21 @@ function renderActivityHeatmap(logs) {
     activityMap[dStr] = (activityMap[dStr] || 0) + parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
   });
   
+  // End heatmap exactly at today (local calendar date)
   const today = new Date();
-  const yearAgo = new Date();
-  yearAgo.setDate(today.getDate() - 364);
+  today.setHours(0,0,0,0);
+  
+  // Start exactly 364 days ago (local time)
+  const startTime = today.getTime() - 364 * 24 * 60 * 60 * 1000;
   
   const isDark = !document.body.classList.contains('light-mode');
   
   for (let i = 0; i < 365; i++) {
-    const activeDate = new Date(yearAgo);
-    activeDate.setDate(yearAgo.getDate() + i);
-    const dateStr = activeDate.toISOString().split('T')[0];
+    const activeDate = new Date(startTime + i * 24 * 60 * 60 * 1000);
+    const year = activeDate.getFullYear();
+    const month = String(activeDate.getMonth() + 1).padStart(2, '0');
+    const day = String(activeDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-\t${day}`.replace('\t', '');
     
     const pagesRead = activityMap[dateStr] || 0;
     
