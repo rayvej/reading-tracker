@@ -48,6 +48,7 @@ let currentView       = 'dashboard'; // Start on dashboard as default premium sc
 let dashFilter        = 'all';
 let dashYearFilter    = 'all';
 let wishlistFilter    = 'all';
+let categoryChartMode = 'pages';
 let librarySearchTerm = '';
 let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';
