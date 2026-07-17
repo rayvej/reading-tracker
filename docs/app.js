@@ -255,7 +255,6 @@ async function initApp() {
   setupGoals();
   setupWishlist();
   setupLogDetailSheet();
-  setupZenMode();
   setupHaptics();
   showView('dashboard'); // Start on Dashboard
   
@@ -265,24 +264,38 @@ async function initApp() {
 
 async function loadDatabaseData() {
   try {
-    // Check if books already exist
-    const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
-    if (booksSnap.empty) {
-      await runSeedImport();
-    }
+    // Try to load cache first so it works offline/online instantly!
     await loadBooksCache();
     await loadLogsCache();
     populateBookDropdown();
-    populateGroupDatalist(booksCache);
+    if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
     
-    // Refresh active views if the user is already looking at them
+    // Refresh active views immediately from cache
     if (currentView === 'dashboard') renderDashboard();
     if (currentView === 'goals')     renderGoals();
     if (currentView === 'wishlist')  renderWishlist();
     if (currentView === 'library')   renderLibrary();
+
+    // Check if database needs seeding
+    const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
+    if (booksSnap.empty) {
+      await runSeedImport();
+      await loadBooksCache();
+      await loadLogsCache();
+      populateBookDropdown();
+      if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
+      
+      if (currentView === 'dashboard') renderDashboard();
+      if (currentView === 'goals')     renderGoals();
+      if (currentView === 'wishlist')  renderWishlist();
+      if (currentView === 'library')   renderLibrary();
+    }
   } catch (e) {
     console.error("Failed to load library database:", e);
-    showToast("Database connection offline. Showing local data.", "error");
+    // Only alert if we have no cached data at all
+    if (booksCache.length === 0) {
+      showToast("Database connection offline. Showing local data.", "error");
+    }
   }
 }
 
@@ -1783,16 +1796,11 @@ async function renderLibrary() {
 async function startBookReRead(b) {
   try {
     const nextCycle = (b.read_count || 1) + 1;
-    // Set book status to In Progress, pages_read to total_pages * read_count (re-read starting at 0 progress)
-    const booksSnap = await getDocs(query(
-      collection(db, `users/${uid}/books`), where('title', '==', b.title)
-    ));
-    if (!booksSnap.empty) {
-      await updateDoc(booksSnap.docs[0].ref, {
-        status: 'In Progress',
-        pages_read: b.total_pages * (b.read_count || 1)
-      });
-    }
+    // Update the document by ID directly to ensure it works reliably and instantly
+    await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+      status: 'In Progress',
+      pages_read: b.total_pages * (b.read_count || 1)
+    });
     
     showToast(`✓ Started Cycle ${nextCycle} for "${b.title.slice(0, 20)}…"`, 'success');
     await loadBooksCache();
@@ -1839,11 +1847,13 @@ async function saveNewBook() {
   const selectVal = $('ab-group-select').value;
   const group = selectVal === 'Other' ? $('ab-group-custom').value.trim() : selectVal;
   
+  if (!title) { showToast('Please enter a book title.', 'error'); return; }
+  if (selectVal === 'Other' && !group) { showToast('Please type a custom group name.', 'error'); return; }
+  
   const pages = parseInt($('ab-pages').value);
   const prio = $('ab-priority').value;
   const status = $('ab-status').value;
   
-  if (!title) { showToast('Please enter a book title.', 'error'); return; }
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   
   try {
@@ -2072,6 +2082,7 @@ async function addWishlistItem() {
 
 
 
+
 // =========================================================================
 // ELITE FEATURES: TACTILE HAPTICS EMULATION
 // =========================================================================
@@ -2103,111 +2114,7 @@ function setupHaptics() {
 }
 
 // =========================================================================
-// ELITE FEATURES: "ZEN MODE" STOPWATCH & WAKE LOCK MANAGER
-// =========================================================================
-let focusTimer = null;
-let focusSeconds = 0;
-let screenWakeLock = null;
-
-const SoundscapeUrls = {
-  rain: 'https://www.soundjay.com/nature/sounds/rain-07.mp3',
-  waves: 'https://www.soundjay.com/nature/sounds/ocean-wave-1.mp3',
-  forest: 'https://www.soundjay.com/nature/sounds/river-1.mp3'
-};
-
-const Soundscapes = {
-  player: new Audio(),
-  play: (url) => {
-    Soundscapes.player.src = url;
-    Soundscapes.player.loop = true;
-    Soundscapes.player.play().catch(e => console.log("User interaction required for audio playback: ", e));
-  },
-  stop: () => {
-    Soundscapes.player.pause();
-  }
-};
-
-async function enableWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      screenWakeLock = await navigator.wakeLock.request('screen');
-    }
-  } catch (err) {
-    console.warn("Screen Wake Lock not supported or rejected: ", err.message);
-  }
-}
-
-function disableWakeLock() {
-  if (screenWakeLock !== null) {
-    screenWakeLock.release();
-    screenWakeLock = null;
-  }
-}
-
-function startZenFocus() {
-  Haptics.success();
-  enableWakeLock();
-  focusSeconds = 0;
-  
-  document.getElementById('zen-breathing-orb').classList.add('breathing-orb');
-  
-  focusTimer = setInterval(() => {
-    focusSeconds++;
-    const mins = Math.floor(focusSeconds / 60).toString().padStart(2, '0');
-    const secs = (focusSeconds % 60).toString().padStart(2, '0');
-    document.getElementById('zen-stopwatch-display').innerText = `${mins}:${secs}`;
-  }, 1000);
-}
-
-function stopZenFocus() {
-  clearInterval(focusTimer);
-  focusTimer = null;
-  disableWakeLock();
-  Soundscapes.stop();
-  document.getElementById('zen-breathing-orb').classList.remove('breathing-orb');
-  
-  const minutesSpent = Math.max(1, Math.round(focusSeconds / 60));
-  const minInput = document.getElementById('log-minutes') || document.getElementById('log-minutes-input');
-  if (minInput) minInput.value = minutesSpent;
-}
-
-function setupZenMode() {
-  const startBtn = $('btn-zen-start');
-  const stopBtn = $('btn-zen-stop');
-  const soundSelect = $('zen-soundscape');
-  
-  if (startBtn) {
-    startBtn.addEventListener('click', () => {
-      startZenFocus();
-      startBtn.classList.add('hidden');
-      stopBtn.classList.remove('hidden');
-    });
-  }
-  
-  if (stopBtn) {
-    stopBtn.addEventListener('click', () => {
-      stopZenFocus();
-      stopBtn.classList.add('hidden');
-      startBtn.classList.remove('hidden');
-    });
-  }
-  
-  if (soundSelect) {
-    soundSelect.addEventListener('change', () => {
-      if (focusTimer) {
-        const sound = soundSelect.value;
-        if (sound && SoundscapeUrls[sound]) {
-          Soundscapes.play(SoundscapeUrls[sound]);
-        } else {
-          Soundscapes.stop();
-        }
-      }
-    });
-  }
-}
-
-// =========================================================================
-// 12-WEEK CHRONOLOGICAL GRAPH OVERHAUL
+// 12-WEEK CHRONOLOGICAL GRAPH OVERHAUL (TimeZone & Gap Fixed)
 // =========================================================================
 function renderChronologicalSparkline(logs, containerId) {
   const svgContainer = document.getElementById(containerId);
@@ -2217,31 +2124,32 @@ function renderChronologicalSparkline(logs, containerId) {
   const height = 150;
   const padding = 20;
 
-  // 1. Calculate the start dates for the last 12 weeks
+  // 1. Calculate the start/end dates for the last 12 contiguous 7-day weeks ending today
   const today = new Date();
+  today.setHours(23, 59, 59, 999); // end of today in local time
+
   const weeks = [];
   for (let i = 11; i >= 0; i--) {
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - (i * 7));
-    weekStart.setHours(0,0,0,0);
+    const bucketEnd = new Date(today.getTime() - (i * 7 * 86400000));
+    const bucketStart = new Date(bucketEnd.getTime() - (7 * 86400000) + 1);
     weeks.push({
-      start: weekStart,
+      start: bucketStart,
+      end: bucketEnd,
       pages: 0
     });
   }
 
-  // 2. Aggregate logs into their respective weekly buckets
+  // 2. Aggregate logs into their respective weekly buckets using local timezone parsing
   logs.forEach(log => {
-    const logDate = new Date(log.date);
+    const parts = log.date.split('-');
+    if (parts.length !== 3) return;
+    
+    // Midday local time to prevent DST shifting issues
+    const logDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
     const pages = parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
     
-    // Find the correct week bucket
     for (let i = 0; i < 12; i++) {
-      const bucketStart = weeks[i].start;
-      const bucketEnd = new Date(bucketStart);
-      bucketEnd.setDate(bucketStart.getDate() + 7);
-      
-      if (logDate >= bucketStart && logDate < bucketEnd) {
+      if (logDate >= weeks[i].start && logDate <= weeks[i].end) {
         weeks[i].pages += pages;
         break;
       }
@@ -2567,5 +2475,22 @@ function handleBookSelection(selectedBookTitle, books, logs) {
   document.getElementById('log-cycle').value = currentCycle;
 }
 
-
-// ── Service Worker ────────────────────────────────────────────────────────────
+// =========================================================================
+// SERVICE WORKER AUTO-UPDATE RELOAD
+// =========================================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              window.location.reload();
+            }
+          });
+        }
+      });
+    });
+  });
+}
