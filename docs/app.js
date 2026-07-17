@@ -42,9 +42,11 @@ const gp     = new GoogleAuthProvider();
 let uid        = null;
 let booksCache = [];          // all book docs { id, ...data }
 let wishlistCache = [];       // all wishlist items
+let logsCache = [];           // cached reading logs
 let goalsCache = {};
 let currentView       = 'log';
 let dashFilter        = 'all';
+let dashYearFilter    = 'all';
 let wishlistFilter    = 'all';
 let historySearchTerm = '';
 let wishlistSearchTerm= '';
@@ -224,6 +226,7 @@ async function loadDatabaseData() {
       await runSeedImport();
     }
     await loadBooksCache();
+    await loadLogsCache();
     populateBookDropdown();
     
     // Refresh active views if the user is already looking at them
@@ -302,6 +305,13 @@ async function loadBooksCache() {
   booksCache.sort((a, b) => a.title.localeCompare(b.title));
 }
 
+async function loadLogsCache() {
+  if (logsCache.length === 0) {
+    const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
+    logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────────
 function setupNav() {
   document.querySelectorAll('.btm-nav button').forEach(btn => {
@@ -335,16 +345,35 @@ function setupLogForm() {
 
   $('log-book').addEventListener('change', async () => {
     const title = $('log-book').value;
-    if (!title) { $('log-start').value = ''; $('log-start-hint').textContent = ''; return; }
-    const lastPage = await getLastPage(title);
-    if (lastPage !== null) {
-      $('log-start').value = lastPage;
-      $('log-start-hint').textContent = `↑ Auto-filled from last session`;
-      $('log-start-hint').className = 'input-hint found';
-    } else {
+    if (!title) {
+      $('log-start').value = '';
+      $('log-cycle').value = '1';
+      $('log-start-hint').textContent = '';
+      return;
+    }
+    
+    // Show loading state
+    $('log-start').value = '';
+    $('log-start-hint').textContent = 'Fetching reading status...';
+    $('log-start-hint').className = 'input-hint';
+
+    try {
+      const { cycle, startPage } = await determineActiveCycleAndPage(title);
+      $('log-start').value = startPage;
+      $('log-cycle').value = cycle;
+      
+      if (startPage > 0) {
+        $('log-start-hint').textContent = `↑ Auto-filled from last session (Cycle ${cycle})`;
+        $('log-start-hint').className = 'input-hint found';
+      } else {
+        $('log-start-hint').textContent = cycle > 1 ? `Starting Cycle ${cycle} fresh` : 'Starting fresh';
+        $('log-start-hint').className = 'input-hint';
+      }
+    } catch (e) {
+      console.error(e);
       $('log-start').value = '0';
-      $('log-start-hint').textContent = 'Starting fresh';
-      $('log-start-hint').className = 'input-hint';
+      $('log-cycle').value = '1';
+      $('log-start-hint').textContent = 'Offline fallback loaded';
     }
   });
 
@@ -377,17 +406,45 @@ function populateBookDropdown() {
   if (cur) sel.value = cur;
 }
 
-async function getLastPage(title) {
+async function determineActiveCycleAndPage(title) {
+  const book = booksCache.find(b => b.title === title);
+  if (!book) return { cycle: 1, startPage: 0 };
+  const tot = book.total_pages || 1;
+  
+  // Get all logs for this book
   const q = query(
     collection(db, `users/${uid}/reading_logs`),
-    where('book_title', '==', title),
-    orderBy('date', 'desc'),
-    orderBy('end_page', 'desc'),
-    limit(1)
+    where('book_title', '==', title)
   );
   const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return snap.docs[0].data().end_page;
+  if (snap.empty) {
+    return { cycle: 1, startPage: 0 };
+  }
+  
+  const cycleLogs = {};
+  snap.docs.forEach(doc => {
+    const data = doc.data();
+    const c = data.read_cycle || 1;
+    if (!cycleLogs[c]) cycleLogs[c] = [];
+    cycleLogs[c].push(data);
+  });
+  
+  const cycles = Object.keys(cycleLogs).map(Number);
+  const maxCycle = Math.max(...cycles);
+  
+  const logsInMaxCycle = cycleLogs[maxCycle];
+  logsInMaxCycle.sort((a, b) => {
+    return b.date.localeCompare(a.date) || (b.end_page - a.end_page);
+  });
+  
+  const latestLog = logsInMaxCycle[0];
+  const lastEndPage = latestLog.end_page || 0;
+  
+  if (lastEndPage >= tot) {
+    return { cycle: maxCycle + 1, startPage: 0 };
+  } else {
+    return { cycle: maxCycle, startPage: lastEndPage };
+  }
 }
 
 async function submitLog() {
@@ -438,8 +495,8 @@ async function submitLog() {
     $('log-start-hint').textContent = '↑ Auto-filled from last session';
     $('log-start-hint').className = 'input-hint found';
     
-    // Invalidate history cache so new entry shows up
-    historyCache = [];
+    // Invalidate logs cache so new entry shows up
+    logsCache = [];
 
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -505,6 +562,64 @@ async function recalculateBook(title, cycle) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
+function populateYearDropdown(logs) {
+  const sel = $('dash-year-select');
+  if (sel.options.length > 1) return; // already populated
+  const years = [...new Set(logs.map(l => l.date.slice(0, 4)))].sort((a,b) => b - a);
+  sel.innerHTML = '<option value="all">All Time</option>';
+  years.forEach(y => {
+    const opt = el('option', '', y);
+    opt.value = y;
+    opt.textContent = y;
+    sel.appendChild(opt);
+  });
+  sel.value = dashYearFilter;
+}
+
+function calculateStreaks(logs) {
+  const dates = [...new Set(logs.map(l => l.date))].sort();
+  if (dates.length === 0) return { current: 0, longest: 0 };
+  
+  let current = 0;
+  let longest = 0;
+  let temp = 0;
+  let prevDate = null;
+  
+  const todayStr = todayISO();
+  
+  for (let i = 0; i < dates.length; i++) {
+    const cur = new Date(dates[i] + 'T00:00:00');
+    if (prevDate === null) {
+      temp = 1;
+    } else {
+      const diffTime = Math.abs(cur - prevDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        temp++;
+      } else if (diffDays > 1) {
+        if (temp > longest) longest = temp;
+        temp = 1;
+      }
+    }
+    prevDate = cur;
+  }
+  if (temp > longest) longest = temp;
+  
+  // Check if current streak is active (ends today or yesterday)
+  const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+  const today = new Date(todayStr + 'T00:00:00');
+  const diffLastTime = Math.abs(today - lastDate);
+  const diffLastDays = Math.ceil(diffLastTime / (1000 * 60 * 60 * 24));
+  
+  if (diffLastDays <= 1) {
+    current = temp;
+  } else {
+    current = 0;
+  }
+  
+  return { current, longest };
+}
+
 function setupDashboard() {
   $('dash-seg').addEventListener('click', e => {
     const btn = e.target.closest('[data-col]');
@@ -519,75 +634,342 @@ function setupDashboard() {
     });
     renderDashboard();
   });
+
+  $('dash-year-select').addEventListener('change', e => {
+    dashYearFilter = e.target.value;
+    renderDashboard();
+  });
 }
 
-function renderDashboard() {
+async function renderDashboard() {
+  await loadLogsCache();
+  populateYearDropdown(logsCache);
+  
+  const selectedYear = $('dash-year-select').value;
+  
+  // Filter logs by selected year
+  let filteredLogs = logsCache;
+  if (selectedYear !== 'all') {
+    filteredLogs = logsCache.filter(l => l.date.startsWith(selectedYear));
+  }
+  
+  // Filter books by category tab
   const books = dashFilter === 'all' ? booksCache : booksCache.filter(b => b.collection === dashFilter);
+  
+  // ── 1. Overall Summary ─────────────────────────────────────────
+  // Total Reads (Completed books/cycles in the selected year, or all-time)
+  let completions = 0;
+  logsCache.forEach(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    if (book && l.end_page >= book.total_pages) {
+      const year = l.date.slice(0, 4);
+      if (selectedYear === 'all' || year === selectedYear) {
+        completions++;
+      }
+    }
+  });
 
-  // Stats
-  const totalPages  = books.reduce((s, b) => s + (b.total_pages || 0), 0);
-  const pagesRead   = books.reduce((s, b) => s + (b.pages_read  || 0), 0);
-  const totalReads  = books.reduce((s, b) => s + (b.read_count  || 0), 0);
-  const finished    = books.filter(b => b.status === 'Finished').length;
-  const pct         = totalPages > 0 ? Math.round((pagesRead / totalPages) * 100) : 0;
-
-  $('stat-reads').textContent  = fmtNum(totalReads);
-  $('stat-titles').textContent = fmtNum(books.length);
-  $('stat-pages').textContent  = fmtNum(pagesRead);
-  $('stat-pct').textContent    = pct + '%';
-
-  // Currently reading
+  // Avg pages/book
+  const finished = books.filter(b => b.status === 'Finished');
+  const finishedPagesSum = finished.reduce((s, b) => s + (b.total_pages || 0), 0);
+  const avgPagesPerBook = finished.length > 0 ? Math.round(finishedPagesSum / finished.length) : 0;
+  
+  $('stat-reads').textContent = completions;
+  $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
+  
+  // Total Titles (active or finished unique titles in timeframe)
+  let titlesCount = 0;
+  let finishedCount = 0;
+  let progressCount = 0;
+  
+  if (selectedYear === 'all') {
+    titlesCount = books.length;
+    finishedCount = books.filter(b => b.status === 'Finished').length;
+    progressCount = books.filter(b => b.status === 'In Progress').length;
+  } else {
+    const activeTitles = new Set(filteredLogs.map(l => l.book_title));
+    titlesCount = activeTitles.size;
+    
+    activeTitles.forEach(t => {
+      const book = books.find(b => b.title === t);
+      if (book) {
+        const bookLogs = filteredLogs.filter(l => l.book_title === t);
+        const hasFinished = bookLogs.some(l => l.end_page >= book.total_pages);
+        if (hasFinished) finishedCount++;
+        else progressCount++;
+      }
+    });
+  }
+  
+  $('stat-titles').textContent = titlesCount;
+  $('detail-titles').textContent = `Finished: ${finishedCount} · Active: ${progressCount}`;
+  
+  // Pages Read
+  const totalPagesRead = filteredLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  $('stat-pages').textContent = fmtNum(totalPagesRead);
+  $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
+  
+  // Progress %
+  const totalPagesInLib = books.reduce((s, b) => s + (b.total_pages || 0), 0);
+  const totalPagesReadLib = books.reduce((s, b) => s + (b.pages_read || 0), 0);
+  const overallPct = totalPagesInLib > 0 ? Math.round((totalPagesReadLib / totalPagesInLib) * 100) : 0;
+  const pagesRemaining = Math.max(0, totalPagesInLib - totalPagesReadLib);
+  
+  $('stat-pct').textContent = overallPct + '%';
+  $('detail-pct').textContent = `Pages left: ${fmtNum(pagesRemaining)}`;
+  
+  // ── 2. Streaks & Activity ──────────────────────────────────────
+  const streaks = calculateStreaks(logsCache);
+  $('stat-streak-cur').textContent = `${streaks.current} days`;
+  $('stat-streak-max').textContent = `${streaks.longest} days`;
+  
+  const allUniqueDays = [...new Set(logsCache.map(l => l.date))].length;
+  $('stat-days-total').textContent = `${allUniqueDays} days`;
+  
+  const avgPagesPerActiveDay = allUniqueDays > 0 ? (logsCache.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0) / allUniqueDays).toFixed(1) : 0;
+  $('stat-pages-active-avg').textContent = avgPagesPerActiveDay;
+  
+  // % Days Read (Month)
+  const today = new Date();
+  const yearNum = today.getFullYear();
+  const monthNum = today.getMonth() + 1;
+  const monthDaysCount = new Date(yearNum, monthNum, 0).getDate();
+  const currentMonthLogs = logsCache.filter(l => l.date.startsWith(`${yearNum}-${String(monthNum).padStart(2, '0')}`));
+  const monthUniqueDays = [...new Set(currentMonthLogs.map(l => l.date))].length;
+  const monthPct = monthDaysCount > 0 ? Math.round((monthUniqueDays / monthDaysCount) * 100) : 0;
+  $('stat-days-month-pct').textContent = `${monthPct}%`;
+  
+  // % Days Read (YTD)
+  const startOfYear = new Date(`${yearNum}-01-01T00:00:00`);
+  const diffTimeYtd = Math.abs(today - startOfYear);
+  const ytdDaysElapsed = Math.floor(diffTimeYtd / (86400000)) + 1;
+  const currentYearLogs = logsCache.filter(l => l.date.startsWith(String(yearNum)));
+  const ytdUniqueDays = [...new Set(currentYearLogs.map(l => l.date))].length;
+  const ytdPct = ytdDaysElapsed > 0 ? Math.round((ytdUniqueDays / ytdDaysElapsed) * 100) : 0;
+  $('stat-days-ytd-pct').textContent = `${ytdPct}%`;
+  
+  // ── 3. Year-Over-Year YTD Comparison ───────────────────────────
+  const lastYear = yearNum - 1;
+  const todayMonthDay = todayISO().slice(5); // e.g. "07-17"
+  
+  const thisYearYTDLogs = currentYearLogs.filter(l => l.date.slice(5) <= todayMonthDay);
+  const lastYearYTDLogs = logsCache.filter(l => l.date.startsWith(String(lastYear)) && l.date.slice(5) <= todayMonthDay);
+  
+  const countCompletedYTD = (ytdLogs) => {
+    let completed = 0;
+    ytdLogs.forEach(l => {
+      const book = booksCache.find(b => b.title === l.book_title);
+      if (book && l.end_page >= book.total_pages) completed++;
+    });
+    return completed;
+  };
+  
+  const thisYearYTDBooks = countCompletedYTD(thisYearYTDLogs);
+  const lastYearYTDBooks = countCompletedYTD(lastYearYTDLogs);
+  
+  const thisYearYTDPages = thisYearYTDLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const lastYearYTDPages = lastYearYTDLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  
+  $('yoy-books').textContent = `${thisYearYTDBooks} vs ${lastYearYTDBooks}`;
+  $('yoy-pages').textContent = `${fmtNum(thisYearYTDPages)} vs ${fmtNum(lastYearYTDPages)}`;
+  
+  $('dash-yoy-card').classList.toggle('hidden', selectedYear !== 'all' && selectedYear !== String(yearNum));
+  
+  // ── 4. Weekly Velocity ─────────────────────────────────────────
+  const sevenDaysAgoStr = new Date(today.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+  const fourteenDaysAgoStr = new Date(today.getTime() - 14 * 86400000).toISOString().slice(0, 10);
+  
+  const thisWeekLogs = logsCache.filter(l => l.date >= sevenDaysAgoStr);
+  const prevWeekLogs = logsCache.filter(l => l.date >= fourteenDaysAgoStr && l.date < sevenDaysAgoStr);
+  
+  const thisWeekSessions = thisWeekLogs.length;
+  const thisWeekPages = thisWeekLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const thisWeekMinutes = thisWeekLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
+  const prevWeekPages = prevWeekLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  
+  const pageDelta = thisWeekPages - prevWeekPages;
+  const pageDeltaStr = pageDelta >= 0 ? `+${pageDelta} pages` : `${pageDelta} pages`;
+  const weekAvg = (thisWeekPages / 7).toFixed(1);
+  
+  $('dash-week-stats').innerHTML = `
+    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">📊 Weekly Velocity (Last 7 Days)</div>
+    <div class="grid grid-cols-3 gap-2.5 mt-2 text-center">
+      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
+        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Sessions</div>
+        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${thisWeekSessions}</div>
+      </div>
+      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
+        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Pages Read</div>
+        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${fmtNum(thisWeekPages)}</div>
+      </div>
+      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
+        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Minutes</div>
+        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${thisWeekMinutes}m</div>
+      </div>
+    </div>
+    <div class="flex justify-between items-center text-[10px] text-slate-400 mt-2 border-t border-white/5 pt-2 font-medium">
+      <span>vs. Previous 7 Days: <b class="${pageDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pageDeltaStr}</b></span>
+      <span>Avg Pages/Day: <b class="text-slate-200">${weekAvg}</b></span>
+    </div>
+  `;
+  
+  // ── 5. Next Milestones ─────────────────────────────────────────
+  const booksYTD = thisYearYTDBooks;
+  const pagesYTD = thisYearYTDPages;
+  const booksToMilestone = Math.max(0, 75 - booksYTD);
+  const pagesToMilestone = Math.max(0, 20000 - pagesYTD);
+  
+  const booksPerDay = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0;
+  const pagesPerDay = ytdDaysElapsed > 0 ? pagesYTD / ytdDaysElapsed : 0;
+  
+  const calculateETA = (needed, rate) => {
+    if (rate <= 0) return 'Never';
+    const daysNeeded = needed / rate;
+    const etaDate = new Date();
+    etaDate.setDate(etaDate.getDate() + daysNeeded);
+    return etaDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+  const booksETA = calculateETA(booksToMilestone, booksPerDay);
+  const pagesETA = calculateETA(pagesToMilestone, pagesPerDay);
+  
+  $('dash-milestones').innerHTML = `
+    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">⏰ Targets & Milestones</div>
+    
+    <!-- Books Milestone -->
+    <div class="flex flex-col gap-1">
+      <div class="flex justify-between text-xs font-semibold text-slate-200">
+        <span>📚 Next Books Milestone</span>
+        <span>${booksYTD} / 75 Books</span>
+      </div>
+      <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+        <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (booksYTD/75)*100)}%"></div>
+      </div>
+      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+        <span>To go: <b>${booksToMilestone} books</b></span>
+        <span>ETA: <b>${booksETA}</b></span>
+      </div>
+    </div>
+    
+    <!-- Pages Milestone -->
+    <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
+      <div class="flex justify-between text-xs font-semibold text-slate-200">
+        <span>📄 Next Pages Milestone</span>
+        <span>${fmtNum(pagesYTD)} / 20k Pages</span>
+      </div>
+      <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+        <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesYTD/20000)*100)}%"></div>
+      </div>
+      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+        <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
+        <span>ETA: <b>${pagesETA}</b></span>
+      </div>
+    </div>
+  `;
+  
+  // ── 6. Year Progress ───────────────────────────────────────────
+  const daysRemainingInYear = 365 - ytdDaysElapsed;
+  const pagesPerCalendarDay = (pagesYTD / ytdDaysElapsed).toFixed(1);
+  const booksPerMonthYTD = (booksYTD / (ytdDaysElapsed / 30)).toFixed(2);
+  
+  $('dash-year-progress').innerHTML = `
+    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">📅 Current Year Progress (${yearNum})</div>
+    <div class="grid grid-cols-2 gap-y-2 gap-x-4 mt-2 text-xs border-t border-white/5 pt-2">
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Elapsed</span><span class="text-slate-200 font-bold">${ytdDaysElapsed}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Remaining</span><span class="text-slate-200 font-bold">${daysRemainingInYear}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Books Completed</span><span class="text-slate-200 font-bold">${booksYTD}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(pagesYTD)}</span></div>
+      <div class="flex justify-between col-span-2 border-t border-white/5 pt-2 mt-1">
+        <span class="text-slate-400 font-medium">Pages/Calendar Day (YTD)</span>
+        <span class="text-slate-200 font-bold">${pagesPerCalendarDay}</span>
+      </div>
+      <div class="flex justify-between col-span-2">
+        <span class="text-slate-400 font-medium">Books Completed/Month</span>
+        <span class="text-slate-200 font-bold">${booksPerMonthYTD}</span>
+      </div>
+    </div>
+  `;
+  
+  // ── 7. Currently Reading List ──────────────────────────────────
   const active = books.filter(b => b.status === 'In Progress');
   const activeEl = $('dash-active-books');
   activeEl.innerHTML = '';
   if (active.length === 0) {
-    activeEl.innerHTML = '<p class="text-sm text-slate-500 text-center py-4 font-semibold">No books currently in progress</p>';
+    activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
   } else {
-    active.forEach(b => activeEl.appendChild(bookCard(b, true)));
+    active.forEach(b => {
+      const left = Math.max(0, b.total_pages - b.pages_read);
+      const estDays = Math.ceil(left / 10);
+      const pct = Math.min(100, Math.round((b.pages_read / b.total_pages) * 100));
+      
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5');
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+            <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">${pct}%</span>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5">
+          <span>Pages Left: <b>${left}</b></span>
+          <span>ETA @ 10pg/day: <b>${estDays} days</b></span>
+        </div>
+      `;
+      activeEl.appendChild(card);
+    });
   }
-
-  // All books (sorted: in-progress → finished → not started)
-  const allEl = $('dash-all-books');
-  allEl.innerHTML = '';
-  const sorted = [...books].sort((a, b) => {
-    const o = { 'In Progress': 0, 'Finished': 1, 'Not Started': 2 };
-    return (o[a.status] || 0) - (o[b.status] || 0) || a.title.localeCompare(b.title);
+  
+  // ── 8. Up Next List ────────────────────────────────────────────
+  const notStarted = books.filter(b => b.status === 'Not Started');
+  const prioOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+  const upNext = [...notStarted].sort((a,b) => (prioOrder[a.priority] ?? 2) - (prioOrder[b.priority] ?? 2)).slice(0, 5);
+  
+  const upNextEl = $('dash-up-next-books');
+  upNextEl.innerHTML = '';
+  if (upNext.length === 0) {
+    upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
+  } else {
+    upNext.forEach(b => {
+      const prioColor = b.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border-rose-500/10' : b.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/10' : 'bg-slate-800/40 text-slate-400 border-white/5';
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center gap-3 border border-white/5');
+      card.innerHTML = `
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+          <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-black border uppercase ${prioColor}">${b.priority || 'Low'}</span>
+      `;
+      upNextEl.appendChild(card);
+    });
+  }
+  
+  // ── 9. Recently Finished ───────────────────────────────────────
+  const pastYearTime = today.getTime() - 365 * 86400000;
+  const finishedLogs = logsCache.filter(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    return book && l.end_page >= book.total_pages && new Date(l.date + 'T00:00:00').getTime() >= pastYearTime;
   });
-  sorted.forEach(b => allEl.appendChild(bookCard(b, false)));
-}
-
-function bookCard(b, large) {
-  const tot = b.total_pages || 1;
-  const pr  = b.pages_read  || 0;
-  const pct = Math.min(100, Math.round((pr / tot) * 100));
-
-  const card = el('div', 'glass-panel p-4 rounded-2xl flex flex-col gap-3 transition-all duration-200 hover:bg-slate-900/40 border border-white/5');
-  const header = el('div', 'flex items-start justify-between gap-3');
-  const info   = el('div', 'flex-1 min-w-0');
-  const title  = el('div', 'text-sm font-semibold text-slate-100 truncate', b.title);
-  const meta   = el('div', 'text-xs text-slate-400 truncate mt-0.5', `${b.author || ''}${b.group_name ? ' • ' + b.group_name : ''}`);
-  info.append(title, meta);
-
-  const badgeColors = {
-    'Finished': 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10',
-    'In Progress': 'bg-blue-500/10 text-blue-400 border border-blue-500/10',
-    'Not Started': 'bg-slate-800/40 text-slate-400 border border-white/5'
-  };
-  const badge = el('span', `px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${badgeColors[b.status] || badgeColors['Not Started']}`, b.status);
-
-  header.append(info, badge);
-
-  const prog = el('div', 'flex flex-col gap-1.5');
-  const bar  = el('div', 'h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden border border-white/5');
-  const fill = el('div', `h-full rounded-full transition-all duration-500 ${b.status === 'Finished' ? 'bg-gradient-to-r from-gold to-yellow-500' : 'bg-gradient-to-r from-blue-400 to-emerald-400'}`);
-  fill.style.width = pct + '%';
-  bar.appendChild(fill);
-  const labels = el('div', 'flex justify-between text-[10px] text-slate-400 font-medium');
-  labels.innerHTML = `<span>${fmtNum(pr)} / ${fmtNum(tot)} pages</span><span>${pct}%</span>`;
-  prog.append(bar, labels);
-
-  card.append(header, prog);
-  return card;
+  
+  const recentEl = $('dash-recent-books');
+  recentEl.innerHTML = '';
+  if (finishedLogs.length === 0) {
+    recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books finished recently</p>';
+  } else {
+    finishedLogs.slice(0, 5).forEach(l => {
+      const book = booksCache.find(b => b.title === l.book_title);
+      const pages = book ? book.total_pages : 0;
+      
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center gap-3 border border-white/5');
+      card.innerHTML = `
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-slate-100 truncate">${l.book_title}</div>
+          <div class="text-[9px] text-slate-400 mt-0.5">${pages} pg · Finished: ${fmtDate(l.date)}</div>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Done</span>
+      `;
+      recentEl.appendChild(card);
+    });
+  }
 }
 
 // ── Goals ─────────────────────────────────────────────────────────────────────
@@ -819,26 +1201,40 @@ async function addWishlistItem() {
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
-let historyCache = [];
-
 function setupHistory() {
   $('history-search').addEventListener('input', e => {
     historySearchTerm = e.target.value.toLowerCase();
     renderHistory();
   });
+
+  $('log-detail-close').addEventListener('click', () => {
+    $('log-detail-modal').classList.remove('open');
+  });
+
+  $('log-detail-modal').addEventListener('click', e => {
+    if (e.target === $('log-detail-modal')) {
+      $('log-detail-modal').classList.remove('open');
+    }
+  });
+}
+
+function openLogDetailModal(l) {
+  $('detail-log-title').textContent = l.book_title;
+  $('detail-log-date').textContent = fmtDate(l.date);
+  $('detail-log-cycle').textContent = `Cycle ${l.read_cycle || 1}`;
+  
+  const pages = (l.end_page || 0) - (l.start_page || 0);
+  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pages)`;
+  $('detail-log-minutes').textContent = l.minutes_spent ? `${l.minutes_spent} min` : '—';
+  $('detail-log-notes').textContent = l.notes || 'No notes recorded for this session.';
+  
+  $('log-detail-modal').classList.add('open');
 }
 
 async function renderHistory() {
-  if (historyCache.length === 0) {
-    const q = query(
-      collection(db, `users/${uid}/reading_logs`),
-      orderBy('date', 'desc')
-    );
-    const snap = await getDocs(q);
-    historyCache = snap.docs.map(d => d.data());
-  }
+  await loadLogsCache();
 
-  let items = historyCache;
+  let items = logsCache;
   if (historySearchTerm) {
     items = items.filter(l => l.book_title.toLowerCase().includes(historySearchTerm));
   }
@@ -857,7 +1253,7 @@ async function renderHistory() {
   }
 
   items.forEach(l => {
-    const entry = el('div', 'glass-panel p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:bg-slate-900/40 transition-all');
+    const entry = el('div', 'glass-panel p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:bg-slate-900/40 transition-all cursor-pointer');
     const d = new Date(l.date + 'T00:00:00');
     const dateBlock = el('div', 'flex flex-col items-center justify-center bg-slate-800/40 border border-white/5 rounded-xl py-1.5 px-2.5 min-w-[50px] text-center shrink-0');
     dateBlock.innerHTML = `<span class="text-base font-extrabold text-slate-100 leading-none">${d.getDate()}</span><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${d.toLocaleDateString('en-US',{month:'short'})}</span>`;
@@ -871,6 +1267,9 @@ async function renderHistory() {
     
     const mins = el('div', 'text-xs font-bold text-slate-200 shrink-0 text-right', l.minutes_spent ? `${l.minutes_spent} min` : '');
     entry.append(dateBlock, info, mins);
+    
+    entry.addEventListener('click', () => openLogDetailModal(l));
+    
     container.appendChild(entry);
   });
 }
