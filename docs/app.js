@@ -201,6 +201,21 @@ async function verifyPin(pin) {
 // ── Seed Import ───────────────────────────────────────────────────────────────
 async function initApp() {
   showScreen('app');
+  
+  // 1. Initialize UI handlers immediately (synchronously) so the app remains fully responsive
+  setupNav();
+  setupLogForm();
+  setupDashboard();
+  setupGoals();
+  setupWishlist();
+  setupHistory();
+  showView('log');
+  
+  // 2. Load database content asynchronously in the background
+  loadDatabaseData();
+}
+
+async function loadDatabaseData() {
   try {
     // Check if books already exist
     const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
@@ -209,19 +224,16 @@ async function initApp() {
     }
     await loadBooksCache();
     populateBookDropdown();
+    
+    // Refresh active views if the user is already looking at them
+    if (currentView === 'dashboard') renderDashboard();
+    if (currentView === 'goals')     renderGoals();
+    if (currentView === 'wishlist')  renderWishlist();
+    if (currentView === 'history')   renderHistory();
   } catch (e) {
     console.error("Failed to load library database:", e);
-    showToast("Connection offline or restricted. Loading UI...", "error");
+    showToast("Database connection offline. Showing local data.", "error");
   }
-  
-  // Initialize navigation and forms even if database query failed
-  setupNav();
-  setupLogForm();
-  setupDashboard();
-  setupGoals();
-  setupWishlist();
-  setupHistory();
-  showView('log');
 }
 
 async function runSeedImport() {
