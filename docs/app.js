@@ -577,21 +577,20 @@ async function recalculateBook(title, cycle) {
   if (!book) return;
   const tot = book.total_pages;
 
+  const logs = logsSnap.docs.map(d => d.data());
+  const newStatus = evaluateBookReadingProgress(book, logs);
+
   const completedCycles = Object.values(cycleMaxes).filter(m => m >= tot).length;
   const maxCurrentCycle = cycleMaxes[cycle] ?? 0;
-  const isCurrentComplete = maxCurrentCycle >= tot;
 
-  let newStatus, newPagesRead;
-  if (isCurrentComplete) {
-    newStatus    = 'Finished';
+  let newPagesRead;
+  if (newStatus === 'Finished') {
     newPagesRead = tot * completedCycles;
-  } else if (Object.values(cycleMaxes).some(m => m > 0)) {
-    newStatus    = 'In Progress';
+  } else if (newStatus === 'In Progress') {
     const prevCompleted = Object.entries(cycleMaxes)
       .filter(([c, m]) => parseInt(c) !== cycle && m >= tot).length;
     newPagesRead = tot * prevCompleted + maxCurrentCycle;
   } else {
-    newStatus    = 'Not Started';
     newPagesRead = 0;
   }
 
@@ -1521,74 +1520,7 @@ function renderSparklineChart() {
 }
 
 function renderBarChart() {
-  const wrap = $('chart-bar-wrap');
-  if (!wrap) return;
-
-  // Aggregate by group
-  const groupMap = {};
-  booksCache.forEach(b => {
-    const g = normalizeGroup(b.reading_group || b.group);
-    if (!groupMap[g]) groupMap[g] = 0;
-    const comp = (b.read_count || 0) * (b.total_pages || 0);
-    const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
-    groupMap[g] += comp + active;
-  });
-
-  const entries = Object.entries(groupMap)
-    .filter(([, v]) => v > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7);
-
-  if (entries.length === 0) { wrap.innerHTML = ''; return; }
-
-  const W = 300, H = 120;
-  const maxVal = Math.max(...entries.map(e => e[1]), 1);
-  const barW = Math.min(32, (W - 16) / entries.length - 6);
-  const padB = 28, padT = 6;
-  const plotH = H - padT - padB;
-
-  const isDark = !document.body.classList.contains('light-mode');
-  const gradColors = [
-    ['#D6A85C','#F5D76E'], ['#38BDF8','#818CF8'], ['#34D399','#38BDF8'],
-    ['#F472B6','#818CF8'], ['#FB7185','#F472B6'], ['#818CF8','#38BDF8'], ['#F5D76E','#D6A85C']
-  ];
-
-  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', style: 'width:100%;height:120px' });
-  const defs = svgEl('defs');
-
-  entries.forEach(([label, val], i) => {
-    const barH = Math.max(4, (val / maxVal) * plotH);
-    const x = (i / entries.length) * W + (W / entries.length - barW) / 2;
-    const y = padT + plotH - barH;
-    const [c1, c2] = gradColors[i % gradColors.length];
-    const gid = `bg${i}`;
-    const g = svgEl('linearGradient', { id: gid, x1: '0', y1: '0', x2: '0', y2: '1' });
-    g.appendChild(svgEl('stop', { offset: '0%', 'stop-color': c1 }));
-    g.appendChild(svgEl('stop', { offset: '100%', 'stop-color': c2, 'stop-opacity': '0.6' }));
-    defs.appendChild(g);
-
-    const rect = svgEl('rect', {
-      x: x.toFixed(1), y: y.toFixed(1),
-      width: barW, height: barH.toFixed(1),
-      rx: 4, ry: 4, fill: `url(#${gid})`
-    });
-    rect.style.transition = 'height 0.8s cubic-bezier(0.4,0,0.2,1)';
-    svg.appendChild(rect);
-
-    // Label
-    const shortLabel = label.length > 8 ? label.slice(0, 7) + '…' : label;
-    const lbl = svgEl('text', {
-      x: (x + barW / 2).toFixed(1), y: H - 4,
-      'text-anchor': 'middle',
-      style: `font-size:7px;fill:${isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'};font-family:-apple-system,sans-serif`
-    });
-    lbl.textContent = shortLabel;
-    svg.appendChild(lbl);
-  });
-
-  svg.insertBefore(defs, svg.firstChild);
-  wrap.innerHTML = '';
-  wrap.appendChild(svg);
+  renderCategoryPieChart(booksCache, 'chart-bar-wrap');
 }
 
 function renderCharts() {
@@ -1903,7 +1835,10 @@ async function saveNewBook() {
   const title = $('ab-title').value.trim();
   const author = $('ab-author').value.trim() || null;
   const coll = $('ab-collection').value;
-  const group = $('ab-group').value.trim() || '';
+  
+  const selectVal = $('ab-group-select').value;
+  const group = selectVal === 'Other' ? $('ab-group-custom').value.trim() : selectVal;
+  
   const pages = parseInt($('ab-pages').value);
   const prio = $('ab-priority').value;
   const status = $('ab-status').value;
@@ -1917,7 +1852,9 @@ async function saveNewBook() {
       title,
       author,
       collection: coll,
+      group: group,
       group_name: group,
+      reading_group: group,
       total_pages: pages,
       priority: prio,
       status: status,
@@ -1943,7 +1880,9 @@ async function saveNewBook() {
     
     $('ab-title').value = '';
     $('ab-author').value = '';
-    $('ab-group').value = '';
+    $('ab-group-select').value = 'Writings';
+    $('ab-group-custom').value = '';
+    $('custom-group-container').classList.add('hidden');
     $('ab-pages').value = '';
     $('ab-priority').value = 'Low';
     $('ab-status').value = 'Not Started';
@@ -2132,13 +2071,14 @@ async function addWishlistItem() {
 
 
 
+
 // =========================================================================
 // ELITE FEATURES: TACTILE HAPTICS EMULATION
 // =========================================================================
 const Haptics = {
   click: () => {
     if ('vibrate' in navigator) {
-      navigator.vibrate(10);
+      navigator.vibrate(12);
     }
   },
   success: () => {
@@ -2267,39 +2207,58 @@ function setupZenMode() {
 }
 
 // =========================================================================
-// PAGES OVER TIME GRAPH CHRONOLOGICAL & BEZIER FIX
+// 12-WEEK CHRONOLOGICAL GRAPH OVERHAUL
 // =========================================================================
 function renderChronologicalSparkline(logs, containerId) {
-  if (!logs || logs.length === 0) return;
-
-  const sortedLogs = [...logs].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const aggregated = {};
-  sortedLogs.forEach(log => {
-    const dateStr = log.date;
-    const pages = parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
-    aggregated[dateStr] = (aggregated[dateStr] || 0) + pages;
-  });
-
-  const dataPoints = [];
-  const today = new Date();
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400000);
-    const dStr = d.toISOString().split('T')[0];
-    dataPoints.push(aggregated[dStr] || 0);
-  }
+  const svgContainer = document.getElementById(containerId);
+  if (!svgContainer) return;
 
   const width = 500;
   const height = 150;
   const padding = 20;
-  const maxVal = Math.max(...dataPoints, 10);
 
+  // 1. Calculate the start dates for the last 12 weeks
+  const today = new Date();
+  const weeks = [];
+  for (let i = 11; i >= 0; i--) {
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - (i * 7));
+    weekStart.setHours(0,0,0,0);
+    weeks.push({
+      start: weekStart,
+      pages: 0
+    });
+  }
+
+  // 2. Aggregate logs into their respective weekly buckets
+  logs.forEach(log => {
+    const logDate = new Date(log.date);
+    const pages = parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
+    
+    // Find the correct week bucket
+    for (let i = 0; i < 12; i++) {
+      const bucketStart = weeks[i].start;
+      const bucketEnd = new Date(bucketStart);
+      bucketEnd.setDate(bucketStart.getDate() + 7);
+      
+      if (logDate >= bucketStart && logDate < bucketEnd) {
+        weeks[i].pages += pages;
+        break;
+      }
+    }
+  });
+
+  const dataPoints = weeks.map(w => w.pages);
+  const maxVal = Math.max(...dataPoints, 10); // Prevent divide-by-zero
+
+  // 3. Map Coordinates
   const coords = dataPoints.map((val, index) => {
-    const x = padding + (index / (dataPoints.length - 1)) * (width - 2 * padding);
+    const x = padding + (index / 11) * (width - 2 * padding);
     const y = height - padding - (val / maxVal) * (height - 2 * padding);
     return { x, y };
   });
 
+  // 4. Draw smooth cubic Bezier curve paths
   let dPath = `M ${coords[0].x} ${coords[0].y}`;
   for (let i = 0; i < coords.length - 1; i++) {
     const p0 = coords[i];
@@ -2311,49 +2270,191 @@ function renderChronologicalSparkline(logs, containerId) {
     dPath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
   }
 
-  const svgContainer = document.getElementById(containerId);
-  if (!svgContainer) return;
-
   const isDark = !document.body.classList.contains('light-mode');
   const accentColor = isDark ? '#38BDF8' : '#0A84FF';
-  const bgColor = isDark ? '#090A0F' : '#F2F2F7';
+  const bgColor = isDark ? '#111217' : '#FFFFFF';
 
   svgContainer.innerHTML = `
     <svg viewBox="0 0 ${width} ${height}" class="w-full h-full">
       <defs>
         <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.3"/>
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.35"/>
           <stop offset="100%" stop-color="${accentColor}" stop-opacity="0.0"/>
         </linearGradient>
       </defs>
-      <path d="${dPath} L ${coords[coords.length-1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z" fill="url(#chartGrad)" />
+      <!-- Area curve gradient -->
+      <path d="&dPath L ${coords[coords.length-1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z".replace('&dPath', dPath) fill="url(#chartGrad)" />
+      <!-- Top stroke contour -->
       <path d="${dPath}" fill="none" stroke="${accentColor}" stroke-width="3" stroke-linecap="round" />
+      <!-- Chronological node markers -->
       ${coords.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="${bgColor}" stroke="${accentColor}" stroke-width="2"/>`).join('')}
     </svg>
   `;
 }
 
 // =========================================================================
-// ROBUST CATEGORY NORMALIZER (Fixes "Other" graph bug)
+// SECTION 3: BY CATEGORY PIE CHART RENDERER (Replacing Bar Chart)
 // =========================================================================
-function normalizeGroup(groupName) {
-  if (!groupName) return 'Other';
-  
-  const clean = groupName.toLowerCase().trim()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
-  
-  if (clean.includes('writing') || clean.includes('aqdas')) return 'Writings';
-  if (clean.includes('aboutthefaith') || clean.includes('about')) return 'About the Faith';
-  if (clean.includes('compilation')) return 'Compilations';
-  if (clean.includes('fiction') && !clean.includes('non')) return 'Fiction';
-  if (clean.includes('nonfiction')) return 'Non-Fiction';
-  
-  return 'Other';
+function renderCategoryPieChart(books, containerId) {
+  const svgContainer = document.getElementById(containerId);
+  if (!svgContainer) return;
+
+  const counts = {
+    'Writings': 0,
+    'About the Faith': 0,
+    'Compilations': 0,
+    'Fiction': 0,
+    'Non-Fiction': 0,
+    'Other': 0
+  };
+
+  books.forEach(book => {
+    const groupVal = book.group || book.group_name || book.reading_group || book.category || 'Other';
+    const normalized = normalizeGroup(groupVal);
+    if (counts[normalized] !== undefined) {
+      counts[normalized]++;
+    } else {
+      counts['Other']++;
+    }
+  });
+
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total === 0) {
+    svgContainer.innerHTML = `<div class="text-center py-6 text-xs text-neutral-400">No books found to categorize</div>`;
+    return;
+  }
+
+  const colors = {
+    'Writings': '#38BDF8',       // Sky Blue
+    'About the Faith': '#F472B6', // Sunset Rose
+    'Compilations': '#818CF8',    // Indigo/Lavender
+    'Fiction': '#D6A85C',         // Stone Gold
+    'Non-Fiction': '#34D399',     // Emerald Mint
+    'Other': '#64748B'            // Slate Muted
+  };
+
+  const circumference = 2 * Math.PI * 35; // r=35 -> ~219.91
+  let cumulativePercent = 0;
+  let svgCircles = '';
+  let legendItems = '';
+
+  Object.keys(counts).forEach(cat => {
+    const count = counts[cat];
+    if (count === 0) return;
+
+    const percent = count / total;
+    const strokeLength = percent * circumference;
+    const strokeOffset = -cumulativePercent * circumference;
+
+    svgCircles += `
+      <circle cx="50" cy="50" r="35" 
+        fill="transparent" 
+        stroke="${colors[cat]}" 
+        stroke-width="10" 
+        stroke-dasharray="${strokeLength} ${circumference}" 
+        stroke-dashoffset="${strokeOffset}"
+        transform="rotate(-90 50 50)"
+        class="transition-all duration-300 hover:opacity-80"
+        style="transform-origin: center;"
+      />
+    `;
+
+    legendItems += `
+      <div class="flex items-center gap-2 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
+        <span class="font-medium text-neutral-300 truncate max-w-[100px]">${cat}</span>
+        <span class="text-neutral-500 text-[10px] ml-auto">(${count})</span>
+      </div>
+    `;
+
+    cumulativePercent += percent;
+  });
+
+  svgContainer.innerHTML = `
+    <div class="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
+      <div class="relative w-36 h-36 shrink-0">
+        <svg viewBox="0 0 100 100" class="w-full h-full transform -scale-x-100">
+          <circle cx="50" cy="50" r="35" fill="transparent" stroke="var(--border-color)" stroke-width="10" />
+          ${svgCircles}
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span class="text-xl font-extrabold text-white">${total}</span>
+          <span class="text-[9px] uppercase tracking-wider text-neutral-400">Books</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]">
+        ${legendItems}
+      </div>
+    </div>
+  `;
 }
 
 // =========================================================================
-// GITHUB-STYLE INTENSITY HEATMAP MATRIX
+// SECTION 4: RE-READ LOG STATUS EVALUATOR (Fixes multi-cycle progress bugs)
+// =========================================================================
+function evaluateBookReadingProgress(book, logs) {
+  if (book.status === 'In Progress') {
+    // If the book status is already In Progress (e.g. started via Re-Read button), preserve it!
+    // But check if we actually finished it in this cycle!
+    const bookLogs = logs.filter(l => l.book_title === book.title);
+    if (bookLogs.length > 0) {
+      bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const activeCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
+      const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+      if (cycleLogs.length > 0) {
+        const latestLog = cycleLogs[cycleLogs.length - 1];
+        const endPage = parseInt(latestLog.end_page || 0, 10);
+        const totalPages = parseInt(book.total_pages || 0, 10);
+        if (endPage >= totalPages) {
+          return 'Finished';
+        }
+      }
+    }
+    return 'In Progress';
+  }
+
+  const bookLogs = logs.filter(l => l.book_title === book.title);
+  if (bookLogs.length === 0) {
+    return 'Not Started';
+  }
+
+  // 1. Sort logs chronologically to get cycles in order
+  bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // 2. Identify the highest current read_cycle
+  const activeCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
+  const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+
+  // 3. Evaluate progress inside the active cycle
+  const latestLog = cycleLogs[cycleLogs.length - 1];
+  const endPage = parseInt(latestLog.end_page || 0, 10);
+  const totalPages = parseInt(book.total_pages || 0, 10);
+
+  if (endPage >= totalPages) {
+    return 'Finished';
+  } else if (endPage > 0) {
+    return 'In Progress';
+  }
+  
+  return 'Not Started';
+}
+
+// =========================================================================
+// SECTION 5: CONDITIONAL DROPDOWN IN ADD BOOK (Form Markup Helper)
+// =========================================================================
+function toggleCustomGroupInput(val) {
+  const container = document.getElementById('custom-group-container');
+  if (container) {
+    if (val === 'Other') {
+      container.classList.remove('hidden');
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+}
+
+// =========================================================================
+// SECTION 6: GITHUB-STYLE INTENSITY HEATMAP MATRIX
 // =========================================================================
 function renderActivityHeatmap(logs) {
   const container = document.getElementById('heatmap-container');
@@ -2398,6 +2499,47 @@ function renderActivityHeatmap(logs) {
 }
 
 // =========================================================================
+// ROBUST GROUP NORMALIZATION (Fixes "Other" category bug)
+// =========================================================================
+function normalizeGroup(groupName) {
+  if (!groupName) return 'Other';
+  
+  const clean = groupName.toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+  if (
+    clean.includes('writing') || 
+    clean.includes('bahaullah') || 
+    clean.includes('thebab') || 
+    clean.includes('abdulbaha') || 
+    clean.includes('shoghieffendi') ||
+    clean.includes('aqdas') ||
+    clean.includes('iqan')
+  ) {
+    return 'Writings';
+  }
+  
+  if (clean.includes('aboutthefaith') || clean.includes('about')) {
+    return 'About the Faith';
+  }
+  
+  if (clean.includes('compilation')) {
+    return 'Compilations';
+  }
+  
+  if (clean.includes('fiction') && !clean.includes('non')) {
+    return 'Fiction';
+  }
+  
+  if (clean.includes('nonfiction')) {
+    return 'Non-Fiction';
+  }
+
+  return 'Other';
+}
+
+// =========================================================================
 // SMART FORM CYCLE & PROGRESS CALCULATIONS
 // =========================================================================
 function handleBookSelection(selectedBookTitle, books, logs) {
@@ -2426,27 +2568,4 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 }
 
 
-
-// =========================================================================
-// SEARCHABLE GROUP DATALIST IN ADD BOOK FORM
-// =========================================================================
-function populateGroupDatalist(books) {
-  const datalist = document.getElementById('group-list');
-  if (!datalist) return;
-
-  // Collect all unique groups currently present in the database
-  const uniqueGroups = [...new Set(books.map(b => b.reading_group || b.group).filter(Boolean))];
-
-  datalist.innerHTML = uniqueGroups
-    .map(group => `<option value="${group}"></option>`)
-    .join('');
-}
-
 // ── Service Worker ────────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('SW registered'))
-      .catch(e => console.warn('SW failed:', e));
-  });
-}

@@ -390,12 +390,12 @@
               </div>
             </div>
 
-            <!-- ── SVG BAR CHART — By reading group ── -->
+            <!-- ── SVG DONUT CHART — By Category ── -->
             <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl">
               <div class="flex justify-between items-center">
-                <span class="section-label"><i class="fa-solid fa-chart-bar text-[10px]" style="color: var(--accent3)"></i> By Category</span>
+                <span class="section-label"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent3)"></i> By Category</span>
               </div>
-              <div id="chart-bar-wrap" class="w-full" style="height: 130px">
+              <div id="chart-bar-wrap" class="w-full" style="height: auto; min-height: 160px">
                 <!-- Rendered by JS -->
               </div>
             </div>
@@ -874,9 +874,19 @@
           <select class="select select-bordered glass-input w-full" id="ab-collection">
             <option value="Bahai">Bahá'í</option><option value="Non-Bahai">Non-Bahá'í</option>
           </select></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
-          <input type="text" class="input input-bordered glass-input w-full" id="ab-group" list="group-list" placeholder="e.g. Writings">
-          <datalist id="group-list"></datalist>
+        <div class="form-control" id="ab-group-container">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
+          <select id="ab-group-select" class="select select-bordered glass-input w-full" onchange="toggleCustomGroupInput(this.value)">
+            <option value="Writings">Writings</option>
+            <option value="About the Faith">About the Faith</option>
+            <option value="Compilations">Compilations</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+            <option value="Other">Other (Add new group...)</option>
+          </select>
+          <div id="custom-group-container" class="hidden mt-2">
+            <input type="text" id="ab-group-custom" placeholder="Type new group name" class="input input-bordered glass-input w-full">
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
