@@ -1,0 +1,18 @@
+# Excel source file — keep private, don't push to GitHub
+*.xlsx
+*.xls
+
+# Python scripts & scratch files — internal tools, not part of the web app
+*.py
+__pycache__/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+
+# macOS junk
+.DS_Store
+
+# Editor folders
+.vscode/
+.idea/

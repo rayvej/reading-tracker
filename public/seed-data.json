@@ -1,0 +1,7234 @@
+{
+  "books": [
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Hooper Dunbar",
+      "title": "A Companion to the Study of the Kitáb-i-Íqán/S",
+      "total_pages": 291,
+      "pages_read": 291,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Janet Ruhe-Schoen",
+      "title": "A Love Which Does Not Wait/S",
+      "total_pages": 341,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Rúhíyyih Khánum",
+      "title": "A Manual for Pioneers/S",
+      "total_pages": 287,
+      "pages_read": 287,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "A Traveler’s Narrative",
+      "total_pages": 94,
+      "pages_read": 94,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Joshua Lincoln",
+      "title": "‘Abdu’l-Bahá ‘Abbás Head of the Bahá’í Faith: A Life in Social & Regional Context",
+      "total_pages": 232,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Earl Redman",
+      "title": "‘Abdu’l-Bahá in Their Midst/S",
+      "total_pages": 371,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "George Townshend",
+      "title": "‘Abdu’l-Bahá the Master/S",
+      "total_pages": 80,
+      "pages_read": 80,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Hasan M. Balyuzi",
+      "title": "‘Abdu’l-Bahá: The Centre of the Covenant",
+      "total_pages": 560,
+      "pages_read": 560,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Paul Hanley",
+      "title": "‘Adasíyyih",
+      "total_pages": 336,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "John S. Hatcher",
+      "title": "‘Alí’s Dream/S",
+      "total_pages": 310,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Violette Nakhjavani",
+      "title": "Amatu’l-Bahá Visits India/S",
+      "total_pages": 203,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Baharieh Rouhani Man'ani",
+      "title": "Ásíyih Khánum - The Most Exalted Leaf Entitled Navváb/S",
+      "total_pages": 92,
+      "pages_read": 92,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "Bahá’í Administration",
+      "total_pages": 196,
+      "pages_read": 196,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "Bahá’í Sacred Writings",
+      "total_pages": 489,
+      "pages_read": 6,
+      "read_count": 0,
+      "status": "In Progress"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "J. E. Esslemont",
+      "title": "Bahá’u’lláh and the New Era",
+      "total_pages": 312,
+      "pages_read": 312,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Hasan M. Balyuzi",
+      "title": "Bahá’u’lláh - The King of Glory",
+      "total_pages": 436,
+      "pages_read": 436,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Stephen Beebe",
+      "title": "Bahá’u’lláh the West and Birth of Modernity",
+      "total_pages": 274,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "Century of Light/S",
+      "total_pages": 157,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Janet Ruhe-Schoen",
+      "title": "Champions of Oneness - Louis Gregory and His Shining Circle/S",
+      "total_pages": 282,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Lameh Fananapazir",
+      "title": "Christianity Beyond the Crossroads",
+      "total_pages": 674,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "Citadel of Faith",
+      "total_pages": 198,
+      "pages_read": 198,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Lameh Fananapazir",
+      "title": "Companion Epistle to the Son of the Wolf",
+      "total_pages": 565,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Shirin Sabri",
+      "title": "Companions of the Crimson Ark",
+      "total_pages": 144,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Bahá’í World Centre",
+      "title": "Constitution of the Universal House of Justice/S (Per/Eng)",
+      "total_pages": 10,
+      "pages_read": 10,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Michael V. Day",
+      "title": "Coronation on Carmel/S",
+      "total_pages": 384,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Paul Lample",
+      "title": "Creating a New Mind/S",
+      "total_pages": 148,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Mary Perkins",
+      "title": "Day of Glory/S",
+      "total_pages": 206,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Bahá’í World Centre",
+      "title": "Days of Remembrance, Selections from Writings of Bahá’u’lláh/H",
+      "total_pages": 226,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Elaheh Mottahedeh Bos",
+      "title": "Divine Springtime (Hidden Words)/H",
+      "total_pages": 15,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Iran Muhajir",
+      "title": "Dr. Muhájir",
+      "total_pages": 704,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Amir Badiei",
+      "title": "Dreams of Destiny",
+      "total_pages": 300,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Hasan M. Balyuzi",
+      "title": "Eminent Bahá’ís in Time of Bahá’u’lláh/H",
+      "total_pages": 400,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "Epistle to the Son of the Wolf",
+      "total_pages": 181,
+      "pages_read": 181,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "May Faizi-Moore",
+      "title": "Faizí/S",
+      "total_pages": 412,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Parichehr Manuchehri",
+      "title": "Farid English-Persian Dictionary/H",
+      "total_pages": 401,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Brian Kurzius",
+      "title": "Fire and Gold: Benefiting from Life's Tests/S",
+      "total_pages": 349,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "Five Year Plan and the One Year Plan, 2016-2022: Summary of Achievements and Learning",
+      "total_pages": 183,
+      "pages_read": 183,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Hooper Dunbar",
+      "title": "Forces of Our Time/S",
+      "total_pages": 165,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Susan Ahmadi Hansen",
+      "title": "From Behind All the Veils",
+      "total_pages": 32,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Dorothy Freeman",
+      "title": "From Copper to Gold - The Life of Dorothy Baker",
+      "total_pages": 568,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Iran Muhajir",
+      "title": "Furútan",
+      "total_pages": 523,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "Gems of Divine Mysteries",
+      "total_pages": 50,
+      "pages_read": 50,
+      "read_count": 2,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "David Hofman",
+      "title": "George Townshend/S",
+      "total_pages": 418,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "Gleanings from the Writings of Bahá’u’lláh",
+      "total_pages": 286,
+      "pages_read": 286,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "God Passes By",
+      "total_pages": 412,
+      "pages_read": 412,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Nathan Rutstein",
+      "title": "He Loved & Served/S",
+      "total_pages": 204,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "William Sears",
+      "title": "In Grandfathers Barn/S",
+      "total_pages": 96,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Paul Lample",
+      "title": "In Pursuit of a More Superb Mission/S",
+      "total_pages": 130,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Kathryn Jewett Hogenson",
+      "title": "Infinite Horizons",
+      "total_pages": 544,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Moojan Momen",
+      "title": "Islam & the Bahá’í Faith/S",
+      "total_pages": 293,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Michael V. Day",
+      "title": "Journey to a Mountain",
+      "total_pages": 317,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Leona Hosack",
+      "title": "Kamál’s Day/H",
+      "total_pages": 43,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Hasan M. Balyuzi",
+      "title": "Khadíjih Bagum: Wife of the Báb/S",
+      "total_pages": 40,
+      "pages_read": 40,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Marzieh Gail",
+      "title": "Khánum - The Greatest Holy Leaf/S",
+      "total_pages": 40,
+      "pages_read": 40,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Robert Weinberg",
+      "title": "Lady Blomfield, Her Life and Times/S",
+      "total_pages": 524,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Anita Ioas Chapman",
+      "title": "Leroy Ioas - Hand of the Cause of God/S",
+      "total_pages": 406,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Light of the World",
+      "total_pages": 207,
+      "pages_read": 207,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Barron Deems Harper",
+      "title": "Lights of Fortitude/S",
+      "total_pages": 490,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Velda Metelmann",
+      "title": "Lua Getsinger: Herald of Covenant/S",
+      "total_pages": 414,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Mírzá Mahmúd-i-Zarqání",
+      "title": "Mahmúd’s Diary",
+      "total_pages": 588,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "M. R. Garis",
+      "title": "Martha Root",
+      "total_pages": 496,
+      "pages_read": 496,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Dr. A.M. Ghadirian",
+      "title": "Materialism - Moral and Social Consequences/S",
+      "total_pages": 272,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Violette Nakhjavani",
+      "title": "Maxwells of Montreal, The /H (Vol 1)",
+      "total_pages": 480,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Memorials of the Faithful",
+      "total_pages": 203,
+      "pages_read": 203,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Youness Afroukhteh",
+      "title": "Memories of Nine Years in ‘Akká",
+      "total_pages": 522,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "Messages from UHJ 2001-2022, Fifth Epoch/H",
+      "total_pages": 945,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Shoghi Effendi",
+      "title": "Messages of Shoghi Effendi to the Indian Subcontinent",
+      "total_pages": 469,
+      "pages_read": 469,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "Messages to the Bahá’í World",
+      "total_pages": 175,
+      "pages_read": 175,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Shirin Taherzadeh",
+      "title": "Mighty",
+      "total_pages": 63,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Alí Nakhjavání",
+      "title": "Mírzá ‘Alí-Akbar-i-Nakhjavání",
+      "total_pages": 199,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Boris Handal",
+      "title": "Mírzá Mihdí The Purest Branch/S",
+      "total_pages": 282,
+      "pages_read": 282,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Sona Farid-Arbab",
+      "title": "Moral Empowerment: In Quest for Pedagogy",
+      "total_pages": 412,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Hasan M. Balyuzi",
+      "title": "Muḥammad & the Course of Islám/S",
+      "total_pages": 457,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "National Spiritual Assembly, The",
+      "total_pages": 105,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Susan Lockhartsdottir",
+      "title": "On the Wings of Angels",
+      "total_pages": 108,
+      "pages_read": 108,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "One Common Faith/S",
+      "total_pages": 60,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "title": "Paris Talks",
+      "total_pages": 184,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Rúhíyyih Khánum",
+      "title": "Poems of the Passing/H",
+      "total_pages": 115,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Howard Colby Ives",
+      "title": "Portals to Freedom/S",
+      "total_pages": 256,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "Prayer and Devotional Life",
+      "total_pages": 24,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "Prayers and Meditations",
+      "total_pages": 284,
+      "pages_read": 284,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Riaz Khadem",
+      "title": "Prelude to the Guardianship/S",
+      "total_pages": 318,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Rúhíyyih Khánum",
+      "title": "Prescription for Living/S",
+      "total_pages": 256,
+      "pages_read": 256,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Janet Ruhe-Schoen",
+      "title": "Rejoice in My Gladness (The Life of Ṭáhirih)/S",
+      "total_pages": 383,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "William Sears",
+      "title": "Release the Sun - The Story of the Báb/S",
+      "total_pages": 323,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Paul Lample",
+      "title": "Revelation and Social Reality/S",
+      "total_pages": 293,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "Revelation of Bahá’u’lláh - Vol 1",
+      "total_pages": 355,
+      "pages_read": 355,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "Revelation of Bahá’u’lláh - Vol 2",
+      "total_pages": 450,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "Revelation of Bahá’u’lláh - Vol 3",
+      "total_pages": 449,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "Revelation of Bahá’u’lláh - Vol 4",
+      "total_pages": 431,
+      "pages_read": 431,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Elaheh Mottahedeh Bos",
+      "title": "Rose of Love (Boardbook)",
+      "total_pages": 12,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Michael V. Day",
+      "title": "Sacred Stairway/S",
+      "total_pages": 302,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Carolyn Sparey Fox",
+      "title": "Seeking a State of Heaven/S",
+      "total_pages": 162,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "total_pages": 333,
+      "pages_read": 333,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "The Báb",
+      "title": "Selections from the Writings of the Báb",
+      "total_pages": 224,
+      "pages_read": 224,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Mary Perkins",
+      "title": "Servant of the Glory - Life of ‘Abdu’l-Bahá/S",
+      "total_pages": 340,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Ugo Giachery",
+      "title": "Shoghi Effendi - Recollections by Ugo Giachery/S",
+      "total_pages": 264,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Iran Muhajir",
+      "title": "Siyyid Mustafá Rúmí: Hand of the Cause of God",
+      "total_pages": 287,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Some Answered Questions",
+      "total_pages": 352,
+      "pages_read": 352,
+      "read_count": 2,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Linda Ahdieh Grant",
+      "title": "Sometimes I Made Him Laugh",
+      "total_pages": 32,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "total_pages": 247,
+      "pages_read": 247,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Tablets of the Divine Plan",
+      "total_pages": 107,
+      "pages_read": 107,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Bahá’í World Centre",
+      "title": "Text for the Study of the Covenant",
+      "total_pages": 122,
+      "pages_read": 122,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "The Advent of Divine Justice",
+      "total_pages": 138,
+      "pages_read": 138,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Hasan M. Balyuzi",
+      "title": "The Báb (The Herald of the Day of Days)/S",
+      "total_pages": 256,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Moojan Momen",
+      "title": "The Bábí and Bahá’í Religions 1844-1944/H",
+      "total_pages": 572,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "The Bahá’í World Volume 35 2006-2021",
+      "total_pages": 455,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Call of the Divine Beloved",
+      "total_pages": 102,
+      "pages_read": 102,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "The Child of the Covenant",
+      "total_pages": 425,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Adib Taherzadeh",
+      "title": "The Covenant of Bahá’u’lláh",
+      "total_pages": 449,
+      "pages_read": 449,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Enoch N. Tanyi",
+      "title": "The Covenant: Daily Readings/H",
+      "total_pages": 383,
+      "pages_read": 383,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Nabil-i-Azam",
+      "title": "The Dawn-Breakers",
+      "total_pages": 488,
+      "pages_read": 488,
+      "read_count": 2,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Rúhíyyih Khánum",
+      "title": "The Desire of the World/S",
+      "total_pages": 192,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Violette Nakhjavani",
+      "title": "The Great African Safari",
+      "total_pages": 586,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Hidden Words",
+      "total_pages": 52,
+      "pages_read": 52,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "The Institution of the Mashriqu’l-Adhkár/S",
+      "total_pages": 122,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Kitáb-i-Aqdas",
+      "total_pages": 266,
+      "pages_read": 266,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Kitáb-i-Iqán",
+      "total_pages": 291,
+      "pages_read": 291,
+      "read_count": 2,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Earl Redman",
+      "title": "The Knights of Bahá'u'lláh",
+      "total_pages": 405,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Rúhíyyih Khánum",
+      "title": "The Ministry of the Custodians/H",
+      "total_pages": 485,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "The Nine Year Plan 2022 - 2031",
+      "total_pages": 109,
+      "pages_read": 109,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Shahin Vafai",
+      "title": "The Path Toward Spirituality",
+      "total_pages": 149,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Rúhíyyih Khánum",
+      "title": "The Priceless Pearl/S",
+      "total_pages": 484,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Abu'l-Qásim Faizi",
+      "title": "The Prince of Martyrs",
+      "total_pages": 68,
+      "pages_read": 68,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "William Sears",
+      "title": "The Prisoner and the Kings/S",
+      "total_pages": 259,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "The Promised Day is Come",
+      "total_pages": 204,
+      "pages_read": 204,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "title": "The Promulgation of Universal Peace",
+      "total_pages": 707,
+      "pages_read": 70,
+      "read_count": 0,
+      "status": "In Progress"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "John S. Hatcher",
+      "title": "The Quickening: Unknown Poetry of Ṭáhirih/S",
+      "total_pages": 261,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "The Secret of Divine Civilization",
+      "total_pages": 116,
+      "pages_read": 116,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Ali-Akbar Furutan",
+      "title": "The Story of My Heart/S",
+      "total_pages": 268,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Summons of the Lord of Hosts",
+      "total_pages": 235,
+      "pages_read": 235,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Bahá’u’lláh",
+      "title": "The Tabernacle of Unity",
+      "total_pages": 64,
+      "pages_read": 64,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "The Universal House of Justice",
+      "total_pages": 149,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "William Sears",
+      "title": "The Wine of Astonishment",
+      "total_pages": 162,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "The World Order of Bahá’u’lláh",
+      "total_pages": 206,
+      "pages_read": 206,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "William Sears",
+      "title": "Thief in the Night/S",
+      "total_pages": 308,
+      "pages_read": 308,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "Shoghi Effendi",
+      "title": "This Decisive Hour",
+      "total_pages": 135,
+      "pages_read": 135,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Robert H. Stockman",
+      "title": "Thornton Chase",
+      "total_pages": 264,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "To Set the World in Order",
+      "total_pages": 84,
+      "pages_read": 84,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Bahá’í World Centre",
+      "title": "Training Institute: Attaining a Higher Level of Functioning",
+      "total_pages": 25,
+      "pages_read": 25,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Emily McBride Perigord",
+      "title": "Translation of French Footnotes, Dawn-Breakers/S",
+      "total_pages": 83,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Compilation",
+      "author": "Bahá’í World Centre",
+      "title": "Turning Point: Selected Messages of UHJ/S",
+      "total_pages": 434,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Shirin Sabri",
+      "title": "Valiant Horsemen of the Merciful/S",
+      "total_pages": 82,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "title": "Vignettes from the Life of ‘Abdu’l-Bahá/S",
+      "total_pages": 238,
+      "pages_read": 238,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Earl Redman",
+      "title": "Visiting ‘Abdu’l-Bahá Vol 1/S",
+      "total_pages": 304,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "About the Faith",
+      "author": "Amy Renshaw",
+      "title": "Voyage of Love - ‘Abdu’l-Bahá in North America/S",
+      "total_pages": 270,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Writings",
+      "author": "‘Abdu’l-Bahá",
+      "title": "Will and Testament of ‘Abdu’l-Bahá",
+      "total_pages": 26,
+      "pages_read": 26,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Bahai",
+      "group_name": "Other",
+      "author": "Linda Ahdieh Grant",
+      "title": "Zíá’s Search: Learning from Mullá Ḥusayn",
+      "total_pages": 42,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "Bill Bryson",
+      "title": "A Short History of Nearly Everything",
+      "total_pages": 560,
+      "pages_read": 142,
+      "read_count": 0,
+      "status": "In Progress"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "Boyé Lafayette De Mente",
+      "title": "Etiquette Guide to China: Know the Rules that Make the Difference!",
+      "total_pages": 192,
+      "pages_read": 192,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "Howard Yu",
+      "title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "total_pages": 258,
+      "pages_read": 258,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Fiction",
+      "author": "Paulo Coelho",
+      "title": "The Alchemist",
+      "total_pages": 182,
+      "pages_read": 182,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Fiction",
+      "author": "Homer",
+      "title": "The Iliad",
+      "total_pages": 414,
+      "pages_read": 414,
+      "read_count": 1,
+      "status": "Finished"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Fiction",
+      "author": "Rachel Carson",
+      "title": "Silent Spring",
+      "total_pages": 400,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "James Clear",
+      "title": "Atomic Habits",
+      "total_pages": 320,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "Jonathan Haidt",
+      "title": "The Anxious Generation",
+      "total_pages": 400,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Non-Fiction",
+      "author": "Yuval Noah Harari",
+      "title": "Sapiens: A Brief History of Humankind",
+      "total_pages": 464,
+      "pages_read": 0,
+      "read_count": 0,
+      "status": "Not Started"
+    },
+    {
+      "collection": "Non-Bahai",
+      "group_name": "Fiction",
+      "author": "Mitch Albom",
+      "title": "tuesdays with Morrie",
+      "total_pages": 201,
+      "pages_read": 201,
+      "read_count": 1,
+      "status": "Finished"
+    }
+  ],
+  "reading_logs": [
+    {
+      "date": "2024-01-01",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 43,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-02",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 43,
+      "end_page": 62,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-03",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 62,
+      "end_page": 78,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-04",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 78,
+      "end_page": 94,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-05",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 94,
+      "end_page": 112,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-06",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 112,
+      "end_page": 128,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-07",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 128,
+      "end_page": 144,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-08",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 144,
+      "end_page": 163,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-09",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 163,
+      "end_page": 204,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-10",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 204,
+      "end_page": 229,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-11",
+      "book_title": "The Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 229,
+      "end_page": 266,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-12",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 21,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-13",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 21,
+      "end_page": 63,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-14",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 63,
+      "end_page": 80,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-15",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 80,
+      "end_page": 106,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-16",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 106,
+      "end_page": 131,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-17",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 131,
+      "end_page": 150,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-18",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 150,
+      "end_page": 170,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-19",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 170,
+      "end_page": 179,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-20",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 179,
+      "end_page": 198,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-21",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 198,
+      "end_page": 213,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-22",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 213,
+      "end_page": 237,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-23",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 237,
+      "end_page": 254,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-24",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 254,
+      "end_page": 274,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-25",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 274,
+      "end_page": 286,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-26",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 1,
+      "start_page": 286,
+      "end_page": 291,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-27",
+      "book_title": "The Hidden Words",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 15,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-28",
+      "book_title": "The Hidden Words",
+      "read_cycle": 1,
+      "start_page": 15,
+      "end_page": 30,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-29",
+      "book_title": "The Hidden Words",
+      "read_cycle": 1,
+      "start_page": 30,
+      "end_page": 45,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-30",
+      "book_title": "The Hidden Words",
+      "read_cycle": 1,
+      "start_page": 45,
+      "end_page": 52,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-01-31",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 18,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-01",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 18,
+      "end_page": 38,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-02",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 38,
+      "end_page": 45,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-03",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 45,
+      "end_page": 69,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-04",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 69,
+      "end_page": 84,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-05",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 84,
+      "end_page": 101,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-06",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 101,
+      "end_page": 119,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-07",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 119,
+      "end_page": 136,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-08",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 136,
+      "end_page": 138,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-09",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 138,
+      "end_page": 157,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-10",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 157,
+      "end_page": 168,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-11",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 168,
+      "end_page": 174,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-12",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 174,
+      "end_page": 180,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-13",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 180,
+      "end_page": 186,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-14",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 186,
+      "end_page": 198,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-15",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 198,
+      "end_page": 212,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-16",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 212,
+      "end_page": 219,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-17",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 1,
+      "start_page": 219,
+      "end_page": 247,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-18",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 4,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-19",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 4,
+      "end_page": 12,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-20",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 12,
+      "end_page": 27,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-21",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 27,
+      "end_page": 39,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-22",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 39,
+      "end_page": 54,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-23",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 54,
+      "end_page": 55,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-24",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 55,
+      "end_page": 56,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-25",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 56,
+      "end_page": 57,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-26",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 57,
+      "end_page": 58,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-27",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 58,
+      "end_page": 59,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-28",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 59,
+      "end_page": 60,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-02-29",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 60,
+      "end_page": 61,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-04",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 61,
+      "end_page": 68,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-05",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 68,
+      "end_page": 73,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-06",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 73,
+      "end_page": 78,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-07",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 78,
+      "end_page": 83,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-08",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 83,
+      "end_page": 92,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-09",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 92,
+      "end_page": 94,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-10",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 94,
+      "end_page": 99,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-11",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 99,
+      "end_page": 106,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-12",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 106,
+      "end_page": 112,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-13",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 112,
+      "end_page": 122,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-14",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 122,
+      "end_page": 132,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-15",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 132,
+      "end_page": 142,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-16",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 142,
+      "end_page": 146,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-17",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 146,
+      "end_page": 147,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-18",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 147,
+      "end_page": 152,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-19",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 152,
+      "end_page": 153,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-20",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 153,
+      "end_page": 154,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-21",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 154,
+      "end_page": 166,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-22",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 166,
+      "end_page": 179,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-23",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 179,
+      "end_page": 188,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-24",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 188,
+      "end_page": 195,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-25",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 195,
+      "end_page": 203,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-26",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 203,
+      "end_page": 204,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-27",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 204,
+      "end_page": 208,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-28",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 208,
+      "end_page": 210,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-29",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 210,
+      "end_page": 211,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-30",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 211,
+      "end_page": 212,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-03-31",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 212,
+      "end_page": 217,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-01",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 217,
+      "end_page": 222,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-02",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 222,
+      "end_page": 230,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-03",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 230,
+      "end_page": 236,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-04",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 236,
+      "end_page": 241,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-05",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 241,
+      "end_page": 249,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-06",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 249,
+      "end_page": 260,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-07",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 260,
+      "end_page": 261,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-08",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 261,
+      "end_page": 269,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-09",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 269,
+      "end_page": 270,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-10",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 270,
+      "end_page": 277,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-11",
+      "book_title": "Gleanings from the Writings of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 277,
+      "end_page": 286,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-12",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 11,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-13",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 11,
+      "end_page": 24,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-14",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 24,
+      "end_page": 27,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-15",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 27,
+      "end_page": 40,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-16",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 40,
+      "end_page": 41,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-17",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 41,
+      "end_page": 50,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-18",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 50,
+      "end_page": 57,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-19",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 57,
+      "end_page": 70,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-20",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 70,
+      "end_page": 85,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-21",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 85,
+      "end_page": 91,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-22",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 91,
+      "end_page": 108,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-23",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 108,
+      "end_page": 112,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-24",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 112,
+      "end_page": 117,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-25",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 117,
+      "end_page": 132,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-26",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 132,
+      "end_page": 139,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-27",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 139,
+      "end_page": 157,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-28",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 157,
+      "end_page": 159,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-29",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 159,
+      "end_page": 165,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-04-30",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 165,
+      "end_page": 181,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-01",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 181,
+      "end_page": 185,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-02",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 185,
+      "end_page": 200,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-03",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 200,
+      "end_page": 206,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-04",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 206,
+      "end_page": 210,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-05",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 210,
+      "end_page": 212,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-06",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 212,
+      "end_page": 216,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-07",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 216,
+      "end_page": 219,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-08",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 219,
+      "end_page": 223,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-09",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 223,
+      "end_page": 226,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-10",
+      "book_title": "The Summons of the Lord of Hosts",
+      "read_cycle": 1,
+      "start_page": 226,
+      "end_page": 235,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-11",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 17,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-12",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 17,
+      "end_page": 29,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-13",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 29,
+      "end_page": 35,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-14",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 35,
+      "end_page": 50,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-15",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 50,
+      "end_page": 54,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-16",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 54,
+      "end_page": 69,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-17",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 69,
+      "end_page": 78,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-18",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 78,
+      "end_page": 85,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-19",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 85,
+      "end_page": 100,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-20",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 100,
+      "end_page": 109,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-21",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 109,
+      "end_page": 119,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-22",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 119,
+      "end_page": 134,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-23",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 134,
+      "end_page": 150,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-24",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 150,
+      "end_page": 165,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-25",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 165,
+      "end_page": 166,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-26",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 166,
+      "end_page": 169,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-27",
+      "book_title": "Epistle to the Son of the Wolf",
+      "read_cycle": 1,
+      "start_page": 169,
+      "end_page": 181,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-28",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 4,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-29",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 4,
+      "end_page": 14,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-30",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 14,
+      "end_page": 24,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-05-31",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 24,
+      "end_page": 47,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-01",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 47,
+      "end_page": 53,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-02",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 53,
+      "end_page": 59,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-03",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 59,
+      "end_page": 74,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-04",
+      "book_title": "The Call of the Divine Beloved",
+      "read_cycle": 1,
+      "start_page": 74,
+      "end_page": 102,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-05",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 2,
+      "start_page": 0,
+      "end_page": 4,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-06",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 2,
+      "start_page": 4,
+      "end_page": 6,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-07",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 2,
+      "start_page": 6,
+      "end_page": 22,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-08",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 2,
+      "start_page": 22,
+      "end_page": 39,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-09",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 2,
+      "start_page": 39,
+      "end_page": 50,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-10",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 3,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-11",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 3,
+      "end_page": 6,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-12",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 6,
+      "end_page": 21,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-13",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 21,
+      "end_page": 27,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-14",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 27,
+      "end_page": 29,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-15",
+      "book_title": "The Tabernacle of Unity",
+      "read_cycle": 1,
+      "start_page": 29,
+      "end_page": 64,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-16",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 23,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-17",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 23,
+      "end_page": 48,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-18",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 48,
+      "end_page": 63,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-19",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 63,
+      "end_page": 75,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-20",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 75,
+      "end_page": 86,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-21",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 86,
+      "end_page": 103,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-22",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 103,
+      "end_page": 125,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-23",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 125,
+      "end_page": 133,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-24",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 133,
+      "end_page": 138,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-25",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 138,
+      "end_page": 140,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-26",
+      "book_title": "Selections from the Writings of the Báb",
+      "read_cycle": 1,
+      "start_page": 140,
+      "end_page": 224,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-28",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 0,
+      "end_page": 13,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-06-28",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 13,
+      "end_page": 36,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-01",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 36,
+      "end_page": 48,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-02",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 48,
+      "end_page": 57,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-04",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 57,
+      "end_page": 62,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-06",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 62,
+      "end_page": 77,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-07",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 77,
+      "end_page": 79,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-11",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 79,
+      "end_page": 88,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-22",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 88,
+      "end_page": 97,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-07-30",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 97,
+      "end_page": 106,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-03",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 106,
+      "end_page": 140,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-07",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 140,
+      "end_page": 155,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-10",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 155,
+      "end_page": 173,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-12",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 173,
+      "end_page": 190,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-18",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 190,
+      "end_page": 206,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-20",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 206,
+      "end_page": 221,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-22",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 221,
+      "end_page": 234,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-25",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 234,
+      "end_page": 250,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-26",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 250,
+      "end_page": 258,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-27",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 258,
+      "end_page": 280,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-28",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 280,
+      "end_page": 306,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-29",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 306,
+      "end_page": 323,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-08-31",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 2,
+      "start_page": 323,
+      "end_page": 352,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-02",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 23,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-04",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 23,
+      "end_page": 35,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-07",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 35,
+      "end_page": 45,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-08",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 45,
+      "end_page": 50,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-09",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 50,
+      "end_page": 69,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-10",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 69,
+      "end_page": 87,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-12",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 87,
+      "end_page": 102,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-14",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 102,
+      "end_page": 110,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-16",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 110,
+      "end_page": 116,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-17",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 116,
+      "end_page": 125,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-18",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 125,
+      "end_page": 131,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-19",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 131,
+      "end_page": 141,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-20",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 141,
+      "end_page": 150,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-21",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 150,
+      "end_page": 157,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-22",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 157,
+      "end_page": 174,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-23",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 174,
+      "end_page": 186,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-24",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 186,
+      "end_page": 198,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-25",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 198,
+      "end_page": 217,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-09-26",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 217,
+      "end_page": 224,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-03",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 224,
+      "end_page": 237,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-08",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 237,
+      "end_page": 248,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-09",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 248,
+      "end_page": 256,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-14",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 256,
+      "end_page": 270,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-15",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 270,
+      "end_page": 285,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-16",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 285,
+      "end_page": 312,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-17",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 312,
+      "end_page": 315,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-19",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 315,
+      "end_page": 333,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-21",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 5,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-10-22",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 5,
+      "end_page": 6,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-11-04",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 6,
+      "end_page": 18,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-11-06",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 18,
+      "end_page": 22,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-11-09",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 22,
+      "end_page": 26,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-11-10",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 26,
+      "end_page": 38,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-11-18",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 38,
+      "end_page": 44,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-08",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 44,
+      "end_page": 51,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-17",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 51,
+      "end_page": 59,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-18",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 59,
+      "end_page": 69,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-21",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 69,
+      "end_page": 79,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-22",
+      "book_title": "A Traveler’s Narrative",
+      "read_cycle": 1,
+      "start_page": 79,
+      "end_page": 94,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2024-12-24",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 17,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-04",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 17,
+      "end_page": 32,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-06",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 32,
+      "end_page": 61,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-07",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 61,
+      "end_page": 76,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-08",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 76,
+      "end_page": 103,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-09",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 103,
+      "end_page": 118,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-10",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 118,
+      "end_page": 130,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-12",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 130,
+      "end_page": 146,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-13",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 146,
+      "end_page": 165,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-15",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 165,
+      "end_page": 177,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-19",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 177,
+      "end_page": 187,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-20",
+      "book_title": "Memorials of the Faithful",
+      "read_cycle": 1,
+      "start_page": 187,
+      "end_page": 203,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-21",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 19,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-22",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 19,
+      "end_page": 32,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-23",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 32,
+      "end_page": 66,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-24",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 66,
+      "end_page": 100,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-25",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 100,
+      "end_page": 134,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-26",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 134,
+      "end_page": 168,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-28",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 168,
+      "end_page": 183,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-30",
+      "book_title": "Light of the World",
+      "read_cycle": 1,
+      "start_page": 183,
+      "end_page": 207,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-01-31",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 6,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-02",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 6,
+      "end_page": 18,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-03",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 18,
+      "end_page": 27,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-04",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 27,
+      "end_page": 31,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-05",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 31,
+      "end_page": 46,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-06",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 46,
+      "end_page": 68,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-13",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 68,
+      "end_page": 81,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-23",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 81,
+      "end_page": 97,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-24",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 97,
+      "end_page": 121,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-02-27",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 121,
+      "end_page": 140,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-01",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 140,
+      "end_page": 159,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-03",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 159,
+      "end_page": 167,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-04",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 167,
+      "end_page": 190,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-05",
+      "book_title": "Bahá’í Administration",
+      "read_cycle": 1,
+      "start_page": 190,
+      "end_page": 196,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-06",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 38,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-09",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 38,
+      "end_page": 65,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-10",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 65,
+      "end_page": 77,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-11",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 77,
+      "end_page": 106,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-12",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 106,
+      "end_page": 137,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-13",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 137,
+      "end_page": 159,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-15",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 159,
+      "end_page": 177,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2025-03-16",
+      "book_title": "The Promised Day is Come",
+      "read_cycle": 1,
+      "start_page": 177,
+      "end_page": 204,
+      "minutes_spent": null,
+      "notes": null
+    },
+    {
+      "date": "2026-05-04",
+      "book_title": "Bahá’u’lláh - The King of Glory",
+      "read_cycle": 1,
+      "start_page": 264,
+      "end_page": 274,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-05-04",
+      "book_title": "Bahá’u’lláh - The King of Glory",
+      "read_cycle": 1,
+      "start_page": 274,
+      "end_page": 338,
+      "minutes_spent": 90,
+      "notes": null
+    },
+    {
+      "date": "2026-05-05",
+      "book_title": "Bahá’u’lláh - The King of Glory",
+      "read_cycle": 1,
+      "start_page": 338,
+      "end_page": 368,
+      "minutes_spent": 60,
+      "notes": "Shaykh Mahmud's three attempts to visit the Blessed Beauty; Abdu'r-Rahman Pasha's attempt to close Baha'i shops in Akka"
+    },
+    {
+      "date": "2026-05-06",
+      "book_title": "Bahá’u’lláh - The King of Glory",
+      "read_cycle": 1,
+      "start_page": 368,
+      "end_page": 392,
+      "minutes_spent": 40,
+      "notes": null
+    },
+    {
+      "date": "2026-05-07",
+      "book_title": "Bahá’u’lláh - The King of Glory",
+      "read_cycle": 1,
+      "start_page": 392,
+      "end_page": 436,
+      "minutes_spent": 75,
+      "notes": null
+    },
+    {
+      "date": "2026-05-08",
+      "book_title": "The Prince of Martyrs",
+      "read_cycle": 1,
+      "start_page": 1,
+      "end_page": 10,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-05-09",
+      "book_title": "The Prince of Martyrs",
+      "read_cycle": 1,
+      "start_page": 10,
+      "end_page": 32,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-05-10",
+      "book_title": "The Prince of Martyrs",
+      "read_cycle": 1,
+      "start_page": 32,
+      "end_page": 58,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-05-10",
+      "book_title": "The Prince of Martyrs",
+      "read_cycle": 1,
+      "start_page": 58,
+      "end_page": 68,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-05-10",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 1,
+      "end_page": 34,
+      "minutes_spent": 50,
+      "notes": null
+    },
+    {
+      "date": "2026-05-11",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 34,
+      "end_page": 42,
+      "minutes_spent": 7,
+      "notes": "Roy Wilhelm taught Martha the Faith in 1908"
+    },
+    {
+      "date": "2026-05-12",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 42,
+      "end_page": 56,
+      "minutes_spent": 20,
+      "notes": "Martha met Thornton Chase, the first American Baha'i,  in a restaurant. They talked for several hours, and she later said that their talk was a stepping stone to her accepting the Faith, which she did in 1909; 1898 was the first pilgrimage for believers from the West; Thornton Chase met 'Abdu'l-Baha in 1907; 1909 was the first National Convention for the National Spiritual Assembly of the United States and Canada; Martha was a delegate for the Naitonal Convention from 1911 onwards (when she was in the country); The Young Turk Revolution was in 1908, had to free all political and religious prisoners which led to freedom of 'Abdu'l-Baha"
+    },
+    {
+      "date": "2026-05-13",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 56,
+      "end_page": 82,
+      "minutes_spent": 40,
+      "notes": "Started her first trip around the world on 30 January 1915; On 24 April 1915 she sailed for India, landing in Bombay; Martha was the first American Baha'i to visit Burma; She met Siyyid Mustafa Rumi in Mandalay, Burma; Agnes Alexander was living as a teacher in Japan, and Martha was there in July 1915; The first Japanese to accept the Faith in Japan is Mr. Fukuta; On 31 July 1915, she sailed out of Yokohama and had a short stay in Manchuria; In 1917 five Tablets of the Divine Plan were read in Boston at the National Convention; In 1917 Roy Wilhelm released two blue teaching booklets, little Ben and Big Ben, which Martha found to be indespensable; In 1917's Boston Convention, Martha and Harry Randall first worked together and their friends called them soulmates; Martha developed a lasting friendship with Agens Parsons while working together on the publicity committee for the 1917 celebration of the centenary of the Birth of Baha'u'llah"
+    },
+    {
+      "date": "2026-05-13",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 82,
+      "end_page": 100,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-05-14",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 100,
+      "end_page": 110,
+      "minutes_spent": 17,
+      "notes": "She crossed the Andes in 1919; She reached Panama on 25 October 1919"
+    },
+    {
+      "date": "2026-05-14",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 110,
+      "end_page": 134,
+      "minutes_spent": 30,
+      "notes": "She was helping with the talks of Jinab-i-Fadil in the United States and Canada; She served on the Ideas Committee of the Temple Board; She helped with planning the amity conference with Agnes Parsons, which was supposed to be held in 1920 but was held in the Spring of 1921"
+    },
+    {
+      "date": "2026-05-15",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 134,
+      "end_page": 160,
+      "minutes_spent": 35,
+      "notes": "She wrote to the President of Mexico, Álvaro Obregón, sharing the 'Economic Solution' as discussed in Star of the West 31 December 1919 in the article by Mr. Alfred E. Lunt"
+    },
+    {
+      "date": "2026-05-16",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 160,
+      "end_page": 174,
+      "minutes_spent": 20,
+      "notes": "On 25 April 1923 she embarked on a steamer headed for China"
+    },
+    {
+      "date": "2026-05-17",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 174,
+      "end_page": 178,
+      "minutes_spent": 15,
+      "notes": "She started in Peking; She visited Ginanfu (now Chin ch'eng), and then Chefoo (now Yentai), home of Confucius, then Tsuchowfu, then Nanking, then Shanghai; She wrote articles for the Shanghai Times newspaper"
+    },
+    {
+      "date": "2026-05-17",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 178,
+      "end_page": 186,
+      "minutes_spent": 15,
+      "notes": "She said \"It is a Favour and a Bounty of God to have the pribilege to do anything for China. I do not think one of you will ever come who will not love the Chinese people.\"; "
+    },
+    {
+      "date": "2026-05-18",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 186,
+      "end_page": 206,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-05-19",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 206,
+      "end_page": 218,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-05-20",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 218,
+      "end_page": 222,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-05-21",
+      "book_title": "Bahá’í Sacred Writings",
+      "read_cycle": 1,
+      "start_page": 1,
+      "end_page": 6,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-05-22",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 222,
+      "end_page": 224,
+      "minutes_spent": 3,
+      "notes": null
+    },
+    {
+      "date": "2026-05-23",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 224,
+      "end_page": 234,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-05-24",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 234,
+      "end_page": 260,
+      "minutes_spent": 35,
+      "notes": null
+    },
+    {
+      "date": "2026-05-24",
+      "book_title": "Tablets of Bahá’u’lláh revealed after the Kitáb-i-Aqdas",
+      "read_cycle": 2,
+      "start_page": 1,
+      "end_page": 34,
+      "minutes_spent": 60,
+      "notes": null
+    },
+    {
+      "date": "2026-05-25",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 260,
+      "end_page": 291,
+      "minutes_spent": 50,
+      "notes": "She met the Archbishop of Sweden who was awared the Nobel Peace Prize in 1930 - she gave him the Kitab-i-Iqan and Baha'u'llah and the New Era; She met Queen Marie and her daughter again."
+    },
+    {
+      "date": "2026-05-26",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 291,
+      "end_page": 292,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-05-27",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 292,
+      "end_page": 297,
+      "minutes_spent": 3,
+      "notes": null
+    },
+    {
+      "date": "2026-05-28",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 297,
+      "end_page": 304,
+      "minutes_spent": 10,
+      "notes": "Princess Ileana translated some of the Baha'i writings into Rumanian; She visited the first president of the republic of Czechoslovakia, Thomas Masaryk in 1928 and he encouraged her and supported her efforts"
+    },
+    {
+      "date": "2026-05-29",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 304,
+      "end_page": 399,
+      "minutes_spent": 150,
+      "notes": null
+    },
+    {
+      "date": "2026-05-30",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 399,
+      "end_page": 400,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-05-31",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 400,
+      "end_page": 414,
+      "minutes_spent": 10,
+      "notes": "In all the Scandinavian and Baltic countries Martha sensed the vitality and integrity of the northern people. \"I tell you,\" she wrote a few months later, \"that the Bahá'i culture of the North may be a rose that blooms later, but when it does bloom it will be fresh, fragrant, exquisite! The flowers of the North pos(s]ess a freshness all their own!\" If Bahä'u'lláh'steachings for world peace could be established in Scandinavia, Martha felt, this region would lead the way to the formation of a Universal League of Nations that would unite the nations of the world. Martha was years ahead of her time, as that institution would come into being in 1945 as the United Nations, with its first secretary general, Trygve Lie, of Oslo, Norway."
+    },
+    {
+      "date": "2026-05-31",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 414,
+      "end_page": 438,
+      "minutes_spent": 25,
+      "notes": "\"In Japan I may only stay two or three weeks. (Japan is very expensive, I can't stay there very long.) I expect to make my long stay in China and I must earn a little by teaching English lessons.\""
+    },
+    {
+      "date": "2026-06-01",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 438,
+      "end_page": 458,
+      "minutes_spent": 30,
+      "notes": "\"August 14-The air • • raids came over the Shanghai International Settlement! The whirring, the stacatto [sic] louder and louder.•. over our heads, then a ... [silence] then the horror, the shock, the shaking house and the awful explosions of bursting bombs, it was HELL upon earth!... I was on the fifth floor, the top floor and I thought our house was falling. I was living one-half block from the place they were aiming to bomb and less than two blocks from Palace Hotel and Cathay.. [Hotel] where the bombs crashed... [through] thundering death. I prayed Ya Alláh-El-Mostaghas!* and bowed my head thinking the next one might fall on me. It was doomsday! The mind lives a lifetime in a moment! But the planes soared farther away and the bombing stopped for that time.*\"; On 13-14 February 1938, again traveling with Işfándiar Bakhtiari, Martha made her second trip to the Visva-Bharati University of Rabindranath Tagore. She felt deeply privileged to meet, finally, this world figure, this Nobel-prize-winning poet. His humanistic ideas radiated beyond the borders of In-dia, and his views often determined Mahatma Gandhi's ac-tions. In 1912 he had met Abdu'l-Bahá in Chicago and had ever after been impressed with the ideals of the Bahá'i Faith. Someday he hoped that a \"Bahá'i Chair of Religion\" could be established at his university."
+    },
+    {
+      "date": "2026-06-01",
+      "book_title": "Martha Root",
+      "read_cycle": 1,
+      "start_page": 458,
+      "end_page": 496,
+      "minutes_spent": 45,
+      "notes": null
+    },
+    {
+      "date": "2026-06-02",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 50,
+      "end_page": 66,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-02",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 66,
+      "end_page": 82,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-03",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 82,
+      "end_page": 102,
+      "minutes_spent": 27,
+      "notes": null
+    },
+    {
+      "date": "2026-06-04",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 102,
+      "end_page": 130,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-06-05",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 130,
+      "end_page": 144,
+      "minutes_spent": 16,
+      "notes": null
+    },
+    {
+      "date": "2026-06-06",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 144,
+      "end_page": 176,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-06-07",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 176,
+      "end_page": 180,
+      "minutes_spent": 3,
+      "notes": null
+    },
+    {
+      "date": "2026-06-08",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 180,
+      "end_page": 182,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-06-09",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 182,
+      "end_page": 184,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-06-10",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 184,
+      "end_page": 198,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-06-11",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 198,
+      "end_page": 200,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-06-12",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 200,
+      "end_page": 202,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-06-13",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 1,
+      "end_page": 6,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-06-14",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 202,
+      "end_page": 214,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-06-15",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 6,
+      "end_page": 22,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-16",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 214,
+      "end_page": 220,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-06-16",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 220,
+      "end_page": 224,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-06-17",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 224,
+      "end_page": 252,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-06-17",
+      "book_title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "read_cycle": 1,
+      "start_page": 252,
+      "end_page": 258,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-06-18",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 22,
+      "end_page": 24,
+      "minutes_spent": 2,
+      "notes": null
+    },
+    {
+      "date": "2026-06-19",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 24,
+      "end_page": 26,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-06-19",
+      "book_title": "A Short History of Nearly Everything",
+      "read_cycle": 1,
+      "start_page": 126,
+      "end_page": 142,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-20",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 26,
+      "end_page": 40,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-06-21",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 40,
+      "end_page": 48,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-06-21",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 48,
+      "end_page": 50,
+      "minutes_spent": 2,
+      "notes": null
+    },
+    {
+      "date": "2026-06-22",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 50,
+      "end_page": 58,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-06-23",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 58,
+      "end_page": 72,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-24",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 72,
+      "end_page": 84,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-24",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 84,
+      "end_page": 87,
+      "minutes_spent": 5,
+      "notes": null
+    },
+    {
+      "date": "2026-06-25",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 87,
+      "end_page": 105,
+      "minutes_spent": 25,
+      "notes": null
+    },
+    {
+      "date": "2026-06-26",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 105,
+      "end_page": 114,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-06-27",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 114,
+      "end_page": 119,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-06-28",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 119,
+      "end_page": 128,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-06-28",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 128,
+      "end_page": 142,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-06-29",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 142,
+      "end_page": 158,
+      "minutes_spent": 22,
+      "notes": null
+    },
+    {
+      "date": "2026-06-30",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 158,
+      "end_page": 172,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2026-07-01",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 172,
+      "end_page": 175,
+      "minutes_spent": 3,
+      "notes": null
+    },
+    {
+      "date": "2026-07-02",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 175,
+      "end_page": 186,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-07-03",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 186,
+      "end_page": 193,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-07-04",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 193,
+      "end_page": 194,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-07-05",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 194,
+      "end_page": 216,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-07-06",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 216,
+      "end_page": 218,
+      "minutes_spent": 2,
+      "notes": null
+    },
+    {
+      "date": "2026-07-07",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 218,
+      "end_page": 232,
+      "minutes_spent": 30,
+      "notes": null
+    },
+    {
+      "date": "2026-07-08",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 232,
+      "end_page": 242,
+      "minutes_spent": 8,
+      "notes": null
+    },
+    {
+      "date": "2026-07-09",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 242,
+      "end_page": 249,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-07-10",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 249,
+      "end_page": 250,
+      "minutes_spent": 1,
+      "notes": null
+    },
+    {
+      "date": "2026-07-11",
+      "book_title": "Bahá’u’lláh and the New Era",
+      "read_cycle": 2,
+      "start_page": 250,
+      "end_page": 312,
+      "minutes_spent": 90,
+      "notes": null
+    },
+    {
+      "date": "2026-07-12",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 1,
+      "end_page": 7,
+      "minutes_spent": 10,
+      "notes": null
+    },
+    {
+      "date": "2026-07-13",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 7,
+      "end_page": 14,
+      "minutes_spent": 15,
+      "notes": null
+    },
+    {
+      "date": "2026-07-14",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 14,
+      "end_page": 46,
+      "minutes_spent": 60,
+      "notes": null
+    },
+    {
+      "date": "2026-07-15",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 46,
+      "end_page": 77,
+      "minutes_spent": 60,
+      "notes": null
+    },
+    {
+      "date": "2026-07-16",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 77,
+      "end_page": 88,
+      "minutes_spent": 20,
+      "notes": null
+    },
+    {
+      "date": "2024-01-26",
+      "book_title": "A Companion to the Study of the Kitáb-i-Íqán/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 291,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "A Manual for Pioneers/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 287,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-03-14",
+      "book_title": "‘Abdu’l-Bahá the Master/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 80,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "‘Abdu’l-Bahá: The Centre of the Covenant",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 560,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-03-08",
+      "book_title": "Ásíyih Khánum - The Most Exalted Leaf Entitled Navváb/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 92,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2026-05-02",
+      "book_title": "Citadel of Faith",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 198,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-12-31",
+      "book_title": "Constitution of the Universal House of Justice/S (Per/Eng)",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 10,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2024-03-31",
+      "book_title": "Five Year Plan and the One Year Plan, 2016-2022: Summary of Achievements and Learning",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 183,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2015-12-31",
+      "book_title": "Gems of Divine Mysteries",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 50,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2020-12-31",
+      "book_title": "God Passes By",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 412,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-03-04",
+      "book_title": "Khadíjih Bagum: Wife of the Báb/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 40,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-03-02",
+      "book_title": "Khánum - The Greatest Holy Leaf/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 40,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2022-12-31",
+      "book_title": "Messages of Shoghi Effendi to the Indian Subcontinent",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 469,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-10-25",
+      "book_title": "Messages to the Bahá’í World",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 175,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-03-10",
+      "book_title": "Mírzá Mihdí The Purest Branch/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 282,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2026-01-20",
+      "book_title": "On the Wings of Angels",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 108,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-03-14",
+      "book_title": "Prayers and Meditations",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 284,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2015-12-31",
+      "book_title": "Prescription for Living/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 256,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2018-12-31",
+      "book_title": "Revelation of Bahá’u’lláh - Vol 1",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 355,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2024-12-31",
+      "book_title": "Revelation of Bahá’u’lláh - Vol 4",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 431,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2024-10-20",
+      "book_title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 333,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "Some Answered Questions",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 352,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "Tablets of the Divine Plan",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 107,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-12-31",
+      "book_title": "Text for the Study of the Covenant",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 122,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "The Advent of Divine Justice",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 138,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-12-31",
+      "book_title": "The Covenant of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 449,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2024-12-31",
+      "book_title": "The Covenant: Daily Readings/H",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 383,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2015-04-30",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 488,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2019-12-31",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 2,
+      "start_page": 0,
+      "end_page": 488,
+      "minutes_spent": null,
+      "notes": "Historical cycle 2"
+    },
+    {
+      "date": "2026-03-12",
+      "book_title": "The Kitáb-i-Iqán",
+      "read_cycle": 2,
+      "start_page": 0,
+      "end_page": 291,
+      "minutes_spent": null,
+      "notes": "Historical cycle 2"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "The Nine Year Plan 2022 - 2031",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 109,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-12-31",
+      "book_title": "The Secret of Divine Civilization",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 116,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-09-08",
+      "book_title": "The World Order of Bahá’u’lláh",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 206,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2022-03-19",
+      "book_title": "Thief in the Night/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 308,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-11-15",
+      "book_title": "This Decisive Hour",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 135,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2023-09-30",
+      "book_title": "To Set the World in Order",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 84,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-12-31",
+      "book_title": "Training Institute: Attaining a Higher Level of Functioning",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 25,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2015-12-31",
+      "book_title": "Vignettes from the Life of ‘Abdu’l-Bahá/S",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 238,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2021-12-31",
+      "book_title": "Will and Testament of ‘Abdu’l-Bahá",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 26,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2026-02-24",
+      "book_title": "Etiquette Guide to China: Know the Rules that Make the Difference!",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 192,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-07-26",
+      "book_title": "The Alchemist",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 182,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2025-08-31",
+      "book_title": "The Iliad",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 414,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2018-12-31",
+      "book_title": "tuesdays with Morrie",
+      "read_cycle": 1,
+      "start_page": 0,
+      "end_page": 201,
+      "minutes_spent": null,
+      "notes": "Historical cycle 1"
+    }
+  ],
+  "wishlist": [
+    {
+      "title": "A Companion to the Study of the Kitáb-i-Íqán/S",
+      "author": "Hooper Dunbar",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 291,
+      "est_cost": 9.85,
+      "where_to_buy": "",
+      "date_added": "2024-01-11",
+      "notes": ""
+    },
+    {
+      "title": "A Love Which Does Not Wait/S",
+      "author": "Janet Ruhe-Schoen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 341,
+      "est_cost": 9.56,
+      "where_to_buy": "",
+      "date_added": "2023-06-21",
+      "notes": ""
+    },
+    {
+      "title": "A Manual for Pioneers/S",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 287,
+      "est_cost": 6.86,
+      "where_to_buy": "",
+      "date_added": "2023-06-19",
+      "notes": ""
+    },
+    {
+      "title": "A Short History of Nearly Everything",
+      "author": "Bill Bryson",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 560,
+      "est_cost": 16.18,
+      "where_to_buy": "",
+      "date_added": "2025-07-19",
+      "notes": ""
+    },
+    {
+      "title": "A Traveler’s Narrative",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 94,
+      "est_cost": 7.27,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "‘Abdu’l-Bahá ‘Abbás Head of the Bahá’í Faith: A Life in Social & Regional Context",
+      "author": "Joshua Lincoln",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 232,
+      "est_cost": 24.07,
+      "where_to_buy": "",
+      "date_added": "2024-02-14",
+      "notes": ""
+    },
+    {
+      "title": "‘Abdu’l-Bahá the Master/S",
+      "author": "George Townshend",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 80,
+      "est_cost": 7.15,
+      "where_to_buy": "",
+      "date_added": "2023-11-21",
+      "notes": ""
+    },
+    {
+      "title": "‘Abdu’l-Bahá in Their Midst/S",
+      "author": "Earl Redman",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 371,
+      "est_cost": 13.46,
+      "where_to_buy": "",
+      "date_added": "2024-04-16",
+      "notes": ""
+    },
+    {
+      "title": "‘Abdu’l-Bahá: The Centre of the Covenant",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 560,
+      "est_cost": 12.19,
+      "where_to_buy": "",
+      "date_added": "2021-02-25",
+      "notes": ""
+    },
+    {
+      "title": "‘Adasíyyih",
+      "author": "Paul Hanley",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 336,
+      "est_cost": 15.07,
+      "where_to_buy": "",
+      "date_added": "2025-11-18",
+      "notes": ""
+    },
+    {
+      "title": "‘Alí’s Dream/S",
+      "author": "John S. Hatcher",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 310,
+      "est_cost": 9.99,
+      "where_to_buy": "",
+      "date_added": "2025-02-12",
+      "notes": ""
+    },
+    {
+      "title": "Amatu’l-Bahá Visits India/S",
+      "author": "Violette Nakhjavani",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 203,
+      "est_cost": 2.97,
+      "where_to_buy": "",
+      "date_added": "2023-06-21",
+      "notes": ""
+    },
+    {
+      "title": "Ásíyih Khánum - The Most Exalted Leaf Entitled Navváb/S",
+      "author": "Baharieh Rouhani Man'ani",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 92,
+      "est_cost": 6.74,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 320,
+      "est_cost": 25.0,
+      "where_to_buy": "",
+      "date_added": "2025-07-19",
+      "notes": ""
+    },
+    {
+      "title": "Bahá’u’lláh and the New Era",
+      "author": "J. E. Esslemont",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 332,
+      "est_cost": 16.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Bahá’u’lláh the West and Birth of Modernity",
+      "author": "Stephen Beebe",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 274,
+      "est_cost": 12.49,
+      "where_to_buy": "",
+      "date_added": "2025-12-28",
+      "notes": ""
+    },
+    {
+      "title": "Bahá’í Administration Selected Messages 1922-1932/S",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 196,
+      "est_cost": 7.27,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Bahá’í Sacred Writings",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 489,
+      "est_cost": 8.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Bahá’u’lláh - The King of Glory",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 436,
+      "est_cost": 16.54,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Century of Light/S",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 157,
+      "est_cost": 20.28,
+      "where_to_buy": "",
+      "date_added": "2023-03-14",
+      "notes": ""
+    },
+    {
+      "title": "Champions of Oneness - Louis Gregory and His Shining Circle/S",
+      "author": "Janet Ruhe-Schoen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 282,
+      "est_cost": 11.22,
+      "where_to_buy": "",
+      "date_added": "2023-01-24",
+      "notes": ""
+    },
+    {
+      "title": "Christianity Beyond the Crossroads",
+      "author": "Lameh Fananapazir",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 674,
+      "est_cost": 22.53,
+      "where_to_buy": "",
+      "date_added": "2026-04-29",
+      "notes": ""
+    },
+    {
+      "title": "Citadel of Faith",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 198,
+      "est_cost": 4.8,
+      "where_to_buy": "",
+      "date_added": "2025-03-13",
+      "notes": ""
+    },
+    {
+      "title": "Companion Epistle to the Son of the Wolf",
+      "author": "Lameh Fananapazir",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 565,
+      "est_cost": 17.71,
+      "where_to_buy": "",
+      "date_added": "2024-05-09",
+      "notes": ""
+    },
+    {
+      "title": "Companions of the Crimson Ark",
+      "author": "Shirin Sabri",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 144,
+      "est_cost": 7.26,
+      "where_to_buy": "",
+      "date_added": "2025-10-19",
+      "notes": ""
+    },
+    {
+      "title": "Constitution of the Universal House of Justice/S (Per/Eng)",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 0,
+      "est_cost": 5.2,
+      "where_to_buy": "",
+      "date_added": "2024-06-15",
+      "notes": ""
+    },
+    {
+      "title": "Coronation on Carmel/S",
+      "author": "Michael V. Day",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 384,
+      "est_cost": 14.09,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Creating a New Mind/S",
+      "author": "Paul Lample",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 148,
+      "est_cost": 9.22,
+      "where_to_buy": "",
+      "date_added": "2024-08-14",
+      "notes": ""
+    },
+    {
+      "title": "Day of Glory/S",
+      "author": "Mary Perkins",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 206,
+      "est_cost": 11.37,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Days of Remembrance, Selections from Writings of Bahá’u’lláh/H",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned",
+      "est_pages": 226,
+      "est_cost": 13.0,
+      "where_to_buy": "",
+      "date_added": "2024-06-25",
+      "notes": ""
+    },
+    {
+      "title": "Divine Springtime (Hidden Words)/H",
+      "author": "Elaheh Mottahedeh Bos",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 15,
+      "est_cost": 6.09,
+      "where_to_buy": "",
+      "date_added": "2023-06-19",
+      "notes": ""
+    },
+    {
+      "title": "Dr. Muhájir",
+      "author": "Iran Muhajir",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 704,
+      "est_cost": 4.8,
+      "where_to_buy": "",
+      "date_added": "2021-09-16",
+      "notes": ""
+    },
+    {
+      "title": "Dreams of Destiny",
+      "author": "Amir Badiei",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 300,
+      "est_cost": 9.99,
+      "where_to_buy": "",
+      "date_added": "2024-06-20",
+      "notes": ""
+    },
+    {
+      "title": "Eminent Bahá’ís in Time of Bahá’u’lláh/H",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 400,
+      "est_cost": 27.3,
+      "where_to_buy": "",
+      "date_added": "2025-09-02",
+      "notes": ""
+    },
+    {
+      "title": "Epistle to the Son of the Wolf",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 181,
+      "est_cost": 5.95,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Etiquette Guide to China: Know the Rules that Make the Difference!",
+      "author": "Boyé Lafayette De Mente",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 192,
+      "est_cost": 16.18,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Faizí/S",
+      "author": "May Faizi-Moore",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 412,
+      "est_cost": 16.91,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "Farid English-Persian Dictionary/H",
+      "author": "Parichehr Manuchehri",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 401,
+      "est_cost": 18.48,
+      "where_to_buy": "",
+      "date_added": "2025-08-28",
+      "notes": ""
+    },
+    {
+      "title": "Fire and Gold: Benefiting from Life's Tests/S",
+      "author": "Brian Kurzius",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 349,
+      "est_cost": 12.68,
+      "where_to_buy": "",
+      "date_added": "2023-02-28",
+      "notes": ""
+    },
+    {
+      "title": "Five Year Plan and the One Year Plan, 2016-2022: Summary of Achievements and Learning",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 183,
+      "est_cost": 4.74,
+      "where_to_buy": "",
+      "date_added": "2024-05-30",
+      "notes": ""
+    },
+    {
+      "title": "Forces of Our Time/S",
+      "author": "Hooper Dunbar",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 165,
+      "est_cost": 6.45,
+      "where_to_buy": "",
+      "date_added": "2025-10-28",
+      "notes": ""
+    },
+    {
+      "title": "Fountain of Wisdom (Writings of Bahá’u’lláh)/H",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 262,
+      "est_cost": 14.35,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "From Behind All the Veils",
+      "author": "Susan Ahmadi Hansen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 32,
+      "est_cost": 6.42,
+      "where_to_buy": "",
+      "date_added": "2026-04-29",
+      "notes": ""
+    },
+    {
+      "title": "From Copper to Gold - The Life of Dorothy Baker",
+      "author": "Dorothy Freeman",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 568,
+      "est_cost": 16.6,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Furútan",
+      "author": "Iran Muhajir",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 523,
+      "est_cost": 15.26,
+      "where_to_buy": "",
+      "date_added": "2022-06-10",
+      "notes": ""
+    },
+    {
+      "title": "Gems of Divine Mysteries",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 50,
+      "est_cost": 16.18,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "George Townshend/S",
+      "author": "David Hofman",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 418,
+      "est_cost": 17.13,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Gleanings from the Writings of Bahá’u’lláh/H",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 286,
+      "est_cost": 14.35,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "God Loves Laughter",
+      "author": "William Sears",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Want to Buy",
+      "est_pages": 178,
+      "est_cost": 8.74,
+      "where_to_buy": "",
+      "date_added": "2022-03-08",
+      "notes": ""
+    },
+    {
+      "title": "God Passes By",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 412,
+      "est_cost": 19.95,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "He Loved & Served/S",
+      "author": "Nathan Rutstein",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 204,
+      "est_cost": 13.52,
+      "where_to_buy": "",
+      "date_added": "2025-10-09",
+      "notes": ""
+    },
+    {
+      "title": "In Grandfathers Barn/S",
+      "author": "William Sears",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 96,
+      "est_cost": 3.01,
+      "where_to_buy": "",
+      "date_added": "2025-02-12",
+      "notes": ""
+    },
+    {
+      "title": "In Pursuit of a More Superb Mission/S",
+      "author": "Paul Lample",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 130,
+      "est_cost": 5.19,
+      "where_to_buy": "",
+      "date_added": "2025-11-19",
+      "notes": ""
+    },
+    {
+      "title": "Infinite Horizons",
+      "author": "Kathryn Jewett Hogenson",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 544,
+      "est_cost": 21.76,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Islam & the Bahá’í Faith/S",
+      "author": "Moojan Momen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 293,
+      "est_cost": 12.55,
+      "where_to_buy": "",
+      "date_added": "2025-03-13",
+      "notes": ""
+    },
+    {
+      "title": "Journey to a Mountain",
+      "author": "Michael V. Day",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 317,
+      "est_cost": 11.87,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Kamál’s Day/H",
+      "author": "Leona Hosack",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 43,
+      "est_cost": 6.06,
+      "where_to_buy": "",
+      "date_added": "2026-04-29",
+      "notes": ""
+    },
+    {
+      "title": "Khadíjih Bagum: Wife of the Báb/S",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 40,
+      "est_cost": 5.89,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "Khánum - The Greatest Holy Leaf/S",
+      "author": "Marzieh Gail",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 40,
+      "est_cost": 5.89,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "Lady Blomfield, Her Life and Times/S",
+      "author": "Robert Weinberg",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 524,
+      "est_cost": 17.03,
+      "where_to_buy": "",
+      "date_added": "2026-05-05",
+      "notes": ""
+    },
+    {
+      "title": "Leap: How to Thrive in a World Where Everything Can Be Copied",
+      "author": "Howard Yu",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 258,
+      "est_cost": 20.95,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Leroy Ioas - Hand of the Cause of God/S",
+      "author": "Anita Ioas Chapman",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 406,
+      "est_cost": 15.58,
+      "where_to_buy": "",
+      "date_added": "2022-11-27",
+      "notes": ""
+    },
+    {
+      "title": "Light of the World",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 207,
+      "est_cost": 12.0,
+      "where_to_buy": "",
+      "date_added": "2021-06-23",
+      "notes": ""
+    },
+    {
+      "title": "Lights of Fortitude/S",
+      "author": "Barron Deems Harper",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 490,
+      "est_cost": 25.11,
+      "where_to_buy": "",
+      "date_added": "2025-11-05",
+      "notes": ""
+    },
+    {
+      "title": "Lua Getsinger: Herald of Covenant/S",
+      "author": "Velda Metelmann",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 414,
+      "est_cost": 15.97,
+      "where_to_buy": "",
+      "date_added": "2023-06-21",
+      "notes": ""
+    },
+    {
+      "title": "Mahmúd’s Diary",
+      "author": "Mírzá Mahmúd-i-Zarqání",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 588,
+      "est_cost": 23.4,
+      "where_to_buy": "",
+      "date_added": "2022-06-10",
+      "notes": ""
+    },
+    {
+      "title": "Martha Root Lioness at the Threshold",
+      "author": "M. R. Garis",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 496,
+      "est_cost": 11.11,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Materialism - Moral and Social Consequences/S",
+      "author": "Dr. A.M. Ghadirian",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 272,
+      "est_cost": 13.58,
+      "where_to_buy": "",
+      "date_added": "2024-10-24",
+      "notes": ""
+    },
+    {
+      "title": "Maxwells of Montreal, The /H (Vol 1)",
+      "author": "Violette Nakhjavani",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 480,
+      "est_cost": 22.53,
+      "where_to_buy": "",
+      "date_added": "2025-09-08",
+      "notes": ""
+    },
+    {
+      "title": "Memorials of the Faithful",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 203,
+      "est_cost": 9.96,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Memories of Nine Years in ‘Akká",
+      "author": "Youness Afroukhteh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 522,
+      "est_cost": 9.96,
+      "where_to_buy": "",
+      "date_added": "2021-03-11",
+      "notes": ""
+    },
+    {
+      "title": "Messages from UHJ 2001-2022, Fifth Epoch/H",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 945,
+      "est_cost": 20.94,
+      "where_to_buy": "",
+      "date_added": "2024-09-16",
+      "notes": ""
+    },
+    {
+      "title": "Messages of Shoghi Effendi to the Indian Subcontinent",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Compilation",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 469,
+      "est_cost": 7.16,
+      "where_to_buy": "",
+      "date_added": "2022-06-30",
+      "notes": ""
+    },
+    {
+      "title": "Messages to the Bahá’í World",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 175,
+      "est_cost": 4.87,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Mighty",
+      "author": "Shirin Taherzadeh",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 63,
+      "est_cost": 7.43,
+      "where_to_buy": "",
+      "date_added": "2024-06-20",
+      "notes": ""
+    },
+    {
+      "title": "Mírzá Mihdí The Purest Branch/S",
+      "author": "Boris Handal",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 282,
+      "est_cost": 9.58,
+      "where_to_buy": "",
+      "date_added": "2021-02-28",
+      "notes": ""
+    },
+    {
+      "title": "Mírzá ‘Alí-Akbar-i-Nakhjavání",
+      "author": "Alí Nakhjavání",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 199,
+      "est_cost": 12.87,
+      "where_to_buy": "",
+      "date_added": "2026-05-14",
+      "notes": ""
+    },
+    {
+      "title": "Moral Empowerment: In Quest for Pedagogy",
+      "author": "Sona Farid-Arbab",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 412,
+      "est_cost": 14.63,
+      "where_to_buy": "",
+      "date_added": "2024-06-01",
+      "notes": ""
+    },
+    {
+      "title": "Muḥammad & the Course of Islám/S",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 457,
+      "est_cost": 22.14,
+      "where_to_buy": "",
+      "date_added": "2025-03-03",
+      "notes": ""
+    },
+    {
+      "title": "National Spiritual Assembly, The",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 105,
+      "est_cost": 4.66,
+      "where_to_buy": "",
+      "date_added": "2024-06-15",
+      "notes": ""
+    },
+    {
+      "title": "On the Wings of Angels",
+      "author": "Susan Lockhartsdottir",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Gifted and Read",
+      "est_pages": 108,
+      "est_cost": 21.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "One Common Faith/S",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 60,
+      "est_cost": 6.21,
+      "where_to_buy": "",
+      "date_added": "2023-03-14",
+      "notes": ""
+    },
+    {
+      "title": "Paris Talks: Anniversary Edition/H",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 184,
+      "est_cost": 12.31,
+      "where_to_buy": "",
+      "date_added": "2024-09-11",
+      "notes": ""
+    },
+    {
+      "title": "Pen of Glory",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 134,
+      "est_cost": 12.38,
+      "where_to_buy": "",
+      "date_added": "2020-12-10",
+      "notes": ""
+    },
+    {
+      "title": "Poems of the Passing/H",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 115,
+      "est_cost": 15.12,
+      "where_to_buy": "",
+      "date_added": "2023-03-14",
+      "notes": ""
+    },
+    {
+      "title": "Portals to Freedom/S",
+      "author": "Howard Colby Ives",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 256,
+      "est_cost": 11.53,
+      "where_to_buy": "",
+      "date_added": "2024-09-01",
+      "notes": ""
+    },
+    {
+      "title": "Prayer and Devotional Life",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 24,
+      "est_cost": 2.97,
+      "where_to_buy": "",
+      "date_added": "2021-08-02",
+      "notes": ""
+    },
+    {
+      "title": "Prayers and Meditations",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 284,
+      "est_cost": 13.48,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Prelude to the Guardianship/S",
+      "author": "Riaz Khadem",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 318,
+      "est_cost": 13.68,
+      "where_to_buy": "",
+      "date_added": "2025-09-01",
+      "notes": ""
+    },
+    {
+      "title": "Prescription for Living/S",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 256,
+      "est_cost": 13.48,
+      "where_to_buy": "",
+      "date_added": "2021-10-27",
+      "notes": ""
+    },
+    {
+      "title": "Rejoice in My Gladness (The Life of Ṭáhirih)/S",
+      "author": "Janet Ruhe-Schoen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 383,
+      "est_cost": 11.22,
+      "where_to_buy": "",
+      "date_added": "2023-01-24",
+      "notes": ""
+    },
+    {
+      "title": "Release the Sun - The Story of the Báb/S",
+      "author": "William Sears",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 323,
+      "est_cost": 9.32,
+      "where_to_buy": "",
+      "date_added": "2023-03-14",
+      "notes": ""
+    },
+    {
+      "title": "Revelation and Social Reality/S",
+      "author": "Paul Lample",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 293,
+      "est_cost": 10.06,
+      "where_to_buy": "",
+      "date_added": "2024-08-14",
+      "notes": ""
+    },
+    {
+      "title": "Revelation of Bahá’u’lláh - Vol 1",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 355,
+      "est_cost": 10.98,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Revelation of Bahá’u’lláh - Vol 2",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 450,
+      "est_cost": 24.4,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Revelation of Bahá’u’lláh - Vol 3",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 449,
+      "est_cost": 24.4,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Revelation of Bahá’u’lláh - Vol 4",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 431,
+      "est_cost": 11.52,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Rose of Love (Boardbook)",
+      "author": "Elaheh Mottahedeh Bos",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 12,
+      "est_cost": 4.25,
+      "where_to_buy": "",
+      "date_added": "2025-02-11",
+      "notes": ""
+    },
+    {
+      "title": "Sacred Stairway/S",
+      "author": "Michael V. Day",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 302,
+      "est_cost": 11.59,
+      "where_to_buy": "",
+      "date_added": "2026-05-04",
+      "notes": ""
+    },
+    {
+      "title": "Sapiens: A Brief History of Humankind",
+      "author": "Yuval Noah Harari",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 464,
+      "est_cost": 21.0,
+      "where_to_buy": "",
+      "date_added": "2021-07-19",
+      "notes": ""
+    },
+    {
+      "title": "Seeking a State of Heaven/S",
+      "author": "Carolyn Sparey Fox",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 162,
+      "est_cost": 12.98,
+      "where_to_buy": "",
+      "date_added": "2025-12-31",
+      "notes": ""
+    },
+    {
+      "title": "Selections from the Writings of the Báb",
+      "author": "The Báb",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 224,
+      "est_cost": 14.62,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Selections from the Writings of ‘Abdu’l-Bahá",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 333,
+      "est_cost": 13.95,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Servant of the Glory - Life of ‘Abdu’l-Bahá/S",
+      "author": "Mary Perkins",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 340,
+      "est_cost": 14.42,
+      "where_to_buy": "",
+      "date_added": "2026-05-04",
+      "notes": ""
+    },
+    {
+      "title": "Shoghi Effendi - Recollections by Ugo Giachery/S",
+      "author": "Ugo Giachery",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 264,
+      "est_cost": 14.95,
+      "where_to_buy": "",
+      "date_added": "2025-01-07",
+      "notes": ""
+    },
+    {
+      "title": "Silent Spring",
+      "author": "Rachel Carson",
+      "category": "Fiction",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 400,
+      "est_cost": 15.0,
+      "where_to_buy": "",
+      "date_added": "2025-07-19",
+      "notes": ""
+    },
+    {
+      "title": "Siyyid Mustafá Rúmí: Hand of the Cause of God",
+      "author": "Iran Muhajir",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Gifted",
+      "est_pages": 287,
+      "est_cost": 0.0,
+      "where_to_buy": "",
+      "date_added": "2025-05-21",
+      "notes": ""
+    },
+    {
+      "title": "Some Answered Questions",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 352,
+      "est_cost": 9.0,
+      "where_to_buy": "",
+      "date_added": "2020-11-26",
+      "notes": ""
+    },
+    {
+      "title": "Sometimes I Made Him Laugh",
+      "author": "Linda Ahdieh Grant ",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 32,
+      "est_cost": 7.26,
+      "where_to_buy": "",
+      "date_added": "2026-01-19",
+      "notes": ""
+    },
+    {
+      "title": "Tablets of the Divine Plan",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 107,
+      "est_cost": 3.57,
+      "where_to_buy": "",
+      "date_added": "2021-07-05",
+      "notes": ""
+    },
+    {
+      "title": "Text for the Study of the Covenant",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 122,
+      "est_cost": 1.19,
+      "where_to_buy": "",
+      "date_added": "2021-02-25",
+      "notes": ""
+    },
+    {
+      "title": "The Advent of Divine Justice",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 138,
+      "est_cost": 3.69,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "The Alchemist",
+      "author": "Paulo Coelho",
+      "category": "Fiction",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 182,
+      "est_cost": 9.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Anxious Generation",
+      "author": "Jonathan Haidt",
+      "category": "Non-Fiction",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 400,
+      "est_cost": 24.0,
+      "where_to_buy": "",
+      "date_added": "2025-07-19",
+      "notes": ""
+    },
+    {
+      "title": "The Báb (The Herald of the Day of Days)/S",
+      "author": "Hasan M. Balyuzi",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 256,
+      "est_cost": 12.59,
+      "where_to_buy": "",
+      "date_added": "2025-11-25",
+      "notes": ""
+    },
+    {
+      "title": "The Bábí and Bahá’í Religions 1844-1944/H",
+      "author": "Moojan Momen",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 572,
+      "est_cost": 26.15,
+      "where_to_buy": "",
+      "date_added": "2026-04-29",
+      "notes": ""
+    },
+    {
+      "title": "The Bahá’í World Volume 35 2006-2021",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 455,
+      "est_cost": 20.0,
+      "where_to_buy": "",
+      "date_added": "2025-02-12",
+      "notes": ""
+    },
+    {
+      "title": "The Call of the Divine Beloved",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 102,
+      "est_cost": 7.0,
+      "where_to_buy": "",
+      "date_added": "2024-05-23",
+      "notes": ""
+    },
+    {
+      "title": "The Child of the Covenant",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 425,
+      "est_cost": 23.33,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Covenant of Bahá’u’lláh",
+      "author": "Adib Taherzadeh",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 449,
+      "est_cost": 18.63,
+      "where_to_buy": "",
+      "date_added": "2021-03-11",
+      "notes": ""
+    },
+    {
+      "title": "The Covenant: Daily Readings/H",
+      "author": "Enoch N. Tanyi",
+      "category": "Bahá'í Compilation",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 383,
+      "est_cost": 9.81,
+      "where_to_buy": "",
+      "date_added": "2023-05-20",
+      "notes": ""
+    },
+    {
+      "title": "The Dawn-Breakers",
+      "author": "Nabil-i-Azam",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 488,
+      "est_cost": 24.62,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Desire of the World/S",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 192,
+      "est_cost": 9.69,
+      "where_to_buy": "",
+      "date_added": "2024-05-30",
+      "notes": ""
+    },
+    {
+      "title": "The Great African Safari",
+      "author": "Violette Nakhjavani",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 586,
+      "est_cost": 18.63,
+      "where_to_buy": "",
+      "date_added": "2026-05-14",
+      "notes": ""
+    },
+    {
+      "title": "The Hidden Words",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 52,
+      "est_cost": 9.59,
+      "where_to_buy": "",
+      "date_added": "2020-11-12",
+      "notes": ""
+    },
+    {
+      "title": "The Iliad",
+      "author": "Homer",
+      "category": "Fiction",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 414,
+      "est_cost": 21.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Institution of the Mashriqu’l-Adhkár/S",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 122,
+      "est_cost": 1.07,
+      "where_to_buy": "",
+      "date_added": "2024-05-07",
+      "notes": ""
+    },
+    {
+      "title": "The Kitáb-i-Aqdas",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 266,
+      "est_cost": 18.24,
+      "where_to_buy": "",
+      "date_added": "2023-11-21",
+      "notes": ""
+    },
+    {
+      "title": "The Kitáb-i-Iqán",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 291,
+      "est_cost": 14.59,
+      "where_to_buy": "",
+      "date_added": "2024-01-02",
+      "notes": ""
+    },
+    {
+      "title": "The Knights of Bahá’u’lláh",
+      "author": "Earl Redman",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 405,
+      "est_cost": 15.2,
+      "where_to_buy": "",
+      "date_added": "2026-05-14",
+      "notes": ""
+    },
+    {
+      "title": "The Ministry of the Custodians/H",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 485,
+      "est_cost": 20.79,
+      "where_to_buy": "",
+      "date_added": "2022-11-27",
+      "notes": ""
+    },
+    {
+      "title": "The Nine Year Plan 2022 - 2031",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Medium",
+      "status": "Owned and Read",
+      "est_pages": 109,
+      "est_cost": 1.29,
+      "where_to_buy": "",
+      "date_added": "2022-09-06",
+      "notes": ""
+    },
+    {
+      "title": "The Path Toward Spirituality",
+      "author": "Shahin Vafai",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 149,
+      "est_cost": 5.07,
+      "where_to_buy": "",
+      "date_added": "2025-11-25",
+      "notes": ""
+    },
+    {
+      "title": "The Priceless Pearl/S",
+      "author": "Rúhíyyih Khánum",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 484,
+      "est_cost": 19.45,
+      "where_to_buy": "",
+      "date_added": "2023-06-21",
+      "notes": ""
+    },
+    {
+      "title": "The Prince of Martyrs",
+      "author": "Abu'l-Qásim Faizi",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 68,
+      "est_cost": 5.89,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "The Prisoner and the Kings/S",
+      "author": "William Sears",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 259,
+      "est_cost": 7.48,
+      "where_to_buy": "",
+      "date_added": "2023-03-14",
+      "notes": ""
+    },
+    {
+      "title": "The Promised Day is Come",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 204,
+      "est_cost": 3.59,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Promulgation of Universal Peace",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 707,
+      "est_cost": 3.59,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Proofs of Bahá’u’lláh's Mission",
+      "author": "Paul Lample",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 234,
+      "est_cost": 3.16,
+      "where_to_buy": "",
+      "date_added": "2020-11-12",
+      "notes": ""
+    },
+    {
+      "title": "The Quickening: Unknown Poetry of Ṭáhirih/S",
+      "author": "John S. Hatcher",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 261,
+      "est_cost": 11.91,
+      "where_to_buy": "",
+      "date_added": "2025-06-10",
+      "notes": ""
+    },
+    {
+      "title": "The Secret of Divine Civilization/H",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 116,
+      "est_cost": 12.38,
+      "where_to_buy": "",
+      "date_added": "2021-03-11",
+      "notes": ""
+    },
+    {
+      "title": "The Story of My Heart/S",
+      "author": "Ali-Akbar Furutan",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 268,
+      "est_cost": 10.98,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "The Summons of the Lord of Hosts",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 235,
+      "est_cost": 13.38,
+      "where_to_buy": "",
+      "date_added": "2024-03-12",
+      "notes": ""
+    },
+    {
+      "title": "The Tabernacle of Unity",
+      "author": "Bahá’u’lláh",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 64,
+      "est_cost": 0.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "The Universal House of Justice",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 149,
+      "est_cost": 3.24,
+      "where_to_buy": "",
+      "date_added": "2024-06-15",
+      "notes": ""
+    },
+    {
+      "title": "The Wine of Astonishment",
+      "author": "William Sears",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 162,
+      "est_cost": 8.74,
+      "where_to_buy": "",
+      "date_added": "2022-07-27",
+      "notes": ""
+    },
+    {
+      "title": "The World Order of Bahá’u’lláh",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 206,
+      "est_cost": 3.52,
+      "where_to_buy": "",
+      "date_added": "2023-05-13",
+      "notes": ""
+    },
+    {
+      "title": "Thief in the Night/S",
+      "author": "William Sears",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 308,
+      "est_cost": 9.92,
+      "where_to_buy": "",
+      "date_added": "2023-01-24",
+      "notes": ""
+    },
+    {
+      "title": "This Decisive Hour",
+      "author": "Shoghi Effendi",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 135,
+      "est_cost": 15.2,
+      "where_to_buy": "",
+      "date_added": "2022-09-06",
+      "notes": ""
+    },
+    {
+      "title": "Thornton Chase",
+      "author": "Robert H. Stockman",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 264,
+      "est_cost": 15.87,
+      "where_to_buy": "",
+      "date_added": "2026-05-14",
+      "notes": ""
+    },
+    {
+      "title": "To Set the World in Order",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Low",
+      "status": "Owned and Read",
+      "est_pages": 84,
+      "est_cost": 4.66,
+      "where_to_buy": "",
+      "date_added": "2024-06-15",
+      "notes": ""
+    },
+    {
+      "title": "Training Institute: Attaining a Higher Level of Functioning",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 25,
+      "est_cost": 3.28,
+      "where_to_buy": "",
+      "date_added": "2024-06-15",
+      "notes": ""
+    },
+    {
+      "title": "Translation of French Footnotes, Dawn-Breakers/S",
+      "author": "Emily McBride Perigord",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 83,
+      "est_cost": 3.07,
+      "where_to_buy": "",
+      "date_added": "2024-05-20",
+      "notes": ""
+    },
+    {
+      "title": "tuesdays with Morrie",
+      "author": "Mitch Albom",
+      "category": "Fiction",
+      "priority": "Low",
+      "status": "Gifted and Read",
+      "est_pages": 201,
+      "est_cost": 9.0,
+      "where_to_buy": "",
+      "date_added": "2026-06-03",
+      "notes": ""
+    },
+    {
+      "title": "Turning Point: Selected Messages of UHJ/S",
+      "author": "Bahá’í World Centre",
+      "category": "Bahá'í Compilation",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 434,
+      "est_cost": 11.41,
+      "where_to_buy": "",
+      "date_added": "2025-06-10",
+      "notes": ""
+    },
+    {
+      "title": "Valiant Horsemen of the Merciful/S",
+      "author": "Shirin Sabri",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 82,
+      "est_cost": 7.26,
+      "where_to_buy": "",
+      "date_added": "2025-10-18",
+      "notes": ""
+    },
+    {
+      "title": "Vignettes from the Life of ‘Abdu’l-Bahá/S",
+      "author": "Utterances of ‘Abdu’l-Bahá",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 238,
+      "est_cost": 8.43,
+      "where_to_buy": "",
+      "date_added": "2023-02-16",
+      "notes": ""
+    },
+    {
+      "title": "Visiting ‘Abdu’l-Bahá Vol 1/S",
+      "author": "Earl Redman",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 304,
+      "est_cost": 13.89,
+      "where_to_buy": "",
+      "date_added": "2021-02-14",
+      "notes": ""
+    },
+    {
+      "title": "Voyage of Love - ‘Abdu’l-Bahá in North America/S",
+      "author": "Amy Renshaw",
+      "category": "Bahá'í About the Faith",
+      "priority": "Medium",
+      "status": "Owned",
+      "est_pages": 270,
+      "est_cost": 7.29,
+      "where_to_buy": "",
+      "date_added": "2025-12-31",
+      "notes": ""
+    },
+    {
+      "title": "Will and Testament of ‘Abdu’l-Bahá",
+      "author": "‘Abdu’l-Bahá",
+      "category": "Bahá'í Writings",
+      "priority": "High",
+      "status": "Owned and Read",
+      "est_pages": 26,
+      "est_cost": 0.0,
+      "where_to_buy": "",
+      "date_added": "2026-05-11",
+      "notes": ""
+    },
+    {
+      "title": "Zíá’s Search: Learning from Mullá Ḥusayn",
+      "author": "Linda Ahdieh Grant",
+      "category": "Bahá'í Other",
+      "priority": "Low",
+      "status": "Owned",
+      "est_pages": 42,
+      "est_cost": 26.1,
+      "where_to_buy": "",
+      "date_added": "2026-04-29",
+      "notes": ""
+    }
+  ],
+  "goals": {
+    "annual_books_target": 12,
+    "annual_pages_target": 3000,
+    "monthly_books_target": 1,
+    "monthly_pages_target": 300
+  }
+}
