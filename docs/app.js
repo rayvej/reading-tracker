@@ -44,16 +44,25 @@ let booksCache = [];          // all book docs { id, ...data }
 let wishlistCache = [];       // all wishlist items
 let logsCache = [];           // cached reading logs
 let goalsCache = {};
-let currentView       = 'log';
+let currentView       = 'dashboard'; // Start on dashboard as default premium screen
 let dashFilter        = 'all';
 let dashYearFilter    = 'all';
 let wishlistFilter    = 'all';
-let historySearchTerm = '';
+let librarySearchTerm = '';
+let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';
 let pinBuffer = '';
 const PIN_LENGTH = 4;
 const SESSION_KEY = 'rt_session';
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+// Stopwatch timer state
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+
+// Chart.js state
+let activeChart = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -209,10 +218,10 @@ async function initApp() {
   setupNav();
   setupLogForm();
   setupDashboard();
+  setupLibrary();
   setupGoals();
   setupWishlist();
-  setupHistory();
-  showView('log');
+  showView('dashboard'); // Start on Dashboard
   
   // 2. Load database content asynchronously in the background
   loadDatabaseData();
@@ -233,7 +242,7 @@ async function loadDatabaseData() {
     if (currentView === 'dashboard') renderDashboard();
     if (currentView === 'goals')     renderGoals();
     if (currentView === 'wishlist')  renderWishlist();
-    if (currentView === 'history')   renderHistory();
+    if (currentView === 'library')   renderLibrary();
   } catch (e) {
     console.error("Failed to load library database:", e);
     showToast("Database connection offline. Showing local data.", "error");
@@ -334,7 +343,8 @@ function showView(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'goals')     renderGoals();
   if (name === 'wishlist')  renderWishlist();
-  if (name === 'history')   renderHistory();
+  if (name === 'library')   renderLibrary();
+  if (name === 'log')       renderLogView();
   // Show/hide FAB
   $('wishlist-fab').classList.toggle('hidden', name !== 'wishlist');
 }
@@ -378,6 +388,7 @@ function setupLogForm() {
   });
 
   $('log-submit').addEventListener('click', submitLog);
+  setupStopwatch();
 }
 
 function populateBookDropdown() {
@@ -639,6 +650,13 @@ function setupDashboard() {
     dashYearFilter = e.target.value;
     renderDashboard();
   });
+
+  const chartTypeSel = $('chart-type');
+  if (chartTypeSel) {
+    chartTypeSel.addEventListener('change', () => {
+      renderCharts();
+    });
+  }
 }
 
 async function renderDashboard() {
@@ -984,7 +1002,7 @@ async function renderDashboard() {
           <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
           <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
         </div>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-black border uppercase ${prioColor}">${b.priority || 'Low'}</span>
+        <span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${prioColor}">${b.priority || 'Low'}</span>
       `;
       upNextEl.appendChild(card);
     });
@@ -997,12 +1015,19 @@ async function renderDashboard() {
     return book && l.end_page >= book.total_pages && new Date(l.date + 'T00:00:00').getTime() >= pastYearTime;
   });
   
+  // Sort descending by completion date
+  finishedLogs.sort((a, b) => b.date.localeCompare(a.date));
+  
   const recentEl = $('dash-recent-books');
   recentEl.innerHTML = '';
   if (finishedLogs.length === 0) {
     recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books finished recently</p>';
   } else {
-    finishedLogs.slice(0, 5).forEach(l => {
+    const seenTitles = new Set();
+    finishedLogs.forEach(l => {
+      if (seenTitles.has(l.book_title)) return;
+      seenTitles.add(l.book_title);
+      
       const book = booksCache.find(b => b.title === l.book_title);
       const pages = book ? book.total_pages : 0;
       
@@ -1012,14 +1037,17 @@ async function renderDashboard() {
           <div class="text-xs font-bold text-slate-100 truncate">${l.book_title}</div>
           <div class="text-[9px] text-slate-400 mt-0.5">${pages} pg · Finished: ${fmtDate(l.date)}</div>
         </div>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Done</span>
+        <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Done</span>
       `;
       recentEl.appendChild(card);
     });
   }
+  
+  // Render Chart
+  renderCharts();
 }
 
-// ── Goals ─────────────────────────────────────────────────────────────────────
+// ── Goals & Projections ───────────────────────────────────────────────────────
 function setupGoals() {
   $('btn-edit-goals').addEventListener('click', openGoalsModal);
   $('goals-modal-close').addEventListener('click', closeGoalsModal);
@@ -1028,48 +1056,70 @@ function setupGoals() {
 }
 
 async function renderGoals() {
-  // Load goals
+  // Load goals config
   const gSnap = await getDoc(doc(db, `users/${uid}/goals/config`));
   goalsCache  = gSnap.exists() ? gSnap.data() : { annual_books_target:12, annual_pages_target:3000, monthly_books_target:1, monthly_pages_target:300 };
 
   const today = new Date();
   const year  = today.getFullYear();
+  const startOfYearISO = `${year}-01-01`;
+  const startOfMonthISO = `${year}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
 
-  // Compute year-to-date stats from logs
-  const yearLogsSnap = await getDocs(query(
-    collection(db, `users/${uid}/reading_logs`),
-    where('date', '>=', `${year}-01-01`),
-    where('date', '<=', `${year}-12-31`)
-  ));
+  // Filter active logs (user session logs)
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
 
-  const yearLogs = yearLogsSnap.docs.map(d => d.data());
-  const yearPages = yearLogs.reduce((s, l) => s + Math.max(0, (l.end_page||0) - (l.start_page||0)), 0);
+  // Year to Date stats
+  const yearLogs = activeLogs.filter(l => l.date >= startOfYearISO && l.date <= `${year}-12-31`);
+  const yearPages = yearLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
+  const yearSessions = yearLogs.length;
+  const yearMinutes = yearLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
 
-  // Books finished this year = books with a log entry in this year where end_page >= total_pages
-  const finishedThisYear = new Set();
-  for (const l of yearLogs) {
-    const book = booksCache.find(b => b.title === l.book_title);
-    if (book && l.end_page >= book.total_pages) finishedThisYear.add(l.book_title);
-  }
-  const yearBooks = finishedThisYear.size;
+  // Month to Date stats
+  const monthLogs = yearLogs.filter(l => l.date >= startOfMonthISO);
+  const monthPages = monthLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
+  const monthSessions = monthLogs.length;
+  const monthMinutes = monthLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
 
-  // Month stats
-  const mn = String(today.getMonth() + 1).padStart(2, '0');
-  const monthLogs = yearLogs.filter(l => l.date >= `${year}-${mn}-01`);
-  const monthPages = monthLogs.reduce((s, l) => s + Math.max(0, (l.end_page||0) - (l.start_page||0)), 0);
-  const finishedThisMonth = new Set();
-  for (const l of monthLogs) {
-    const book = booksCache.find(b => b.title === l.book_title);
-    if (book && l.end_page >= book.total_pages) finishedThisMonth.add(l.book_title);
-  }
-  const monthBooks = finishedThisMonth.size;
+  // Build completions list
+  const completions = [];
+  const logsByBookCycle = {};
+  logsCache.forEach(l => {
+    const key = `${l.book_title}-${l.read_cycle || 1}`;
+    if (!logsByBookCycle[key]) logsByBookCycle[key] = [];
+    logsByBookCycle[key].push(l);
+  });
+
+  Object.keys(logsByBookCycle).forEach(key => {
+    const parts = key.split('-');
+    const title = parts.slice(0, -1).join('-');
+    const cycle = parseInt(parts[parts.length - 1]);
+    const book = booksCache.find(b => b.title === title);
+    if (book) {
+      const tot = book.total_pages;
+      const cycleLogs = logsByBookCycle[key];
+      const compLogs = cycleLogs.filter(l => l.end_page >= tot);
+      if (compLogs.length > 0) {
+        compLogs.sort((a,b) => a.date.localeCompare(b.date));
+        completions.push({
+          title,
+          cycle,
+          date: compLogs[0].date,
+          pages: tot
+        });
+      }
+    }
+  });
+
+  // Calculate books completed YTD and Month
+  const yearBooks = completions.filter(c => c.date.startsWith(String(year))).length;
+  const monthBooks = completions.filter(c => c.date.startsWith(String(year)) && c.date >= startOfMonthISO).length;
 
   const aBT = goalsCache.annual_books_target  || 12;
   const aPT = goalsCache.annual_pages_target  || 3000;
   const mBT = goalsCache.monthly_books_target || 1;
   const mPT = goalsCache.monthly_pages_target || 300;
 
-  // Rings
+  // Ring fills
   const CIRC = 289;
   const bPct = Math.min(1, yearBooks / aBT);
   const pPct = Math.min(1, yearPages / aPT);
@@ -1077,37 +1127,730 @@ async function renderGoals() {
   $('ring-pages-fill').style.strokeDashoffset = CIRC - CIRC * pPct;
   $('ring-books-val').textContent = yearBooks;
   $('ring-pages-val').textContent = yearPages >= 1000 ? Math.round(yearPages/100)/10 + 'k' : yearPages;
-  $('ring-books-lbl').textContent = `/ ${aBT} books`;
-  $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pages`;
+  $('ring-books-lbl').textContent = `/ ${aBT} bks`;
+  $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pgs`;
 
-  // Annual stat rows
-  const daysLeft = Math.ceil((new Date(`${year}-12-31`) - today) / 86400000);
-  const booksLeft = Math.max(0, aBT - yearBooks);
-  const pagesLeft = Math.max(0, aPT - yearPages);
-  $('goal-annual-stats').innerHTML = goalRows([
-    ['Books Finished', `${yearBooks} of ${aBT}`],
-    ['Pages Read', `${fmtNum(yearPages)} of ${fmtNum(aPT)}`],
-    ['Books Remaining', booksLeft > 0 ? `${booksLeft} left` : '✓ Goal reached!'],
-    ['Pages Remaining', pagesLeft > 0 ? `${fmtNum(pagesLeft)} left` : '✓ Goal reached!'],
-    ['Days Left in Year', daysLeft],
-  ]);
+  // 1. Targets & Completions Table
+  const progressStr = (cur, target) => {
+    const pct = target > 0 ? Math.round((cur / target) * 100) : 0;
+    const left = Math.max(0, target - cur);
+    return `<div class="text-right"><div class="font-extrabold text-slate-200">${pct}%</div><div class="text-[8px] text-slate-400 mt-0.5">${left} left</div></div>`;
+  };
 
-  // Monthly stat rows
-  $('goal-monthly-stats').innerHTML = goalRows([
-    ['Books This Month', `${monthBooks} of ${mBT}`],
-    ['Pages This Month', `${fmtNum(monthPages)} of ${fmtNum(mPT)}`],
-  ]);
+  $('goals-table-body').innerHTML = `
+    <tr>
+      <td>Books This Month</td>
+      <td class="text-center font-bold text-slate-300">${mBT}</td>
+      <td class="text-center font-bold text-slate-300">${monthBooks}</td>
+      <td>${progressStr(monthBooks, mBT)}</td>
+    </tr>
+    <tr>
+      <td>Pages This Month</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(mPT)}</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(monthPages)}</td>
+      <td>${progressStr(monthPages, mPT)}</td>
+    </tr>
+    <tr>
+      <td>Sessions This Month</td>
+      <td class="text-center font-bold text-slate-300">10</td>
+      <td class="text-center font-bold text-slate-300">${monthSessions}</td>
+      <td>${progressStr(monthSessions, 10)}</td>
+    </tr>
+    <tr>
+      <td>Minutes This Month</td>
+      <td class="text-center font-bold text-slate-300">300</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(monthMinutes)}</td>
+      <td>${progressStr(monthMinutes, 300)}</td>
+    </tr>
+    <tr class="border-t border-white/5 bg-white/2">
+      <td>Books This Year</td>
+      <td class="text-center font-bold text-slate-300">${aBT}</td>
+      <td class="text-center font-bold text-slate-300">${yearBooks}</td>
+      <td>${progressStr(yearBooks, aBT)}</td>
+    </tr>
+    <tr>
+      <td>Pages This Year</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(aPT)}</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(yearPages)}</td>
+      <td>${progressStr(yearPages, aPT)}</td>
+    </tr>
+    <tr>
+      <td>Sessions This Year</td>
+      <td class="text-center font-bold text-slate-300">100</td>
+      <td class="text-center font-bold text-slate-300">${yearSessions}</td>
+      <td>${progressStr(yearSessions, 100)}</td>
+    </tr>
+    <tr>
+      <td>Minutes Reading YTD</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(3000)}</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(yearMinutes)}</td>
+      <td>${progressStr(yearMinutes, 3000)}</td>
+    </tr>
+  `;
 
-  // Pace
+  // 2. Required Pace Check Table
   const dayOfYear = Math.floor((today - new Date(`${year}-01-01`)) / 86400000) + 1;
-  const avgPagesPerDay = dayOfYear > 0 ? Math.round(yearPages / dayOfYear) : 0;
-  const projPages = avgPagesPerDay * 365;
-  const projBooks = dayOfYear > 0 ? Math.round(yearBooks / dayOfYear * 365) : 0;
-  $('goal-pace-stats').innerHTML = goalRows([
-    ['Avg Pages/Day', fmtNum(avgPagesPerDay)],
-    ['Projected Pages (Year)', fmtNum(projPages)],
-    ['Projected Books (Year)', projBooks],
-  ]);
+  const daysInYear = (year % 4 === 0) ? 366 : 365;
+  const monthsElapsed = dayOfYear / 30.4;
+  const weeksElapsed = dayOfYear / 7;
+  
+  const currentBooksPace = (yearBooks / Math.max(0.1, monthsElapsed)).toFixed(1);
+  const currentPagesPace = (yearPages / Math.max(1, dayOfYear)).toFixed(1);
+  const currentSessionsPace = (yearSessions / Math.max(0.1, weeksElapsed)).toFixed(1);
+  const currentMinutesPace = (yearMinutes / Math.max(1, dayOfYear)).toFixed(1);
+
+  const statusBadge = (cur, req) => {
+    const ok = parseFloat(cur) >= parseFloat(req);
+    return `<span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${
+      ok ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border-rose-500/10'
+    }">${ok ? '✓ On Track' : 'Behind'}</span>`;
+  };
+
+  const estYearEnd = (curRate, unit) => {
+    return Math.round(parseFloat(curRate) * unit);
+  };
+
+  $('pace-table-body').innerHTML = `
+    <tr>
+      <td>Books</td>
+      <td class="text-center">1.0 /mo</td>
+      <td class="text-center font-extrabold text-slate-200">${currentBooksPace} /mo</td>
+      <td class="text-right">${statusBadge(currentBooksPace, 1.0)}</td>
+    </tr>
+    <tr class="text-[8px] text-slate-400">
+      <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearBooks/Math.max(1, dayOfYear), daysInYear)} books</b></td>
+    </tr>
+    <tr>
+      <td>Pages</td>
+      <td class="text-center">${(aPT/daysInYear).toFixed(1)} /day</td>
+      <td class="text-center font-extrabold text-slate-200">${currentPagesPace} /day</td>
+      <td class="text-right">${statusBadge(currentPagesPace, aPT/daysInYear)}</td>
+    </tr>
+    <tr class="text-[8px] text-slate-400">
+      <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentPagesPace, daysInYear))} pages</b></td>
+    </tr>
+    <tr>
+      <td>Sessions</td>
+      <td class="text-center">1.9 /wk</td>
+      <td class="text-center font-extrabold text-slate-200">${currentSessionsPace} /wk</td>
+      <td class="text-right">${statusBadge(currentSessionsPace, 1.9)}</td>
+    </tr>
+    <tr class="text-[8px] text-slate-400">
+      <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearSessions/Math.max(1, dayOfYear), daysInYear)} sessions</b></td>
+    </tr>
+    <tr>
+      <td>Minutes</td>
+      <td class="text-center">${(3000/daysInYear).toFixed(1)} /day</td>
+      <td class="text-center font-extrabold text-slate-200">${currentMinutesPace} /day</td>
+      <td class="text-right">${statusBadge(currentMinutesPace, 3000/daysInYear)}</td>
+    </tr>
+    <tr class="text-[8px] text-slate-400">
+      <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentMinutesPace, daysInYear))} minutes</b></td>
+    </tr>
+  `;
+
+  // 3. Long-Term Milestones
+  const pagesReadG5 = booksCache.reduce((s, b) => {
+    let p = (b.read_count || 0) * b.total_pages;
+    if (b.status === 'In Progress') p += (b.pages_read || 0);
+    return s + p;
+  }, 0);
+  
+  let rereadsPages = 0;
+  activeLogs.forEach(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    if (book) {
+      const rc = book.read_count || 0;
+      if (l.read_cycle > rc && l.read_cycle > 1) {
+        rereadsPages += Math.max(0, l.end_page - l.start_page);
+      }
+    }
+  });
+  const totalPagesReadLifetime = pagesReadG5 + rereadsPages;
+  const totalReadsLifetime = booksCache.reduce((s, b) => s + (b.read_count || 0), 0);
+
+  const inProgressBooks = booksCache.filter(b => b.status === 'In Progress');
+  const pagesLeftIP = inProgressBooks.reduce((s, b) => s + Math.max(0, b.total_pages - b.pages_read), 0);
+  
+  const calculateETA = (needed, dailyRate) => {
+    if (needed <= 0) return '✓ Achieved!';
+    if (dailyRate <= 0) return 'Never (Pace is 0)';
+    const daysNeeded = needed / dailyRate;
+    const eta = new Date();
+    eta.setDate(eta.getDate() + daysNeeded);
+    return eta.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const pagesPerDayRate = yearPages / Math.max(1, dayOfYear);
+  const booksPerYearRate = yearBooks / Math.max(1, dayOfYear) * 365;
+
+  const ipETA = calculateETA(pagesLeftIP, pagesPerDayRate);
+  const lifetime50ETA = totalReadsLifetime >= 50 ? '✓ Achieved!' : calculateETA(50 - totalReadsLifetime, booksPerYearRate / 365);
+  const lifetime100ETA = totalReadsLifetime >= 100 ? '✓ Achieved!' : calculateETA(100 - totalReadsLifetime, booksPerYearRate / 365);
+  const pages30kETA = totalPagesReadLifetime >= 30000 ? '✓ Achieved!' : calculateETA(30000 - totalPagesReadLifetime, pagesPerDayRate);
+
+  $('projection-table-body').innerHTML = `
+    <tr>
+      <td>Finish "In Progress" Books (${inProgressBooks.length} books left, ${pagesLeftIP} pg)</td>
+      <td class="text-right font-bold text-slate-200">${ipETA}</td>
+    </tr>
+    <tr>
+      <td>Reach 50 Books Lifetime (Current: ${totalReadsLifetime})</td>
+      <td class="text-right font-bold text-slate-200">${lifetime50ETA}</td>
+    </tr>
+    <tr>
+      <td>Reach 100 Books Lifetime (Current: ${totalReadsLifetime})</td>
+      <td class="text-right font-bold text-slate-200">${lifetime100ETA}</td>
+    </tr>
+    <tr>
+      <td>Reach 30k Pages Lifetime (Current: ${fmtNum(totalPagesReadLifetime)})</td>
+      <td class="text-right font-bold text-slate-200">${pages30kETA}</td>
+    </tr>
+  `;
+
+  // 4. Currently Reading Projections List
+  const etasContainer = $('goals-reading-etas');
+  etasContainer.innerHTML = '';
+  
+  if (inProgressBooks.length === 0) {
+    etasContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
+  } else {
+    inProgressBooks.forEach(b => {
+      const left = b.total_pages - b.pages_read;
+      const pct = Math.round((b.pages_read / b.total_pages) * 100);
+      
+      const bookLogs = activeLogs.filter(l => l.book_title === b.title);
+      let avgRate = 0.5;
+      let lastReadStr = 'Not started';
+      
+      if (bookLogs.length > 0) {
+        bookLogs.sort((a,b) => a.date.localeCompare(b.date));
+        const oldestDate = new Date(bookLogs[0].date + 'T00:00:00');
+        const newestDate = new Date(bookLogs[bookLogs.length - 1].date + 'T00:00:00');
+        
+        const daysDiff = Math.ceil(Math.abs(newestDate - oldestDate) / 86400000) + 1;
+        const totalLoggedPages = bookLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
+        avgRate = totalLoggedPages / daysDiff;
+        if (avgRate <= 0) avgRate = 0.5;
+        
+        lastReadStr = fmtDate(bookLogs[bookLogs.length - 1].date);
+      }
+      
+      const bookETA = calculateETA(left, avgRate);
+      
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5');
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+            <div class="text-[9px] text-slate-400 mt-0.5">Last read: ${lastReadStr} · ${left} pages left (${pct}%)</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">Active</span>
+        </div>
+        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1 border-t border-white/5 pt-2 font-semibold">
+          <span>Pace: <b class="text-slate-200">${avgRate.toFixed(1)} pg/day</b></span>
+          <span>ETA: <b class="text-gold">${bookETA}</b></span>
+        </div>
+      `;
+      etasContainer.appendChild(card);
+    });
+  }
+}
+
+function openGoalsModal() {
+  $('goal-annual-books').value  = goalsCache.annual_books_target  || 12;
+  $('goal-annual-pages').value  = goalsCache.annual_pages_target  || 3000;
+  $('goal-monthly-books').value = goalsCache.monthly_books_target || 1;
+  $('goal-monthly-pages').value = goalsCache.monthly_pages_target || 300;
+  $('goals-modal').classList.add('open');
+}
+function closeGoalsModal() { $('goals-modal').classList.remove('open'); }
+
+async function saveGoals() {
+  const data = {
+    annual_books_target:  parseInt($('goal-annual-books').value)  || 12,
+    annual_pages_target:  parseInt($('goal-annual-pages').value)  || 3000,
+    monthly_books_target: parseInt($('goal-monthly-books').value) || 1,
+    monthly_pages_target: parseInt($('goal-monthly-pages').value) || 300,
+  };
+  await setDoc(doc(db, `users/${uid}/goals/config`), data, { merge: true });
+  goalsCache = data;
+  closeGoalsModal();
+  showToast('Goals updated ✓', 'success');
+  renderGoals();
+}
+
+// ── Chart.js Visualization ───────────────────────────────────────────────────
+function renderCharts() {
+  const ctx = $('dash-chart');
+  if (!ctx) return;
+  
+  if (activeChart) {
+    activeChart.destroy();
+  }
+  
+  const selectedYear = $('dash-year-select').value;
+  const chartType = $('chart-type').value;
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  
+  const yearLogs = selectedYear === 'all' ? activeLogs : activeLogs.filter(l => l.date.startsWith(selectedYear));
+  const filteredLogs = yearLogs.filter(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    return !book || dashFilter === 'all' || book.collection === dashFilter;
+  });
+  
+  if (chartType === 'pages' || chartType === 'minutes') {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlySum = new Array(12).fill(0);
+    
+    filteredLogs.forEach(l => {
+      const monthIdx = parseInt(l.date.slice(5, 7)) - 1;
+      if (monthIdx >= 0 && monthIdx < 12) {
+        if (chartType === 'pages') {
+          monthlySum[monthIdx] += Math.max(0, l.end_page - l.start_page);
+        } else {
+          monthlySum[monthIdx] += (l.minutes_spent || 0);
+        }
+      }
+    });
+    
+    const label = chartType === 'pages' ? 'Pages Read' : 'Reading Minutes';
+    const color = chartType === 'pages' ? '#38bdf8' : '#eab308';
+    
+    activeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: [{
+          label: label,
+          data: monthlySum,
+          borderColor: color,
+          backgroundColor: color + '15',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: color
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+          y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+        }
+      }
+    });
+  } else if (chartType === 'genres') {
+    let bahaiPages = 0;
+    let nonBahaiPages = 0;
+    
+    booksCache.forEach(b => {
+      const completed = (b.read_count || 0) * b.total_pages;
+      const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+      const tot = completed + active;
+      if (b.collection === 'Bahai') bahaiPages += tot;
+      else nonBahaiPages += tot;
+    });
+    
+    activeChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ["Baha'i Books", "Non-Baha'i"],
+        datasets: [{
+          data: [bahaiPages, nonBahaiPages],
+          backgroundColor: ['#eab308', '#38bdf8'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#e2e8f0', font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+}
+
+// ── Log Stopwatch & Heatmap ───────────────────────────────────────────────────
+function setupStopwatch() {
+  const toggleBtn = $('btn-timer-toggle');
+  const resetBtn = $('btn-timer-reset');
+  const display = $('timer-display');
+  
+  if (!toggleBtn) return;
+  
+  toggleBtn.addEventListener('click', () => {
+    if (timerRunning) {
+      // Pause timer
+      clearInterval(timerInterval);
+      timerRunning = false;
+      toggleBtn.textContent = 'Resume';
+      toggleBtn.className = 'btn btn-sm rounded-xl bg-gold/10 hover:bg-gold/25 border border-gold/20 text-gold text-xs font-bold px-4 h-9';
+      display.classList.remove('timer-running');
+      resetBtn.classList.remove('hidden');
+      
+      // Auto-populate input
+      $('log-minutes').value = Math.ceil(timerSeconds / 60);
+    } else {
+      // Start timer
+      timerRunning = true;
+      toggleBtn.textContent = 'Pause';
+      toggleBtn.className = 'btn btn-sm rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 text-xs font-bold px-4 h-9';
+      display.classList.add('timer-running');
+      resetBtn.classList.add('hidden');
+      
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        const secs = String(timerSeconds % 60).padStart(2, '0');
+        display.textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+  });
+  
+  resetBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerSeconds = 0;
+    timerRunning = false;
+    display.textContent = '00:00';
+    display.classList.remove('timer-running');
+    toggleBtn.textContent = 'Start';
+    toggleBtn.className = 'btn btn-sm rounded-xl bg-gold/10 hover:bg-gold/25 border border-gold/20 text-gold text-xs font-bold px-4 h-9';
+    resetBtn.classList.add('hidden');
+    $('log-minutes').value = '';
+  });
+}
+
+function renderLogView() {
+  renderHeatmap();
+  renderRecentLogs();
+}
+
+function renderHeatmap() {
+  const container = $('heatmap-calendar');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  const pagesPerDay = {};
+  activeLogs.forEach(l => {
+    const val = Math.max(0, l.end_page - l.start_page);
+    pagesPerDay[l.date] = (pagesPerDay[l.date] || 0) + val;
+  });
+  
+  // Last 12 weeks = 84 days
+  const today = new Date();
+  const dates = [];
+  for (let i = 83; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400000);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  
+  dates.forEach(dStr => {
+    const pages = pagesPerDay[dStr] || 0;
+    const cell = el('div', 'heatmap-cell');
+    if (pages > 0) {
+      if (pages <= 10) cell.classList.add('heatmap-tier-1');
+      else if (pages <= 20) cell.classList.add('heatmap-tier-2');
+      else if (pages <= 40) cell.classList.add('heatmap-tier-3');
+      else cell.classList.add('heatmap-tier-4');
+    }
+    
+    const d = new Date(dStr + 'T00:00:00');
+    cell.title = `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${pages} pages read`;
+    container.appendChild(cell);
+  });
+}
+
+function renderRecentLogs() {
+  const container = $('log-recent-list');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  if (activeLogs.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No recent logs recorded</p>';
+    return;
+  }
+  
+  activeLogs.slice(0, 5).forEach(l => {
+    const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-white/5 hover:bg-slate-900/30 transition-all cursor-pointer');
+    const pages = l.end_page - l.start_page;
+    card.innerHTML = `
+      <div class="min-w-0 flex-1">
+        <div class="text-xs font-bold text-slate-100 truncate">${l.book_title}</div>
+        <div class="text-[9px] text-slate-400 mt-0.5">${pages} pg · Cycle ${l.read_cycle} · ${fmtDate(l.date)}</div>
+      </div>
+      <div class="text-xs font-bold text-slate-200">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
+    `;
+    card.addEventListener('click', () => openLogDetailModal(l));
+    container.appendChild(card);
+  });
+}
+
+// ── Book Library Manager ──────────────────────────────────────────────────────
+function setupLibrary() {
+  $('lib-search').addEventListener('input', e => {
+    librarySearchTerm = e.target.value.toLowerCase();
+    renderLibrary();
+  });
+  
+  $('lib-filter-status').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      libraryStatusFilter = btn.dataset.status;
+      $('lib-filter-status').querySelectorAll('button').forEach(b => {
+        const isCur = b.dataset.status === libraryStatusFilter;
+        b.classList.toggle('active', isCur);
+        b.classList.toggle('bg-white/10', isCur);
+        b.classList.toggle('text-white', isCur);
+        b.classList.toggle('font-bold', isCur);
+      });
+      renderLibrary();
+    });
+  });
+  
+  $('btn-add-book-trigger').addEventListener('click', () => {
+    $('add-book-modal').classList.add('open');
+  });
+  $('add-book-close').addEventListener('click', () => {
+    $('add-book-modal').classList.remove('open');
+  });
+  $('add-book-save').addEventListener('click', saveNewBook);
+  
+  $('edit-book-close').addEventListener('click', () => {
+    $('edit-book-modal').classList.remove('open');
+  });
+  $('edit-book-save').addEventListener('click', saveEditBook);
+}
+
+async function renderLibrary() {
+  await loadBooksCache();
+  
+  const container = $('lib-books-list');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  let items = booksCache;
+  if (librarySearchTerm) {
+    items = items.filter(b => b.title.toLowerCase().includes(librarySearchTerm) || (b.author && b.author.toLowerCase().includes(librarySearchTerm)));
+  }
+  if (libraryStatusFilter !== 'all') {
+    items = items.filter(b => b.status === libraryStatusFilter);
+  }
+  
+  if (items.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6 font-medium">No books match your criteria</p>';
+    return;
+  }
+  
+  items.forEach(b => {
+    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3.5 relative');
+    const isFin = b.status === 'Finished';
+    const isAct = b.status === 'In Progress';
+    const badgeColor = isFin ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : isAct ? 'bg-blue-500/10 text-blue-400 border-blue-500/10' : 'bg-slate-800/40 text-slate-400 border-white/5';
+    
+    let activeProgress = 0;
+    if (b.status === 'In Progress') {
+      activeProgress = b.pages_read || 0;
+    }
+    const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((activeProgress / b.total_pages) * 100)) : 0;
+    
+    card.innerHTML = `
+      <div class="flex justify-between items-start gap-4">
+        <div class="min-w-0">
+          <div class="text-sm font-bold text-slate-100 truncate">${b.title}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase shrink-0 ${badgeColor}">${b.status}</span>
+      </div>
+      
+      ${isAct ? `
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+            <span>Reading Progress</span>
+            <span>${activeProgress} / ${b.total_pages} pg (${progressPct}%)</span>
+          </div>
+          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-2 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      ` : ''}
+      
+      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-3 font-semibold mt-1">
+        <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+        <div class="flex gap-2">
+          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Mark Complete</button>` : ''}
+          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+        </div>
+      </div>
+    `;
+    
+    const compBtn = card.querySelector('[data-action="complete"]');
+    if (compBtn) {
+      compBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) {
+          await markBookComplete(b);
+        }
+      });
+    }
+    
+    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
+      e.stopPropagation();
+      openEditBookModal(b);
+    });
+    
+    container.appendChild(card);
+  });
+}
+
+async function markBookComplete(b) {
+  try {
+    const date = todayISO();
+    const cycle = (b.read_count || 0) + 1;
+    const start = b.pages_read || 0;
+    const end = b.total_pages;
+    
+    await addDoc(collection(db, `users/${uid}/reading_logs`), {
+      date,
+      book_title: b.title,
+      read_cycle: cycle,
+      start_page: start,
+      end_page: end,
+      minutes_spent: null,
+      notes: "Manual library completion",
+      created_at: serverTimestamp()
+    });
+    
+    await recalculateBook(b.title, cycle);
+    showToast(`✓ Registered completion for "${b.title}"!`, 'success');
+    logsCache = [];
+    await renderLibrary();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to complete book: ' + e.message, 'error');
+  }
+}
+
+async function saveNewBook() {
+  const title = $('ab-title').value.trim();
+  const author = $('ab-author').value.trim() || null;
+  const coll = $('ab-collection').value;
+  const group = $('ab-group').value.trim() || '';
+  const pages = parseInt($('ab-pages').value);
+  const prio = $('ab-priority').value;
+  const status = $('ab-status').value;
+  
+  if (!title) { showToast('Please enter a book title.', 'error'); return; }
+  if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
+  
+  try {
+    const isFinished = status === 'Finished';
+    const newBook = {
+      title,
+      author,
+      collection: coll,
+      group_name: group,
+      total_pages: pages,
+      priority: prio,
+      status: status,
+      pages_read: isFinished ? pages : 0,
+      read_count: isFinished ? 1 : 0
+    };
+    
+    await addDoc(collection(db, `users/${uid}/books`), newBook);
+    
+    if (isFinished) {
+      await addDoc(collection(db, `users/${uid}/reading_logs`), {
+        date: todayISO(),
+        book_title: title,
+        read_cycle: 1,
+        start_page: 0,
+        end_page: pages,
+        minutes_spent: null,
+        notes: "Historical starting complete",
+        created_at: serverTimestamp()
+      });
+      logsCache = [];
+    }
+    
+    $('ab-title').value = '';
+    $('ab-author').value = '';
+    $('ab-group').value = '';
+    $('ab-pages').value = '';
+    $('ab-priority').value = 'Low';
+    $('ab-status').value = 'Not Started';
+    
+    $('add-book-modal').classList.remove('open');
+    showToast(`✓ Book "${title}" successfully registered!`, 'success');
+    await loadBooksCache();
+    await renderLibrary();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to add book: ' + e.message, 'error');
+  }
+}
+
+function openEditBookModal(b) {
+  $('eb-book-id').value = b.id;
+  $('eb-title').value = b.title;
+  $('eb-pages').value = b.total_pages;
+  $('eb-read-count').value = b.read_count || 0;
+  $('eb-status').value = b.status;
+  $('eb-progress').value = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+  $('edit-book-modal').classList.add('open');
+}
+
+async function saveEditBook() {
+  const id = $('eb-book-id').value;
+  const pages = parseInt($('eb-pages').value);
+  const rc = parseInt($('eb-read-count').value) || 0;
+  const status = $('eb-status').value;
+  const prog = parseInt($('eb-progress').value) || 0;
+  
+  if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
+  
+  try {
+    const updates = {
+      total_pages: pages,
+      read_count: rc,
+      status: status,
+      pages_read: status === 'Finished' ? (pages * (rc || 1)) : status === 'In Progress' ? prog : 0
+    };
+    
+    await updateDoc(doc(db, `users/${uid}/books/${id}`), updates);
+    $('edit-book-modal').classList.remove('open');
+    showToast('✓ Book details successfully updated!', 'success');
+    await loadBooksCache();
+    await renderLibrary();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to update book: ' + e.message, 'error');
+  }
+}
+
+// ── Log Detail Modal ─────────────────────────────────────────────────────────
+function openLogDetailModal(l) {
+  $('detail-log-title').textContent = l.book_title;
+  $('detail-log-date').textContent = fmtDate(l.date);
+  $('detail-log-cycle').textContent = `Cycle ${l.read_cycle || 1}`;
+  
+  const pages = (l.end_page || 0) - (l.start_page || 0);
+  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pages)`;
+  $('detail-log-minutes').textContent = l.minutes_spent ? `${l.minutes_spent} min` : '—';
+  $('detail-log-notes').textContent = l.notes || 'No notes recorded for this session.';
+  $('log-detail-modal').classList.add('open');
 }
 
 function goalRows(rows) {
@@ -1247,79 +1990,7 @@ async function addWishlistItem() {
   renderWishlist();
 }
 
-// ── History ───────────────────────────────────────────────────────────────────
-function setupHistory() {
-  $('history-search').addEventListener('input', e => {
-    historySearchTerm = e.target.value.toLowerCase();
-    renderHistory();
-  });
 
-  $('log-detail-close').addEventListener('click', () => {
-    $('log-detail-modal').classList.remove('open');
-  });
-
-  $('log-detail-modal').addEventListener('click', e => {
-    if (e.target === $('log-detail-modal')) {
-      $('log-detail-modal').classList.remove('open');
-    }
-  });
-}
-
-function openLogDetailModal(l) {
-  $('detail-log-title').textContent = l.book_title;
-  $('detail-log-date').textContent = fmtDate(l.date);
-  $('detail-log-cycle').textContent = `Cycle ${l.read_cycle || 1}`;
-  
-  const pages = (l.end_page || 0) - (l.start_page || 0);
-  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pages)`;
-  $('detail-log-minutes').textContent = l.minutes_spent ? `${l.minutes_spent} min` : '—';
-  $('detail-log-notes').textContent = l.notes || 'No notes recorded for this session.';
-  
-  $('log-detail-modal').classList.add('open');
-}
-
-async function renderHistory() {
-  await loadLogsCache();
-
-  let items = logsCache;
-  if (historySearchTerm) {
-    items = items.filter(l => l.book_title.toLowerCase().includes(historySearchTerm));
-  }
-
-  const container = $('history-list');
-  container.innerHTML = '';
-
-  if (items.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3">
-        <span class="text-4xl">📅</span>
-        <div class="text-sm font-bold text-slate-400">No entries yet</div>
-        <p class="text-xs text-slate-500">Log your first reading session to get started</p>
-      </div>`;
-    return;
-  }
-
-  items.forEach(l => {
-    const entry = el('div', 'glass-panel p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:bg-slate-900/40 transition-all cursor-pointer');
-    const d = new Date(l.date + 'T00:00:00');
-    const dateBlock = el('div', 'flex flex-col items-center justify-center bg-slate-800/40 border border-white/5 rounded-xl py-1.5 px-2.5 min-w-[50px] text-center shrink-0');
-    dateBlock.innerHTML = `<span class="text-base font-extrabold text-slate-100 leading-none">${d.getDate()}</span><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${d.toLocaleDateString('en-US',{month:'short'})}</span>`;
-    
-    const info = el('div', 'flex-1 min-w-0');
-    const pages = (l.end_page || 0) - (l.start_page || 0);
-    info.innerHTML = `
-      <div class="text-sm font-semibold text-slate-100 truncate">${l.book_title}</div>
-      <div class="text-xs text-slate-400 mt-0.5">pp. ${l.start_page} → ${l.end_page} · ${pages} page${pages===1?'':'s'}${l.read_cycle > 1 ? ` · Cycle ${l.read_cycle}` : ''}</div>
-    `;
-    
-    const mins = el('div', 'text-xs font-bold text-slate-200 shrink-0 text-right', l.minutes_spent ? `${l.minutes_spent} min` : '');
-    entry.append(dateBlock, info, mins);
-    
-    entry.addEventListener('click', () => openLogDetailModal(l));
-    
-    container.appendChild(entry);
-  });
-}
 
 // ── Service Worker ────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {

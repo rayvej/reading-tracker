@@ -34,6 +34,8 @@
   </script>
 
   <link rel="stylesheet" href="style.css">
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen overflow-hidden relative selection:bg-gold/30 selection:text-white">
   
@@ -133,17 +135,37 @@
       <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-goldlight to-gold bg-clip-text text-transparent flex items-center gap-2">
         <span>📖</span> Reading Tracker
       </h1>
-      <button id="btn-signout" class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:text-rose-400 hover:bg-white/5 active:scale-90 transition-all" title="Sign out" aria-label="Sign out">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-      </button>
-    </header>
-
-    <!-- ── Scrollable Views Container ───────────────────────────────── -->
+      <button id="btn-signout" class="btn btn-sm btn-circle btn-ghost text-slate-    <!-- ── Scrollable Views Container ───────────────────────────────── -->
     <main class="flex-1 overflow-hidden relative">
 
-      <!-- ── View 1: Daily Entry Form ──────────────────────────────── -->
-      <section id="view-log" class="view active h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom">
-        <div class="p-5 flex flex-col gap-5">
+      <!-- ── View 1: Daily Entry Form & Heatmap & Recent Sessions ── -->
+      <section id="view-log" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-5 animate-fade-in">
+          
+          <!-- Stopwatch Reading Timer Card -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">⏱️ Reading Stopwatch</span>
+              <div class="text-2xl font-black text-slate-200 tracking-wider transition-all" id="timer-display">00:00</div>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-sm rounded-xl bg-gold/10 hover:bg-gold/25 border border-gold/20 text-gold text-xs font-bold px-4 h-9" id="btn-timer-toggle">Start</button>
+              <button class="btn btn-sm rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-slate-200 text-xs px-3 h-9 hidden" id="btn-timer-reset">Reset</button>
+            </div>
+          </div>
+
+          <!-- Heatmap Consistency Card -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📅 Consistency Heatmap</span>
+              <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Last 12 Weeks</span>
+            </div>
+            <div class="flex justify-center py-1 overflow-x-auto no-scrollbar">
+              <div id="heatmap-calendar" class="heatmap-grid"></div>
+            </div>
+          </div>
+
+          <!-- Log Session Form -->
           <div class="glass-panel p-6 rounded-3xl flex flex-col gap-5">
             <div>
               <h2 class="text-2xl font-extrabold tracking-tight text-slate-100">Log a Session</h2>
@@ -184,7 +206,7 @@
                 <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-cycle" min="1" value="1">
               </div>
               <div class="form-control w-full">
-                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1">Minutes <span class="text-slate-500 font-normal capitalize">(opt)</span></span></label>
+                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400 font-semibold">Minutes <span class="text-slate-500 font-normal capitalize">(opt)</span></span></label>
                 <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-minutes" min="0" placeholder="e.g. 30">
               </div>
             </div>
@@ -197,18 +219,24 @@
 
             <button class="btn border-none bg-gradient-to-r from-gold to-yellow-500 hover:from-goldlight hover:to-gold text-slate-950 font-bold rounded-2xl py-4 h-auto shadow-lg shadow-gold/10 hover:shadow-gold/20 active:scale-98 transition-all duration-200 mt-2" id="log-submit">Log Reading Session</button>
           </div>
+
+          <!-- Recent Sessions list in Log Tab -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📋 Recent Sessions</span>
+            <div class="flex flex-col gap-2.5" id="log-recent-list"></div>
+          </div>
         </div>
       </section>
 
-      <!-- ── View 2: Dashboard ─────────────────────────────────────── -->
-      <section id="view-dashboard" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-        <div class="p-5 flex flex-col gap-6">
+      <!-- ── View 2: Dashboard & Charts ── -->
+      <section id="view-dashboard" class="view active h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom">
+        <div class="p-5 flex flex-col gap-6 animate-fade-in">
           
           <!-- Title & Year Filter Header -->
           <div class="flex justify-between items-center bg-slate-950/20 backdrop-blur-md pb-2 border-b border-white/5">
             <div>
               <h2 class="text-2xl font-extrabold tracking-tight text-slate-100">Reading Analytics</h2>
-              <p class="text-[11px] text-slate-400 font-medium">Reconstructed Excel workbook metrics</p>
+              <p class="text-[11px] text-slate-400 font-medium font-semibold">Frosted glass statistics dashboard</p>
             </div>
             <select id="dash-year-select" class="select select-xs select-bordered glass-input rounded-xl border border-white/5 text-xs font-bold text-slate-200">
               <option value="all">All Time</option>
@@ -216,6 +244,28 @@
               <option value="2025">2025</option>
               <option value="2024">2024</option>
             </select>
+          </div>
+
+          <!-- Interactive Chart.js Visuals -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📊 Visual Trends</span>
+              <select id="chart-type" class="select select-xs select-bordered glass-input rounded-lg text-[9px] font-bold text-slate-300 py-0 px-2 h-6 min-h-6 border-white/5">
+                <option value="pages">Pages Read</option>
+                <option value="genres">Genre Shares</option>
+                <option value="minutes">Reading Minutes</option>
+              </select>
+            </div>
+            <div class="w-full relative h-48 mt-1">
+              <canvas id="dash-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Category filter segments -->
+          <div class="join w-full glass-panel-light p-1 rounded-full border border-white/5" id="dash-seg" role="tablist">
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 active bg-white/10 text-white font-bold" data-col="all" role="tab" aria-selected="true">All Books</button>
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95" data-col="Bahai" role="tab" aria-selected="false">Bahá'í</button>
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95" data-col="Non-Bahai" role="tab" aria-selected="false">Non-Bahá'í</button>
           </div>
 
           <!-- Overall Summary Cards (Grid of 4) -->
@@ -240,7 +290,7 @@
                 <span class="text-2xl font-black text-emerald-400 mt-1" id="stat-pages">—</span>
                 <span class="text-[9px] text-emerald-500/70 font-medium truncate mt-1" id="detail-pages">—</span>
               </div>
-              <!-- Overall Completion -->
+              <!-- Overall Progress -->
               <div class="glass-panel p-3.5 rounded-2xl flex flex-col justify-between min-h-[92px] border border-gold/15 bg-gold/5">
                 <span class="text-[10px] font-bold tracking-wider uppercase text-gold">Overall Progress</span>
                 <span class="text-2xl font-black text-gold mt-1" id="stat-pct">—</span>
@@ -310,26 +360,13 @@
           </div>
 
           <!-- Weekly Velocity Card -->
-          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3" id="dash-week-stats">
-            <!-- Weekly Stats will be injected dynamically -->
-          </div>
+          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3" id="dash-week-stats"></div>
 
           <!-- Milestones & Target Progression -->
-          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3.5" id="dash-milestones">
-            <!-- Milestones will be injected dynamically -->
-          </div>
+          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3.5" id="dash-milestones"></div>
 
           <!-- Current Year Statistics -->
-          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3" id="dash-year-progress">
-            <!-- Dynamic year statistics injected here -->
-          </div>
-
-          <!-- Category filter segments -->
-          <div class="join w-full glass-panel-light p-1 rounded-full border border-white/5" id="dash-seg" role="tablist">
-            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 active-tab transition-all duration-200 active bg-white/10 text-white font-bold" data-col="all" role="tab" aria-selected="true">All Books</button>
-            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 transition-all duration-200" data-col="Bahai" role="tab" aria-selected="false">Bahá'í</button>
-            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 transition-all duration-200" data-col="Non-Bahai" role="tab" aria-selected="false">Non-Bahá'í</button>
-          </div>
+          <div class="glass-panel p-4.5 rounded-2xl border border-white/5 flex flex-col gap-3" id="dash-year-progress"></div>
 
           <!-- Currently Reading Section -->
           <div>
@@ -357,84 +394,169 @@
             </div>
             <div class="flex flex-col gap-3" id="dash-recent-books"></div>
           </div>
-
-          <!-- Library list container (replaces legacy All Books lists) -->
-          <div class="hidden" id="dash-all-books"></div>
-
         </div>
       </section>
 
-      <!-- ── View 3: Goals ────────────────────────────────────────── -->
-      <section id="view-goals" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-        <div class="p-5 flex flex-col gap-5">
+      <!-- ── View 3: Book Library ── -->
+      <section id="view-library" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-5 animate-fade-in">
           
-          <!-- Annual Goals Card -->
-          <div class="glass-panel p-6 rounded-3xl flex flex-col gap-6">
-            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📅 Annual Targets</div>
-            
-            <div class="flex justify-around gap-4 py-2">
-              <!-- Books Ring -->
-              <div class="flex flex-col items-center gap-3">
-                <div class="relative w-28 h-28 flex items-center justify-center">
-                  <svg class="absolute transform -rotate-90 w-full h-full" viewBox="0 0 110 110">
-                    <circle class="fill-none stroke-slate-800/60" cx="55" cy="55" r="46" stroke-width="8"/>
-                    <circle class="fill-none stroke-gold ring-fill" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
-                  </svg>
-                  <div class="text-center flex flex-col">
-                    <span class="text-2xl font-black text-slate-100" id="ring-books-val">0</span>
-                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-books-lbl">/ 12 bks</span>
-                  </div>
-                </div>
-                <span class="text-xs font-bold text-slate-300">Books Goal</span>
-              </div>
+          <!-- Library Header -->
+          <div class="flex justify-between items-center border-b border-white/5 pb-2">
+            <div>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-100">Book Library</h2>
+              <p class="text-[11px] text-slate-400 font-medium">Manage and audit your library inventory</p>
+            </div>
+            <button class="btn btn-xs rounded-xl bg-gold/10 hover:bg-gold/20 border border-gold/30 text-gold text-[10px] font-bold h-7 px-3" id="btn-add-book-trigger">＋ Add Book</button>
+          </div>
 
-              <!-- Pages Ring -->
-              <div class="flex flex-col items-center gap-3">
-                <div class="relative w-28 h-28 flex items-center justify-center">
+          <!-- Search & Filter Controls -->
+          <div class="flex flex-col gap-3">
+            <div class="relative w-full">
+              <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">🔍</span>
+              <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11 text-sm h-11" id="lib-search" placeholder="Search by title, author, or category…">
+            </div>
+            <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1" id="lib-filter-status">
+              <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7 active bg-white/10 text-white font-bold" data-status="all">All</button>
+              <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="In Progress">Active</button>
+              <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Finished">Finished</button>
+              <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Not Started">Not Started</button>
+            </div>
+          </div>
+
+          <!-- Books List Grid -->
+          <div class="flex flex-col gap-3" id="lib-books-list"></div>
+        </div>
+      </section>
+
+      <!-- ── View 4: Goals & Projections ── -->
+      <section id="view-goals" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-6 animate-fade-in">
+          
+          <!-- Goals Configuration Trigger -->
+          <div class="flex justify-between items-center border-b border-white/5 pb-2">
+            <div>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-100">Goals & Planning</h2>
+              <p class="text-[11px] text-slate-400 font-medium">Reading targets & pace projections</p>
+            </div>
+            <button class="btn btn-xs rounded-xl bg-gold/10 hover:bg-gold/20 border border-gold/30 text-gold text-[10px] font-bold h-7 px-3" id="btn-edit-goals">✏️ Edit Config</button>
+          </div>
+
+          <!-- Annual Goals Progress Rings -->
+          <div class="glass-panel p-5 rounded-3xl flex flex-col gap-5">
+            <div class="text-[9px] font-bold uppercase tracking-widest text-slate-400">🎯 Annual Progression</div>
+            <div class="flex justify-around gap-4">
+              <!-- Books Ring -->
+              <div class="flex flex-col items-center gap-2.5">
+                <div class="relative w-24 h-24 flex items-center justify-center">
                   <svg class="absolute transform -rotate-90 w-full h-full" viewBox="0 0 110 110">
-                    <circle class="fill-none stroke-slate-800/60" cx="55" cy="55" r="46" stroke-width="8"/>
-                    <circle class="fill-none stroke-emerald-400 ring-fill" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
+                    <circle class="fill-none stroke-slate-800/40" cx="55" cy="55" r="46" stroke-width="7.5"/>
+                    <circle class="fill-none stroke-gold ring-fill" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="7.5" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
                   </svg>
                   <div class="text-center flex flex-col">
-                    <span class="text-2xl font-black text-slate-100" id="ring-pages-val">0</span>
-                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-pages-lbl">/ 3k pgs</span>
+                    <span class="text-xl font-black text-slate-100" id="ring-books-val">0</span>
+                    <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-books-lbl">/ 12 bks</span>
                   </div>
                 </div>
-                <span class="text-xs font-bold text-slate-300">Pages Goal</span>
+                <span class="text-[10px] font-bold text-slate-300">Books Goal</span>
+              </div>
+              <!-- Pages Ring -->
+              <div class="flex flex-col items-center gap-2.5">
+                <div class="relative w-24 h-24 flex items-center justify-center">
+                  <svg class="absolute transform -rotate-90 w-full h-full" viewBox="0 0 110 110">
+                    <circle class="fill-none stroke-slate-800/40" cx="55" cy="55" r="46" stroke-width="7.5"/>
+                    <circle class="fill-none stroke-emerald-400 ring-fill" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="7.5" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
+                  </svg>
+                  <div class="text-center flex flex-col">
+                    <span class="text-xl font-black text-slate-100" id="ring-pages-val">0</span>
+                    <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-pages-lbl">/ 3k pgs</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-slate-300">Pages Goal</span>
               </div>
             </div>
-
-            <div class="divide-y divide-white/5 border-t border-white/5 pt-2" id="goal-annual-stats"></div>
           </div>
 
-          <!-- Monthly Stats -->
-          <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
-            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📆 Monthly Progress</div>
-            <div class="divide-y divide-white/5" id="goal-monthly-stats"></div>
+          <!-- Monthly & Annual Target Grid -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📅 Targets & Completions</span>
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="table-fixed w-full text-[10px] text-left excel-table">
+                <thead>
+                  <tr>
+                    <th class="w-2/5">Metric</th>
+                    <th class="w-1/5 text-center">Target</th>
+                    <th class="w-1/5 text-center">Current</th>
+                    <th class="w-1/5 text-right">Progress</th>
+                  </tr>
+                </thead>
+                <tbody id="goals-table-body">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Pace Statistics -->
-          <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
-            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📊 Reading Velocity</div>
-            <div class="divide-y divide-white/5" id="goal-pace-stats"></div>
+          <!-- Pace Check -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">⚖️ Required Pace Check</span>
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="table-fixed w-full text-[10px] text-left excel-table">
+                <thead>
+                  <tr>
+                    <th class="w-[28%]">Metric</th>
+                    <th class="w-[26%] text-center">Req. Pace</th>
+                    <th class="w-[26%] text-center">Cur. Pace</th>
+                    <th class="w-[20%] text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="pace-table-body">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <button class="btn btn-outline border-white/10 hover:bg-white/5 text-slate-200 rounded-2xl w-full py-4 h-auto shadow-md" id="btn-edit-goals">✏️ Edit Goals</button>
+          <!-- Long-Term Projections -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📊 Long-Term Milestones</span>
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="table-fixed w-full text-[10px] text-left excel-table">
+                <thead>
+                  <tr>
+                    <th class="w-3/5">Milestone / Goal</th>
+                    <th class="w-2/5 text-right">ETA (Proj. Date)</th>
+                  </tr>
+                </thead>
+                <tbody id="projection-table-body">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Currently Reading Project Finish -->
+          <div class="glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3">
+            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">📖 Currently Reading ETAs</span>
+            <div class="flex flex-col gap-3" id="goals-reading-etas">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- ── View 4: Wishlist ─────────────────────────────────────── -->
+      <!-- ── View 5: Wishlist ── -->
       <section id="view-wishlist" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-        <div class="p-5 flex flex-col gap-5">
+        <div class="p-5 flex flex-col gap-5 animate-fade-in">
           <!-- Search -->
           <div class="relative w-full">
             <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">🔍</span>
-            <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11" id="wishlist-search" placeholder="Search book title or author…">
+            <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11 text-sm h-11" id="wishlist-search" placeholder="Search book title or author…">
           </div>
 
           <!-- Filters Chips Horizontal Scroll -->
-          <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 shrink-0" id="wishlist-filters">
-            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7 active" data-status="all">All</button>
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 shrink-0" id="wishlist-filters">
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7 active bg-white/10 text-white font-bold" data-status="all">All</button>
             <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Want to Buy">Want to Buy</button>
             <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Owned">Owned</button>
             <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Owned and Read">Owned & Read</button>
@@ -447,42 +569,24 @@
         </div>
       </section>
 
-      <!-- ── View 5: History ──────────────────────────────────────── -->
-      <section id="view-history" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-        <div class="p-5 flex flex-col gap-5">
-          <!-- Search -->
-          <div class="relative w-full">
-            <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">🔍</span>
-            <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11" id="history-search" placeholder="Search by book title…">
-          </div>
-          <!-- History List -->
-          <div class="flex flex-col gap-3" id="history-list"></div>
-        </div>
-      </section>
-
     </main>
 
-    <!-- ── Viewport Fixed Bottom Navigation Bar ─────────────────────── -->
+    <!-- ── Viewport Fixed Bottom Navigation Bar (Minimalist Text-Only) ── -->
     <nav class="btm-nav safe-nav-bottom border-t border-white/5 bg-slate-900/50 backdrop-blur-2xl relative z-40 shrink-0" role="navigation" aria-label="Main navigation">
-      <button class="active text-slate-400 hover:text-gold transition-colors duration-200" data-view="log" aria-label="Log session">
-        <span class="text-lg">✏️</span>
-        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Log</span>
+      <button class="active text-slate-400 hover:text-gold transition-colors duration-200" data-view="dashboard" aria-label="Dashboard">
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-widest">DASHBOARD</span>
       </button>
-      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="dashboard" aria-label="Dashboard">
-        <span class="text-lg">📊</span>
-        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Dash</span>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="log" aria-label="Log session">
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-widest">LOG</span>
+      </button>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="library" aria-label="Library">
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-widest">LIBRARY</span>
       </button>
       <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="goals" aria-label="Goals">
-        <span class="text-lg">🎯</span>
-        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Goals</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-widest">GOALS</span>
       </button>
       <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="wishlist" aria-label="Wishlist">
-        <span class="text-lg">📚</span>
-        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Wishlist</span>
-      </button>
-      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="history" aria-label="History">
-        <span class="text-lg">📅</span>
-        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Logs</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-widest">WISHLIST</span>
       </button>
     </nav>
 
@@ -623,6 +727,100 @@
   <!-- ── Toast Notification ────────────────────────────────────────── -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
     <div class="alert shadow-xl border border-white/10 bg-slate-900/95 backdrop-blur-md rounded-2xl py-3 px-5 text-sm text-slate-200 font-semibold flex items-center gap-2"></div>
+  </div>
+
+  <!-- ── Add Book Modal (Library Tab) ── -->
+  <div id="add-book-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="glass-panel max-w-sm w-full mx-4 p-6 rounded-3xl flex flex-col gap-4 border border-white/10 shadow-2xl relative transform scale-95 transition-all duration-300 [.open_&]:scale-100">
+      <div class="flex items-center justify-between">
+        <span class="text-lg font-bold text-slate-100">Register Book</span>
+        <button class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:bg-white/5" id="add-book-close">✕</button>
+      </div>
+      <div class="form-control w-full">
+        <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Title *</span></label>
+        <input type="text" class="input input-bordered glass-input w-full rounded-2xl" id="ab-title" placeholder="Book title">
+      </div>
+      <div class="form-control w-full">
+        <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Author</span></label>
+        <input type="text" class="input input-bordered glass-input w-full rounded-2xl" id="ab-author" placeholder="Author name">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Collection *</span></label>
+          <select class="select select-bordered glass-input w-full rounded-2xl" id="ab-collection">
+            <option value="Bahai">Bahá'í</option>
+            <option value="Non-Bahai">Non-Bahá'í</option>
+          </select>
+        </div>
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Group Name</span></label>
+          <input type="text" class="input input-bordered glass-input w-full rounded-2xl" id="ab-group" placeholder="e.g. Writings, Non-Fiction">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Total Pages *</span></label>
+          <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="ab-pages" min="1" placeholder="e.g. 300">
+        </div>
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Priority</span></label>
+          <select class="select select-bordered glass-input w-full rounded-2xl" id="ab-priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-control w-full">
+        <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Initial Status</span></label>
+        <select class="select select-bordered glass-input w-full rounded-2xl" id="ab-status">
+          <option value="Not Started">Not Started</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Finished">Finished (Direct Complete)</option>
+        </select>
+      </div>
+      <button class="btn border-none bg-gradient-to-r from-gold to-yellow-500 hover:from-goldlight hover:to-gold text-slate-950 font-bold rounded-2xl py-4 h-auto shadow-lg shadow-gold/10 hover:shadow-gold/20 active:scale-98 transition-all duration-200 mt-2" id="add-book-save">Register Book</button>
+    </div>
+  </div>
+
+  <!-- ── Edit Book Details Modal (Library Tab) ── -->
+  <div id="edit-book-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="glass-panel max-w-sm w-full mx-4 p-6 rounded-3xl flex flex-col gap-4 border border-white/10 shadow-2xl relative transform scale-95 transition-all duration-300 [.open_&]:scale-100">
+      <div class="flex items-center justify-between">
+        <span class="text-lg font-bold text-slate-100">Edit Book & Status</span>
+        <button class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:bg-white/5" id="edit-book-close">✕</button>
+      </div>
+      <input type="hidden" id="eb-book-id">
+      <div class="form-control w-full">
+        <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Title</span></label>
+        <input type="text" class="input input-bordered glass-input w-full rounded-2xl" id="eb-title" readonly>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Total Pages</span></label>
+          <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="eb-pages" min="1">
+        </div>
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Read Count (Completed Cycles)</span></label>
+          <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="eb-read-count" min="0">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Status</span></label>
+          <select class="select select-bordered glass-input w-full rounded-2xl" id="eb-status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Finished">Finished</option>
+          </select>
+        </div>
+        <div class="form-control w-full">
+          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Active Cycle Progress</span></label>
+          <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="eb-progress" min="0">
+        </div>
+      </div>
+      <button class="btn border-none bg-gradient-to-r from-gold to-yellow-500 hover:from-goldlight hover:to-gold text-slate-950 font-bold rounded-2xl py-4 h-auto shadow-lg shadow-gold/10 hover:shadow-gold/20 active:scale-98 transition-all duration-200 mt-2" id="edit-book-save">Save Book Details</button>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>
