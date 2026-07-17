@@ -1,212 +1,577 @@
-/* ─── Reading Tracker — Frosted iOS Glassmorphism Stylesheet ─────────────────── */
+/* ─── Reading Tracker — iOS HIG Design System v11 ─────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
-/* ── Base Styles ───────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Dark Mode (default)
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:              #090A0F;
+  --bg-elevated:     #16171C;
+  --bg-card:         rgba(22, 23, 30, 0.82);
+  --bg-input:        rgba(255, 255, 255, 0.04);
+  --bg-input-focus:  rgba(255, 255, 255, 0.06);
+  --text-primary:    #FFFFFF;
+  --text-secondary:  #8E8E93;
+  --text-tertiary:   #48484A;
+  --accent:          #38BDF8;
+  --accent-rgb:      56, 189, 248;
+  --accent2:         #818CF8;
+  --accent2-rgb:     129, 140, 248;
+  --accent3:         #F472B6;
+  --accent3-rgb:     244, 114, 182;
+  --gold:            #D6A85C;
+  --gold-rgb:        214, 168, 92;
+  --gold-light:      #F5D76E;
+  --emerald:         #34D399;
+  --emerald-rgb:     52, 211, 153;
+  --rose:            #FB7185;
+  --rose-rgb:        251, 113, 133;
+  --border:          rgba(255, 255, 255, 0.06);
+  --border-strong:   rgba(255, 255, 255, 0.10);
+  --shadow-card:     0 8px 32px rgba(0, 0, 0, 0.45);
+  --blur:            blur(24px) saturate(180%);
+  --radius:          16px;
+  --radius-lg:       20px;
+  --radius-xl:       24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Light Mode
+   ══════════════════════════════════════════════════════════════ */
+body.light-mode {
+  --bg:              #F2F2F7;
+  --bg-elevated:     #FFFFFF;
+  --bg-card:         rgba(255, 255, 255, 0.88);
+  --bg-input:        rgba(0, 0, 0, 0.04);
+  --bg-input-focus:  rgba(0, 0, 0, 0.06);
+  --text-primary:    #1C1C1E;
+  --text-secondary:  #3A3A3C;
+  --text-tertiary:   #8E8E93;
+  --accent:          #0A84FF;
+  --accent-rgb:      10, 132, 255;
+  --accent2:         #5856D6;
+  --accent2-rgb:     88, 86, 214;
+  --accent3:         #FF2D55;
+  --accent3-rgb:     255, 45, 85;
+  --gold:            #FF9F0A;
+  --gold-rgb:        255, 159, 10;
+  --gold-light:      #FFD60A;
+  --emerald:         #30D158;
+  --emerald-rgb:     48, 209, 88;
+  --rose:            #FF3B30;
+  --rose-rgb:        255, 59, 48;
+  --border:          rgba(0, 0, 0, 0.06);
+  --border-strong:   rgba(0, 0, 0, 0.12);
+  --shadow-card:     0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESET
+   ══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Outfit", sans-serif;
-  background-color: #06070a; /* Premium dark background */
-  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.35s ease, color 0.35s ease;
+  overscroll-behavior: none;
+  height: 100%;
+  min-height: 100dvh;
 }
 
-/* Hide scrollbars but keep functionality */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBARS
+   ══════════════════════════════════════════════════════════════ */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── iOS Frosted Glass Panels ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   GLASS PANELS
+   ══════════════════════════════════════════════════════════════ */
 .glass-panel {
-  background: rgba(18, 22, 33, 0.65); /* dark slate translucency */
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.5);
-  border-radius: 20px;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  transition: background 0.35s ease, border-color 0.35s ease;
 }
 
 .glass-panel-light {
-  background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 14px;
+  background: var(--bg-input);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
 }
 
-/* ── iOS-Style Segment Controllers ───────────────────────────────────────────── */
-#dash-seg, #lib-filter-status, #wishlist-filters {
-  background: rgba(120, 120, 128, 0.12) !important;
-  padding: 2.5px !important;
+/* ═══════════════════════════════════════════════════════════════
+   INPUTS
+   ══════════════════════════════════════════════════════════════ */
+.glass-input,
+.glass-input.input,
+.glass-input.select,
+.glass-input.textarea {
+  background: var(--bg-input) !important;
+  border: 0.5px solid var(--border-strong) !important;
+  color: var(--text-primary) !important;
   border-radius: 12px !important;
-  border: 1px solid rgba(255, 255, 255, 0.03) !important;
-  display: flex !important;
-  gap: 2px !important;
-}
-
-#dash-seg button, #lib-filter-status button, #wishlist-filters button {
-  flex: 1 !important;
-  border: none !important;
-  background: transparent !important;
-  color: #94a3b8 !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  border-radius: 9px !important;
-  padding: 7px 12px !important;
-  height: auto !important;
-  min-height: auto !important;
-  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s !important;
-}
-
-#dash-seg button.active, #lib-filter-status button.active, #wishlist-filters button.active {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* ── Modern iOS Inputs & Select Fields ────────────────────────────────────────── */
-.glass-input {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  color: #f1f5f9 !important;
-  border-radius: 14px !important;
-  padding: 10px 14px !important;
-  font-size: 13px !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
   font-weight: 500 !important;
-  transition: border-color 0.2s, box-shadow 0.2s !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.35s ease !important;
 }
 
-.glass-input:focus {
-  border-color: #d6a85c !important; /* Warm gold accent focus */
-  box-shadow: 0 0 0 3px rgba(214, 168, 92, 0.18) !important;
+.glass-input:focus,
+.glass-input.input:focus,
+.glass-input.select:focus,
+.glass-input.textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18) !important;
   outline: none !important;
+  background: var(--bg-input-focus) !important;
 }
 
-/* ── Custom active navigation capsule underlines ──────────────────────────────── */
-.btm-nav {
-  background: rgba(10, 11, 16, 0.65) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(24px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+.glass-input::placeholder { color: var(--text-tertiary) !important; }
+
+.glass-input option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
-.btm-nav button {
-  position: relative !important;
-  border: none !important;
-  transition: color 0.2s !important;
+/* Label text color */
+.label-text { color: var(--text-secondary) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS TAB BAR
+   ══════════════════════════════════════════════════════════════ */
+#tab-bar {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  background: rgba(9, 10, 15, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.10);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  position: relative;
+  z-index: 40;
+  flex-shrink: 0;
 }
 
-.btm-nav button.active {
-  color: #d6a85c !important; /* warm gold active color */
-  background: transparent !important;
+body.light-mode #tab-bar {
+  background: rgba(242, 242, 247, 0.92);
+  border-top-color: rgba(0, 0, 0, 0.10);
 }
 
-.btm-nav button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 12px;
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 11px 4px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #8E8E93;
+  transition: color 0.22s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 50px;
+}
+
+.tab-item i {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.22s ease;
+}
+
+.tab-item span {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tab-item.active {
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.tab-item.active i {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.65));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+.view { display: none; }
+.view.active { display: block; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeSlideIn 0.3s ease forwards;
+}
+
+/* Safe area padding for scrollable views */
+.safe-padding-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS BOTTOM SHEET
+   ══════════════════════════════════════════════════════════════ */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 60;
+  pointer-events: none;
+  transition: background 0.32s ease;
+}
+
+.sheet-backdrop.open {
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.sheet {
+  position: fixed;
+  bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 2.5px;
-  background-color: #d6a85c;
-  border-radius: 1.5px;
-  box-shadow: 0 0 10px rgba(214, 168, 92, 0.6);
+  transform: translateX(-50%) translateY(102%);
+  width: 100%;
+  max-width: 448px;
+  background: var(--bg-elevated);
+  border-radius: 24px 24px 0 0;
+  border-top: 0.5px solid var(--border-strong);
+  z-index: 70;
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1), background 0.35s ease;
+  padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+  max-height: 88vh;
+  overflow-y: auto;
 }
 
-/* ── Heatmap Grid Calendar styling ───────────────────────────────────────────── */
+.sheet.open {
+  transform: translateX(-50%) translateY(0);
+}
+
+.sheet-handle {
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border-strong);
+  margin: 12px auto 8px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS SEGMENT CONTROL
+   ══════════════════════════════════════════════════════════════ */
+.seg-control {
+  display: flex;
+  background: rgba(120, 120, 128, 0.12);
+  border-radius: 10px;
+  padding: 2.5px;
+  gap: 2px;
+  width: 100%;
+}
+
+.seg-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seg-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .seg-btn.active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEATMAP
+   ══════════════════════════════════════════════════════════════ */
 .heatmap-grid {
   display: grid;
-  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(7, 10px);
   grid-auto-flow: column;
-  gap: 3.5px;
+  gap: 3px;
 }
 
 .heatmap-cell {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.04);
-  transition: background-color 0.2s ease, transform 0.15s ease;
+  background: rgba(255, 255, 255, 0.05);
+  transition: transform 0.15s ease;
+  cursor: default;
 }
 
-.heatmap-cell:hover {
-  transform: scale(1.25);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
-}
+body.light-mode .heatmap-cell { background: rgba(0, 0, 0, 0.06); }
+.heatmap-cell:hover { transform: scale(1.3); }
 
-.heatmap-tier-1 { background: rgba(56, 189, 248, 0.25); } /* Sky-blue low */
-.heatmap-tier-2 { background: rgba(56, 189, 248, 0.55); } /* Sky-blue medium */
-.heatmap-tier-3 { background: rgba(214, 168, 92, 0.6); }  /* Sand-gold high */
-.heatmap-tier-4 { background: rgba(214, 168, 92, 1); box-shadow: 0 0 8px rgba(214, 168, 92, 0.45); } /* Gold glow */
+.heatmap-tier-1 { background: rgba(56, 189, 248, 0.22); }
+.heatmap-tier-2 { background: rgba(56, 189, 248, 0.50); }
+.heatmap-tier-3 { background: rgba(214, 168, 92, 0.65); }
+.heatmap-tier-4 { background: rgba(214, 168, 92, 1.0); box-shadow: 0 0 6px rgba(214, 168, 92, 0.45); }
 
-/* ── Glow effect for stopwatch active state ─────────────────────────────────── */
+body.light-mode .heatmap-tier-1 { background: rgba(10, 132, 255, 0.2); }
+body.light-mode .heatmap-tier-2 { background: rgba(10, 132, 255, 0.45); }
+body.light-mode .heatmap-tier-3 { background: rgba(255, 159, 10, 0.65); }
+body.light-mode .heatmap-tier-4 { background: rgba(255, 159, 10, 1.0); }
+
+/* ═══════════════════════════════════════════════════════════════
+   STOPWATCH TIMER
+   ══════════════════════════════════════════════════════════════ */
 @keyframes timer-glow {
-  0%, 100% { text-shadow: 0 0 4px rgba(214, 168, 92, 0.1); }
-  50% { text-shadow: 0 0 14px rgba(214, 168, 92, 0.7); }
+  0%,100% { text-shadow: 0 0 4px rgba(var(--gold-rgb), 0.1); }
+  50%      { text-shadow: 0 0 16px rgba(var(--gold-rgb), 0.75); }
 }
 
 .timer-running {
-  animation: timer-glow 1.5s infinite;
-  color: #d6a85c !important;
+  animation: timer-glow 1.5s ease-in-out infinite;
+  color: var(--gold) !important;
 }
 
-/* ── Table styling override for Excel look ───────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   SVG PROGRESS RINGS
+   ══════════════════════════════════════════════════════════════ */
+.ring-fill {
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DATA TABLES
+   ══════════════════════════════════════════════════════════════ */
 .excel-table {
   border-collapse: separate;
   border-spacing: 0;
+  width: 100%;
 }
 
 .excel-table th {
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
-  padding: 10px 12px;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  padding: 10px 10px;
   font-weight: 700;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 0.5px solid var(--border-strong);
+  white-space: nowrap;
 }
 
 .excel-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 9px 10px;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text-primary);
   vertical-align: middle;
+  font-size: 11px;
 }
 
-.excel-table tr:hover td {
-  background: rgba(255, 255, 255, 0.015);
+.excel-table tr:last-child td { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   AMBIENT BACKGROUND BLOBS
+   ══════════════════════════════════════════════════════════════ */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-18px) scale(1.06); }
+}
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0) scale(1.06); }
+  50%       { transform: translateY(18px) scale(1); }
 }
 
-/* Custom background blur shapes */
-.bg-blur-blob {
-  position: absolute;
+.animate-float-1 { animation: float-slow 18s ease-in-out infinite; }
+.animate-float-2 { animation: float-reverse 22s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PIN SHAKE
+   ══════════════════════════════════════════════════════════════ */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-8px); }
+  75%       { transform: translateX(8px); }
+}
+.animate-shake { animation: shake 0.4s ease; }
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME TOGGLE BUTTON
+   ══════════════════════════════════════════════════════════════ */
+#btn-theme-toggle {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  filter: blur(80px);
-  z-index: 0;
+  border: 0.5px solid var(--border-strong);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.35s ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+#btn-theme-toggle:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SVG CHART CONTAINERS
+   ══════════════════════════════════════════════════════════════ */
+.chart-svg-wrap {
+  width: 100%;
+  overflow: visible;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS MODALS
+   ══════════════════════════════════════════════════════════════ */
+.ios-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
   pointer-events: none;
-  opacity: 0.22;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
 
-.bg-blur-1 {
-  background: radial-gradient(circle, rgba(214, 168, 92, 0.4) 0%, rgba(214, 168, 92, 0) 70%);
-  width: 250px;
-  height: 250px;
-  top: -50px;
-  right: -50px;
+.ios-modal-overlay.open {
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
 }
 
-.bg-blur-2 {
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(56, 189, 248, 0) 70%);
-  width: 320px;
-  height: 320px;
-  bottom: 50px;
-  left: -100px;
+.ios-modal-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border-strong);
+  padding: 24px;
+  width: calc(100% - 40px);
+  max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.94) translateY(10px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.35s ease;
+}
+
+.ios-modal-overlay.open .ios-modal-card {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Legacy modal compat — keep existing class working */
+[id$="-modal"].fixed {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MISC UTILITIES
+   ══════════════════════════════════════════════════════════════ */
+.input-hint {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  min-height: 14px;
+  transition: color 0.2s;
+}
+.input-hint.found { color: var(--emerald); }
+
+/* Page section label */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* iOS-style list separator */
+.list-sep {
+  border: none;
+  border-bottom: 0.5px solid var(--border);
+  margin: 0;
+}
+
+/* Status badges */
+.badge-blue   { background: rgba(var(--accent-rgb),0.12); color: var(--accent); border: 0.5px solid rgba(var(--accent-rgb),0.2); }
+.badge-green  { background: rgba(var(--emerald-rgb),0.12); color: var(--emerald); border: 0.5px solid rgba(var(--emerald-rgb),0.2); }
+.badge-gold   { background: rgba(var(--gold-rgb),0.12); color: var(--gold); border: 0.5px solid rgba(var(--gold-rgb),0.2); }
+.badge-rose   { background: rgba(var(--rose-rgb),0.12); color: var(--rose); border: 0.5px solid rgba(var(--rose-rgb),0.2); }
+.badge-muted  { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 0.5px solid var(--border); }
+body.light-mode .badge-muted { background: rgba(0,0,0,0.05); }
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Progress bar */
+.prog-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.prog-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }

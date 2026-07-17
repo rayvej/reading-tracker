@@ -86,14 +86,43 @@ async function hashPin(pin) {
 let toastTimer;
 function showToast(msg, type = '') {
   const t = $('toast');
-  const alert = t.querySelector('.alert');
-  alert.textContent = msg;
-  alert.className = `alert shadow-xl border border-white/10 bg-slate-900/95 backdrop-blur-md rounded-2xl py-3 px-5 text-sm font-semibold flex items-center gap-2 ${
-    type === 'success' ? 'border-emerald-500/20 text-emerald-400' : type === 'error' ? 'border-rose-500/20 text-rose-400' : 'text-slate-200'
-  }`;
+  const inner = t.querySelector('div');
+  inner.textContent = msg;
+  // CSS-variable-driven colour overlay
+  if (type === 'success') {
+    inner.style.color = 'var(--emerald)';
+    inner.style.borderColor = 'rgba(var(--emerald-rgb),0.25)';
+  } else if (type === 'error') {
+    inner.style.color = 'var(--rose)';
+    inner.style.borderColor = 'rgba(var(--rose-rgb),0.25)';
+  } else {
+    inner.style.color = 'var(--text-primary)';
+    inner.style.borderColor = 'var(--border-strong)';
+  }
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+// ── Dark / Light Mode ────────────────────────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem('rt_theme');
+  // Apply saved preference, or keep dark (default)
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const icon = $('theme-icon');
+    if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('rt_theme', isLight ? 'light' : 'dark');
+  const icon = $('theme-icon');
+  if (icon) {
+    icon.classList.toggle('fa-moon', !isLight);
+    icon.classList.toggle('fa-sun', isLight);
+  }
 }
 
 // ── Screen visibility ─────────────────────────────────────────────────────────
@@ -106,6 +135,9 @@ function showScreen(id) {
   if (id === 'app') { app.classList.remove('hidden'); }
   else              { app.classList.add('hidden'); }
 }
+
+// Apply theme as early as possible
+initTheme();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 $('btn-google-signin').addEventListener('click', async () => {
@@ -214,13 +246,15 @@ async function verifyPin(pin) {
 async function initApp() {
   showScreen('app');
   
-  // 1. Initialize UI handlers immediately (synchronously) so the app remains fully responsive
+  // 1. Initialize UI handlers immediately (synchronously)
+  initTheme();
   setupNav();
   setupLogForm();
   setupDashboard();
   setupLibrary();
   setupGoals();
   setupWishlist();
+  setupLogDetailSheet();
   showView('dashboard'); // Start on Dashboard
   
   // 2. Load database content asynchronously in the background
@@ -323,29 +357,43 @@ async function loadLogsCache() {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function setupNav() {
-  document.querySelectorAll('.btm-nav button').forEach(btn => {
+  // Wire iOS tab bar
+  document.querySelectorAll('#tab-bar .tab-item').forEach(btn => {
     btn.addEventListener('click', () => showView(btn.dataset.view));
   });
+
+  // Wire dark/light mode toggle
+  const themeBtn = $('btn-theme-toggle');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+  // Wire sign-out
+  const soBtn = $('btn-signout');
+  if (soBtn) soBtn.addEventListener('click', () => signOut(auth));
 }
 
 function showView(name) {
   currentView = name;
-  document.querySelectorAll('.btm-nav button').forEach(b => {
-    const isCur = b.dataset.view === name;
-    b.classList.toggle('active', isCur);
-    b.classList.toggle('text-gold', isCur);
-    b.classList.toggle('text-slate-400', !isCur);
+
+  // Update tab bar active state
+  document.querySelectorAll('#tab-bar .tab-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === name);
   });
+
+  // Show/hide view sections
   document.querySelectorAll('.view').forEach(v => {
-    v.classList.toggle('hidden', v.id !== `view-${name}`);
+    const isActive = v.id === `view-${name}`;
+    v.classList.toggle('active', isActive);
+    v.classList.toggle('hidden', !isActive);
   });
-  // Refresh on tab open
+
+  // Refresh content on tab open
   if (name === 'dashboard') renderDashboard();
   if (name === 'goals')     renderGoals();
   if (name === 'wishlist')  renderWishlist();
   if (name === 'library')   renderLibrary();
   if (name === 'log')       renderLogView();
-  // Show/hide FAB
+
+  // Show/hide wishlist FAB
   $('wishlist-fab').classList.toggle('hidden', name !== 'wishlist');
 }
 
@@ -632,31 +680,22 @@ function calculateStreaks(logs) {
 }
 
 function setupDashboard() {
+  // Segment filter (Bahá'í / Non-Bahá'í / All)
   $('dash-seg').addEventListener('click', e => {
     const btn = e.target.closest('[data-col]');
     if (!btn) return;
     dashFilter = btn.dataset.col;
-    $('dash-seg').querySelectorAll('button').forEach(b => {
-      const isCur = b.dataset.col === dashFilter;
-      b.classList.toggle('active', isCur);
-      b.classList.toggle('bg-white/10', isCur);
-      b.classList.toggle('text-white', isCur);
-      b.classList.toggle('font-bold', isCur);
+    $('dash-seg').querySelectorAll('.seg-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.col === dashFilter);
     });
     renderDashboard();
   });
 
+  // Year filter
   $('dash-year-select').addEventListener('change', e => {
     dashYearFilter = e.target.value;
     renderDashboard();
   });
-
-  const chartTypeSel = $('chart-type');
-  if (chartTypeSel) {
-    chartTypeSel.addEventListener('change', () => {
-      renderCharts();
-    });
-  }
 }
 
 async function renderDashboard() {
@@ -1381,105 +1420,258 @@ async function saveGoals() {
 }
 
 // ── Chart.js Visualization ───────────────────────────────────────────────────
-function renderCharts() {
-  const ctx = $('dash-chart');
-  if (!ctx) return;
-  
-  if (activeChart) {
-    activeChart.destroy();
-  }
-  
-  const selectedYear = $('dash-year-select').value;
-  const chartType = $('chart-type').value;
-  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
-  
-  const yearLogs = selectedYear === 'all' ? activeLogs : activeLogs.filter(l => l.date.startsWith(selectedYear));
-  const filteredLogs = yearLogs.filter(l => {
-    const book = booksCache.find(b => b.title === l.book_title);
-    return !book || dashFilter === 'all' || book.collection === dashFilter;
-  });
-  
-  if (chartType === 'pages' || chartType === 'minutes') {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlySum = new Array(12).fill(0);
-    
-    filteredLogs.forEach(l => {
-      const monthIdx = parseInt(l.date.slice(5, 7)) - 1;
-      if (monthIdx >= 0 && monthIdx < 12) {
-        if (chartType === 'pages') {
-          monthlySum[monthIdx] += Math.max(0, l.end_page - l.start_page);
-        } else {
-          monthlySum[monthIdx] += (l.minutes_spent || 0);
-        }
-      }
-    });
-    
-    const label = chartType === 'pages' ? 'Pages Read' : 'Reading Minutes';
-    const color = chartType === 'pages' ? '#38bdf8' : '#eab308';
-    
-    activeChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: months,
-        datasets: [{
-          label: label,
-          data: monthlySum,
-          borderColor: color,
-          backgroundColor: color + '15',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3,
-          pointBackgroundColor: color
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
-          y: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
-        }
-      }
-    });
-  } else if (chartType === 'genres') {
-    let bahaiPages = 0;
-    let nonBahaiPages = 0;
-    
-    booksCache.forEach(b => {
-      const completed = (b.read_count || 0) * b.total_pages;
-      const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
-      const tot = completed + active;
-      if (b.collection === 'Bahai') bahaiPages += tot;
-      else nonBahaiPages += tot;
-    });
-    
-    activeChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ["Baha'i Books", "Non-Baha'i"],
-        datasets: [{
-          data: [bahaiPages, nonBahaiPages],
-          backgroundColor: ['#eab308', '#38bdf8'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color: '#e2e8f0', font: { size: 9 } }
-          }
-        }
-      }
-    });
-  }
+// ── Native SVG Chart Renderers ───────────────────────────────────────────────
+
+// Helper: create an SVG element
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  return el;
 }
+
+// ── DONUT CHART — Baha'i vs Non-Baha'i pages ─────────────────────────────────
+function renderDonutChart() {
+  const wrap = $('chart-donut-wrap');
+  if (!wrap) return;
+
+  // Compute totals
+  let bahaiPg = 0, nonBahaiPg = 0;
+  booksCache.forEach(b => {
+    const completed = (b.read_count || 0) * (b.total_pages || 0);
+    const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+    const tot = completed + active;
+    if (b.collection === 'Bahai') bahaiPg += tot;
+    else nonBahaiPg += tot;
+  });
+
+  const total = bahaiPg + nonBahaiPg || 1;
+  const r = 40, cx = 54, cy = 54, sw = 14;
+  const circ = 2 * Math.PI * r;
+  const bahaiDash = (bahaiPg / total) * circ;
+  const nonBahaiDash = (nonBahaiPg / total) * circ;
+
+  const isDark = !document.body.classList.contains('light-mode');
+  const c1 = isDark ? '#D6A85C' : '#FF9F0A';
+  const c2 = isDark ? '#38BDF8' : '#0A84FF';
+  const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+
+  const svg = svgEl('svg', { viewBox: '0 0 108 108', width: '108', height: '108', style: 'display:block' });
+  // Track
+  svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: trackColor, 'stroke-width': sw }));
+  // Non-Baha'i arc
+  svg.appendChild(svgEl('circle', {
+    cx, cy, r, fill: 'none', stroke: c2, 'stroke-width': sw,
+    'stroke-dasharray': circ,
+    'stroke-dashoffset': 0,
+    'stroke-linecap': 'round',
+    transform: `rotate(-90 ${cx} ${cy})`
+  }));
+  // Baha'i arc (on top)
+  const bahaiArc = svgEl('circle', {
+    cx, cy, r, fill: 'none', stroke: c1, 'stroke-width': sw,
+    'stroke-dasharray': `${bahaiDash} ${circ}`,
+    'stroke-dashoffset': 0,
+    'stroke-linecap': 'round',
+    transform: `rotate(-90 ${cx} ${cy})`
+  });
+  bahaiArc.style.transition = 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)';
+  svg.appendChild(bahaiArc);
+  // Center total
+  const totalTxt = svgEl('text', { x: cx, y: cy - 4, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    style: `font-size:14px; font-weight:900; fill:${isDark ? '#fff' : '#1c1c1e'}; font-family:-apple-system,sans-serif` });
+  totalTxt.textContent = fmtNum(total);
+  svg.appendChild(totalTxt);
+  const subTxt = svgEl('text', { x: cx, y: cy + 12, 'text-anchor': 'middle',
+    style: `font-size:7px; font-weight:700; fill:${isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)'}; font-family:-apple-system,sans-serif; letter-spacing:0.04em; text-transform:uppercase` });
+  subTxt.textContent = 'TOTAL PGS';
+  svg.appendChild(subTxt);
+
+  // Legend
+  const legend = document.createElement('div');
+  legend.style.cssText = 'display:flex;flex-direction:column;gap:10px;justify-content:center';
+  const pctBahai = total > 0 ? Math.round(bahaiPg / total * 100) : 0;
+  const pctNon   = 100 - pctBahai;
+  legend.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${c1};flex-shrink:0"></div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-primary)">Bahá'í</div>
+        <div style="font-size:11px;font-weight:800;color:${c1}">${pctBahai}%</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${c2};flex-shrink:0"></div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-primary)">Non-Bahá'í</div>
+        <div style="font-size:11px;font-weight:800;color:${c2}">${pctNon}%</div>
+      </div>
+    </div>`;
+
+  wrap.innerHTML = '';
+  wrap.appendChild(svg);
+  wrap.appendChild(legend);
+}
+
+// ── SPARKLINE — weekly pages over last 12 weeks ───────────────────────────────
+function renderSparklineChart() {
+  const wrap = $('chart-sparkline-wrap');
+  if (!wrap) return;
+
+  const today = new Date();
+  const weeks = 12;
+  const labels = [];
+  const data = [];
+
+  for (let i = weeks - 1; i >= 0; i--) {
+    const wStart = new Date(today);
+    wStart.setDate(today.getDate() - i * 7 - today.getDay());
+    const wEnd = new Date(wStart);
+    wEnd.setDate(wStart.getDate() + 6);
+
+    const wStartISO = wStart.toISOString().slice(0, 10);
+    const wEndISO   = wEnd.toISOString().slice(0, 10);
+
+    const wPages = logsCache
+      .filter(l => l.date >= wStartISO && l.date <= wEndISO)
+      .reduce((sum, l) => sum + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+
+    labels.push(wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    data.push(wPages);
+  }
+
+  const W = 300, H = 80;
+  const maxVal = Math.max(...data, 1);
+  const padL = 4, padR = 4, padT = 8, padB = 20;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const pts = data.map((v, i) => [
+    padL + (i / (weeks - 1)) * plotW,
+    padT + plotH - (v / maxVal) * plotH
+  ]);
+
+  const isDark = !document.body.classList.contains('light-mode');
+  const lineColor = isDark ? '#818CF8' : '#5856D6';
+  const fillId = 'sparkGrad';
+
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', style: 'width:100%;height:80px' });
+
+  // Gradient fill
+  const defs = svgEl('defs');
+  const grad = svgEl('linearGradient', { id: fillId, x1: '0', y1: '0', x2: '0', y2: '1' });
+  const s1 = svgEl('stop', { offset: '0%', 'stop-color': lineColor, 'stop-opacity': '0.3' });
+  const s2 = svgEl('stop', { offset: '100%', 'stop-color': lineColor, 'stop-opacity': '0.02' });
+  grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
+
+  // Area fill path
+  const areaD = `M${pts[0][0]},${padT + plotH} L${pts.map(p => p.join(',')).join(' L')} L${pts[pts.length-1][0]},${padT + plotH} Z`;
+  svg.appendChild(svgEl('path', { d: areaD, fill: `url(#${fillId})` }));
+
+  // Line path (smooth)
+  const lineD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.join(',')).join(' ');
+  const linePth = svgEl('path', { d: lineD, fill: 'none', stroke: lineColor, 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  linePth.style.transition = 'stroke-dashoffset 1s ease';
+  svg.appendChild(linePth);
+
+  // Data point dots + labels
+  pts.forEach((p, i) => {
+    if (data[i] > 0) {
+      svg.appendChild(svgEl('circle', { cx: p[0], cy: p[1], r: 3, fill: lineColor }));
+    }
+    // Week label (every 3rd)
+    if (i % 3 === 0) {
+      const lbl = svgEl('text', {
+        x: p[0], y: H - 4, 'text-anchor': 'middle',
+        style: `font-size:7px;fill:${isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'};font-family:-apple-system,sans-serif`
+      });
+      lbl.textContent = labels[i];
+      svg.appendChild(lbl);
+    }
+  });
+
+  wrap.innerHTML = '';
+  wrap.appendChild(svg);
+}
+
+// ── BAR CHART — pages by reading group ───────────────────────────────────────
+function renderBarChart() {
+  const wrap = $('chart-bar-wrap');
+  if (!wrap) return;
+
+  // Aggregate by group
+  const groupMap = {};
+  booksCache.forEach(b => {
+    const g = b.reading_group || b.group || 'Other';
+    if (!groupMap[g]) groupMap[g] = 0;
+    const comp = (b.read_count || 0) * (b.total_pages || 0);
+    const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+    groupMap[g] += comp + active;
+  });
+
+  const entries = Object.entries(groupMap)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7);
+
+  if (entries.length === 0) { wrap.innerHTML = ''; return; }
+
+  const W = 300, H = 120;
+  const maxVal = Math.max(...entries.map(e => e[1]), 1);
+  const barW = Math.min(32, (W - 16) / entries.length - 6);
+  const padB = 28, padT = 6;
+  const plotH = H - padT - padB;
+
+  const isDark = !document.body.classList.contains('light-mode');
+  const gradColors = [
+    ['#D6A85C','#F5D76E'], ['#38BDF8','#818CF8'], ['#34D399','#38BDF8'],
+    ['#F472B6','#818CF8'], ['#FB7185','#F472B6'], ['#818CF8','#38BDF8'], ['#F5D76E','#D6A85C']
+  ];
+
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', style: 'width:100%;height:120px' });
+  const defs = svgEl('defs');
+
+  entries.forEach(([label, val], i) => {
+    const barH = Math.max(4, (val / maxVal) * plotH);
+    const x = (i / entries.length) * W + (W / entries.length - barW) / 2;
+    const y = padT + plotH - barH;
+    const [c1, c2] = gradColors[i % gradColors.length];
+    const gid = `bg${i}`;
+    const g = svgEl('linearGradient', { id: gid, x1: '0', y1: '0', x2: '0', y2: '1' });
+    g.appendChild(svgEl('stop', { offset: '0%', 'stop-color': c1 }));
+    g.appendChild(svgEl('stop', { offset: '100%', 'stop-color': c2, 'stop-opacity': '0.6' }));
+    defs.appendChild(g);
+
+    const rect = svgEl('rect', {
+      x: x.toFixed(1), y: y.toFixed(1),
+      width: barW, height: barH.toFixed(1),
+      rx: 4, ry: 4, fill: `url(#${gid})`
+    });
+    rect.style.transition = 'height 0.8s cubic-bezier(0.4,0,0.2,1)';
+    svg.appendChild(rect);
+
+    // Label
+    const shortLabel = label.length > 8 ? label.slice(0, 7) + '…' : label;
+    const lbl = svgEl('text', {
+      x: (x + barW / 2).toFixed(1), y: H - 4,
+      'text-anchor': 'middle',
+      style: `font-size:7px;fill:${isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'};font-family:-apple-system,sans-serif`
+    });
+    lbl.textContent = shortLabel;
+    svg.appendChild(lbl);
+  });
+
+  svg.insertBefore(defs, svg.firstChild);
+  wrap.innerHTML = '';
+  wrap.appendChild(svg);
+}
+
+// Stub kept for compatibility — calls the three SVG renderers
+function renderCharts() {
+  renderDonutChart();
+  renderSparklineChart();
+  renderBarChart();
+}
+
 
 // ── Log Stopwatch & Heatmap ───────────────────────────────────────────────────
 function setupStopwatch() {
@@ -1491,24 +1683,19 @@ function setupStopwatch() {
   
   toggleBtn.addEventListener('click', () => {
     if (timerRunning) {
-      // Pause timer
       clearInterval(timerInterval);
       timerRunning = false;
       toggleBtn.textContent = 'Resume';
-      toggleBtn.className = 'btn btn-sm rounded-xl bg-gold/10 hover:bg-gold/25 border border-gold/20 text-gold text-xs font-bold px-4 h-9';
+      toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
       display.classList.remove('timer-running');
       resetBtn.classList.remove('hidden');
-      
-      // Auto-populate input
       $('log-minutes').value = Math.ceil(timerSeconds / 60);
     } else {
-      // Start timer
       timerRunning = true;
       toggleBtn.textContent = 'Pause';
-      toggleBtn.className = 'btn btn-sm rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 text-xs font-bold px-4 h-9';
+      toggleBtn.style.cssText = 'background:rgba(var(--rose-rgb),0.1);border-color:rgba(var(--rose-rgb),0.25);color:var(--rose)';
       display.classList.add('timer-running');
       resetBtn.classList.add('hidden');
-      
       timerInterval = setInterval(() => {
         timerSeconds++;
         const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
@@ -1517,7 +1704,7 @@ function setupStopwatch() {
       }, 1000);
     }
   });
-  
+
   resetBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -1526,7 +1713,7 @@ function setupStopwatch() {
     display.textContent = '00:00';
     display.classList.remove('timer-running');
     toggleBtn.textContent = 'Start';
-    toggleBtn.className = 'btn btn-sm rounded-xl bg-gold/10 hover:bg-gold/25 border border-gold/20 text-gold text-xs font-bold px-4 h-9';
+    toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
     resetBtn.classList.add('hidden');
     $('log-minutes').value = '';
   });
@@ -1874,17 +2061,29 @@ async function saveEditBook() {
   }
 }
 
-// ── Log Detail Modal ─────────────────────────────────────────────────────────
+// ── Log Detail — iOS Bottom Sheet ────────────────────────────────────────────
 function openLogDetailModal(l) {
+  // Populate sheet fields
   $('detail-log-title').textContent = l.book_title;
   $('detail-log-date').textContent = fmtDate(l.date);
   $('detail-log-cycle').textContent = `Cycle ${l.read_cycle || 1}`;
-  
   const pages = (l.end_page || 0) - (l.start_page || 0);
-  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pages)`;
+  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pgs)`;
   $('detail-log-minutes').textContent = l.minutes_spent ? `${l.minutes_spent} min` : '—';
-  $('detail-log-notes').textContent = l.notes || 'No notes recorded for this session.';
-  $('log-detail-modal').classList.add('open');
+  $('detail-log-notes').textContent = l.notes || 'No notes recorded.';
+  // Open sheet
+  $('log-detail-sheet').classList.add('open');
+  $('sheet-backdrop').classList.add('open');
+}
+
+function closeLogDetailSheet() {
+  $('log-detail-sheet').classList.remove('open');
+  $('sheet-backdrop').classList.remove('open');
+}
+
+function setupLogDetailSheet() {
+  $('log-detail-close').addEventListener('click', closeLogDetailSheet);
+  $('sheet-backdrop').addEventListener('click', closeLogDetailSheet);
 }
 
 function setupWishlist() {
