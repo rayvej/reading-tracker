@@ -744,7 +744,7 @@ async function renderHistory() {
     const q = query(
       collection(db, `users/${uid}/reading_logs`),
       orderBy('date', 'desc'),
-      limit(200)
+      limit(1000)
     );
     const snap = await getDocs(q);
     historyCache = snap.docs.map(d => d.data());
