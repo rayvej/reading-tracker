@@ -273,6 +273,7 @@ async function loadDatabaseData() {
     await loadBooksCache();
     await loadLogsCache();
     populateBookDropdown();
+    populateGroupDatalist(booksCache);
     
     // Refresh active views if the user is already looking at them
     if (currentView === 'dashboard') renderDashboard();
@@ -1788,12 +1789,12 @@ async function renderLibrary() {
     const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((activeProgress / b.total_pages) * 100)) : 0;
     
     card.innerHTML = `
-      <div class="flex justify-between items-start gap-4">
-        <div class="min-w-0">
-          <div class="text-sm font-bold text-slate-100 truncate">${b.title}</div>
-          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
+      <div class="book-card-header">
+        <div class="min-w-0 flex-1">
+          <div class="book-title-clamped">${b.title}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-1">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
         </div>
-        <span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase shrink-0 ${badgeColor}">${b.status}</span>
+        <span class="status-badge-fit border ${badgeColor}">${b.status}</span>
       </div>
       
       ${isAct ? `
@@ -2226,7 +2227,8 @@ function stopZenFocus() {
   document.getElementById('zen-breathing-orb').classList.remove('breathing-orb');
   
   const minutesSpent = Math.max(1, Math.round(focusSeconds / 60));
-  document.getElementById('log-minutes').value = minutesSpent;
+  const minInput = document.getElementById('log-minutes') || document.getElementById('log-minutes-input');
+  if (minInput) minInput.value = minutesSpent;
 }
 
 function setupZenMode() {
@@ -2423,6 +2425,22 @@ function handleBookSelection(selectedBookTitle, books, logs) {
   document.getElementById('log-cycle').value = currentCycle;
 }
 
+
+
+// =========================================================================
+// SEARCHABLE GROUP DATALIST IN ADD BOOK FORM
+// =========================================================================
+function populateGroupDatalist(books) {
+  const datalist = document.getElementById('group-list');
+  if (!datalist) return;
+
+  // Collect all unique groups currently present in the database
+  const uniqueGroups = [...new Set(books.map(b => b.reading_group || b.group).filter(Boolean))];
+
+  datalist.innerHTML = uniqueGroups
+    .map(group => `<option value="${group}"></option>`)
+    .join('');
+}
 
 // ── Service Worker ────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {

@@ -859,7 +859,7 @@
     <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 overflow-y-auto max-h-[90vh]"
          style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
       <div class="flex items-center justify-between">
-        <span class="text-lg font-bold" style="color: var(--text-primary)">Register Book</span>
+        <span class="text-lg font-bold" style="color: var(--text-primary)">Add Book</span>
         <button id="add-book-close" class="w-8 h-8 rounded-full flex items-center justify-center"
                 style="background: var(--bg-input); color: var(--text-secondary)">
           <i class="fa-solid fa-xmark text-sm"></i>
@@ -875,7 +875,9 @@
             <option value="Bahai">Bahá'í</option><option value="Non-Bahai">Non-Bahá'í</option>
           </select></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
-          <input type="text" class="input input-bordered glass-input w-full" id="ab-group" placeholder="e.g. Writings"></div>
+          <input type="text" class="input input-bordered glass-input w-full" id="ab-group" list="group-list" placeholder="e.g. Writings">
+          <datalist id="group-list"></datalist>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Total Pages *</span></label>
@@ -894,7 +896,7 @@
       <button id="add-book-save"
         class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
         style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
-        Register Book
+        Add Book
       </button>
     </div>
   </div>
