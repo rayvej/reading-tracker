@@ -1,15 +1,16 @@
 // ─── Reading Tracker — Service Worker ────────────────────────────────────────
 const CACHE_NAME = 'reading-tracker-v1';
+const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/firebase-config.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/seed-data.json'
+  BASE,
+  BASE + 'index.html',
+  BASE + 'style.css',
+  BASE + 'app.js',
+  BASE + 'firebase-config.js',
+  BASE + 'manifest.json',
+  BASE + 'icon-192.png',
+  BASE + 'icon-512.png',
+  BASE + 'seed-data.json'
 ];
 
 // ── Install: cache all static assets ─────────────────────────────────────────
