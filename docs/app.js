@@ -41,6 +41,7 @@ const gp     = new GoogleAuthProvider();
 // ── State ─────────────────────────────────────────────────────────────────────
 let uid        = null;
 let booksCache = [];          // all book docs { id, ...data }
+let wishlistCache = [];       // all wishlist items
 let goalsCache = {};
 let currentView       = 'log';
 let dashFilter        = 'all';

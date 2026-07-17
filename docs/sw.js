@@ -1,5 +1,5 @@
 // ─── Reading Tracker — Service Worker ────────────────────────────────────────
-const CACHE_NAME = 'reading-tracker-v7';
+const CACHE_NAME = 'reading-tracker-v8';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
