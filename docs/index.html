@@ -203,6 +203,39 @@
               </div>
             </div>
 
+            <!-- Zen Focus Mode -->
+            <div class="glass-panel p-4.5 rounded-2xl flex flex-col gap-4">
+              <div class="flex justify-between items-center">
+                <span class="section-label" style="color: var(--accent)"><i class="fa-solid fa-spa text-[10px]"></i> Zen Focus Mode</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-tertiary)">Mindful Reading</span>
+              </div>
+              
+              <div class="flex flex-col items-center justify-center py-4 relative">
+                <!-- Glowing Focus guide breathing indicator -->
+                <div id="zen-breathing-orb" class="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-400/40 flex items-center justify-center transition-all duration-1000">
+                  <i class="fa-solid fa-spa text-sky-400 text-xl"></i>
+                </div>
+                <div id="zen-stopwatch-display" class="text-3xl font-black mt-4 tracking-widest tabular-nums" style="color: var(--text-primary); font-variant-numeric: tabular-nums">00:00</div>
+              </div>
+
+              <!-- Ambient Audio controls -->
+              <div class="flex justify-between items-center border-t border-white/5 pt-3">
+                <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-secondary)">Ambient Sound</span>
+                <select id="zen-soundscape" class="select select-xs select-bordered glass-input rounded-xl text-xs" style="color: var(--text-primary)">
+                  <option value="">None (Silent)</option>
+                  <option value="rain">🌧️ Rain Shower</option>
+                  <option value="waves">🌊 Ocean Waves</option>
+                  <option value="forest">🌲 Forest Wind</option>
+                </select>
+              </div>
+
+              <!-- Start/End buttons -->
+              <div class="flex gap-2 justify-center mt-1">
+                <button id="btn-zen-start" class="px-5 py-2.5 rounded-2xl text-xs font-bold border border-sky-500/30 bg-sky-500/10 text-sky-400 active:scale-95 transition-all w-full">Start Focus</button>
+                <button id="btn-zen-stop" class="px-5 py-2.5 rounded-2xl text-xs font-bold border border-rose-500/30 bg-rose-500/10 text-rose-400 active:scale-95 transition-all w-full hidden">End Focus</button>
+              </div>
+            </div>
+
             <!-- Consistency Heatmap -->
             <div class="glass-panel p-4 flex flex-col gap-3">
               <div class="flex justify-between items-center">
@@ -401,6 +434,17 @@
                   <span class="text-xl font-extrabold tabular-nums" style="color: var(--text-primary)" id="stat-days-ytd-pct">—</span>
                   <span class="text-[9px]" style="color: var(--text-tertiary)">year to date</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Reading Intensity Grid (GitHub-style) -->
+            <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl">
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-tertiary)">Past Year</span>
+              </div>
+              <div id="heatmap-container" class="heatmap-grid no-scrollbar">
+                <!-- Rendered dynamically by JS -->
               </div>
             </div>
 

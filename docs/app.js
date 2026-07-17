@@ -255,6 +255,8 @@ async function initApp() {
   setupGoals();
   setupWishlist();
   setupLogDetailSheet();
+  setupZenMode();
+  setupHaptics();
   showView('dashboard'); // Start on Dashboard
   
   // 2. Load database content asynchronously in the background
@@ -401,7 +403,7 @@ function showView(name) {
 function setupLogForm() {
   $('log-date').value = todayISO();
 
-  $('log-book').addEventListener('change', async () => {
+  $('log-book').addEventListener('change', () => {
     const title = $('log-book').value;
     if (!title) {
       $('log-start').value = '';
@@ -410,28 +412,16 @@ function setupLogForm() {
       return;
     }
     
-    // Show loading state
-    $('log-start').value = '';
-    $('log-start-hint').textContent = 'Fetching reading status...';
-    $('log-start-hint').className = 'input-hint';
-
-    try {
-      const { cycle, startPage } = await determineActiveCycleAndPage(title);
-      $('log-start').value = startPage;
-      $('log-cycle').value = cycle;
-      
-      if (startPage > 0) {
-        $('log-start-hint').textContent = `↑ Auto-filled from last session (Cycle ${cycle})`;
-        $('log-start-hint').className = 'input-hint found';
-      } else {
-        $('log-start-hint').textContent = cycle > 1 ? `Starting Cycle ${cycle} fresh` : 'Starting fresh';
-        $('log-start-hint').className = 'input-hint';
-      }
-    } catch (e) {
-      console.error(e);
-      $('log-start').value = '0';
-      $('log-cycle').value = '1';
-      $('log-start-hint').textContent = 'Offline fallback loaded';
+    handleBookSelection(title, booksCache, logsCache);
+    
+    const startPage = parseInt($('log-start').value) || 0;
+    const cycle = parseInt($('log-cycle').value) || 1;
+    if (startPage > 0) {
+      $('log-start-hint').textContent = `↑ Auto-filled from last session (Cycle ${cycle})`;
+      $('log-start-hint').className = 'input-hint found';
+    } else {
+      $('log-start-hint').textContent = cycle > 1 ? `Starting Cycle ${cycle} fresh` : 'Starting fresh';
+      $('log-start-hint').className = 'input-hint';
     }
   });
 
@@ -1517,83 +1507,18 @@ function renderSparklineChart() {
   const wrap = $('chart-sparkline-wrap');
   if (!wrap) return;
 
-  const today = new Date();
-  const weeks = 12;
-  const labels = [];
-  const data = [];
-
-  for (let i = weeks - 1; i >= 0; i--) {
-    const wStart = new Date(today);
-    wStart.setDate(today.getDate() - i * 7 - today.getDay());
-    const wEnd = new Date(wStart);
-    wEnd.setDate(wStart.getDate() + 6);
-
-    const wStartISO = wStart.toISOString().slice(0, 10);
-    const wEndISO   = wEnd.toISOString().slice(0, 10);
-
-    const wPages = logsCache
-      .filter(l => l.date >= wStartISO && l.date <= wEndISO)
-      .reduce((sum, l) => sum + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-
-    labels.push(wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    data.push(wPages);
-  }
-
-  const W = 300, H = 80;
-  const maxVal = Math.max(...data, 1);
-  const padL = 4, padR = 4, padT = 8, padB = 20;
-  const plotW = W - padL - padR;
-  const plotH = H - padT - padB;
-
-  const pts = data.map((v, i) => [
-    padL + (i / (weeks - 1)) * plotW,
-    padT + plotH - (v / maxVal) * plotH
-  ]);
-
-  const isDark = !document.body.classList.contains('light-mode');
-  const lineColor = isDark ? '#818CF8' : '#5856D6';
-  const fillId = 'sparkGrad';
-
-  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', style: 'width:100%;height:80px' });
-
-  // Gradient fill
-  const defs = svgEl('defs');
-  const grad = svgEl('linearGradient', { id: fillId, x1: '0', y1: '0', x2: '0', y2: '1' });
-  const s1 = svgEl('stop', { offset: '0%', 'stop-color': lineColor, 'stop-opacity': '0.3' });
-  const s2 = svgEl('stop', { offset: '100%', 'stop-color': lineColor, 'stop-opacity': '0.02' });
-  grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
-
-  // Area fill path
-  const areaD = `M${pts[0][0]},${padT + plotH} L${pts.map(p => p.join(',')).join(' L')} L${pts[pts.length-1][0]},${padT + plotH} Z`;
-  svg.appendChild(svgEl('path', { d: areaD, fill: `url(#${fillId})` }));
-
-  // Line path (smooth)
-  const lineD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.join(',')).join(' ');
-  const linePth = svgEl('path', { d: lineD, fill: 'none', stroke: lineColor, 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  linePth.style.transition = 'stroke-dashoffset 1s ease';
-  svg.appendChild(linePth);
-
-  // Data point dots + labels
-  pts.forEach((p, i) => {
-    if (data[i] > 0) {
-      svg.appendChild(svgEl('circle', { cx: p[0], cy: p[1], r: 3, fill: lineColor }));
-    }
-    // Week label (every 3rd)
-    if (i % 3 === 0) {
-      const lbl = svgEl('text', {
-        x: p[0], y: H - 4, 'text-anchor': 'middle',
-        style: `font-size:7px;fill:${isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'};font-family:-apple-system,sans-serif`
-      });
-      lbl.textContent = labels[i];
-      svg.appendChild(lbl);
-    }
+  const selectedYear = $('dash-year-select').value;
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  
+  let yearLogs = selectedYear === 'all' ? activeLogs : activeLogs.filter(l => l.date.startsWith(selectedYear));
+  let filteredLogs = yearLogs.filter(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    return !book || dashFilter === 'all' || book.collection === dashFilter;
   });
 
-  wrap.innerHTML = '';
-  wrap.appendChild(svg);
+  renderChronologicalSparkline(filteredLogs, 'chart-sparkline-wrap');
 }
 
-// ── BAR CHART — pages by reading group ───────────────────────────────────────
 function renderBarChart() {
   const wrap = $('chart-bar-wrap');
   if (!wrap) return;
@@ -1601,7 +1526,7 @@ function renderBarChart() {
   // Aggregate by group
   const groupMap = {};
   booksCache.forEach(b => {
-    const g = b.reading_group || b.group || 'Other';
+    const g = normalizeGroup(b.reading_group || b.group);
     if (!groupMap[g]) groupMap[g] = 0;
     const comp = (b.read_count || 0) * (b.total_pages || 0);
     const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
@@ -1665,11 +1590,20 @@ function renderBarChart() {
   wrap.appendChild(svg);
 }
 
-// Stub kept for compatibility — calls the three SVG renderers
 function renderCharts() {
+  const selectedYear = $('dash-year-select').value;
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  
+  let yearLogs = selectedYear === 'all' ? activeLogs : activeLogs.filter(l => l.date.startsWith(selectedYear));
+  let filteredActiveLogs = yearLogs.filter(l => {
+    const book = booksCache.find(b => b.title === l.book_title);
+    return !book || dashFilter === 'all' || book.collection === dashFilter;
+  });
+
   renderDonutChart();
   renderSparklineChart();
   renderBarChart();
+  renderActivityHeatmap(filteredActiveLogs);
 }
 
 
@@ -2194,6 +2128,300 @@ async function addWishlistItem() {
   renderWishlist();
 }
 
+
+
+
+// =========================================================================
+// ELITE FEATURES: TACTILE HAPTICS EMULATION
+// =========================================================================
+const Haptics = {
+  click: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  },
+  success: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([15, 30, 15]);
+    }
+  },
+  nudge: () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(25);
+    }
+  }
+};
+
+function setupHaptics() {
+  document.addEventListener('click', e => {
+    const el = e.target.closest('.tab-item, button, .seg-btn, .heatmap-cell, .heatmap-day');
+    if (el) {
+      Haptics.click();
+    }
+  });
+}
+
+// =========================================================================
+// ELITE FEATURES: "ZEN MODE" STOPWATCH & WAKE LOCK MANAGER
+// =========================================================================
+let focusTimer = null;
+let focusSeconds = 0;
+let screenWakeLock = null;
+
+const SoundscapeUrls = {
+  rain: 'https://www.soundjay.com/nature/sounds/rain-07.mp3',
+  waves: 'https://www.soundjay.com/nature/sounds/ocean-wave-1.mp3',
+  forest: 'https://www.soundjay.com/nature/sounds/river-1.mp3'
+};
+
+const Soundscapes = {
+  player: new Audio(),
+  play: (url) => {
+    Soundscapes.player.src = url;
+    Soundscapes.player.loop = true;
+    Soundscapes.player.play().catch(e => console.log("User interaction required for audio playback: ", e));
+  },
+  stop: () => {
+    Soundscapes.player.pause();
+  }
+};
+
+async function enableWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      screenWakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (err) {
+    console.warn("Screen Wake Lock not supported or rejected: ", err.message);
+  }
+}
+
+function disableWakeLock() {
+  if (screenWakeLock !== null) {
+    screenWakeLock.release();
+    screenWakeLock = null;
+  }
+}
+
+function startZenFocus() {
+  Haptics.success();
+  enableWakeLock();
+  focusSeconds = 0;
+  
+  document.getElementById('zen-breathing-orb').classList.add('breathing-orb');
+  
+  focusTimer = setInterval(() => {
+    focusSeconds++;
+    const mins = Math.floor(focusSeconds / 60).toString().padStart(2, '0');
+    const secs = (focusSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('zen-stopwatch-display').innerText = `${mins}:${secs}`;
+  }, 1000);
+}
+
+function stopZenFocus() {
+  clearInterval(focusTimer);
+  focusTimer = null;
+  disableWakeLock();
+  Soundscapes.stop();
+  document.getElementById('zen-breathing-orb').classList.remove('breathing-orb');
+  
+  const minutesSpent = Math.max(1, Math.round(focusSeconds / 60));
+  document.getElementById('log-minutes').value = minutesSpent;
+}
+
+function setupZenMode() {
+  const startBtn = $('btn-zen-start');
+  const stopBtn = $('btn-zen-stop');
+  const soundSelect = $('zen-soundscape');
+  
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      startZenFocus();
+      startBtn.classList.add('hidden');
+      stopBtn.classList.remove('hidden');
+    });
+  }
+  
+  if (stopBtn) {
+    stopBtn.addEventListener('click', () => {
+      stopZenFocus();
+      stopBtn.classList.add('hidden');
+      startBtn.classList.remove('hidden');
+    });
+  }
+  
+  if (soundSelect) {
+    soundSelect.addEventListener('change', () => {
+      if (focusTimer) {
+        const sound = soundSelect.value;
+        if (sound && SoundscapeUrls[sound]) {
+          Soundscapes.play(SoundscapeUrls[sound]);
+        } else {
+          Soundscapes.stop();
+        }
+      }
+    });
+  }
+}
+
+// =========================================================================
+// PAGES OVER TIME GRAPH CHRONOLOGICAL & BEZIER FIX
+// =========================================================================
+function renderChronologicalSparkline(logs, containerId) {
+  if (!logs || logs.length === 0) return;
+
+  const sortedLogs = [...logs].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const aggregated = {};
+  sortedLogs.forEach(log => {
+    const dateStr = log.date;
+    const pages = parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
+    aggregated[dateStr] = (aggregated[dateStr] || 0) + pages;
+  });
+
+  const dataPoints = [];
+  const today = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400000);
+    const dStr = d.toISOString().split('T')[0];
+    dataPoints.push(aggregated[dStr] || 0);
+  }
+
+  const width = 500;
+  const height = 150;
+  const padding = 20;
+  const maxVal = Math.max(...dataPoints, 10);
+
+  const coords = dataPoints.map((val, index) => {
+    const x = padding + (index / (dataPoints.length - 1)) * (width - 2 * padding);
+    const y = height - padding - (val / maxVal) * (height - 2 * padding);
+    return { x, y };
+  });
+
+  let dPath = `M ${coords[0].x} ${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[i];
+    const p1 = coords[i + 1];
+    const cpX1 = p0.x + (p1.x - p0.x) / 2;
+    const cpY1 = p0.y;
+    const cpX2 = p0.x + (p1.x - p0.x) / 2;
+    const cpY2 = p1.y;
+    dPath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
+  }
+
+  const svgContainer = document.getElementById(containerId);
+  if (!svgContainer) return;
+
+  const isDark = !document.body.classList.contains('light-mode');
+  const accentColor = isDark ? '#38BDF8' : '#0A84FF';
+  const bgColor = isDark ? '#090A0F' : '#F2F2F7';
+
+  svgContainer.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" class="w-full h-full">
+      <defs>
+        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="${accentColor}" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+      <path d="${dPath} L ${coords[coords.length-1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z" fill="url(#chartGrad)" />
+      <path d="${dPath}" fill="none" stroke="${accentColor}" stroke-width="3" stroke-linecap="round" />
+      ${coords.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="${bgColor}" stroke="${accentColor}" stroke-width="2"/>`).join('')}
+    </svg>
+  `;
+}
+
+// =========================================================================
+// ROBUST CATEGORY NORMALIZER (Fixes "Other" graph bug)
+// =========================================================================
+function normalizeGroup(groupName) {
+  if (!groupName) return 'Other';
+  
+  const clean = groupName.toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+  
+  if (clean.includes('writing') || clean.includes('aqdas')) return 'Writings';
+  if (clean.includes('aboutthefaith') || clean.includes('about')) return 'About the Faith';
+  if (clean.includes('compilation')) return 'Compilations';
+  if (clean.includes('fiction') && !clean.includes('non')) return 'Fiction';
+  if (clean.includes('nonfiction')) return 'Non-Fiction';
+  
+  return 'Other';
+}
+
+// =========================================================================
+// GITHUB-STYLE INTENSITY HEATMAP MATRIX
+// =========================================================================
+function renderActivityHeatmap(logs) {
+  const container = document.getElementById('heatmap-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  const activityMap = {};
+  logs.forEach(log => {
+    const dStr = log.date;
+    activityMap[dStr] = (activityMap[dStr] || 0) + parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
+  });
+  
+  const today = new Date();
+  const yearAgo = new Date();
+  yearAgo.setDate(today.getDate() - 364);
+  
+  const isDark = !document.body.classList.contains('light-mode');
+  const glowClass = isDark ? 'bg-sky-500' : 'bg-blue-600';
+  const baseColorClass = isDark ? 'bg-white/5' : 'bg-black/5';
+  
+  for (let i = 0; i < 365; i++) {
+    const activeDate = new Date(yearAgo);
+    activeDate.setDate(yearAgo.getDate() + i);
+    const dateStr = activeDate.toISOString().split('T')[0];
+    
+    const pagesRead = activityMap[dateStr] || 0;
+    let opacity = 1.0;
+    let colorClass = baseColorClass;
+    
+    if (pagesRead > 0) {
+      colorClass = glowClass;
+      opacity = Math.min(0.2 + (pagesRead / 100) * 0.8, 1.0);
+    }
+    
+    const block = document.createElement('div');
+    block.className = `heatmap-day ${colorClass}`;
+    block.style.opacity = opacity;
+    block.setAttribute('title', `${dateStr}: ${pagesRead} pages read`);
+    container.appendChild(block);
+  }
+}
+
+// =========================================================================
+// SMART FORM CYCLE & PROGRESS CALCULATIONS
+// =========================================================================
+function handleBookSelection(selectedBookTitle, books, logs) {
+  const book = books.find(b => b.title === selectedBookTitle);
+  if (!book) return;
+  
+  const bookLogs = logs.filter(l => l.book_title === selectedBookTitle);
+  let currentCycle = 1;
+  let startPage = 0;
+  
+  if (bookLogs.length > 0) {
+    bookLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+    
+    const lastLog = bookLogs[bookLogs.length - 1];
+    currentCycle = parseInt(lastLog.read_cycle || 1, 10);
+    startPage = parseInt(lastLog.end_page || 0, 10);
+    
+    if (startPage >= parseInt(book.total_pages || 0, 10)) {
+      currentCycle += 1;
+      startPage = 0;
+    }
+  }
+  
+  document.getElementById('log-start').value = startPage;
+  document.getElementById('log-cycle').value = currentCycle;
+}
 
 
 // ── Service Worker ────────────────────────────────────────────────────────────
