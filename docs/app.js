@@ -26,6 +26,8 @@ import { initializeFirestore, getFirestore, persistentLocalCache,
          serverTimestamp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { firebaseConfig }                          from './firebase-config.js';
 
+window.categoryChartMode = 'pages';
+
 // ── Firebase Init ─────────────────────────────────────────────────────────────
 const fbApp  = initializeApp(firebaseConfig);
 const auth   = getAuth(fbApp);
@@ -48,7 +50,7 @@ let currentView       = 'dashboard'; // Start on dashboard as default premium sc
 let dashFilter        = 'all';
 let dashYearFilter    = 'all';
 let wishlistFilter    = 'all';
-let categoryChartMode = 'pages';
+let categoryChartMode = window.categoryChartMode || 'pages';
 let librarySearchTerm = '';
 let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';

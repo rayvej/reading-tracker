@@ -1,5 +1,5 @@
 // ─── Reading Tracker — Service Worker ────────────────────────────────────────
-const CACHE_NAME = 'reading-tracker-v17';
+const CACHE_NAME = 'reading-tracker-v18';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
@@ -13,10 +13,21 @@ const STATIC_ASSETS = [
   BASE + 'seed-data.json'
 ];
 
-// ── Install: cache all static assets ─────────────────────────────────────────
+// ── Install: cache all static assets (bypass HTTP cache) ─────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(cache => {
+      return Promise.all(
+        STATIC_ASSETS.map(url => {
+          return fetch(url, { cache: 'reload' }).then(response => {
+            if (!response.ok) {
+              throw new Error(`Request for ${url} failed with status ${response.status}`);
+            }
+            return cache.put(url, response);
+          });
+        })
+      );
+    })
   );
   self.skipWaiting();
 });
