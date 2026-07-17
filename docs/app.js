@@ -18,7 +18,7 @@ import { initializeApp }                           from 'https://www.gstatic.com
 import { getAuth, GoogleAuthProvider, signInWithPopup,
          signInWithRedirect, getRedirectResult,
          signOut, onAuthStateChanged }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache,
+import { initializeFirestore, getFirestore, persistentLocalCache,
          collection, doc, addDoc, setDoc, getDoc,
          getDocs, updateDoc, deleteDoc,
          query, where, orderBy, limit,
@@ -29,7 +29,13 @@ import { firebaseConfig }                          from './firebase-config.js';
 // ── Firebase Init ─────────────────────────────────────────────────────────────
 const fbApp  = initializeApp(firebaseConfig);
 const auth   = getAuth(fbApp);
-const db     = initializeFirestore(fbApp, { localCache: persistentLocalCache() });
+let db;
+try {
+  db = initializeFirestore(fbApp, { localCache: persistentLocalCache() });
+} catch (e) {
+  console.warn("Firestore offline cache disabled (Safari private browsing or other restriction):", e);
+  db = getFirestore(fbApp);
+}
 const gp     = new GoogleAuthProvider();
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -195,13 +201,20 @@ async function verifyPin(pin) {
 // ── Seed Import ───────────────────────────────────────────────────────────────
 async function initApp() {
   showScreen('app');
-  // Check if books already exist
-  const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
-  if (booksSnap.empty) {
-    await runSeedImport();
+  try {
+    // Check if books already exist
+    const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
+    if (booksSnap.empty) {
+      await runSeedImport();
+    }
+    await loadBooksCache();
+    populateBookDropdown();
+  } catch (e) {
+    console.error("Failed to load library database:", e);
+    showToast("Connection offline or restricted. Loading UI...", "error");
   }
-  await loadBooksCache();
-  populateBookDropdown();
+  
+  // Initialize navigation and forms even if database query failed
   setupNav();
   setupLogForm();
   setupDashboard();

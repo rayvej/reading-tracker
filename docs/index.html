@@ -36,6 +36,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen overflow-hidden relative selection:bg-gold/30 selection:text-white">
+  
+  <!-- Global Error Logger for diagnostics -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      alert("CRITICAL ERROR:\n" + msg + "\n\nFile: " + url + "\nLine: " + line + ":" + col);
+      return false;
+    };
+    window.onunhandledrejection = function(event) {
+      alert("UNHANDLED REJECTION:\n" + event.reason);
+    };
+  </script>
 
   <!-- ── Ambient Background Glow Blobs ────────────────────────────── -->
   <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
