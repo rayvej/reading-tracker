@@ -114,8 +114,11 @@
       </div>
     </div>
 
-    <!-- ── Viewport Header ───────────────────────────────────────────── -->
-    <header class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-950/30 backdrop-blur-md relative z-30 shrink-0">
+    <!-- ── Main App Content Wrapper ── -->
+    <div id="app" class="hidden flex-1 flex flex-col overflow-hidden">
+
+      <!-- ── Viewport Header ───────────────────────────────────────────── -->
+      <header class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-950/30 backdrop-blur-md relative z-30 shrink-0">
       <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-goldlight to-gold bg-clip-text text-transparent flex items-center gap-2">
         <span>📖</span> Reading Tracker
       </h1>
@@ -364,7 +367,9 @@
       </button>
     </nav>
 
-  </div>
+    </div> <!-- Close #app -->
+
+  </div> <!-- Close outer container -->
 
   <!-- ── Floating Action Button (Wishlist View Only) ──────────────── -->
   <button class="fixed bottom-24 right-6 btn btn-circle bg-gold hover:bg-goldlight border-none text-slate-950 text-2xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover:scale-108 active:scale-95 transition-all duration-200 z-50 hidden" id="wishlist-fab" aria-label="Add book to wishlist">＋</button>
