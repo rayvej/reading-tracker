@@ -699,6 +699,23 @@ function setupDashboard() {
     dashYearFilter = e.target.value;
     renderDashboard();
   });
+
+  // Category toggle (Pages vs Books)
+  const catToggle = document.getElementById('cat-chart-toggle');
+  if (catToggle) {
+    catToggle.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryChartMode = btn.dataset.mode;
+        catToggle.querySelectorAll('button').forEach(b => {
+          const isActive = b.dataset.mode === categoryChartMode;
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('bg-white/10', isActive);
+          b.classList.toggle('text-slate-400', !isActive);
+        });
+        renderBarChart(); // Re-render Category pie chart
+      });
+    });
+  }
 }
 
 async function renderDashboard() {
@@ -1172,6 +1189,9 @@ async function renderGoals() {
   $('ring-books-lbl').textContent = `/ ${aBT} bks`;
   $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pgs`;
 
+  // Render Books Read per Year Bar Chart above tables
+  renderBooksPerYearChart(completions, 'chart-books-year-wrap');
+
   // 1. Targets & Completions Table
   const progressStr = (cur, target) => {
     const pct = target > 0 ? Math.round((cur / target) * 100) : 0;
@@ -1547,7 +1567,6 @@ function renderCharts() {
   });
 
   renderDonutChart();
-  renderSparklineChart();
   renderBarChart();
   renderActivityHeatmap(filteredActiveLogs);
 }
@@ -2083,6 +2102,7 @@ async function addWishlistItem() {
 
 
 
+
 // =========================================================================
 // ELITE FEATURES: TACTILE HAPTICS EMULATION
 // =========================================================================
@@ -2117,95 +2137,115 @@ function setupHaptics() {
 // 12-WEEK CHRONOLOGICAL GRAPH OVERHAUL (TimeZone & Gap Fixed)
 // =========================================================================
 function renderChronologicalSparkline(logs, containerId) {
-  const svgContainer = document.getElementById(containerId);
-  if (!svgContainer) return;
-
-  const width = 500;
-  const height = 150;
-  const padding = 20;
-
-  // 1. Calculate the start/end dates for the last 12 contiguous 7-day weeks ending today
-  const today = new Date();
-  today.setHours(23, 59, 59, 999); // end of today in local time
-
-  const weeks = [];
-  for (let i = 11; i >= 0; i--) {
-    const bucketEnd = new Date(today.getTime() - (i * 7 * 86400000));
-    const bucketStart = new Date(bucketEnd.getTime() - (7 * 86400000) + 1);
-    weeks.push({
-      start: bucketStart,
-      end: bucketEnd,
-      pages: 0
-    });
-  }
-
-  // 2. Aggregate logs into their respective weekly buckets using local timezone parsing
-  logs.forEach(log => {
-    const parts = log.date.split('-');
-    if (parts.length !== 3) return;
-    
-    // Midday local time to prevent DST shifting issues
-    const logDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-    const pages = parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
-    
-    for (let i = 0; i < 12; i++) {
-      if (logDate >= weeks[i].start && logDate <= weeks[i].end) {
-        weeks[i].pages += pages;
-        break;
-      }
-    }
-  });
-
-  const dataPoints = weeks.map(w => w.pages);
-  const maxVal = Math.max(...dataPoints, 10); // Prevent divide-by-zero
-
-  // 3. Map Coordinates
-  const coords = dataPoints.map((val, index) => {
-    const x = padding + (index / 11) * (width - 2 * padding);
-    const y = height - padding - (val / maxVal) * (height - 2 * padding);
-    return { x, y };
-  });
-
-  // 4. Draw smooth cubic Bezier curve paths
-  let dPath = `M ${coords[0].x} ${coords[0].y}`;
-  for (let i = 0; i < coords.length - 1; i++) {
-    const p0 = coords[i];
-    const p1 = coords[i + 1];
-    const cpX1 = p0.x + (p1.x - p0.x) / 2;
-    const cpY1 = p0.y;
-    const cpX2 = p0.x + (p1.x - p0.x) / 2;
-    const cpY2 = p1.y;
-    dPath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
-  }
-
-  const isDark = !document.body.classList.contains('light-mode');
-  const accentColor = isDark ? '#38BDF8' : '#0A84FF';
-  const bgColor = isDark ? '#111217' : '#FFFFFF';
-
-  svgContainer.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" class="w-full h-full">
-      <defs>
-        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="${accentColor}" stop-opacity="0.0"/>
-        </linearGradient>
-      </defs>
-      <!-- Area curve gradient -->
-      <path d="&dPath L ${coords[coords.length-1].x} ${height - padding} L ${coords[0].x} ${height - padding} Z".replace('&dPath', dPath) fill="url(#chartGrad)" />
-      <!-- Top stroke contour -->
-      <path d="${dPath}" fill="none" stroke="${accentColor}" stroke-width="3" stroke-linecap="round" />
-      <!-- Chronological node markers -->
-      ${coords.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="4" fill="${bgColor}" stroke="${accentColor}" stroke-width="2"/>`).join('')}
-    </svg>
-  `;
+  // Deprecated/removed from Dashboard layout
 }
 
 // =========================================================================
-// SECTION 3: BY CATEGORY PIE CHART RENDERER (Replacing Bar Chart)
+// BOOKS READ PER YEAR BAR CHART RENDERER (Goals View)
+// =========================================================================
+function renderBooksPerYearChart(completions, containerId) {
+  const svgContainer = document.getElementById(containerId);
+  if (!svgContainer) return;
+  svgContainer.innerHTML = '';
+
+  const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
+
+  const yearCounts = {};
+  filteredCompletions.forEach(c => {
+    const year = c.date.slice(0, 4);
+    if (year && year.length === 4) {
+      yearCounts[year] = (yearCounts[year] || 0) + 1;
+    }
+  });
+
+  const years = Object.keys(yearCounts).sort();
+  if (years.length === 0) {
+    svgContainer.innerHTML = `<div class="text-center py-6 text-xs text-neutral-400">No completed books found</div>`;
+    return;
+  }
+
+  const width = 500;
+  const height = 150;
+  const paddingLeft = 35;
+  const paddingRight = 15;
+  const paddingTop = 20;
+  const paddingBottom = 25;
+
+  const maxVal = Math.max(...Object.values(yearCounts), 5);
+
+  const plotWidth = width - paddingLeft - paddingRight;
+  const plotHeight = height - paddingTop - paddingBottom;
+
+  const barWidth = Math.min(45, (plotWidth / years.length) * 0.6);
+  const gap = (plotWidth - (barWidth * years.length)) / (years.length > 1 ? years.length - 1 : 1);
+
+  const isDark = !document.body.classList.contains('light-mode');
+  const labelColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+  const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, class: 'w-full h-full', style: 'display:block' });
+
+  const yTicks = [0, Math.round(maxVal / 2), maxVal];
+  yTicks.forEach(tick => {
+    const y = paddingTop + plotHeight - (tick / maxVal) * plotHeight;
+    svg.appendChild(svgEl('line', {
+      x1: paddingLeft, y1: y,
+      x2: width - paddingRight, y2: y,
+      stroke: gridColor,
+      'stroke-width': '1',
+      'stroke-dasharray': '3 3'
+    }));
+    const text = svgEl('text', {
+      x: paddingLeft - 8, y: y + 3,
+      'text-anchor': 'end',
+      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: -apple-system, sans-serif`
+    });
+    text.textContent = tick;
+    svg.appendChild(text);
+  });
+
+  years.forEach((year, index) => {
+    const val = yearCounts[year];
+    const barH = (val / maxVal) * plotHeight;
+    const x = paddingLeft + index * (barWidth + (years.length > 1 ? gap : 0));
+    const y = paddingTop + plotHeight - barH;
+
+    const rect = svgEl('rect', {
+      x: x, y: y,
+      width: barWidth, height: Math.max(2, barH),
+      rx: '4', ry: '4',
+      fill: 'var(--accent)',
+      class: 'transition-all duration-300 hover:opacity-80'
+    });
+    svg.appendChild(rect);
+
+    const valText = svgEl('text', {
+      x: x + barWidth / 2, y: y - 5,
+      'text-anchor': 'middle',
+      style: `font-size: 8px; font-weight: 800; fill: var(--text-primary); font-family: -apple-system, sans-serif`
+    });
+    valText.textContent = val;
+    svg.appendChild(valText);
+
+    const yearText = svgEl('text', {
+      x: x + barWidth / 2, y: height - 8,
+      'text-anchor': 'middle',
+      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: -apple-system, sans-serif`
+    });
+    yearText.textContent = year;
+    svg.appendChild(yearText);
+  });
+
+  svgContainer.appendChild(svg);
+}
+
+// =========================================================================
+// SECTION 3: BY CATEGORY PIE CHART RENDERER (Namespace & Toggle Fixed)
 // =========================================================================
 function renderCategoryPieChart(books, containerId) {
   const svgContainer = document.getElementById(containerId);
   if (!svgContainer) return;
+  svgContainer.innerHTML = '';
 
   const counts = {
     'Writings': 0,
@@ -2219,10 +2259,18 @@ function renderCategoryPieChart(books, containerId) {
   books.forEach(book => {
     const groupVal = book.group || book.group_name || book.reading_group || book.category || 'Other';
     const normalized = normalizeGroup(groupVal);
-    if (counts[normalized] !== undefined) {
-      counts[normalized]++;
+    
+    let val = 0;
+    if (categoryChartMode === 'pages') {
+      val = book.pages_read || ((book.status === 'Finished') ? (book.total_pages * (book.read_count || 1)) : 0);
     } else {
-      counts['Other']++;
+      val = 1;
+    }
+    
+    if (counts[normalized] !== undefined) {
+      counts[normalized] += val;
+    } else {
+      counts['Other'] += val;
     }
   });
 
@@ -2243,7 +2291,16 @@ function renderCategoryPieChart(books, containerId) {
 
   const circumference = 2 * Math.PI * 35; // r=35 -> ~219.91
   let cumulativePercent = 0;
-  let svgCircles = '';
+
+  const chartFlex = el('div', 'flex flex-col sm:flex-row items-center justify-around gap-4 py-2');
+  const svgWrapper = el('div', 'relative w-36 h-36 shrink-0');
+  
+  const isDark = !document.body.classList.contains('light-mode');
+  const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+
+  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full transform -scale-x-100', style: 'display:block' });
+  svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '35', fill: 'none', stroke: trackColor, 'stroke-width': '10' }));
+
   let legendItems = '';
 
   Object.keys(counts).forEach(cat => {
@@ -2254,47 +2311,49 @@ function renderCategoryPieChart(books, containerId) {
     const strokeLength = percent * circumference;
     const strokeOffset = -cumulativePercent * circumference;
 
-    svgCircles += `
-      <circle cx="50" cy="50" r="35" 
-        fill="transparent" 
-        stroke="${colors[cat]}" 
-        stroke-width="10" 
-        stroke-dasharray="${strokeLength} ${circumference}" 
-        stroke-dashoffset="${strokeOffset}"
-        transform="rotate(-90 50 50)"
-        class="transition-all duration-300 hover:opacity-80"
-        style="transform-origin: center;"
-      />
-    `;
+    const segment = svgEl('circle', {
+      cx: '50', cy: '50', r: '35',
+      fill: 'none',
+      stroke: colors[cat],
+      'stroke-width': '10',
+      'stroke-dasharray': `${strokeLength} ${circumference}`,
+      'stroke-dashoffset': strokeOffset,
+      transform: 'rotate(-90 50 50)',
+      class: 'transition-all duration-300 hover:opacity-80'
+    });
+    segment.style.transformOrigin = 'center';
+    svg.appendChild(segment);
 
+    const valLabel = categoryChartMode === 'pages' ? `${fmtNum(count)} pg` : `(${count})`;
     legendItems += `
       <div class="flex items-center gap-2 text-xs">
         <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
         <span class="font-medium text-neutral-300 truncate max-w-[100px]">${cat}</span>
-        <span class="text-neutral-500 text-[10px] ml-auto">(${count})</span>
+        <span class="text-neutral-500 text-[10px] ml-auto">${valLabel}</span>
       </div>
     `;
 
     cumulativePercent += percent;
   });
 
-  svgContainer.innerHTML = `
-    <div class="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
-      <div class="relative w-36 h-36 shrink-0">
-        <svg viewBox="0 0 100 100" class="w-full h-full transform -scale-x-100">
-          <circle cx="50" cy="50" r="35" fill="transparent" stroke="var(--border-color)" stroke-width="10" />
-          ${svgCircles}
-        </svg>
-        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span class="text-xl font-extrabold text-white">${total}</span>
-          <span class="text-[9px] uppercase tracking-wider text-neutral-400">Books</span>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]">
-        ${legendItems}
-      </div>
-    </div>
-  `;
+  svgWrapper.appendChild(svg);
+
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
+  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
+  overlayTotal.textContent = fmtNum(total);
+  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
+  overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
+  
+  centerOverlay.appendChild(overlayTotal);
+  centerOverlay.appendChild(overlayLabel);
+  svgWrapper.appendChild(centerOverlay);
+  chartFlex.appendChild(svgWrapper);
+
+  const legendGrid = el('div', 'grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]');
+  legendGrid.innerHTML = legendItems;
+  chartFlex.appendChild(legendGrid);
+
+  svgContainer.appendChild(chartFlex);
 }
 
 // =========================================================================
@@ -2302,8 +2361,6 @@ function renderCategoryPieChart(books, containerId) {
 // =========================================================================
 function evaluateBookReadingProgress(book, logs) {
   if (book.status === 'In Progress') {
-    // If the book status is already In Progress (e.g. started via Re-Read button), preserve it!
-    // But check if we actually finished it in this cycle!
     const bookLogs = logs.filter(l => l.book_title === book.title);
     if (bookLogs.length > 0) {
       bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -2326,14 +2383,11 @@ function evaluateBookReadingProgress(book, logs) {
     return 'Not Started';
   }
 
-  // 1. Sort logs chronologically to get cycles in order
   bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // 2. Identify the highest current read_cycle
   const activeCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
   const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
 
-  // 3. Evaluate progress inside the active cycle
   const latestLog = cycleLogs[cycleLogs.length - 1];
   const endPage = parseInt(latestLog.end_page || 0, 10);
   const totalPages = parseInt(book.total_pages || 0, 10);
@@ -2362,7 +2416,7 @@ function toggleCustomGroupInput(val) {
 }
 
 // =========================================================================
-// SECTION 6: GITHUB-STYLE INTENSITY HEATMAP MATRIX
+// SECTION 6: GITHUB-STYLE INTENSITY HEATMAP MATRIX (Interactive Tooltips & HSL Colors)
 // =========================================================================
 function renderActivityHeatmap(logs) {
   const container = document.getElementById('heatmap-container');
@@ -2381,8 +2435,6 @@ function renderActivityHeatmap(logs) {
   yearAgo.setDate(today.getDate() - 364);
   
   const isDark = !document.body.classList.contains('light-mode');
-  const glowClass = isDark ? 'bg-sky-500' : 'bg-blue-600';
-  const baseColorClass = isDark ? 'bg-white/5' : 'bg-black/5';
   
   for (let i = 0; i < 365; i++) {
     const activeDate = new Date(yearAgo);
@@ -2390,18 +2442,33 @@ function renderActivityHeatmap(logs) {
     const dateStr = activeDate.toISOString().split('T')[0];
     
     const pagesRead = activityMap[dateStr] || 0;
-    let opacity = 1.0;
-    let colorClass = baseColorClass;
-    
-    if (pagesRead > 0) {
-      colorClass = glowClass;
-      opacity = Math.min(0.2 + (pagesRead / 100) * 0.8, 1.0);
-    }
     
     const block = document.createElement('div');
-    block.className = `heatmap-day ${colorClass}`;
-    block.style.opacity = opacity;
-    block.setAttribute('title', `${dateStr}: ${pagesRead} pages read`);
+    block.className = 'heatmap-day';
+    
+    if (pagesRead > 0) {
+      // HSL color range: Sky Blue Hue (200), varying lightness based on page read count
+      const lightness = isDark 
+        ? Math.max(40, 75 - (pagesRead / 80) * 35) 
+        : Math.max(30, 85 - (pagesRead / 80) * 55);
+      block.style.backgroundColor = `hsla(200, 85%, ${lightness}%, 1)`;
+      // Small premium ring/shadow for very high reading days (>40 pages)
+      if (pagesRead > 40) {
+        block.style.boxShadow = `0 0 4px hsla(200, 85%, ${lightness}%, 0.6)`;
+      }
+    } else {
+      block.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)';
+    }
+    
+    const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    block.setAttribute('title', `${dateFormatted}: ${pagesRead} pages read`);
+    
+    // Add interactive click tooltip & vibration haptic
+    block.addEventListener('click', () => {
+      Haptics.click();
+      showToast(`${dateFormatted}: ${pagesRead} page${pagesRead === 1 ? '' : 's'} read`);
+    });
+    
     container.appendChild(block);
   }
 }
