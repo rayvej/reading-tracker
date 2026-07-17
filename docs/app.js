@@ -1853,35 +1853,6 @@ function openLogDetailModal(l) {
   $('log-detail-modal').classList.add('open');
 }
 
-function goalRows(rows) {
-  return rows.map(([label, val]) =>
-    `<div class="flex justify-between items-center py-3 text-sm"><span class="text-slate-400 font-medium">${label}</span><span class="text-slate-200 font-semibold">${val}</span></div>`
-  ).join('');
-}
-
-function openGoalsModal() {
-  $('goal-annual-books').value  = goalsCache.annual_books_target  || 12;
-  $('goal-annual-pages').value  = goalsCache.annual_pages_target  || 3000;
-  $('goal-monthly-books').value = goalsCache.monthly_books_target || 1;
-  $('goal-monthly-pages').value = goalsCache.monthly_pages_target || 300;
-  $('goals-modal').classList.add('open');
-}
-function closeGoalsModal() { $('goals-modal').classList.remove('open'); }
-
-async function saveGoals() {
-  const data = {
-    annual_books_target:  parseInt($('goal-annual-books').value)  || 12,
-    annual_pages_target:  parseInt($('goal-annual-pages').value)  || 3000,
-    monthly_books_target: parseInt($('goal-monthly-books').value) || 1,
-    monthly_pages_target: parseInt($('goal-monthly-pages').value) || 300,
-  };
-  await setDoc(doc(db, `users/${uid}/goals/config`), data, { merge: true });
-  goalsCache = data;
-  closeGoalsModal();
-  showToast('Goals updated ✓', 'success');
-  renderGoals();
-}
-
 function setupWishlist() {
   // Filter chips
   $('wishlist-filters').addEventListener('click', e => {
