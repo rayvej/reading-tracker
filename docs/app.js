@@ -1,4 +1,18 @@
 // ─── Reading Tracker — app.js ────────────────────────────────────────────────
+// Global Error Handler for debugging
+window.addEventListener('error', e => {
+  const errDiv = document.createElement('div');
+  errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
+  errDiv.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`;
+  document.body.appendChild(errDiv);
+});
+window.addEventListener('unhandledrejection', e => {
+  const errDiv = document.createElement('div');
+  errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
+  errDiv.textContent = `Promise Reject: ${e.reason}`;
+  document.body.appendChild(errDiv);
+});
+
 // Firebase v10 modular SDK via CDN
 import { initializeApp }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup,
