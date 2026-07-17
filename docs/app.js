@@ -647,86 +647,139 @@ async function renderDashboard() {
   
   const selectedYear = $('dash-year-select').value;
   
+  // Filter active logs (actual logs from user, excluding synthesized historical completions)
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  
   // Filter logs by selected year
   let filteredLogs = logsCache;
+  let filteredActiveLogs = activeLogs;
   if (selectedYear !== 'all') {
     filteredLogs = logsCache.filter(l => l.date.startsWith(selectedYear));
+    filteredActiveLogs = activeLogs.filter(l => l.date.startsWith(selectedYear));
   }
   
   // Filter books by category tab
   const books = dashFilter === 'all' ? booksCache : booksCache.filter(b => b.collection === dashFilter);
   
-  // ── 1. Overall Summary ─────────────────────────────────────────
-  // Total Reads (Completed books/cycles in the selected year, or all-time)
-  let completions = 0;
+  // Build a precise list of completions (both historical and logged)
+  const completions = [];
+  const logsByBookCycle = {};
   logsCache.forEach(l => {
-    const book = booksCache.find(b => b.title === l.book_title);
-    if (book && l.end_page >= book.total_pages) {
-      const year = l.date.slice(0, 4);
-      if (selectedYear === 'all' || year === selectedYear) {
-        completions++;
+    const key = `${l.book_title}-${l.read_cycle || 1}`;
+    if (!logsByBookCycle[key]) logsByBookCycle[key] = [];
+    logsByBookCycle[key].push(l);
+  });
+
+  Object.keys(logsByBookCycle).forEach(key => {
+    const parts = key.split('-');
+    const title = parts.slice(0, -1).join('-');
+    const cycle = parseInt(parts[parts.length - 1]);
+    const book = booksCache.find(b => b.title === title);
+    if (book) {
+      const tot = book.total_pages;
+      const cycleLogs = logsByBookCycle[key];
+      const compLogs = cycleLogs.filter(l => l.end_page >= tot);
+      if (compLogs.length > 0) {
+        compLogs.sort((a,b) => a.date.localeCompare(b.date));
+        completions.push({
+          title,
+          cycle,
+          date: compLogs[0].date,
+          pages: tot,
+          collection: book.collection
+        });
       }
     }
   });
 
-  // Avg pages/book
-  const finished = books.filter(b => b.status === 'Finished');
-  const finishedPagesSum = finished.reduce((s, b) => s + (b.total_pages || 0), 0);
-  const avgPagesPerBook = finished.length > 0 ? Math.round(finishedPagesSum / finished.length) : 0;
-  
-  $('stat-reads').textContent = completions;
-  $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
-  
-  // Total Titles (active or finished unique titles in timeframe)
+  // Filter completions by book category tab
+  const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
+
+  // ── 1. Overall Summary ─────────────────────────────────────────
+  let totalReads = 0;
+  let pagesRead = 0;
   let titlesCount = 0;
   let finishedCount = 0;
   let progressCount = 0;
-  
+
   if (selectedYear === 'all') {
+    // Total Reads: Sum of b.read_count across filtered books
+    totalReads = books.reduce((s, b) => s + (b.read_count || 0), 0);
+    
+    // Total Titles: unique books
     titlesCount = books.length;
     finishedCount = books.filter(b => b.status === 'Finished').length;
     progressCount = books.filter(b => b.status === 'In Progress').length;
-  } else {
-    const activeTitles = new Set(filteredLogs.map(l => l.book_title));
-    titlesCount = activeTitles.size;
     
-    activeTitles.forEach(t => {
-      const book = books.find(b => b.title === t);
-      if (book) {
-        const bookLogs = filteredLogs.filter(l => l.book_title === t);
-        const hasFinished = bookLogs.some(l => l.end_page >= book.total_pages);
-        if (hasFinished) finishedCount++;
-        else progressCount++;
+    // Pages Read G5 Formula: completed pages + active pages + re-reads in progress
+    let pagesReadG5 = 0;
+    books.forEach(b => {
+      pagesReadG5 += (b.read_count || 0) * b.total_pages;
+      if (b.status === 'In Progress') {
+        pagesReadG5 += (b.pages_read || 0);
       }
     });
+    
+    let rereadsInProgress = 0;
+    activeLogs.forEach(l => {
+      const book = books.find(b => b.title === l.book_title);
+      if (book) {
+        const rc = book.read_count || 0;
+        if (l.read_cycle > rc && l.read_cycle > 1) {
+          rereadsInProgress += Math.max(0, l.end_page - l.start_page);
+        }
+      }
+    });
+    pagesRead = pagesReadG5 + rereadsInProgress;
+  } else {
+    // Specific Year stats based on completions in that year
+    const completionsInYear = filteredCompletions.filter(c => c.date.startsWith(selectedYear));
+    totalReads = completionsInYear.length;
+    pagesRead = completionsInYear.reduce((s, c) => s + c.pages, 0);
+
+    const activeTitles = new Set(filteredLogs.filter(l => {
+      const book = books.find(b => b.title === l.book_title);
+      return !!book;
+    }).map(l => l.book_title));
+    titlesCount = activeTitles.size;
+
+    activeTitles.forEach(t => {
+      const hasFinished = completionsInYear.some(c => c.title === t);
+      if (hasFinished) finishedCount++;
+      else progressCount++;
+    });
   }
+
+  // Avg pages/book
+  const finishedBooks = books.filter(b => b.status === 'Finished');
+  const finishedPagesSum = finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0);
+  const avgPagesPerBook = finishedBooks.length > 0 ? Math.round(finishedPagesSum / finishedBooks.length) : 0;
   
+  $('stat-reads').textContent = totalReads;
+  $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
   $('stat-titles').textContent = titlesCount;
   $('detail-titles').textContent = `Finished: ${finishedCount} · Active: ${progressCount}`;
-  
-  // Pages Read
-  const totalPagesRead = filteredLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-  $('stat-pages').textContent = fmtNum(totalPagesRead);
+  $('stat-pages').textContent = fmtNum(pagesRead);
   $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
   
   // Progress %
   const totalPagesInLib = books.reduce((s, b) => s + (b.total_pages || 0), 0);
-  const totalPagesReadLib = books.reduce((s, b) => s + (b.pages_read || 0), 0);
-  const overallPct = totalPagesInLib > 0 ? Math.round((totalPagesReadLib / totalPagesInLib) * 100) : 0;
-  const pagesRemaining = Math.max(0, totalPagesInLib - totalPagesReadLib);
+  const overallPct = totalPagesInLib > 0 ? Math.round((pagesRead / totalPagesInLib) * 100) : 0;
+  const pagesRemaining = Math.max(0, totalPagesInLib - pagesRead);
   
   $('stat-pct').textContent = overallPct + '%';
   $('detail-pct').textContent = `Pages left: ${fmtNum(pagesRemaining)}`;
   
   // ── 2. Streaks & Activity ──────────────────────────────────────
-  const streaks = calculateStreaks(logsCache);
+  const streaks = calculateStreaks(activeLogs);
   $('stat-streak-cur').textContent = `${streaks.current} days`;
   $('stat-streak-max').textContent = `${streaks.longest} days`;
   
-  const allUniqueDays = [...new Set(logsCache.map(l => l.date))].length;
+  const allUniqueDays = [...new Set(activeLogs.map(l => l.date))].length;
   $('stat-days-total').textContent = `${allUniqueDays} days`;
   
-  const avgPagesPerActiveDay = allUniqueDays > 0 ? (logsCache.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0) / allUniqueDays).toFixed(1) : 0;
+  const logPagesSum = activeLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
+  const avgPagesPerActiveDay = allUniqueDays > 0 ? (logPagesSum / allUniqueDays).toFixed(1) : 0;
   $('stat-pages-active-avg').textContent = avgPagesPerActiveDay;
   
   // % Days Read (Month)
@@ -734,7 +787,7 @@ async function renderDashboard() {
   const yearNum = today.getFullYear();
   const monthNum = today.getMonth() + 1;
   const monthDaysCount = new Date(yearNum, monthNum, 0).getDate();
-  const currentMonthLogs = logsCache.filter(l => l.date.startsWith(`${yearNum}-${String(monthNum).padStart(2, '0')}`));
+  const currentMonthLogs = activeLogs.filter(l => l.date.startsWith(`${yearNum}-${String(monthNum).padStart(2, '0')}`));
   const monthUniqueDays = [...new Set(currentMonthLogs.map(l => l.date))].length;
   const monthPct = monthDaysCount > 0 ? Math.round((monthUniqueDays / monthDaysCount) * 100) : 0;
   $('stat-days-month-pct').textContent = `${monthPct}%`;
@@ -743,7 +796,7 @@ async function renderDashboard() {
   const startOfYear = new Date(`${yearNum}-01-01T00:00:00`);
   const diffTimeYtd = Math.abs(today - startOfYear);
   const ytdDaysElapsed = Math.floor(diffTimeYtd / (86400000)) + 1;
-  const currentYearLogs = logsCache.filter(l => l.date.startsWith(String(yearNum)));
+  const currentYearLogs = activeLogs.filter(l => l.date.startsWith(String(yearNum)));
   const ytdUniqueDays = [...new Set(currentYearLogs.map(l => l.date))].length;
   const ytdPct = ytdDaysElapsed > 0 ? Math.round((ytdUniqueDays / ytdDaysElapsed) * 100) : 0;
   $('stat-days-ytd-pct').textContent = `${ytdPct}%`;
@@ -752,23 +805,17 @@ async function renderDashboard() {
   const lastYear = yearNum - 1;
   const todayMonthDay = todayISO().slice(5); // e.g. "07-17"
   
-  const thisYearYTDLogs = currentYearLogs.filter(l => l.date.slice(5) <= todayMonthDay);
-  const lastYearYTDLogs = logsCache.filter(l => l.date.startsWith(String(lastYear)) && l.date.slice(5) <= todayMonthDay);
-  
-  const countCompletedYTD = (ytdLogs) => {
-    let completed = 0;
-    ytdLogs.forEach(l => {
-      const book = booksCache.find(b => b.title === l.book_title);
-      if (book && l.end_page >= book.total_pages) completed++;
-    });
-    return completed;
+  const countCompletedYTD = (y) => {
+    return completions.filter(c => c.date.startsWith(String(y)) && c.date.slice(5) <= todayMonthDay).length;
+  };
+  const sumPagesCompletedYTD = (y) => {
+    return completions.filter(c => c.date.startsWith(String(y)) && c.date.slice(5) <= todayMonthDay).reduce((s, c) => s + c.pages, 0);
   };
   
-  const thisYearYTDBooks = countCompletedYTD(thisYearYTDLogs);
-  const lastYearYTDBooks = countCompletedYTD(lastYearYTDLogs);
-  
-  const thisYearYTDPages = thisYearYTDLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-  const lastYearYTDPages = lastYearYTDLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const thisYearYTDBooks = countCompletedYTD(yearNum);
+  const lastYearYTDBooks = countCompletedYTD(lastYear);
+  const thisYearYTDPages = sumPagesCompletedYTD(yearNum);
+  const lastYearYTDPages = sumPagesCompletedYTD(lastYear);
   
   $('yoy-books').textContent = `${thisYearYTDBooks} vs ${lastYearYTDBooks}`;
   $('yoy-pages').textContent = `${fmtNum(thisYearYTDPages)} vs ${fmtNum(lastYearYTDPages)}`;
