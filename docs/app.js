@@ -54,8 +54,12 @@ async function hashPin(pin) {
 let toastTimer;
 function showToast(msg, type = '') {
   const t = $('toast');
-  t.textContent = msg;
-  t.className = `toast toast-${type}`;
+  const alert = t.querySelector('.alert');
+  alert.textContent = msg;
+  alert.className = `alert shadow-xl border border-white/10 bg-slate-900/95 backdrop-blur-md rounded-2xl py-3 px-5 text-sm font-semibold flex items-center gap-2 ${
+    type === 'success' ? 'border-emerald-500/20 text-emerald-400' : type === 'error' ? 'border-rose-500/20 text-rose-400' : 'text-slate-200'
+  }`;
+  t.classList.remove('hidden');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2800);
 }
@@ -123,8 +127,16 @@ async function checkAndShowPin() {
 function renderPinDots() {
   const dots = $('pin-dots').querySelectorAll('span');
   dots.forEach((d, i) => {
-    d.classList.toggle('filled', i < pinBuffer.length);
-    d.classList.remove('error');
+    const isFilled = i < pinBuffer.length;
+    d.classList.toggle('bg-gold', isFilled);
+    d.classList.toggle('border-gold', isFilled);
+    d.classList.toggle('scale-110', isFilled);
+    d.classList.toggle('shadow-lg', isFilled);
+    d.classList.toggle('shadow-gold/20', isFilled);
+    
+    d.classList.toggle('border-slate-600', !isFilled);
+    
+    d.classList.remove('bg-rose-500', 'border-rose-500', 'animate-shake');
   });
 }
 
@@ -153,11 +165,15 @@ async function verifyPin(pin) {
   } else {
     pinBuffer = '';
     const dots = $('pin-dots').querySelectorAll('span');
-    dots.forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
-    const err = $('pin-error'); err.classList.remove('hidden');
+    dots.forEach(d => {
+      d.classList.remove('bg-gold', 'border-gold', 'scale-110', 'shadow-lg', 'shadow-gold/20');
+      d.classList.add('bg-rose-500', 'border-rose-500', 'animate-shake');
+    });
+    const err = $('pin-error');
+    err.classList.remove('opacity-0');
     setTimeout(() => {
       renderPinDots();
-      err.classList.add('hidden');
+      err.classList.add('opacity-0');
     }, 1200);
   }
 }
@@ -248,15 +264,22 @@ async function loadBooksCache() {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function setupNav() {
-  document.querySelectorAll('.nav-tab').forEach(btn => {
+  document.querySelectorAll('.btm-nav button').forEach(btn => {
     btn.addEventListener('click', () => showView(btn.dataset.view));
   });
 }
 
 function showView(name) {
   currentView = name;
-  document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.view === name));
-  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
+  document.querySelectorAll('.btm-nav button').forEach(b => {
+    const isCur = b.dataset.view === name;
+    b.classList.toggle('active', isCur);
+    b.classList.toggle('text-gold', isCur);
+    b.classList.toggle('text-slate-400', !isCur);
+  });
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.toggle('hidden', v.id !== `view-${name}`);
+  });
   // Refresh on tab open
   if (name === 'dashboard') renderDashboard();
   if (name === 'goals')     renderGoals();
@@ -447,7 +470,13 @@ function setupDashboard() {
     const btn = e.target.closest('[data-col]');
     if (!btn) return;
     dashFilter = btn.dataset.col;
-    $('dash-seg').querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.col === dashFilter));
+    $('dash-seg').querySelectorAll('button').forEach(b => {
+      const isCur = b.dataset.col === dashFilter;
+      b.classList.toggle('active', isCur);
+      b.classList.toggle('bg-white/10', isCur);
+      b.classList.toggle('text-white', isCur);
+      b.classList.toggle('font-bold', isCur);
+    });
     renderDashboard();
   });
 }
@@ -472,7 +501,7 @@ function renderDashboard() {
   const activeEl = $('dash-active-books');
   activeEl.innerHTML = '';
   if (active.length === 0) {
-    activeEl.innerHTML = '<p style="color:var(--text-3);font-size:14px;text-align:center;padding:16px 0">No books currently in progress</p>';
+    activeEl.innerHTML = '<p class="text-sm text-slate-500 text-center py-4 font-semibold">No books currently in progress</p>';
   } else {
     active.forEach(b => activeEl.appendChild(bookCard(b, true)));
   }
@@ -492,24 +521,28 @@ function bookCard(b, large) {
   const pr  = b.pages_read  || 0;
   const pct = Math.min(100, Math.round((pr / tot) * 100));
 
-  const card = el('div', 'book-card');
-  const header = el('div', 'book-card-header');
-  const info   = el('div', 'book-info');
-  const title  = el('div', 'book-title', b.title);
-  const meta   = el('div', 'book-meta', `${b.author || ''}${b.group_name ? ' • ' + b.group_name : ''}`);
+  const card = el('div', 'glass-panel p-4 rounded-2xl flex flex-col gap-3 transition-all duration-200 hover:bg-slate-900/40 border border-white/5');
+  const header = el('div', 'flex items-start justify-between gap-3');
+  const info   = el('div', 'flex-1 min-w-0');
+  const title  = el('div', 'text-sm font-semibold text-slate-100 truncate', b.title);
+  const meta   = el('div', 'text-xs text-slate-400 truncate mt-0.5', `${b.author || ''}${b.group_name ? ' • ' + b.group_name : ''}`);
   info.append(title, meta);
 
-  const badgeClass = { 'Finished': 'badge-finished', 'In Progress': 'badge-progress', 'Not Started': 'badge-not-started' };
-  const badge = el('span', `status-badge ${badgeClass[b.status] || 'badge-not-started'}`, b.status);
+  const badgeColors = {
+    'Finished': 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10',
+    'In Progress': 'bg-blue-500/10 text-blue-400 border border-blue-500/10',
+    'Not Started': 'bg-slate-800/40 text-slate-400 border border-white/5'
+  };
+  const badge = el('span', `px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${badgeColors[b.status] || badgeColors['Not Started']}`, b.status);
 
   header.append(info, badge);
 
-  const prog = el('div', 'progress-wrap');
-  const bar  = el('div', 'progress-bar');
-  const fill = el('div', `progress-fill${b.status === 'Finished' ? ' gold' : ''}`);
+  const prog = el('div', 'flex flex-col gap-1.5');
+  const bar  = el('div', 'h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden border border-white/5');
+  const fill = el('div', `h-full rounded-full transition-all duration-500 ${b.status === 'Finished' ? 'bg-gradient-to-r from-gold to-yellow-500' : 'bg-gradient-to-r from-blue-400 to-emerald-400'}`);
   fill.style.width = pct + '%';
   bar.appendChild(fill);
-  const labels = el('div', 'progress-labels');
+  const labels = el('div', 'flex justify-between text-[10px] text-slate-400 font-medium');
   labels.innerHTML = `<span>${fmtNum(pr)} / ${fmtNum(tot)} pages</span><span>${pct}%</span>`;
   prog.append(bar, labels);
 
@@ -610,7 +643,7 @@ async function renderGoals() {
 
 function goalRows(rows) {
   return rows.map(([label, val]) =>
-    `<div class="goal-stat-row"><span class="goal-stat-label">${label}</span><span class="goal-stat-value">${val}</span></div>`
+    `<div class="flex justify-between items-center py-3 text-sm"><span class="text-slate-400 font-medium">${label}</span><span class="text-slate-200 font-semibold">${val}</span></div>`
   ).join('');
 }
 
@@ -637,16 +670,19 @@ async function saveGoals() {
   renderGoals();
 }
 
-// ── Wishlist ──────────────────────────────────────────────────────────────────
-let wishlistCache = [];
-
 function setupWishlist() {
   // Filter chips
   $('wishlist-filters').addEventListener('click', e => {
     const chip = e.target.closest('[data-status]');
     if (!chip) return;
     wishlistFilter = chip.dataset.status;
-    $('wishlist-filters').querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.status === wishlistFilter));
+    $('wishlist-filters').querySelectorAll('button').forEach(c => {
+      const isCur = c.dataset.status === wishlistFilter;
+      c.classList.toggle('active', isCur);
+      c.classList.toggle('bg-gold/15', isCur);
+      c.classList.toggle('text-gold', isCur);
+      c.classList.toggle('font-bold', isCur);
+    });
     renderWishlist();
   });
 
@@ -681,26 +717,36 @@ async function renderWishlist() {
   const container = $('wishlist-list');
   container.innerHTML = '';
   if (items.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-title">No items found</div><div class="empty-body">Try a different filter or add a new book</div></div>`;
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3">
+        <span class="text-4xl">📚</span>
+        <div class="text-sm font-bold text-slate-400">No items found</div>
+        <p class="text-xs text-slate-500">Try a different filter or add a new book</p>
+      </div>`;
     return;
   }
 
   items.forEach(w => {
-    const card = el('div', 'wishlist-card');
-    const info = el('div', 'wishlist-info');
-    const title  = el('div', 'wishlist-title', w.title);
-    const author = el('div', 'wishlist-author', w.author || '');
-    const tags   = el('div', 'wishlist-tags');
+    const card = el('div', 'glass-panel p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/5 hover:bg-slate-900/40 transition-all');
+    const info = el('div', 'flex-1 min-w-0 flex flex-col gap-2');
+    const title  = el('div', 'text-sm font-semibold text-slate-100 truncate', w.title);
+    const author = el('div', 'text-xs text-slate-400 truncate -mt-1', w.author || '');
+    const tags   = el('div', 'flex flex-wrap gap-1.5');
 
-    const statusTag = el('span', 'tag', w.status || '');
-    const catTag    = el('span', 'tag', w.category || '');
-    const prioClass = w.priority === 'High' ? 'priority-high' : w.priority === 'Medium' ? 'priority-med' : '';
-    const prioTag   = el('span', `tag ${prioClass}`, w.priority || '');
+    const statusTag = el('span', 'px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-slate-800/40 text-slate-300 border border-white/5', w.status || '');
+    const catTag    = el('span', 'px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-slate-800/40 text-slate-300 border border-white/5', w.category || '');
+    
+    const prioClasses = {
+      'High': 'bg-rose-500/10 text-rose-400 border border-rose-500/10',
+      'Medium': 'bg-amber-500/10 text-amber-400 border border-amber-500/10',
+      'Low': 'bg-slate-800/40 text-slate-400 border border-white/5'
+    };
+    const prioTag   = el('span', `px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${prioClasses[w.priority] || prioClasses['Low']}`, w.priority || '');
     tags.append(statusTag, catTag, prioTag);
     info.append(title, author, tags);
 
-    const cost = el('div', 'wishlist-cost',
-      w.est_cost > 0 ? `$${w.est_cost.toFixed(2)}` : (w.est_pages > 0 ? `${fmtNum(w.est_pages)} pp` : ''));
+    const costVal = w.est_cost > 0 ? `$${w.est_cost.toFixed(2)}` : (w.est_pages > 0 ? `${fmtNum(w.est_pages)} pp` : '');
+    const cost = el('div', 'text-xs font-bold text-slate-200 shrink-0', costVal);
 
     card.append(info, cost);
     container.appendChild(card);
@@ -761,19 +807,29 @@ async function renderHistory() {
   container.innerHTML = '';
 
   if (items.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No entries yet</div><div class="empty-body">Log your first reading session to get started</div></div>`;
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3">
+        <span class="text-4xl">📅</span>
+        <div class="text-sm font-bold text-slate-400">No entries yet</div>
+        <p class="text-xs text-slate-500">Log your first reading session to get started</p>
+      </div>`;
     return;
   }
 
   items.forEach(l => {
-    const entry = el('div', 'log-entry');
+    const entry = el('div', 'glass-panel p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:bg-slate-900/40 transition-all');
     const d = new Date(l.date + 'T00:00:00');
-    const dateBlock = el('div', 'log-date-block');
-    dateBlock.innerHTML = `<span class="log-date-day">${d.getDate()}</span><span class="log-date-mon">${d.toLocaleDateString('en-US',{month:'short'})}</span>`;
-    const info = el('div', 'log-info');
+    const dateBlock = el('div', 'flex flex-col items-center justify-center bg-slate-800/40 border border-white/5 rounded-xl py-1.5 px-2.5 min-w-[50px] text-center shrink-0');
+    dateBlock.innerHTML = `<span class="text-base font-extrabold text-slate-100 leading-none">${d.getDate()}</span><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${d.toLocaleDateString('en-US',{month:'short'})}</span>`;
+    
+    const info = el('div', 'flex-1 min-w-0');
     const pages = (l.end_page || 0) - (l.start_page || 0);
-    info.innerHTML = `<div class="log-book">${l.book_title}</div><div class="log-pages">pp. ${l.start_page} → ${l.end_page} · ${pages} page${pages===1?'':'s'}${l.read_cycle > 1 ? ` · Cycle ${l.read_cycle}` : ''}</div>`;
-    const mins = el('div', 'log-minutes', l.minutes_spent ? `${l.minutes_spent} min` : '');
+    info.innerHTML = `
+      <div class="text-sm font-semibold text-slate-100 truncate">${l.book_title}</div>
+      <div class="text-xs text-slate-400 mt-0.5">pp. ${l.start_page} → ${l.end_page} · ${pages} page${pages===1?'':'s'}${l.read_cycle > 1 ? ` · Cycle ${l.read_cycle}` : ''}</div>
+    `;
+    
+    const mins = el('div', 'text-xs font-bold text-slate-200 shrink-0 text-right', l.minutes_spent ? `${l.minutes_spent} min` : '');
     entry.append(dateBlock, info, mins);
     container.appendChild(entry);
   });

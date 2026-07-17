@@ -1,343 +1,379 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="bg-slate-950">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Private reading tracker — log sessions, track progress, manage your library.">
-  <meta name="theme-color" content="#0d0f14">
+  <meta name="theme-color" content="#020617">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Reading Tracker">
   <title>Reading Tracker</title>
 
+  <!-- PWA & Styling Dependencies -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
+  
+  <!-- DaisyUI + Tailwind Play CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom config for Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#d4af37',
+            goldlight: '#f5d76e',
+          }
+        }
+      }
+    }
+  </script>
+
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen overflow-hidden relative selection:bg-gold/30 selection:text-white">
 
-<!-- ── Google Sign-In Screen ─────────────────────────────────────── -->
-<div id="auth-screen" class="overlay">
-  <div class="auth-card">
-    <img src="icon-192.png" class="auth-logo" alt="Reading Tracker Icon">
-    <h1 class="auth-title">Reading Tracker</h1>
-    <p class="auth-subtitle">Your private reading journey</p>
-    <button id="btn-google-signin" class="btn-google">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>
-      Sign in with Google
-    </button>
+  <!-- ── Ambient Background Glow Blobs ────────────────────────────── -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute -top-40 -left-40 w-[450px] h-[450px] rounded-full bg-cyan-500/10 blur-[120px] animate-float-1"></div>
+    <div class="absolute top-[35%] -right-40 w-[450px] h-[450px] rounded-full bg-purple-600/10 blur-[120px] animate-float-2"></div>
+    <div class="absolute -bottom-40 left-[10%] w-[380px] h-[380px] rounded-full bg-amber-500/5 blur-[100px] animate-float-1"></div>
   </div>
-</div>
 
-<!-- ── PIN Entry Screen ───────────────────────────────────────────── -->
-<div id="pin-screen" class="overlay hidden">
-  <div class="pin-card">
-    <div class="pin-header">
-      <img src="icon-192.png" class="pin-logo" alt="">
-      <h2>Enter your PIN</h2>
-    </div>
-    <div class="pin-dots" id="pin-dots">
-      <span></span><span></span><span></span><span></span>
-    </div>
-    <p class="pin-error hidden" id="pin-error">Incorrect PIN — try again</p>
-    <div class="pin-pad" id="pin-pad">
-      <button class="pin-key" data-key="1">1</button>
-      <button class="pin-key" data-key="2">2</button>
-      <button class="pin-key" data-key="3">3</button>
-      <button class="pin-key" data-key="4">4</button>
-      <button class="pin-key" data-key="5">5</button>
-      <button class="pin-key" data-key="6">6</button>
-      <button class="pin-key" data-key="7">7</button>
-      <button class="pin-key" data-key="8">8</button>
-      <button class="pin-key" data-key="9">9</button>
-      <button class="pin-key pin-empty" disabled></button>
-      <button class="pin-key" data-key="0">0</button>
-      <button class="pin-key pin-back" id="pin-backspace">⌫</button>
-    </div>
-  </div>
-</div>
+  <div class="relative z-10 flex flex-col h-screen h-[100dvh] max-w-md mx-auto border-x border-white/5 bg-slate-950/20 backdrop-blur-3xl shadow-2xl">
 
-<!-- ── Seed Import Screen ─────────────────────────────────────────── -->
-<div id="seed-screen" class="overlay hidden">
-  <div class="seed-card">
-    <div class="seed-spinner"></div>
-    <h2>Setting up your library…</h2>
-    <p id="seed-status">Preparing data…</p>
-    <div class="seed-progress">
-      <div id="seed-bar" class="seed-bar-fill"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Goals Edit Modal ───────────────────────────────────────────── -->
-<div id="goals-modal" class="modal-backdrop">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title">Edit Goals</span>
-      <button class="btn-close" id="goals-modal-close">✕</button>
-    </div>
-    <div class="field">
-      <label>Annual books target</label>
-      <input type="number" class="input" id="goal-annual-books" min="1" max="365" placeholder="12">
-    </div>
-    <div class="field">
-      <label>Annual pages target</label>
-      <input type="number" class="input" id="goal-annual-pages" min="1" placeholder="3000">
-    </div>
-    <div class="field">
-      <label>Monthly books target</label>
-      <input type="number" class="input" id="goal-monthly-books" min="1" placeholder="1">
-    </div>
-    <div class="field">
-      <label>Monthly pages target</label>
-      <input type="number" class="input" id="goal-monthly-pages" min="1" placeholder="300">
-    </div>
-    <button class="btn-submit" id="goals-modal-save">Save Goals</button>
-  </div>
-</div>
-
-<!-- ── Add Wishlist Item Modal ────────────────────────────────────── -->
-<div id="wishlist-modal" class="modal-backdrop">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title">Add to Wishlist</span>
-      <button class="btn-close" id="wishlist-modal-close">✕</button>
-    </div>
-    <div class="field">
-      <label>Title *</label>
-      <input type="text" class="input" id="wl-title" placeholder="Book title">
-    </div>
-    <div class="field">
-      <label>Author</label>
-      <input type="text" class="input" id="wl-author" placeholder="Author name">
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Category</label>
-        <select class="select" id="wl-category">
-          <option>Bahá'í Writings</option>
-          <option>Bahá'í About the Faith</option>
-          <option>Bahá'í Other</option>
-          <option>Non-Fiction</option>
-          <option>Fiction</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Priority</label>
-        <select class="select" id="wl-priority">
-          <option>High</option>
-          <option>Medium</option>
-          <option>Low</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Status</label>
-        <select class="select" id="wl-status">
-          <option>Want to Buy</option>
-          <option>Owned</option>
-          <option>Gifted</option>
-          <option>Borrowed and Read</option>
-          <option>Owned and Read</option>
-          <option>Gifted and Read</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Est. Pages</label>
-        <input type="number" class="input" id="wl-pages" placeholder="300">
-      </div>
-    </div>
-    <button class="btn-submit" id="wishlist-modal-save">Add to Wishlist</button>
-  </div>
-</div>
-
-<!-- ── Main App ───────────────────────────────────────────────────── -->
-<div id="app" class="hidden">
-  <header class="app-header">
-    <h1 class="app-title">📖 Reading Tracker</h1>
-    <button id="btn-signout" class="btn-icon" title="Sign out" aria-label="Sign out">↩</button>
-  </header>
-
-  <main class="view-container">
-
-    <!-- ── View: Daily Log ──────────────────────────────────── -->
-    <section id="view-log" class="view active" role="main" aria-label="Log reading session">
-      <div class="form-card">
-        <h2 class="form-title">Log a Session</h2>
-        <p class="form-subtitle">Record today's reading</p>
-
-        <div class="field">
-          <label for="log-date">Date</label>
-          <input type="date" class="input" id="log-date">
+    <!-- ── Screen 1: Google Sign-In ─────────────────────────────────── -->
+    <div id="auth-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 bg-slate-950/90 backdrop-blur-2xl">
+      <div class="w-full max-w-xs flex flex-col items-center gap-8 text-center animate-fade-in">
+        <div class="relative group">
+          <div class="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-gold to-yellow-500 opacity-60 blur-xl group-hover:opacity-80 transition duration-1000"></div>
+          <img src="icon-192.png" class="relative w-24 h-24 rounded-3xl shadow-2xl border border-white/10" alt="App Logo">
         </div>
-
-        <div class="field">
-          <label for="log-book">Book</label>
-          <select class="select" id="log-book">
-            <option value="">— Select a book —</option>
-          </select>
+        <div class="flex flex-col gap-2">
+          <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-goldlight via-gold to-yellow-600 bg-clip-text text-transparent">Reading Tracker</h1>
+          <p class="text-slate-400 text-sm font-medium">Your private reading journey, synced & safe</p>
         </div>
+        <button id="btn-google-signin" class="btn btn-outline btn-wide border-white/15 text-slate-200 hover:bg-white/5 rounded-full flex gap-3 font-semibold shadow-lg active:scale-98 transition-all">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label for="log-start">Start Page</label>
-            <input type="number" class="input" id="log-start" min="0" placeholder="0">
-            <span class="input-hint" id="log-start-hint"></span>
-          </div>
-          <div class="field">
-            <label for="log-end">End Page</label>
-            <input type="number" class="input" id="log-end" min="0" placeholder="e.g. 50">
+    <!-- ── Screen 2: PIN Lock Screen ─────────────────────────────────── -->
+    <div id="pin-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 bg-slate-950/90 backdrop-blur-2xl hidden">
+      <div class="w-full max-w-xs flex flex-col items-center gap-8 text-center">
+        <div class="flex flex-col items-center gap-3">
+          <img src="icon-192.png" class="w-16 h-16 rounded-2xl shadow-xl border border-white/10" alt="">
+          <h2 class="text-xl font-bold tracking-tight text-slate-200">Enter Security PIN</h2>
+        </div>
+        <div class="pin-dots flex gap-5 my-2" id="pin-dots">
+          <span class="w-4 h-4 rounded-full border-2 border-slate-600 transition-all duration-200"></span>
+          <span class="w-4 h-4 rounded-full border-2 border-slate-600 transition-all duration-200"></span>
+          <span class="w-4 h-4 rounded-full border-2 border-slate-600 transition-all duration-200"></span>
+          <span class="w-4 h-4 rounded-full border-2 border-slate-600 transition-all duration-200"></span>
+        </div>
+        <p class="text-sm font-semibold text-rose-500 h-5 transition-opacity duration-200 opacity-0" id="pin-error">Incorrect PIN — try again</p>
+        <div class="grid grid-cols-3 gap-4 w-64 justify-items-center" id="pin-pad">
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="1">1</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="2">2</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="3">3</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="4">4</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="5">5</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="6">6</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="7">7</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="8">8</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="9">9</button>
+          <button class="btn btn-circle btn-lg invisible" disabled></button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium text-slate-200 hover:bg-white/10 active:scale-90" data-key="0">0</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-xl font-medium text-slate-400 hover:bg-white/10 active:scale-90" id="pin-backspace">⌫</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Screen 3: Database Seeding ────────────────────────────────── -->
+    <div id="seed-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 bg-slate-950/90 backdrop-blur-2xl hidden">
+      <div class="w-full max-w-xs flex flex-col items-center gap-6 text-center">
+        <div class="loading loading-spinner loading-lg text-gold"></div>
+        <div class="flex flex-col gap-2">
+          <h2 class="text-xl font-bold text-slate-200">Setting up your library…</h2>
+          <p class="text-sm text-slate-400 font-medium" id="seed-status">Preparing data…</p>
+        </div>
+        <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-white/5">
+          <div id="seed-bar" class="bg-gradient-to-r from-gold to-yellow-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Viewport Header ───────────────────────────────────────────── -->
+    <header class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-950/30 backdrop-blur-md relative z-30 shrink-0">
+      <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-goldlight to-gold bg-clip-text text-transparent flex items-center gap-2">
+        <span>📖</span> Reading Tracker
+      </h1>
+      <button id="btn-signout" class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:text-rose-400 hover:bg-white/5 active:scale-90 transition-all" title="Sign out" aria-label="Sign out">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
+    </header>
+
+    <!-- ── Scrollable Views Container ───────────────────────────────── -->
+    <main class="flex-1 overflow-hidden relative">
+
+      <!-- ── View 1: Daily Entry Form ──────────────────────────────── -->
+      <section id="view-log" class="view active h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom">
+        <div class="p-5 flex flex-col gap-5">
+          <div class="glass-panel p-6 rounded-3xl flex flex-col gap-5">
+            <div>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-100">Log a Session</h2>
+              <p class="text-sm text-slate-400 font-medium">Add pages read to your history</p>
+            </div>
+
+            <!-- Date -->
+            <div class="form-control w-full">
+              <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Date</span></label>
+              <input type="date" class="input input-bordered glass-input w-full rounded-2xl" id="log-date">
+            </div>
+
+            <!-- Book Dropdown -->
+            <div class="form-control w-full">
+              <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Select Book</span></label>
+              <select class="select select-bordered glass-input w-full rounded-2xl" id="log-book">
+                <option value="">— Select a book —</option>
+              </select>
+            </div>
+
+            <!-- Pages -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-control w-full">
+                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Start Page</span></label>
+                <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-start" min="0" placeholder="0">
+                <span class="text-[10px] text-slate-500 mt-1.5 h-3 overflow-hidden text-ellipsis whitespace-nowrap" id="log-start-hint"></span>
+              </div>
+              <div class="form-control w-full">
+                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">End Page</span></label>
+                <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-end" min="0" placeholder="e.g. 50">
+              </div>
+            </div>
+
+            <!-- Cycle & Minutes -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-control w-full">
+                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Read Cycle</span></label>
+                <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-cycle" min="1" value="1">
+              </div>
+              <div class="form-control w-full">
+                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1">Minutes <span class="text-slate-500 font-normal capitalize">(opt)</span></span></label>
+                <input type="number" class="input input-bordered glass-input w-full rounded-2xl" id="log-minutes" min="0" placeholder="e.g. 30">
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-control w-full">
+              <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider text-slate-400">Notes <span class="text-slate-500 font-normal capitalize">(optional)</span></span></label>
+              <textarea class="textarea textarea-bordered glass-input w-full rounded-2xl h-20 resize-none leading-relaxed" id="log-notes" placeholder="Reflections on your reading…"></textarea>
+            </div>
+
+            <button class="btn border-none bg-gradient-to-r from-gold to-yellow-500 hover:from-goldlight hover:to-gold text-slate-950 font-bold rounded-2xl py-4 h-auto shadow-lg shadow-gold/10 hover:shadow-gold/20 active:scale-98 transition-all duration-200 mt-2" id="log-submit">Log Reading Session</button>
           </div>
         </div>
+      </section>
 
-        <div class="field">
-          <label for="log-cycle">Read Cycle</label>
-          <input type="number" class="input" id="log-cycle" min="1" value="1">
-        </div>
-
-        <div class="field">
-          <label for="log-minutes">Minutes Spent <span style="color:var(--text-3)">(optional)</span></label>
-          <input type="number" class="input" id="log-minutes" min="0" placeholder="e.g. 30">
-        </div>
-
-        <div class="field">
-          <label for="log-notes">Notes <span style="color:var(--text-3)">(optional)</span></label>
-          <textarea class="textarea" id="log-notes" placeholder="Any thoughts or reflections…"></textarea>
-        </div>
-
-        <button class="btn-submit" id="log-submit">Log Reading Session</button>
-      </div>
-    </section>
-
-    <!-- ── View: Dashboard ──────────────────────────────────── -->
-    <section id="view-dashboard" class="view" aria-label="Reading dashboard">
-      <div class="stats-grid" id="dash-stats">
-        <div class="stat-card"><div class="stat-value" id="stat-reads">—</div><div class="stat-label">Total Reads</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat-titles">—</div><div class="stat-label">Unique Titles</div></div>
-        <div class="stat-card green"><div class="stat-value" id="stat-pages">—</div><div class="stat-label">Pages Read</div></div>
-        <div class="stat-card gold"><div class="stat-value" id="stat-pct">—</div><div class="stat-label">Overall Progress</div></div>
-      </div>
-
-      <div class="seg-control" id="dash-seg" role="tablist">
-        <button class="seg-btn active" data-col="all" role="tab" aria-selected="true">All</button>
-        <button class="seg-btn" data-col="Bahai" role="tab" aria-selected="false">Bahá'í</button>
-        <button class="seg-btn" data-col="Non-Bahai" role="tab" aria-selected="false">Non-Bahá'í</button>
-      </div>
-
-      <div class="section-title">Currently Reading</div>
-      <div id="dash-active-books"></div>
-
-      <div class="section-title section-gap">All Books</div>
-      <div id="dash-all-books"></div>
-    </section>
-
-    <!-- ── View: Goals ──────────────────────────────────────── -->
-    <section id="view-goals" class="view" aria-label="Reading goals">
-      <div class="goals-section">
-        <div class="goals-section-title">📅 This Year</div>
-        <div class="goal-rings">
-          <div class="goal-ring-wrap">
-            <svg class="ring-svg" width="110" height="110" viewBox="0 0 110 110" id="ring-books-svg">
-              <circle class="ring-track" cx="55" cy="55" r="46" stroke-width="10"/>
-              <circle class="ring-fill" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="10" stroke="var(--gold)" stroke-dasharray="289" stroke-dashoffset="289"/>
-              <text class="ring-text" x="55" y="51" text-anchor="middle" font-size="20" font-weight="700" transform="rotate(90,55,55)" id="ring-books-val">0</text>
-              <text class="ring-text" x="55" y="66" text-anchor="middle" font-size="11" fill="var(--text-3)" transform="rotate(90,55,55)" id="ring-books-lbl">/ 12 books</text>
-            </svg>
-            <div class="ring-label">Books This Year</div>
+      <!-- ── View 2: Dashboard ─────────────────────────────────────── -->
+      <section id="view-dashboard" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-6">
+          
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-3" id="dash-stats">
+            <!-- Stat 1 -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col justify-between h-24 border border-white/5">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Total Reads</span>
+              <span class="text-2xl font-extrabold text-slate-100" id="stat-reads">—</span>
+            </div>
+            <!-- Stat 2 -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col justify-between h-24 border border-white/5">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Unique Titles</span>
+              <span class="text-2xl font-extrabold text-slate-100" id="stat-titles">—</span>
+            </div>
+            <!-- Stat 3 (Green) -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col justify-between h-24 border border-emerald-500/10 bg-emerald-950/10">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-400">Pages Read</span>
+              <span class="text-2xl font-extrabold text-emerald-400" id="stat-pages">—</span>
+            </div>
+            <!-- Stat 4 (Gold) -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col justify-between h-24 border border-gold/15 bg-gold/5">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-gold">Progress</span>
+              <span class="text-2xl font-extrabold text-gold" id="stat-pct">—</span>
+            </div>
           </div>
-          <div class="goal-ring-wrap">
-            <svg class="ring-svg" width="110" height="110" viewBox="0 0 110 110" id="ring-pages-svg">
-              <circle class="ring-track" cx="55" cy="55" r="46" stroke-width="10"/>
-              <circle class="ring-fill" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="10" stroke="var(--green)" stroke-dasharray="289" stroke-dashoffset="289"/>
-              <text class="ring-text" x="55" y="51" text-anchor="middle" font-size="18" font-weight="700" transform="rotate(90,55,55)" id="ring-pages-val">0</text>
-              <text class="ring-text" x="55" y="66" text-anchor="middle" font-size="11" fill="var(--text-3)" transform="rotate(90,55,55)" id="ring-pages-lbl">/ 3k pages</text>
-            </svg>
-            <div class="ring-label">Pages This Year</div>
+
+          <!-- Tabs Segmented Control -->
+          <div class="join w-full glass-panel-light p-1 rounded-full border border-white/5" id="dash-seg" role="tablist">
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 active-tab transition-all duration-200 active" data-col="all" role="tab" aria-selected="true">All</button>
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 transition-all duration-200" data-col="Bahai" role="tab" aria-selected="false">Bahá'í</button>
+            <button class="join-item btn btn-sm btn-ghost flex-1 rounded-full text-slate-400 font-medium active:scale-95 transition-all duration-200" data-col="Non-Bahai" role="tab" aria-selected="false">Non-Bahá'í</button>
           </div>
+
+          <!-- Active Books section -->
+          <div>
+            <div class="text-xs font-bold tracking-wider uppercase text-slate-400 mb-3 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Currently Reading
+            </div>
+            <div class="flex flex-col gap-3" id="dash-active-books"></div>
+          </div>
+
+          <!-- All Books section -->
+          <div>
+            <div class="text-xs font-bold tracking-wider uppercase text-slate-400 mb-3 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+              All Books
+            </div>
+            <div class="flex flex-col gap-3.5" id="dash-all-books"></div>
+          </div>
+
         </div>
-        <div id="goal-annual-stats"></div>
-      </div>
+      </section>
 
-      <div class="goals-section">
-        <div class="goals-section-title">📆 This Month</div>
-        <div id="goal-monthly-stats"></div>
-      </div>
+      <!-- ── View 3: Goals ────────────────────────────────────────── -->
+      <section id="view-goals" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-5">
+          
+          <!-- Annual Goals Card -->
+          <div class="glass-panel p-6 rounded-3xl flex flex-col gap-6">
+            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📅 Annual Targets</div>
+            
+            <div class="flex justify-around gap-4 py-2">
+              <!-- Books Ring -->
+              <div class="flex flex-col items-center gap-3">
+                <div class="relative w-28 h-28 flex items-center justify-center">
+                  <svg class="absolute transform -rotate-90 w-full h-full" viewBox="0 0 110 110">
+                    <circle class="fill-none stroke-slate-800/60" cx="55" cy="55" r="46" stroke-width="8"/>
+                    <circle class="fill-none stroke-gold ring-fill" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
+                  </svg>
+                  <div class="text-center flex flex-col">
+                    <span class="text-2xl font-black text-slate-100" id="ring-books-val">0</span>
+                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-books-lbl">/ 12 bks</span>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-slate-300">Books Goal</span>
+              </div>
 
-      <div class="goals-section">
-        <div class="goals-section-title">📊 Reading Pace</div>
-        <div id="goal-pace-stats"></div>
-      </div>
+              <!-- Pages Ring -->
+              <div class="flex flex-col items-center gap-3">
+                <div class="relative w-28 h-28 flex items-center justify-center">
+                  <svg class="absolute transform -rotate-90 w-full h-full" viewBox="0 0 110 110">
+                    <circle class="fill-none stroke-slate-800/60" cx="55" cy="55" r="46" stroke-width="8"/>
+                    <circle class="fill-none stroke-emerald-400 ring-fill" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"/>
+                  </svg>
+                  <div class="text-center flex flex-col">
+                    <span class="text-2xl font-black text-slate-100" id="ring-pages-val">0</span>
+                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5" id="ring-pages-lbl">/ 3k pgs</span>
+                  </div>
+                </div>
+                <span class="text-xs font-bold text-slate-300">Pages Goal</span>
+              </div>
+            </div>
 
-      <button class="btn-secondary" id="btn-edit-goals">✏️ Edit Goals</button>
-    </section>
+            <div class="divide-y divide-white/5 border-t border-white/5 pt-2" id="goal-annual-stats"></div>
+          </div>
 
-    <!-- ── View: Wishlist ────────────────────────────────────── -->
-    <section id="view-wishlist" class="view" aria-label="Book wishlist">
-      <div class="history-search">
-        <span class="history-search-icon">🔍</span>
-        <input type="search" class="input" id="wishlist-search" placeholder="Search wishlist…">
-      </div>
-      <div class="wishlist-filters" id="wishlist-filters">
-        <button class="filter-chip active" data-status="all">All</button>
-        <button class="filter-chip" data-status="Want to Buy">Want to Buy</button>
-        <button class="filter-chip" data-status="Owned">Owned</button>
-        <button class="filter-chip" data-status="Owned and Read">Owned & Read</button>
-        <button class="filter-chip" data-status="Gifted">Gifted</button>
-        <button class="filter-chip" data-status="Borrowed and Read">Borrowed & Read</button>
-      </div>
-      <div id="wishlist-list"></div>
-    </section>
+          <!-- Monthly Stats -->
+          <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
+            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📆 Monthly Progress</div>
+            <div class="divide-y divide-white/5" id="goal-monthly-stats"></div>
+          </div>
 
-    <!-- ── View: History ─────────────────────────────────────── -->
-    <section id="view-history" class="view" aria-label="Reading history">
-      <div class="history-search">
-        <span class="history-search-icon">🔍</span>
-        <input type="search" class="input" id="history-search" placeholder="Search by book title…">
-      </div>
-      <div id="history-list"></div>
-    </section>
+          <!-- Pace Statistics -->
+          <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
+            <div class="text-xs font-bold tracking-wider uppercase text-slate-400">📊 Reading Velocity</div>
+            <div class="divide-y divide-white/5" id="goal-pace-stats"></div>
+          </div>
 
-  </main>
+          <button class="btn btn-outline border-white/10 hover:bg-white/5 text-slate-200 rounded-2xl w-full py-4 h-auto shadow-md" id="btn-edit-goals">✏️ Edit Goals</button>
+        </div>
+      </section>
 
-  <!-- ── Bottom Navigation ──────────────────────────────────── -->
-  <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
-    <button class="nav-tab active" data-view="log" aria-label="Log session">
-      <span class="nav-icon">✏️</span>
-      <span class="nav-label">Log</span>
-    </button>
-    <button class="nav-tab" data-view="dashboard" aria-label="Dashboard">
-      <span class="nav-icon">📊</span>
-      <span class="nav-label">Dashboard</span>
-    </button>
-    <button class="nav-tab" data-view="goals" aria-label="Goals">
-      <span class="nav-icon">🎯</span>
-      <span class="nav-label">Goals</span>
-    </button>
-    <button class="nav-tab" data-view="wishlist" aria-label="Wishlist">
-      <span class="nav-icon">📚</span>
-      <span class="nav-label">Wishlist</span>
-    </button>
-    <button class="nav-tab" data-view="history" aria-label="History">
-      <span class="nav-icon">📅</span>
-      <span class="nav-label">History</span>
-    </button>
-  </nav>
-</div>
+      <!-- ── View 4: Wishlist ─────────────────────────────────────── -->
+      <section id="view-wishlist" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-5">
+          <!-- Search -->
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">🔍</span>
+            <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11" id="wishlist-search" placeholder="Search book title or author…">
+          </div>
 
-<!-- ── Wishlist FAB ───────────────────────────────────────────────── -->
-<button class="fab hidden" id="wishlist-fab" aria-label="Add book to wishlist">＋</button>
+          <!-- Filters Chips Horizontal Scroll -->
+          <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 shrink-0" id="wishlist-filters">
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7 active" data-status="all">All</button>
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Want to Buy">Want to Buy</button>
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Owned">Owned</button>
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Owned and Read">Owned & Read</button>
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Gifted">Gifted</button>
+            <button class="btn btn-xs rounded-full glass-panel-light text-slate-400 hover:text-slate-200 border-none px-3.5 h-7" data-status="Borrowed and Read">Borrowed & Read</button>
+          </div>
 
-<!-- ── Toast Notification ────────────────────────────────────────── -->
-<div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
+          <!-- Wishlist Items -->
+          <div class="flex flex-col gap-3" id="wishlist-list"></div>
+        </div>
+      </section>
 
-<script type="module" src="app.js"></script>
+      <!-- ── View 5: History ──────────────────────────────────────── -->
+      <section id="view-history" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+        <div class="p-5 flex flex-col gap-5">
+          <!-- Search -->
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">🔍</span>
+            <input type="search" class="input input-bordered glass-input w-full rounded-2xl pl-11" id="history-search" placeholder="Search by book title…">
+          </div>
+          <!-- History List -->
+          <div class="flex flex-col gap-3" id="history-list"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Viewport Fixed Bottom Navigation Bar ─────────────────────── -->
+    <nav class="btm-nav safe-nav-bottom border-t border-white/5 bg-slate-900/50 backdrop-blur-2xl relative z-40 shrink-0" role="navigation" aria-label="Main navigation">
+      <button class="active text-slate-400 hover:text-gold transition-colors duration-200" data-view="log" aria-label="Log session">
+        <span class="text-lg">✏️</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Log</span>
+      </button>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="dashboard" aria-label="Dashboard">
+        <span class="text-lg">📊</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Dash</span>
+      </button>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="goals" aria-label="Goals">
+        <span class="text-lg">🎯</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Goals</span>
+      </button>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="wishlist" aria-label="Wishlist">
+        <span class="text-lg">📚</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Wishlist</span>
+      </button>
+      <button class="text-slate-400 hover:text-gold transition-colors duration-200" data-view="history" aria-label="History">
+        <span class="text-lg">📅</span>
+        <span class="btm-nav-label text-[10px] font-bold uppercase tracking-wider mt-1">Logs</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ── Floating Action Button (Wishlist View Only) ──────────────── -->
+  <button class="fixed bottom-24 right-6 btn btn-circle bg-gold hover:bg-goldlight border-none text-slate-950 text-2xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover:scale-108 active:scale-95 transition-all duration-200 z-50 hidden" id="wishlist-fab" aria-label="Add book to wishlist">＋</button>
+
+  <!-- ── Toast Notification ────────────────────────────────────────── -->
+  <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
+    <div class="alert shadow-xl border border-white/10 bg-slate-900/95 backdrop-blur-md rounded-2xl py-3 px-5 text-sm text-slate-200 font-semibold flex items-center gap-2"></div>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
