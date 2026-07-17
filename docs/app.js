@@ -1690,6 +1690,7 @@ async function renderLibrary() {
       <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-3 font-semibold mt-1">
         <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
         <div class="flex gap-2">
+          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
           ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Mark Complete</button>` : ''}
           <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
         </div>
@@ -1705,6 +1706,16 @@ async function renderLibrary() {
         }
       });
     }
+
+    const rereadBtn = card.querySelector('[data-action="re-read"]');
+    if (rereadBtn) {
+      rereadBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (confirm(`Start re-reading "${b.title}"? This moves it to currently reading (Cycle ${(b.read_count || 1) + 1}) while preserving all previous reads!`)) {
+          await startBookReRead(b);
+        }
+      });
+    }
     
     card.querySelector('[data-action="edit"]').addEventListener('click', e => {
       e.stopPropagation();
@@ -1713,6 +1724,29 @@ async function renderLibrary() {
     
     container.appendChild(card);
   });
+}
+
+async function startBookReRead(b) {
+  try {
+    const nextCycle = (b.read_count || 1) + 1;
+    // Set book status to In Progress, pages_read to total_pages * read_count (re-read starting at 0 progress)
+    const booksSnap = await getDocs(query(
+      collection(db, `users/${uid}/books`), where('title', '==', b.title)
+    ));
+    if (!booksSnap.empty) {
+      await updateDoc(booksSnap.docs[0].ref, {
+        status: 'In Progress',
+        pages_read: b.total_pages * (b.read_count || 1)
+      });
+    }
+    
+    showToast(`✓ Started Cycle ${nextCycle} for "${b.title.slice(0, 20)}…"`, 'success');
+    await loadBooksCache();
+    await renderLibrary();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to start re-read: ' + e.message, 'error');
+  }
 }
 
 async function markBookComplete(b) {
