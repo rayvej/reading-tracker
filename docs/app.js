@@ -1024,9 +1024,12 @@ async function renderDashboard() {
     activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
   } else {
     active.forEach(b => {
-      const left = Math.max(0, b.total_pages - b.pages_read);
+      // Calculate progress of current cycle
+      const pagesReadAccum = b.pages_read || 0;
+      const currentCyclePages = pagesReadAccum % b.total_pages;
+      const left = b.total_pages - currentCyclePages;
       const estDays = Math.ceil(left / 10);
-      const pct = Math.min(100, Math.round((b.pages_read / b.total_pages) * 100));
+      const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
       
       const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5');
       card.innerHTML = `
@@ -2301,7 +2304,8 @@ function renderCategoryPieChart(books, containerId) {
   const isDark = !document.body.classList.contains('light-mode');
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
-  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full transform -scale-x-100', style: 'display:block' });
+  // Native SVG, no scaling transform issues
+  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '35', fill: 'none', stroke: trackColor, 'stroke-width': '10' }));
 
   let legendItems = '';
@@ -2312,16 +2316,16 @@ function renderCategoryPieChart(books, containerId) {
 
     const percent = count / total;
     const strokeLength = percent * circumference;
-    const strokeOffset = -cumulativePercent * circumference;
+    const angle = -90 + cumulativePercent * 360;
 
     const segment = svgEl('circle', {
       cx: '50', cy: '50', r: '35',
       fill: 'none',
       stroke: colors[cat],
       'stroke-width': '10',
-      'stroke-dasharray': `${strokeLength} ${circumference}`,
-      'stroke-dashoffset': strokeOffset,
-      transform: 'rotate(-90 50 50)',
+      'stroke-dasharray': strokeLength + ' ' + circumference,
+      'stroke-dashoffset': '0',
+      transform: `rotate(${angle} 50 50)`,
       class: 'transition-all duration-300 hover:opacity-80'
     });
     segment.style.transformOrigin = 'center';
@@ -2363,33 +2367,31 @@ function renderCategoryPieChart(books, containerId) {
 // SECTION 4: RE-READ LOG STATUS EVALUATOR (Fixes multi-cycle progress bugs)
 // =========================================================================
 function evaluateBookReadingProgress(book, logs) {
+  const activeCycle = (book.read_count || 0) + 1;
+  const bookLogs = logs.filter(l => l.book_title === book.title);
+  
   if (book.status === 'In Progress') {
-    const bookLogs = logs.filter(l => l.book_title === book.title);
-    if (bookLogs.length > 0) {
-      bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const activeCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
-      const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
-      if (cycleLogs.length > 0) {
-        const latestLog = cycleLogs[cycleLogs.length - 1];
-        const endPage = parseInt(latestLog.end_page || 0, 10);
-        const totalPages = parseInt(book.total_pages || 0, 10);
-        if (endPage >= totalPages) {
-          return 'Finished';
-        }
+    const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+    if (cycleLogs.length > 0) {
+      cycleLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const latestLog = cycleLogs[cycleLogs.length - 1];
+      const endPage = parseInt(latestLog.end_page || 0, 10);
+      const totalPages = parseInt(book.total_pages || 0, 10);
+      if (endPage >= totalPages) {
+        return 'Finished';
       }
     }
     return 'In Progress';
   }
 
-  const bookLogs = logs.filter(l => l.book_title === book.title);
   if (bookLogs.length === 0) {
     return 'Not Started';
   }
 
   bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const activeCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
-  const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+  const activeLogsCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
+  const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeLogsCycle);
 
   const latestLog = cycleLogs[cycleLogs.length - 1];
   const endPage = parseInt(latestLog.end_page || 0, 10);
