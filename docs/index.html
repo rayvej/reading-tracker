@@ -132,11 +132,14 @@
 
       <!-- ── Viewport Header ───────────────────────────────────────────── -->
       <header class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-950/30 backdrop-blur-md relative z-30 shrink-0">
-      <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-goldlight to-gold bg-clip-text text-transparent flex items-center gap-2">
-        <span>📖</span> Reading Tracker
-      </h1>
-      <button id="btn-signout" class="btn btn-sm btn-circle btn-ghost text-slate-    <!-- ── Scrollable Views Container ───────────────────────────────── -->
-    <main class="flex-1 overflow-hidden relative">
+        <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-goldlight to-gold bg-clip-text text-transparent flex items-center gap-2">
+          <span>📖</span> Reading Tracker
+        </h1>
+        <button id="btn-signout" class="btn btn-sm btn-circle btn-ghost text-slate-400 hover:bg-white/5" aria-label="Sign out">✕</button>
+      </header>
+
+      <!-- ── Scrollable Views Container ───────────────────────────────── -->
+      <main class="flex-1 overflow-hidden relative">
 
       <!-- ── View 1: Daily Entry Form & Heatmap & Recent Sessions ── -->
       <section id="view-log" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
