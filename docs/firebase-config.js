@@ -1,18 +1,11 @@
-// ─── Firebase Configuration ───────────────────────────────────────────────────
-// Fill in your Firebase project details here.
-// Get these from: Firebase Console → Project Settings → Your apps → SDK setup
-//
-// Steps:
-//   1. Go to https://console.firebase.google.com
-//   2. Create a project (or select existing)
-//   3. Add a Web App (</> icon)
-//   4. Copy the firebaseConfig object values below
+// ─── Firebase Configuration ────────────────────────────────────────────────
+// Auto-configured by Firebase CLI — do not edit manually.
 
 export const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyB98auriNklD-DP6AUpRns7hETAuCQmuTo",
+  authDomain:        "reading-tracker-d8410.firebaseapp.com",
+  projectId:         "reading-tracker-d8410",
+  storageBucket:     "reading-tracker-d8410.firebasestorage.app",
+  messagingSenderId: "904263941265",
+  appId:             "1:904263941265:web:f9ccc2c5b70a64fab1d330"
 };
