@@ -374,6 +374,9 @@ async function submitLog() {
     $('log-start').value = end;
     $('log-start-hint').textContent = '↑ Auto-filled from last session';
     $('log-start-hint').className = 'input-hint found';
+    
+    // Invalidate history cache so new entry shows up
+    historyCache = [];
 
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
@@ -743,8 +746,7 @@ async function renderHistory() {
   if (historyCache.length === 0) {
     const q = query(
       collection(db, `users/${uid}/reading_logs`),
-      orderBy('date', 'desc'),
-      limit(1000)
+      orderBy('date', 'desc')
     );
     const snap = await getDocs(q);
     historyCache = snap.docs.map(d => d.data());
