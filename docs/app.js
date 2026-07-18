@@ -51,6 +51,7 @@ let dashFilter        = 'all';
 let dashYearFilter    = 'all';
 let wishlistFilter    = 'all';
 let categoryChartMode = window.categoryChartMode || 'pages';
+let collectionChartMode = 'pages';
 let librarySearchTerm = '';
 let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';
@@ -118,25 +119,34 @@ function updateMetaThemeColor(isLight) {
 }
 
 function initTheme() {
-  const saved = localStorage.getItem('rt_theme');
-  const isLight = saved === 'light';
-  if (isLight) {
+  const saved = localStorage.getItem('rt_theme') || 'light';
+  const isDark = saved === 'dark'; // saved is 'dark' -> class 'light-mode' active
+  if (isDark) {
     document.body.classList.add('light-mode');
-    const icon = $('theme-icon');
-    if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+  } else {
+    document.body.classList.remove('light-mode');
   }
-  updateMetaThemeColor(isLight);
+  const icon = $('theme-icon');
+  if (icon) {
+    icon.classList.toggle('fa-moon', !isDark);
+    icon.classList.toggle('fa-sun', isDark);
+  }
+  updateMetaThemeColor(!isDark);
 }
 
 function toggleTheme() {
-  const isLight = document.body.classList.toggle('light-mode');
-  localStorage.setItem('rt_theme', isLight ? 'light' : 'dark');
+  const isDark = document.body.classList.toggle('light-mode'); // true means light-mode class added -> Dark Theme
+  localStorage.setItem('rt_theme', isDark ? 'dark' : 'light');
   const icon = $('theme-icon');
   if (icon) {
-    icon.classList.toggle('fa-moon', !isLight);
-    icon.classList.toggle('fa-sun', isLight);
+    icon.classList.toggle('fa-moon', !isDark);
+    icon.classList.toggle('fa-sun', isDark);
   }
-  updateMetaThemeColor(isLight);
+  updateMetaThemeColor(!isDark);
+  
+  if (currentView === 'dashboard') {
+    renderDashboard();
+  }
 }
 
 // ── Screen visibility ─────────────────────────────────────────────────────────
@@ -1550,7 +1560,7 @@ async function renderDashboard() {
     upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
   } else {
     upNext.forEach(b => {
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
           <div class="min-w-0">
@@ -1577,9 +1587,9 @@ async function renderDashboard() {
     if (recentCompletions.length === 0) {
       recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books recently finished</p>';
     } else {
-      recentCompletions.slice(0, 5).forEach(c => {
+      recentCompletions.forEach(c => {
         const book = mergedBooks.find(b => b.title === c.title);
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex justify-between items-start gap-3">
             <div class="min-w-0 flex-1">
@@ -1953,22 +1963,28 @@ function renderDonutChart() {
   const wrap = $('chart-donut-wrap');
   if (!wrap) return;
 
-  let bahaiPg = 0, nonBahaiPg = 0;
+  let bahaiVal = 0, nonBahaiVal = 0;
   booksCache.forEach(b => {
-    const completed = (b.read_count || 0) * (b.total_pages || 0);
-    const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
-    const tot = completed + active;
-    if (b.collection === 'Bahai') bahaiPg += tot;
-    else nonBahaiPg += tot;
+    if (collectionChartMode === 'pages') {
+      const completed = (b.read_count || 0) * (b.total_pages || 0);
+      const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+      const tot = completed + active;
+      if (b.collection === 'Bahai') bahaiVal += tot;
+      else nonBahaiVal += tot;
+    } else {
+      const tot = b.read_count || 0;
+      if (b.collection === 'Bahai') bahaiVal += tot;
+      else nonBahaiVal += tot;
+    }
   });
 
-  const total = bahaiPg + nonBahaiPg || 1;
+  const total = bahaiVal + nonBahaiVal || 1;
   const r = 35, cx = 50, cy = 50, sw = 10;
   const circ = 2 * Math.PI * r; // ~219.91
-  const bahaiDash = (bahaiPg / total) * circ;
-  const nonBahaiDash = (nonBahaiPg / total) * circ;
+  const bahaiDash = (bahaiVal / total) * circ;
+  const nonBahaiDash = (nonBahaiVal / total) * circ;
 
-  const isDark = !document.body.classList.contains('light-mode');
+  const isDark = document.body.classList.contains('light-mode');
   const c1 = isDark ? '#D6A85C' : '#FF9F0A'; // Bahai (Gold)
   const c2 = isDark ? '#38BDF8' : '#0A84FF'; // Non-Bahai (Sky Blue)
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
@@ -1980,14 +1996,14 @@ function renderDonutChart() {
   const overlayTotal = el('span', 'text-xl font-extrabold text-white');
   overlayTotal.textContent = fmtNum(total);
   const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
-  overlayLabel.textContent = 'Pages';
+  overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
   centerOverlay.appendChild(overlayTotal);
   centerOverlay.appendChild(overlayLabel);
 
-  const pctBahai = total > 0 ? Math.round(bahaiPg / total * 100) : 0;
+  const pctBahai = total > 0 ? Math.round(bahaiVal / total * 100) : 0;
   const pctNon   = 100 - pctBahai;
 
-  if (bahaiPg > 0) {
+  if (bahaiVal > 0) {
     const s1 = svgEl('circle', {
       cx, cy, r, fill: 'none', stroke: c1, 'stroke-width': sw,
       'stroke-dasharray': `${bahaiDash} ${circ}`,
@@ -1997,19 +2013,19 @@ function renderDonutChart() {
     s1.style.transition = 'stroke-width 0.2s ease';
     s1.addEventListener('mouseenter', () => {
       s1.setAttribute('stroke-width', (sw + 2).toString());
-      overlayTotal.textContent = fmtNum(bahaiPg);
+      overlayTotal.textContent = fmtNum(bahaiVal);
       overlayLabel.textContent = `Bahá'í (${pctBahai}%)`;
     });
     s1.addEventListener('mouseleave', () => {
       s1.setAttribute('stroke-width', sw.toString());
       overlayTotal.textContent = fmtNum(total);
-      overlayLabel.textContent = 'Pages';
+      overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
     });
     svg.appendChild(s1);
   }
 
-  if (nonBahaiPg > 0) {
-    const startAngle = -90 + (bahaiPg / total) * 360;
+  if (nonBahaiVal > 0) {
+    const startAngle = -90 + (bahaiVal / total) * 360;
     const s2 = svgEl('circle', {
       cx, cy, r, fill: 'none', stroke: c2, 'stroke-width': sw,
       'stroke-dasharray': `${nonBahaiDash} ${circ}`,
@@ -2019,32 +2035,33 @@ function renderDonutChart() {
     s2.style.transition = 'stroke-width 0.2s ease';
     s2.addEventListener('mouseenter', () => {
       s2.setAttribute('stroke-width', (sw + 2).toString());
-      overlayTotal.textContent = fmtNum(nonBahaiPg);
+      overlayTotal.textContent = fmtNum(nonBahaiVal);
       overlayLabel.textContent = `Non-Bahá'í (${pctNon}%)`;
     });
     s2.addEventListener('mouseleave', () => {
       s2.setAttribute('stroke-width', sw.toString());
       overlayTotal.textContent = fmtNum(total);
-      overlayLabel.textContent = 'Pages';
+      overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
     });
     svg.appendChild(s2);
   }
 
   // Legend
   const legend = el('div', 'flex flex-col gap-2.5 justify-center w-full max-w-[140px]');
+  const unitStr = collectionChartMode === 'pages' ? 'pg' : 'books';
   legend.innerHTML = `
     <div class="flex items-center gap-2">
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c1}"></span>
       <div>
         <div class="text-[10px] font-bold text-slate-350">Bahá'í</div>
-        <div class="text-xs font-black text-slate-100">${pctBahai}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(bahaiPg)} pg)</span></div>
+        <div class="text-xs font-black text-slate-100">${pctBahai}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(bahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
     <div class="flex items-center gap-2">
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c2}"></span>
       <div>
         <div class="text-[10px] font-bold text-slate-350">Non-Bahá'í</div>
-        <div class="text-xs font-black text-slate-100">${pctNon}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(nonBahaiPg)} pg)</span></div>
+        <div class="text-xs font-black text-slate-100">${pctNon}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(nonBahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
   `;
@@ -2317,7 +2334,7 @@ async function renderBookshelf() {
     const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
     const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
 
-    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer');
+    const card = el('div', 'glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer');
 
     const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
@@ -2345,10 +2362,10 @@ async function renderBookshelf() {
     card.innerHTML = `
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
+          <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">&#8203;${b.title}</div>
           <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
         </div>
-        <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+        <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
       </div>
 
       <div class="flex flex-wrap gap-1.5 mt-0.5">
@@ -2780,7 +2797,7 @@ function renderBooksPerYearChart(completions, containerId) {
   const barWidth = Math.min(45, (plotWidth / years.length) * 0.6);
   const gap = (plotWidth - (barWidth * years.length)) / (years.length > 1 ? years.length - 1 : 1);
 
-  const isDark = !document.body.classList.contains('light-mode');
+  const isDark = document.body.classList.contains('light-mode');
   const labelColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
   const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
@@ -2820,12 +2837,8 @@ function renderBooksPerYearChart(completions, containerId) {
     });
 
     rect.addEventListener('click', () => {
-      Haptics.click();
-      const select = $('dash-year-select');
-      if (select) {
-        select.value = year;
-        select.dispatchEvent(new Event('change'));
-      }
+      const completedBooksInYear = filteredCompletions.filter(c => c.date.slice(0, 4) === year);
+      showYearBooksPopup(year, completedBooksInYear);
     });
 
     svg.appendChild(rect);
@@ -2848,6 +2861,83 @@ function renderBooksPerYearChart(completions, containerId) {
   });
 
   svgContainer.appendChild(svg);
+}
+
+function showYearBooksPopup(year, completedBooksInYear) {
+  if (typeof Haptics !== 'undefined' && Haptics.click) Haptics.click();
+  
+  // Create modal container
+  const modal = el('div', 'fixed inset-0 z-[100] flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto');
+  modal.id = 'year-books-popup';
+  
+  // Backdrop
+  const backdrop = el('div', 'absolute inset-0 bg-black/60 backdrop-blur-sm');
+  backdrop.addEventListener('click', () => {
+    modal.classList.remove('open');
+    setTimeout(() => modal.remove(), 300);
+  });
+  modal.appendChild(backdrop);
+  
+  // Content Card
+  const card = el('div', 'w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl translate-y-10 sm:translate-y-0 sm:scale-95 transition-all duration-300 overflow-y-auto max-h-[80vh] relative z-[110]');
+  card.style.cssText = 'background: var(--bg-elevated); border: 0.5px solid var(--border-strong)';
+  
+  // Header
+  const header = el('div', 'flex justify-between items-center');
+  header.innerHTML = `
+    <div>
+      <h3 class="text-base font-black tracking-tight" style="color: var(--text-primary)">Books Completed in ${year}</h3>
+      <p class="text-[10px] font-bold text-slate-400 mt-0.5">${completedBooksInYear.length} book${completedBooksInYear.length === 1 ? '' : 's'} read</p>
+    </div>
+    <button class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-800/40 text-slate-450" id="close-year-popup">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  `;
+  card.appendChild(header);
+  
+  // Books list
+  const list = el('div', 'flex flex-col gap-2.5 mt-2 overflow-y-auto max-h-[60vh] safe-padding-bottom');
+  if (completedBooksInYear.length === 0) {
+    list.innerHTML = `<div class="text-xs text-slate-500 italic py-2 text-center">No completed books recorded for ${year}.</div>`;
+  } else {
+    // Sort chronologically ascending
+    const sorted = [...completedBooksInYear].sort((a, b) => a.date.localeCompare(b.date));
+    sorted.forEach((c, idx) => {
+      const book = booksCache.find(b => b.title === c.title);
+      const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-white/5 active:scale-[0.98] transition-all cursor-pointer');
+      row.innerHTML = `
+        <div class="min-w-0 pr-3 flex-1">
+          <div class="text-xs font-bold text-slate-100 truncate">${idx + 1}. ${c.title}</div>
+          <div class="text-[9px] text-slate-400 truncate mt-0.5">${book ? book.author || 'Unknown' : 'Unknown'}</div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-[10px] font-black text-emerald">${c.date}</div>
+          <div class="text-[8px] text-slate-400 font-semibold mt-0.5">${c.pages || 0} pg</div>
+        </div>
+      `;
+      if (book) {
+        row.addEventListener('click', () => {
+          modal.classList.remove('open');
+          setTimeout(() => modal.remove(), 300);
+          openBookDetailModal(book);
+        });
+      }
+      list.appendChild(row);
+    });
+  }
+  
+  card.appendChild(list);
+  modal.appendChild(card);
+  document.body.appendChild(modal);
+  
+  card.querySelector('#close-year-popup').addEventListener('click', () => {
+    modal.classList.remove('open');
+    setTimeout(() => modal.remove(), 300);
+  });
+  
+  requestAnimationFrame(() => {
+    modal.classList.add('open');
+  });
 }
 
 // =========================================================================
@@ -2875,7 +2965,7 @@ function renderCategoryPieChart(books, containerId) {
     if (categoryChartMode === 'pages') {
       val = book.pages_read || ((book.status === 'Finished') ? (book.total_pages * (book.read_count || 1)) : 0);
     } else {
-      val = 1;
+      val = book.read_count || (book.status === 'Finished' ? 1 : 0);
     }
     
     if (counts[normalized] !== undefined) {
@@ -2903,19 +2993,19 @@ function renderCategoryPieChart(books, containerId) {
   const circumference = 2 * Math.PI * 35; // r=35 -> ~219.91
   let cumulativePercent = 0;
 
-  const chartFlex = el('div', 'flex flex-col sm:flex-row items-center justify-around gap-6 py-2 w-full');
-  const svgWrapper = el('div', 'relative w-28 h-28 shrink-0');
+  const chartFlex = el('div', 'flex flex-col items-center justify-center gap-6 py-3 w-full');
+  const svgWrapper = el('div', 'relative w-32 h-32 shrink-0');
   
-  const isDark = !document.body.classList.contains('light-mode');
+  const isDark = document.body.classList.contains('light-mode');
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
   const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '35', fill: 'none', stroke: trackColor, 'stroke-width': '10' }));
 
-  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
-  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-2');
+  const overlayTotal = el('span', 'text-2xl font-black text-slate-100');
   overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
+  const overlayLabel = el('span', 'text-[8px] font-bold tracking-wider text-slate-400 uppercase text-center mt-0.5 max-w-[84px] leading-tight');
   overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
   
   centerOverlay.appendChild(overlayTotal);
@@ -2923,7 +3013,7 @@ function renderCategoryPieChart(books, containerId) {
   svgWrapper.appendChild(svg);
   svgWrapper.appendChild(centerOverlay);
 
-  const legendGrid = el('div', 'grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]');
+  const legendGrid = el('div', 'flex flex-col gap-2 w-full max-w-[280px]');
 
   Object.keys(counts).forEach(cat => {
     const count = counts[cat];
@@ -2943,21 +3033,21 @@ function renderCategoryPieChart(books, containerId) {
       class: 'transition-all duration-300 cursor-pointer'
     });
 
-    const valLabel = categoryChartMode === 'pages' ? `${fmtNum(count)} pg` : `(${count})`;
+    const valLabel = categoryChartMode === 'pages' ? `${fmtNum(count)} pg` : `${count} book${count === 1 ? '' : 's'}`;
     const pctVal = Math.round(percent * 100);
 
-    const legendItem = el('div', 'flex items-center gap-2 text-[10px] p-1 rounded-lg border border-transparent transition-all');
+    const legendItem = el('div', 'flex items-center gap-2.5 text-xs p-1.5 px-2.5 rounded-xl border border-transparent transition-all');
     legendItem.innerHTML = `
-      <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
-      <span class="font-medium text-slate-350 truncate max-w-[100px]">${cat}</span>
-      <span class="text-slate-500 font-bold ml-auto">${valLabel} (${pctVal}%)</span>
+      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
+      <span class="font-semibold text-slate-200">${cat}</span>
+      <span class="text-slate-450 font-bold ml-auto">${valLabel} (${pctVal}%)</span>
     `;
     legendGrid.appendChild(legendItem);
 
     segment.addEventListener('mouseenter', () => {
       segment.setAttribute('stroke-width', '12');
       overlayTotal.textContent = fmtNum(count);
-      overlayLabel.textContent = `${cat} (${pctVal}%)`;
+      overlayLabel.textContent = cat;
       legendItem.classList.add('bg-white/5', 'border-white/10');
     });
 
@@ -3119,11 +3209,9 @@ function renderActivityHeatmap(logs) {
   
   const today = new Date();
   today.setHours(0,0,0,0);
-  const startTime = today.getTime() - 364 * 24 * 60 * 60 * 1000;
+  const startTime = today.getTime() - 363 * 24 * 60 * 60 * 1000; // 364 days total (52 full weeks)
   
-  const isDark = !document.body.classList.contains('light-mode');
-  
-  for (let i = 0; i < 365; i++) {
+  for (let i = 0; i < 364; i++) {
     const activeDate = new Date(startTime + i * 24 * 60 * 60 * 1000);
     const year = activeDate.getFullYear();
     const month = String(activeDate.getMonth() + 1).padStart(2, '0');
@@ -3136,15 +3224,10 @@ function renderActivityHeatmap(logs) {
     block.className = 'heatmap-day';
     
     if (pagesRead > 0) {
-      const lightness = isDark 
-        ? Math.max(40, 75 - (pagesRead / 80) * 35) 
-        : Math.max(30, 85 - (pagesRead / 80) * 55);
-      block.style.backgroundColor = `hsla(200, 85%, ${lightness}%, 1)`;
-      if (pagesRead > 40) {
-        block.style.boxShadow = `0 0 4px hsla(200, 85%, ${lightness}%, 0.6)`;
-      }
-    } else {
-      block.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)';
+      if (pagesRead <= 10) block.classList.add('heatmap-tier-1');
+      else if (pagesRead <= 20) block.classList.add('heatmap-tier-2');
+      else if (pagesRead <= 40) block.classList.add('heatmap-tier-3');
+      else block.classList.add('heatmap-tier-4');
     }
     
     const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -3244,7 +3327,13 @@ function normalizeGroup(groupName) {
 // =========================================================================
 function normalizeText(str) {
   if (!str) return '';
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove diacritics
+    .replace(/[\u2018\u2019\u201c\u201d'`"’‘]/g, "") // remove all smart/straight quotes and apostrophes
+    .replace(/[-]/g, "") // remove hyphens
+    .replace(/\s+/g, "") // remove all spaces
+    .toLowerCase();
 }
 
 function openBookDetailModal(b) {
@@ -3294,6 +3383,65 @@ function openBookDetailModal(b) {
   const offset = circumference - (dispPct / 100) * circumference;
   circle.style.strokeDashoffset = offset;
   
+  // Book Reading Calculator calculations
+  const paceInput = $('bd-calc-pace');
+  function updateCalculator() {
+    const pace = parseInt(paceInput.value, 10) || 10;
+    let pagesRemaining = b.total_pages;
+    if (isFin) {
+      pagesRemaining = 0;
+    } else if (isAct) {
+      pagesRemaining = Math.max(0, b.total_pages - currentCyclePages);
+    }
+    
+    $('bd-calc-remaining').textContent = `${pagesRemaining} pg`;
+    
+    if (pagesRemaining <= 0) {
+      $('bd-calc-days').textContent = '0 days';
+      $('bd-calc-weeks').textContent = '0 weeks';
+      $('bd-calc-date').textContent = 'Finished';
+      $('bd-calc-time').textContent = '0 min';
+      $('bd-calc-hist-days').textContent = '0 days';
+      return;
+    }
+    
+    const daysToFinish = Math.ceil(pagesRemaining / pace);
+    const weeksToFinish = (pagesRemaining / pace / 7).toFixed(1);
+    $('bd-calc-days').textContent = `${daysToFinish} days`;
+    $('bd-calc-weeks').textContent = `${weeksToFinish} weeks`;
+    
+    const projDate = new Date();
+    projDate.setDate(projDate.getDate() + daysToFinish);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $('bd-calc-date').textContent = `${projDate.getDate()}-${months[projDate.getMonth()]}-${projDate.getFullYear()}`;
+    
+    // Average reading speed in pages per minute (avgPPM)
+    const totalLoggedPages = logsCache.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+    const totalMins = logsCache.reduce((s, l) => s + (l.minutes_spent || 0), 0);
+    const avgPPM = totalMins > 0 ? (totalLoggedPages / totalMins) : 0.5;
+    const totalReadingMins = Math.round(pagesRemaining / avgPPM);
+    $('bd-calc-time').textContent = `${totalReadingMins} min`;
+    
+    // Days to Finish (historical YTD average pace)
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const dayOfYear = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+    const yearLogs = logsCache.filter(l => l.date && l.date.startsWith(String(now.getFullYear())));
+    const yearPages = yearLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+    const pagesPerDayRate = yearPages / Math.max(1, dayOfYear);
+    
+    if (pagesPerDayRate > 0) {
+      const histDays = Math.ceil(pagesRemaining / pagesPerDayRate);
+      $('bd-calc-hist-days').textContent = `${histDays} days`;
+    } else {
+      $('bd-calc-hist-days').textContent = '—';
+    }
+  }
+  if (paceInput) {
+    paceInput.oninput = updateCalculator;
+    updateCalculator();
+  }
+
   // Wishlist details
   const wlInfo = $('bd-wishlist-info');
   if (b._fromWishlist || isWl) {

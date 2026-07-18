@@ -448,7 +448,13 @@
 
             <!-- SVG Donut Chart Collection Split -->
             <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl">
-              <span class="section-label"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent)"></i> Collection Split</span>
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent)"></i> Collection Split</span>
+                <div class="flex bg-white/5 p-0.5 rounded-lg border border-white/5" id="donut-chart-toggle">
+                  <button class="px-2.5 py-0.5 text-[9px] font-bold rounded-md active:scale-95 transition-all text-white bg-white/10" data-mode="pages">Pages</button>
+                  <button class="px-2.5 py-0.5 text-[9px] font-bold rounded-md active:scale-95 transition-all text-slate-400" data-mode="books">Books</button>
+                </div>
+              </div>
               <div id="chart-donut-wrap" class="flex items-center justify-center gap-6 py-2">
                 <!-- Rendered by JS -->
               </div>
@@ -633,7 +639,7 @@
                 <span class="w-2 h-2 rounded-full" style="background: var(--gold)"></span>
                 Up Next
               </div>
-              <div class="flex flex-col gap-3" id="dash-up-next-books"></div>
+              <div class="scroll-carousel" id="dash-up-next-books"></div>
             </div>
 
             <!-- ── RECENTLY FINISHED ── -->
@@ -642,7 +648,7 @@
                 <span class="w-2 h-2 rounded-full" style="background: var(--emerald)"></span>
                 Recently Finished (Past Year)
               </div>
-              <div class="flex flex-col gap-3" id="dash-recent-books"></div>
+              <div class="scroll-carousel" id="dash-recent-books"></div>
             </div>
 
           </div>
@@ -791,9 +797,9 @@
             <!-- 5-filter Status Segment Control -->
             <div class="seg-control" id="bookshelf-filter-status">
               <button class="seg-btn active" data-bsf="All">All</button>
-              <button class="seg-btn" data-bsf="Not Started">Unread</button>
-              <button class="seg-btn" data-bsf="In Progress">Active</button>
-              <button class="seg-btn" data-bsf="Finished">Done</button>
+              <button class="seg-btn" data-bsf="Not Started">Not Started</button>
+              <button class="seg-btn" data-bsf="In Progress">In Progress</button>
+              <button class="seg-btn" data-bsf="Finished">Finished</button>
               <button class="seg-btn" data-bsf="Wishlist">Wishlist</button>
             </div>
 
@@ -1130,6 +1136,41 @@
         </div>
       </div>
 
+      <!-- Book Calculator Info -->
+      <div id="bd-calculator-info" class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5 mt-1">
+        <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400"><i class="fa-solid fa-calculator"></i> Book Reading Calculator</span>
+        <div class="flex flex-col gap-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">Pages per Day (plan):</span>
+            <input type="number" id="bd-calc-pace" value="10" class="w-16 px-2 py-1 rounded bg-slate-900/50 border border-white/10 text-right text-slate-100 font-bold" min="1">
+          </div>
+          <div class="flex justify-between mt-1 border-t border-white/5 pt-2">
+            <span class="text-slate-400">Pages Remaining:</span>
+            <span class="text-slate-200 font-bold" id="bd-calc-remaining">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Days to Finish:</span>
+            <span class="text-slate-200 font-bold" id="bd-calc-days">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Weeks to Finish:</span>
+            <span class="text-slate-200 font-bold" id="bd-calc-weeks">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Projected Finish Date:</span>
+            <span class="text-slate-200 font-bold text-emerald" id="bd-calc-date">—</span>
+          </div>
+          <div class="flex justify-between border-t border-white/5 pt-2">
+            <span class="text-slate-400">Total Reading Time:</span>
+            <span class="text-slate-200 font-bold" id="bd-calc-time">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Days to Finish (hist. avg):</span>
+            <span class="text-slate-200 font-bold" id="bd-calc-hist-days">—</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Wishlist / Purchase Info -->
       <div id="bd-wishlist-info" class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5 hidden">
         <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-400">Wishlist &amp; Purchase Details</span>
@@ -1177,6 +1218,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=30"></script>
+  <script type="module" src="app.js?v=32"></script>
 </body>
 </html>

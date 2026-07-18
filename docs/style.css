@@ -6,70 +6,65 @@
    DESIGN TOKENS — Sunset Sky Palette (Default: Dark Mode)
    ══════════════════════════════════════════════════════════════ */
 :root {
-  --bg:              #0B0C10;
-  --bg-solid:        #0B0C10;
-  --bg-elevated:     #16171D;
-  --bg-card:         rgba(22, 23, 29, 0.65);
-  --bg-input:        rgba(255, 255, 255, 0.05);
-  --bg-input-focus:  rgba(255, 255, 255, 0.08);
-  --text-primary:    #FFFFFF;
-  --text-secondary:  #9BA3AF;
-  --text-tertiary:   #4B5563;
-  --accent:          #38BDF8; /* Sunset Dawn Blue */
-  --accent-rgb:      56, 189, 248;
-  --accent-peach:    #E29578; /* Sunset Warm Orange */
-  --accent2:         #E29578;
-  --accent2-rgb:     226, 149, 120;
-  --accent3:         #F472B6;
-  --accent3-rgb:     244, 114, 182;
-  --gold:            #D6A85C;
-  --gold-rgb:        214, 168, 92;
-  --gold-light:      #F5D76E;
+  --bg:              linear-gradient(180deg, #FFEBD1 0%, #FAF8F5 35%, #F5E1E6 100%);
+  --bg-solid:        #FAF8F5;
+  --bg-elevated:     #FFFDFB;
+  --bg-card:         rgba(255, 255, 255, 0.65);
+  --bg-input:        rgba(45, 25, 35, 0.04);
+  --bg-input-focus:  rgba(45, 25, 35, 0.07);
+  --text-primary:    #2D1923; /* Twilight Text */
+  --text-secondary:  #6E5A65;
+  --text-tertiary:   #9C8A93;
+  --accent:          #FF5A1F; /* Sunset Orange */
+  --accent-rgb:      255, 90, 31;
+  --accent2:         #FF8C00;
+  --accent2-rgb:     255, 140, 0;
+  --accent3:         #FF6B6B;
+  --accent3-rgb:     255, 107, 107;
+  --gold:            #E69E24;
+  --gold-rgb:        230, 158, 36;
+  --gold-light:      #FAD02C;
   --emerald:         #10B981;
   --emerald-rgb:     16, 185, 129;
   --rose:            #EF4444;
   --rose-rgb:        239, 68, 68;
-  --border:          rgba(255, 255, 255, 0.06);
-  --border-strong:   rgba(255, 255, 255, 0.12);
-  --border-color:    rgba(255, 255, 255, 0.06);
-  --shadow-card:     0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --border:          rgba(45, 25, 35, 0.06);
+  --border-strong:   rgba(45, 25, 35, 0.12);
+  --border-color:    rgba(45, 25, 35, 0.04);
+  --shadow-card:     0 10px 30px -10px rgba(45, 25, 35, 0.05);
   --blur:            blur(20px) saturate(190%);
   --radius:          16px;
   --radius-lg:       20px;
   --radius-xl:       24px;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Sunset Twilight (Toggled: Light Mode)
-   ══════════════════════════════════════════════════════════════ */
 body.light-mode {
-  --bg:              #F6F5F7;
-  --bg-solid:        #F6F5F7;
-  --bg-elevated:     #FFFFFF;
-  --bg-card:         rgba(255, 255, 255, 0.75);
-  --bg-input:        rgba(0, 0, 0, 0.04);
-  --bg-input-focus:  rgba(0, 0, 0, 0.07);
-  --text-primary:    #1C1C1E;
-  --text-secondary:  #636366;
-  --text-tertiary:   #8E8E93;
-  --accent:          #007AFF;
-  --accent-rgb:      0, 122, 255;
-  --accent-peach:    #D97706;
-  --accent2:         #D97706;
-  --accent2-rgb:     217, 119, 6;
-  --accent3:         #FF2D55;
-  --accent3-rgb:     255, 45, 85;
-  --gold:            #FF9F0A;
-  --gold-rgb:        255, 159, 10;
-  --gold-light:      #FFD60A;
-  --emerald:         #30D158;
-  --emerald-rgb:     48, 209, 88;
-  --rose:            #FF3B30;
-  --rose-rgb:        255, 59, 48;
-  --border:          rgba(0, 0, 0, 0.05);
-  --border-strong:   rgba(0, 0, 0, 0.12);
-  --border-color:    rgba(0, 0, 0, 0.05);
-  --shadow-card:     0 10px 30px -10px rgba(45, 25, 35, 0.05);
+  --bg:              linear-gradient(180deg, #2E1528 0%, #120A13 50%, #080309 100%); /* Sunset Twilight Base */
+  --bg-solid:        #120A13;
+  --bg-elevated:     #1B0F1C;
+  --bg-card:         rgba(27, 15, 28, 0.65);
+  --bg-input:        rgba(255, 255, 255, 0.05);
+  --bg-input-focus:  rgba(255, 255, 255, 0.08);
+  --text-primary:    #F5ECEF; /* Lavender Text */
+  --text-secondary:  #9C8A95;
+  --text-tertiary:   #6A5863;
+  --accent:          #FF7F3E; /* Glowing Sunset Orange */
+  --accent-rgb:      255, 127, 62;
+  --accent2:         #FFA36C;
+  --accent2-rgb:     255, 163, 108;
+  --accent3:         #FF8E8E;
+  --accent3-rgb:     255, 142, 142;
+  --gold:            #FFAE19;
+  --gold-rgb:        255, 174, 25;
+  --gold-light:      #FFE047;
+  --emerald:         #34D399;
+  --emerald-rgb:     52, 211, 153;
+  --rose:            #F87171;
+  --rose-rgb:        248, 113, 113;
+  --border:          rgba(255, 255, 255, 0.08);
+  --border-strong:   rgba(255, 255, 255, 0.15);
+  --border-color:    rgba(255, 255, 255, 0.06);
+  --shadow-card:     0 10px 30px -10px rgba(0, 0, 0, 0.55);
 }
 
 /* Fluid Mesh Backdrop Orbs */
@@ -98,11 +93,11 @@ body::after {
 }
 
 body.light-mode::before {
-  background: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 127, 62, 0.12) 0%, transparent 70%);
 }
 
 body.light-mode::after {
-  background: radial-gradient(circle, rgba(217, 119, 6, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(131, 86, 163, 0.12) 0%, transparent 70%);
 }
 
 .frosted-bg-overlay {
@@ -234,9 +229,9 @@ button:active,
   border-radius: 34px;
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  background: rgba(18, 19, 24, 0.82);
-  border: 0.5px solid var(--border-color);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.85);
+  border: 0.5px solid rgba(45, 25, 35, 0.06);
+  box-shadow: 0 8px 30px rgba(45, 25, 35, 0.08);
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -247,8 +242,9 @@ button:active,
 }
 
 body.light-mode #tab-bar {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  background: rgba(18, 19, 24, 0.82);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 .tab-item {
@@ -408,10 +404,10 @@ body.light-mode #tab-bar {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   border-radius: 8px;
-  padding: 7px 10px;
+  padding: 6px 4px;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
@@ -455,15 +451,15 @@ body.light-mode .seg-btn.active {
   z-index: 10;
 }
 
-.heatmap-tier-1 { background: rgba(56, 189, 248, 0.22); }
-.heatmap-tier-2 { background: rgba(56, 189, 248, 0.50); }
-.heatmap-tier-3 { background: rgba(214, 168, 92, 0.65); }
-.heatmap-tier-4 { background: rgba(214, 168, 92, 1.0); box-shadow: 0 0 6px rgba(214, 168, 92, 0.45); }
+.heatmap-tier-1 { background: #0e4429 !important; }
+.heatmap-tier-2 { background: #006d32 !important; }
+.heatmap-tier-3 { background: #26a641 !important; }
+.heatmap-tier-4 { background: #39d353 !important; box-shadow: 0 0 6px rgba(38, 166, 65, 0.45); }
 
-body.light-mode .heatmap-tier-1 { background: rgba(10, 132, 255, 0.2); }
-body.light-mode .heatmap-tier-2 { background: rgba(10, 132, 255, 0.45); }
-body.light-mode .heatmap-tier-3 { background: rgba(255, 159, 10, 0.65); }
-body.light-mode .heatmap-tier-4 { background: rgba(255, 159, 10, 1.0); }
+body.light-mode .heatmap-tier-1 { background: #9be9a8 !important; }
+body.light-mode .heatmap-tier-2 { background: #40c463 !important; }
+body.light-mode .heatmap-tier-3 { background: #30a14e !important; }
+body.light-mode .heatmap-tier-4 { background: #216e39 !important; }
 
 /* ═══════════════════════════════════════════════════════════════
    STOPWATCH TIMER
