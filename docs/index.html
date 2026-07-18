@@ -632,7 +632,7 @@
           <span>Goals</span>
         </button>
         <button class="tab-item" data-view="wishlist" aria-label="Bookshelf">
-          <i class="fa-solid fa-books"></i>
+          <i class="fa-solid fa-book-bookmark"></i>
           <span>Bookshelf</span>
         </button>
       </nav>
@@ -818,12 +818,24 @@
             <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
           </select></div>
       </div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Initial Status</span></label>
-        <select class="select select-bordered glass-input w-full" id="ab-status">
-          <option value="Not Started">Not Started</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Finished">Finished (Direct Complete)</option>
-        </select></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Initial Status</span></label>
+          <select class="select select-bordered glass-input w-full" id="ab-status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Finished">Finished (Direct Complete)</option>
+            <option value="Want to Buy">Want to Buy (Wishlist)</option>
+            <option value="Owned">Owned (Unread)</option>
+            <option value="Gifted">Gifted</option>
+            <option value="Borrowed">Borrowed</option>
+          </select></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Cost ($)</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="ab-cost" step="0.01" min="0" placeholder="e.g. 19.99"></div>
+      </div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
+        <input type="text" class="input input-bordered glass-input w-full" id="ab-where-to-buy" placeholder="Store name or URL"></div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
+        <textarea class="textarea textarea-bordered glass-input w-full h-16 resize-none" id="ab-notes" placeholder="e.g. Gift from friend, special edition..."></textarea></div>
       <button id="add-book-save"
         class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
         style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
@@ -861,10 +873,26 @@
             <option value="Not Started">Not Started</option>
             <option value="In Progress">In Progress</option>
             <option value="Finished">Finished</option>
+            <option value="Want to Buy">Want to Buy (Wishlist)</option>
+            <option value="Owned">Owned (Unread)</option>
+            <option value="Gifted">Gifted</option>
+            <option value="Borrowed">Borrowed</option>
           </select></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Active Progress</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="eb-progress" min="0"></div>
       </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Priority</span></label>
+          <select class="select select-bordered glass-input w-full" id="eb-priority">
+            <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
+          </select></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Cost ($)</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="eb-cost" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
+        <input type="text" class="input input-bordered glass-input w-full" id="eb-where-to-buy" placeholder="Store name or URL"></div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
+        <textarea class="textarea textarea-bordered glass-input w-full h-16 resize-none" id="eb-notes" placeholder="Notes..."></textarea></div>
       <button id="edit-book-save"
         class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
         style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">

@@ -1763,125 +1763,189 @@ async function renderBookshelf() {
 
   const q = bookshelfSearchTerm;
 
-  // Determine which items to show
-  const showWishlistOnly = bookshelfStatusFilter === 'Wishlist';
+  // Merge legacy wishlist items (de-duplicated by title)
+  const libraryTitles = new Set(booksCache.map(b => b.title.toLowerCase()));
+  const normalizedWishlist = wishlistCache
+    .filter(w => !libraryTitles.has(w.title.toLowerCase()))
+    .map(w => ({
+      id: w.id,
+      title: w.title,
+      author: w.author || '',
+      collection: w.collection || 'Non-Bahai',
+      group: w.category || w.group || 'Other',
+      total_pages: w.est_pages || w.total_pages || 0,
+      priority: w.priority || 'Low',
+      status: w.status || 'Want to Buy',
+      est_cost: w.est_cost || 0,
+      where_to_buy: w.where_to_buy || '',
+      notes: w.notes || '',
+      pages_read: 0,
+      read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
+      _isWishlist: true
+    }));
 
-  // Combine: real books + wishlist-only items when Wishlist filter active
-  let items = [];
+  const allItems = [
+    ...booksCache.map(b => ({
+      ...b,
+      collection: b.collection || 'Non-Bahai',
+      group: b.group || 'Other',
+      priority: b.priority || 'Low',
+      est_cost: b.est_cost || 0,
+      where_to_buy: b.where_to_buy || '',
+      notes: b.notes || '',
+      total_pages: b.total_pages || 0,
+      _isWishlist: false
+    })),
+    ...normalizedWishlist
+  ];
 
-  if (!showWishlistOnly) {
-    // Show books from library, filtered by reading status
-    items = booksCache.filter(b => {
-      if (q && !b.title.toLowerCase().includes(q) && !(b.author || '').toLowerCase().includes(q) && !(b.group || '').toLowerCase().includes(q)) return false;
-      if (bookshelfStatusFilter === 'All') return true;
-      return b.status === bookshelfStatusFilter;
-    });
-  } else {
-    // Show wishlist-only items (not yet in library)
-    const libraryTitles = new Set(booksCache.map(b => b.title.toLowerCase()));
-    items = wishlistCache.filter(w => {
-      if (libraryTitles.has(w.title.toLowerCase())) return false; // already in library
-      if (q && !w.title.toLowerCase().includes(q) && !(w.author || '').toLowerCase().includes(q)) return false;
-      return true;
-    }).map(w => ({ ...w, _isWishlist: true }));
-  }
+  // Filter based on search term and selected chip
+  let filtered = allItems.filter(item => {
+    // Search matching
+    if (q) {
+      const matchTitle = item.title.toLowerCase().includes(q);
+      const matchAuthor = (item.author || '').toLowerCase().includes(q);
+      const matchGroup = (item.group || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchAuthor && !matchGroup) return false;
+    }
 
-  if (items.length === 0) {
+    // Tab chips filtering
+    if (bookshelfStatusFilter === 'All') return true;
+    if (bookshelfStatusFilter === 'Not Started') {
+      return ['Not Started', 'Owned'].includes(item.status);
+    }
+    if (bookshelfStatusFilter === 'In Progress') {
+      return item.status === 'In Progress';
+    }
+    if (bookshelfStatusFilter === 'Finished') {
+      return ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(item.status);
+    }
+    if (bookshelfStatusFilter === 'Wishlist') {
+      return ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(item.status) || item._isWishlist;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
     container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-slate-400">No books found</div><p class="text-xs text-slate-500">Try a different filter or add a new book</p></div>`;
     return;
   }
 
   container.innerHTML = '';
-  items.forEach(item => {
-    if (item._isWishlist) {
-      // Render a wishlist-only card
-      const card = el('div', 'glass-panel p-4 rounded-2xl flex items-start justify-between gap-4 border border-white/5');
-      const prioClasses = { 'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10', 'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10', 'Low': 'bg-slate-800/40 text-slate-400 border-white/5' };
-      const prio = prioClasses[item.priority] || prioClasses['Low'];
-      card.innerHTML = `
-        <div class="flex-1 min-w-0 flex flex-col gap-1.5">
-          <div class="flex items-start justify-between gap-2">
-            <span class="text-sm font-bold text-slate-100 leading-tight">${item.title}</span>
-            <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border bg-violet-500/10 text-violet-400 border-violet-500/20">Wishlist</span>
-          </div>
-          <p class="text-[11px] text-slate-400">${item.author || 'Unknown Author'}${item.est_pages > 0 ? ' · ' + fmtNum(item.est_pages) + ' pp' : ''}</p>
-          <div class="flex flex-wrap gap-1.5 mt-0.5">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800/40 text-slate-300 border border-white/5">${item.status || ''}</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${prio}">${item.priority || ''}</span>
-          </div>
+  filtered.forEach(b => {
+    const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
+    const isAct = b.status === 'In Progress';
+    const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+
+    // Elegant high-fidelity badge styling
+    let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
+    if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+    else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+    else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
+    else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+
+    const prioClasses = {
+      'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
+      'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
+      'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
+    };
+    const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
+
+    // Progress bar calculations
+    const pagesReadAccum = b.pages_read || 0;
+    const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+    const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
+    const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
+
+    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] transition-all');
+
+    // Est Cost display
+    const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
+
+    // Where to buy layout
+    let buyHTML = '';
+    if (b.where_to_buy) {
+      const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
+      buyHTML = `
+        <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+          <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
+          <span>Where to Buy:</span>
+          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
         </div>
       `;
-      container.appendChild(card);
-    } else {
-      // Render a library book card (same premium cards as Library view)
-      const b = item;
-      const isFin = b.status === 'Finished';
-      const isAct = b.status === 'In Progress';
-      const badgeColor = isFin
-        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
-        : isAct
-          ? 'bg-blue-500/10 text-blue-400 border-blue-500/10'
-          : 'bg-slate-800/40 text-slate-400 border-white/5';
-
-      const pagesReadAccum = b.pages_read || 0;
-      const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
-      const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
-      const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
-
-      const card = el('div', 'glass-panel p-4 rounded-3xl border border-white/5 flex flex-col gap-3 relative');
-      card.innerHTML = `
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0 flex-1">
-            <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
-            <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
-          </div>
-          <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
-        </div>
-
-        ${isAct ? `
-          <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-              <span>Reading Progress</span>
-              <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
-            </div>
-            <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
-            </div>
-          </div>
-        ` : ''}
-
-        <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold">
-          <div class="flex gap-3">
-            <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
-            <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
-          </div>
-          <div class="flex gap-1.5">
-            ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
-            ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
-            <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
-          </div>
-        </div>
-      `;
-
-      const compBtn = card.querySelector('[data-action="complete"]');
-      if (compBtn) compBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
-      });
-
-      const rereadBtn = card.querySelector('[data-action="re-read"]');
-      if (rereadBtn) rereadBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
-      });
-
-      card.querySelector('[data-action="edit"]').addEventListener('click', e => {
-        e.stopPropagation();
-        openEditBookModal(b);
-      });
-
-      container.appendChild(card);
     }
+
+    // Notes display
+    let notesHTML = '';
+    if (b.notes) {
+      notesHTML = `
+        <div class="text-[11px] text-slate-300 italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
+          <i class="fa-solid fa-quote-left text-[9px] text-slate-500 mr-1 align-top"></i>${b.notes}
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
+          <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+        </div>
+        <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+      </div>
+
+      <div class="flex flex-wrap gap-1.5 mt-0.5">
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+      </div>
+
+      ${isAct ? `
+        <div class="flex flex-col gap-1.5 mt-0.5">
+          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+            <span>Reading Progress</span>
+            <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
+          </div>
+          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${buyHTML}
+      ${notesHTML}
+
+      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
+        <div class="flex gap-3">
+          <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
+          <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+        </div>
+        <div class="flex gap-1.5">
+          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
+          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
+          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+        </div>
+      </div>
+    `;
+
+    const compBtn = card.querySelector('[data-action="complete"]');
+    if (compBtn) compBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
+    });
+
+    const rereadBtn = card.querySelector('[data-action="re-read"]');
+    if (rereadBtn) rereadBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
+    });
+
+    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
+      e.stopPropagation();
+      openEditBookModal(b);
+    });
+
+    container.appendChild(card);
   });
 }
 
@@ -1947,11 +2011,16 @@ async function saveNewBook() {
   const pages = parseInt($('ab-pages').value);
   const prio = $('ab-priority').value;
   const status = $('ab-status').value;
+  const cost = parseFloat($('ab-cost').value) || 0;
+  const buyLink = $('ab-where-to-buy').value.trim() || '';
+  const notes = $('ab-notes').value.trim() || '';
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   
   try {
     const isFinished = status === 'Finished';
+    const isWishlistStatus = ['Want to Buy', 'Gifted', 'Borrowed', 'Owned'].includes(status);
+    
     const newBook = {
       title,
       author,
@@ -1963,10 +2032,32 @@ async function saveNewBook() {
       priority: prio,
       status: status,
       pages_read: isFinished ? pages : 0,
-      read_count: isFinished ? 1 : 0
+      read_count: isFinished ? 1 : 0,
+      est_cost: cost,
+      where_to_buy: buyLink,
+      notes: notes,
+      date_added: todayISO()
     };
     
+    // Save to main books collection
     await addDoc(collection(db, `users/${uid}/books`), newBook);
+    
+    // If it's a wishlist item, also add to legacy wishlist collection for complete database safety
+    if (isWishlistStatus) {
+      await addDoc(collection(db, `users/${uid}/wishlist`), {
+        title,
+        author,
+        category: group,
+        priority: prio,
+        status: status,
+        est_pages: pages,
+        est_cost: cost,
+        where_to_buy: buyLink,
+        notes: notes,
+        date_added: todayISO()
+      });
+      wishlistCache = []; // Reset wishlist cache to force reload
+    }
     
     if (isFinished) {
       await addDoc(collection(db, `users/${uid}/reading_logs`), {
@@ -1982,6 +2073,7 @@ async function saveNewBook() {
       logsCache = [];
     }
     
+    // Reset form fields
     $('ab-title').value = '';
     $('ab-author').value = '';
     $('ab-group-select').value = 'Writings';
@@ -1990,6 +2082,9 @@ async function saveNewBook() {
     $('ab-pages').value = '';
     $('ab-priority').value = 'Low';
     $('ab-status').value = 'Not Started';
+    $('ab-cost').value = '';
+    $('ab-where-to-buy').value = '';
+    $('ab-notes').value = '';
     
     $('add-book-modal').classList.remove('open');
     showToast(`✓ Book "${title}" successfully registered!`, 'success');
@@ -2008,6 +2103,10 @@ function openEditBookModal(b) {
   $('eb-read-count').value = b.read_count || 0;
   $('eb-status').value = b.status;
   $('eb-progress').value = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+  $('eb-priority').value = b.priority || 'Low';
+  $('eb-cost').value = b.est_cost || 0;
+  $('eb-where-to-buy').value = b.where_to_buy || '';
+  $('eb-notes').value = b.notes || '';
   $('edit-book-modal').classList.add('open');
 }
 
@@ -2017,6 +2116,10 @@ async function saveEditBook() {
   const rc = parseInt($('eb-read-count').value) || 0;
   const status = $('eb-status').value;
   const prog = parseInt($('eb-progress').value) || 0;
+  const prio = $('eb-priority').value;
+  const cost = parseFloat($('eb-cost').value) || 0;
+  const buyLink = $('eb-where-to-buy').value.trim() || '';
+  const notes = $('eb-notes').value.trim() || '';
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   
@@ -2025,12 +2128,48 @@ async function saveEditBook() {
       total_pages: pages,
       read_count: rc,
       status: status,
-      pages_read: status === 'Finished' ? (pages * (rc || 1)) : status === 'In Progress' ? prog : 0
+      pages_read: status === 'Finished' ? (pages * (rc || 1)) : status === 'In Progress' ? prog : 0,
+      priority: prio,
+      est_cost: cost,
+      where_to_buy: buyLink,
+      notes: notes
     };
     
     await updateDoc(doc(db, `users/${uid}/books/${id}`), updates);
+
+    // Sync with corresponding legacy wishlist items by title if they exist
+    const bookTitle = $('eb-title').value;
+    const wlSnap = await getDocs(query(collection(db, `users/${uid}/wishlist`), where('title', '==', bookTitle)));
+    if (!wlSnap.empty) {
+      for (const d of wlSnap.docs) {
+        await updateDoc(doc(db, `users/${uid}/wishlist/${d.id}`), {
+          priority: prio,
+          status: status,
+          est_pages: pages,
+          est_cost: cost,
+          where_to_buy: buyLink,
+          notes: notes
+        });
+      }
+    } else if (['Want to Buy', 'Owned', 'Gifted', 'Borrowed'].includes(status)) {
+      // Create legacy wishlist entry if it is moved to a wishlist status
+      await addDoc(collection(db, `users/${uid}/wishlist`), {
+        title: bookTitle,
+        author: '',
+        category: 'Other',
+        priority: prio,
+        status: status,
+        est_pages: pages,
+        est_cost: cost,
+        where_to_buy: buyLink,
+        notes: notes,
+        date_added: todayISO()
+      });
+    }
+    
     $('edit-book-modal').classList.remove('open');
     showToast('✓ Book details successfully updated!', 'success');
+    wishlistCache = [];
     await loadBooksCache();
     await renderBookshelf();
     populateBookDropdown();
