@@ -1,11 +1,11 @@
 // ─── Reading Tracker — Service Worker ────────────────────────────────────────
-const CACHE_NAME = 'reading-tracker-v29';
+const CACHE_NAME = 'reading-tracker-v30';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
   BASE + 'style.css',
-  BASE + 'app.js?v=29',
+  BASE + 'app.js?v=30',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',

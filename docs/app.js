@@ -526,6 +526,7 @@ function setupLogForm() {
 
 function populateBookDropdown() {
   const sel = $('log-book');
+  if (!sel) return;
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Select a book —</option>';
 
@@ -547,7 +548,30 @@ function populateBookDropdown() {
     opt.textContent = b.title;
     sel.appendChild(opt);
   });
-  if (cur) sel.value = cur;
+
+  // If a selection exists, preserve it. Otherwise, default to the most recent entry from reading_logs.
+  if (cur) {
+    sel.value = cur;
+  } else if (logsCache && logsCache.length > 0) {
+    // Sort logs descending by date/time to find the absolute latest log
+    const sortedLogs = [...logsCache].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const latestBookTitle = sortedLogs[0].book_title;
+    if (latestBookTitle && booksCache.some(b => b.title === latestBookTitle)) {
+      sel.value = latestBookTitle;
+      // Trigger the page/cycle calculations and pre-population for the form
+      handleBookSelection(latestBookTitle, booksCache, logsCache);
+      
+      const startPage = parseInt($('log-start').value) || 0;
+      const cycle = parseInt($('log-cycle').value) || 1;
+      if (startPage > 0) {
+        $('log-start-hint').textContent = `↑ Auto-filled from last session (Cycle ${cycle})`;
+        $('log-start-hint').className = 'input-hint found';
+      } else {
+        $('log-start-hint').textContent = cycle > 1 ? `Starting Cycle ${cycle} fresh` : 'Starting fresh';
+        $('log-start-hint').className = 'input-hint';
+      }
+    }
+  }
 }
 
 async function determineActiveCycleAndPage(title) {
@@ -1495,7 +1519,7 @@ async function renderDashboard() {
       const estDays = Math.ceil(left / 10);
       const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
       
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
           <div class="min-w-0">

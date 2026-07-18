@@ -1,37 +1,38 @@
-/* ─── Reading Tracker — iOS HIG Design System v12 — Sunset Ambiance ─── */
+/* ─── Reading Tracker — iOS HIG Design System v13 — Sunset Sky Palette ─── */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Sunset Ambiance Theme (Default: Light Mode)
+   DESIGN TOKENS — Sunset Sky Palette (Default: Dark Mode)
    ══════════════════════════════════════════════════════════════ */
 :root {
-  --bg:              linear-gradient(180deg, #FFEBD1 0%, #FAF8F5 35%, #F5E1E6 100%);
-  --bg-solid:        #FAF8F5;
-  --bg-elevated:     #FFFDFB;
-  --bg-card:         rgba(255, 255, 255, 0.65);
-  --bg-input:        rgba(45, 25, 35, 0.04);
-  --bg-input-focus:  rgba(45, 25, 35, 0.07);
-  --text-primary:    #2D1923;
-  --text-secondary:  #6E5A65;
-  --text-tertiary:   #9C8A93;
-  --accent:          #FF5A1F; /* Sunset Orange */
-  --accent-rgb:      255, 90, 31;
-  --accent2:         #FF8C00;
-  --accent2-rgb:     255, 140, 0;
-  --accent3:         #FF6B6B;
-  --accent3-rgb:     255, 107, 107;
-  --gold:            #E69E24;
-  --gold-rgb:        230, 158, 36;
-  --gold-light:      #FAD02C;
+  --bg:              #0B0C10;
+  --bg-solid:        #0B0C10;
+  --bg-elevated:     #16171D;
+  --bg-card:         rgba(22, 23, 29, 0.65);
+  --bg-input:        rgba(255, 255, 255, 0.05);
+  --bg-input-focus:  rgba(255, 255, 255, 0.08);
+  --text-primary:    #FFFFFF;
+  --text-secondary:  #9BA3AF;
+  --text-tertiary:   #4B5563;
+  --accent:          #38BDF8; /* Sunset Dawn Blue */
+  --accent-rgb:      56, 189, 248;
+  --accent-peach:    #E29578; /* Sunset Warm Orange */
+  --accent2:         #E29578;
+  --accent2-rgb:     226, 149, 120;
+  --accent3:         #F472B6;
+  --accent3-rgb:     244, 114, 182;
+  --gold:            #D6A85C;
+  --gold-rgb:        214, 168, 92;
+  --gold-light:      #F5D76E;
   --emerald:         #10B981;
   --emerald-rgb:     16, 185, 129;
   --rose:            #EF4444;
   --rose-rgb:        239, 68, 68;
-  --border:          rgba(45, 25, 35, 0.06);
-  --border-strong:   rgba(45, 25, 35, 0.12);
-  --border-color:    rgba(45, 25, 35, 0.04);
-  --shadow-card:     0 10px 30px -10px rgba(45, 25, 35, 0.05);
+  --border:          rgba(255, 255, 255, 0.06);
+  --border-strong:   rgba(255, 255, 255, 0.12);
+  --border-color:    rgba(255, 255, 255, 0.06);
+  --shadow-card:     0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --blur:            blur(20px) saturate(190%);
   --radius:          16px;
   --radius-lg:       20px;
@@ -39,35 +40,78 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Sunset Twilight Theme (Toggled: Dark Mode)
+   DESIGN TOKENS — Sunset Twilight (Toggled: Light Mode)
    ══════════════════════════════════════════════════════════════ */
 body.light-mode {
-  --bg:              linear-gradient(180deg, #2E1528 0%, #120A13 50%, #080309 100%);
-  --bg-solid:        #120A13;
-  --bg-elevated:     #1B0F1C;
-  --bg-card:         rgba(27, 15, 28, 0.65);
-  --bg-input:        rgba(255, 255, 255, 0.05);
-  --bg-input-focus:  rgba(255, 255, 255, 0.08);
-  --text-primary:    #F5ECEF;
-  --text-secondary:  #9C8A95;
-  --text-tertiary:   #6A5863;
-  --accent:          #FF7F3E; /* Glowing Sunset Orange */
-  --accent-rgb:      255, 127, 62;
-  --accent2:         #FFA36C;
-  --accent2-rgb:     255, 163, 108;
-  --accent3:         #FF8E8E;
-  --accent3-rgb:     255, 142, 142;
-  --gold:            #FFAE19;
-  --gold-rgb:        255, 174, 25;
-  --gold-light:      #FFE047;
-  --emerald:         #34D399;
-  --emerald-rgb:     52, 211, 153;
-  --rose:            #F87171;
-  --rose-rgb:        248, 113, 113;
-  --border:          rgba(255, 255, 255, 0.08);
-  --border-strong:   rgba(255, 255, 255, 0.15);
-  --border-color:    rgba(255, 255, 255, 0.06);
-  --shadow-card:     0 10px 30px -10px rgba(0, 0, 0, 0.55);
+  --bg:              #F6F5F7;
+  --bg-solid:        #F6F5F7;
+  --bg-elevated:     #FFFFFF;
+  --bg-card:         rgba(255, 255, 255, 0.75);
+  --bg-input:        rgba(0, 0, 0, 0.04);
+  --bg-input-focus:  rgba(0, 0, 0, 0.07);
+  --text-primary:    #1C1C1E;
+  --text-secondary:  #636366;
+  --text-tertiary:   #8E8E93;
+  --accent:          #007AFF;
+  --accent-rgb:      0, 122, 255;
+  --accent-peach:    #D97706;
+  --accent2:         #D97706;
+  --accent2-rgb:     217, 119, 6;
+  --accent3:         #FF2D55;
+  --accent3-rgb:     255, 45, 85;
+  --gold:            #FF9F0A;
+  --gold-rgb:        255, 159, 10;
+  --gold-light:      #FFD60A;
+  --emerald:         #30D158;
+  --emerald-rgb:     48, 209, 88;
+  --rose:            #FF3B30;
+  --rose-rgb:        255, 59, 48;
+  --border:          rgba(0, 0, 0, 0.05);
+  --border-strong:   rgba(0, 0, 0, 0.12);
+  --border-color:    rgba(0, 0, 0, 0.05);
+  --shadow-card:     0 10px 30px -10px rgba(45, 25, 35, 0.05);
+}
+
+/* Fluid Mesh Backdrop Orbs */
+body::before {
+  content: '';
+  position: fixed;
+  top: -10%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+  z-index: -2;
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 10%;
+  left: -10%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(226, 149, 120, 0.12) 0%, transparent 70%);
+  z-index: -2;
+  pointer-events: none;
+}
+
+body.light-mode::before {
+  background: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%);
+}
+
+body.light-mode::after {
+  background: radial-gradient(circle, rgba(217, 119, 6, 0.06) 0%, transparent 70%);
+}
+
+.frosted-bg-overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -180,48 +224,54 @@ button:active,
    ══════════════════════════════════════════════════════════════ */
 #tab-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  left: 16px;
+  right: 16px;
   margin: 0 auto;
-  width: 100%;
-  max-width: 448px;
-  height: calc(56px + env(safe-area-inset-bottom, 12px));
-  padding-bottom: env(safe-area-inset-bottom, 12px);
-  box-sizing: border-box;
-  border-radius: 0;
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  background: var(--bg-card);
-  border-top: 0.5px solid var(--border-strong);
-  z-index: 999;
+  width: calc(100% - 32px);
+  max-width: 440px;
+  height: 68px;
+  border-radius: 34px;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  background: rgba(18, 19, 24, 0.82);
+  border: 0.5px solid var(--border-color);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 -2px 10px rgba(45, 25, 35, 0.02);
-  transition: background 0.35s, border-color 0.35s;
+  z-index: 1000;
+  box-sizing: border-box;
+  padding: 0 8px;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+body.light-mode #tab-bar {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
 .tab-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   width: 25%;
   height: 100%;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
-  cursor: pointer;
-  background: transparent;
   border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .tab-item i {
-  font-size: 18px;
-  margin-bottom: 4px;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 19px;
+  margin-bottom: 3px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .tab-item.active {
@@ -229,12 +279,39 @@ button:active,
 }
 
 .tab-item.active i {
-  transform: scale(1.15);
-  text-shadow: 0 0 12px rgba(var(--accent-rgb), 0.4);
+  transform: scale(1.15) translateY(-2px);
+}
+
+/* Micro-shadow bubble floating underneath the active tab */
+.tab-item.active::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(4px);
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.15);
+}
+
+/* Active indicator dot */
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  width: 5px;
+  height: 5px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .tab-item:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
 /* Breathing Focus Orb for Zen Mode */
@@ -723,4 +800,33 @@ body.light-mode .text-zinc-400 {
   border-radius: 9999px;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Space-saving Bento Grid Container */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+/* Horizontal Swiping Book Carousel */
+.scroll-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 4px 12px 4px;
+  scrollbar-width: none; /* Hide scrollbars */
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-card {
+  flex: 0 0 85%;
+  max-width: 320px;
+  scroll-snap-align: start;
 }
