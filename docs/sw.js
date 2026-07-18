@@ -5,7 +5,7 @@ const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
   BASE + 'style.css',
-  BASE + 'app.js',
+  BASE + 'app.js?v=26',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',
