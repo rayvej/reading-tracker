@@ -2064,7 +2064,11 @@ function setupLogDetailSheet() {
   $('sheet-backdrop').addEventListener('click', closeLogDetailSheet);
 }
 
-// renderWishlist / renderLibrary / setupWishlist / setupLibrary are defined earlier as stubs delegating to renderBookshelf/setupBookshelf
+// Legacy stubs to prevent ReferenceErrors after consolidation
+function setupLibrary() {}
+function setupWishlist() {}
+function renderLibrary() {}
+function renderWishlist() { renderBookshelf(); }
 
 async function addWishlistItem() {
   const title = $('wl-title').value.trim();
