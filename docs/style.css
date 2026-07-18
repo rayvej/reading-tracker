@@ -826,3 +826,21 @@ body.light-mode .text-zinc-400 {
   max-width: 320px;
   scroll-snap-align: start;
 }
+
+/* Fix heatmap tooltip contrast by forcing legible off-white text and tags in both modes */
+#heatmap-tooltip,
+#heatmap-tooltip div,
+#heatmap-tooltip span,
+#heatmap-tooltip b {
+  color: #f8fafc !important;
+}
+
+#heatmap-tooltip .text-amber-400,
+#heatmap-tooltip .text-amber-400 b {
+  color: #fbbf24 !important;
+}
+
+#heatmap-tooltip .text-blue-400,
+#heatmap-tooltip .text-blue-400 b {
+  color: #60a5fa !important;
+}

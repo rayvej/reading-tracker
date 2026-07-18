@@ -3227,9 +3227,12 @@ function renderActivityHeatmap(logs) {
     const pages = parseInt(log.pages_read_today, 10) || parseInt(log.pagesRead, 10) || Math.max(0, end - start) || 0;
     activityMap[dStr] = (activityMap[dStr] || 0) + pages;
   });
+
+  console.log(`[Heatmap Debug] input logs: ${logs.length}, map size: ${Object.keys(activityMap).length}`);
   
   const today = new Date();
   const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  let activeCellsCount = 0;
   
   for (let i = 363; i >= 0; i--) {
     const activeDate = new Date(todayUTC - i * 24 * 60 * 60 * 1000);
@@ -3244,6 +3247,7 @@ function renderActivityHeatmap(logs) {
     block.className = 'heatmap-day';
     
     if (pagesRead > 0) {
+      activeCellsCount++;
       if (pagesRead <= 10) block.classList.add('heatmap-tier-1');
       else if (pagesRead <= 20) block.classList.add('heatmap-tier-2');
       else if (pagesRead <= 40) block.classList.add('heatmap-tier-3');
@@ -3291,6 +3295,7 @@ function renderActivityHeatmap(logs) {
     
     container.appendChild(block);
   }
+  console.log(`[Heatmap Debug] Rendered ${activeCellsCount} active cells out of 364`);
 }
 
 if (!window._heatmapTooltipWired) {
