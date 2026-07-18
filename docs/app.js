@@ -1886,97 +1886,6 @@ async function renderBookshelf() {
 }
 
 
-async function renderLibrary() {
-  await loadBooksCache();
-  
-  const container = $('lib-books-list');
-  if (!container) return;
-  container.innerHTML = '';
-  
-  let items = booksCache;
-  if (librarySearchTerm) {
-    items = items.filter(b => b.title.toLowerCase().includes(librarySearchTerm) || (b.author && b.author.toLowerCase().includes(librarySearchTerm)));
-  }
-  if (libraryStatusFilter !== 'all') {
-    items = items.filter(b => b.status === libraryStatusFilter);
-  }
-  
-  if (items.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6 font-medium">No books match your criteria</p>';
-    return;
-  }
-  
-  items.forEach(b => {
-    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3.5 relative');
-    const isFin = b.status === 'Finished';
-    const isAct = b.status === 'In Progress';
-    const badgeColor = isFin ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : isAct ? 'bg-blue-500/10 text-blue-400 border-blue-500/10' : 'bg-slate-800/40 text-slate-400 border-white/5';
-    
-    let activeProgress = 0;
-    if (b.status === 'In Progress') {
-      activeProgress = b.pages_read || 0;
-    }
-    const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((activeProgress / b.total_pages) * 100)) : 0;
-    
-    card.innerHTML = `
-      <div class="book-card-header">
-        <div class="min-w-0 flex-1">
-          <div class="book-title-clamped">${b.title}</div>
-          <div class="text-[10px] text-slate-400 truncate mt-1">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
-        </div>
-        <span class="status-badge-fit border ${badgeColor}">${b.status}</span>
-      </div>
-      
-      ${isAct ? `
-        <div class="flex flex-col gap-1.5">
-          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Reading Progress</span>
-            <span>${activeProgress} / ${b.total_pages} pg (${progressPct}%)</span>
-          </div>
-          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-2 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
-          </div>
-        </div>
-      ` : ''}
-      
-      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-3 font-semibold mt-1">
-        <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
-        <div class="flex gap-2">
-          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
-          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Mark Complete</button>` : ''}
-          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
-        </div>
-      </div>
-    `;
-    
-    const compBtn = card.querySelector('[data-action="complete"]');
-    if (compBtn) {
-      compBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) {
-          await markBookComplete(b);
-        }
-      });
-    }
-
-    const rereadBtn = card.querySelector('[data-action="re-read"]');
-    if (rereadBtn) {
-      rereadBtn.addEventListener('click', async e => {
-        e.stopPropagation();
-        if (confirm(`Start re-reading "${b.title}"? This moves it to currently reading (Cycle ${(b.read_count || 1) + 1}) while preserving all previous reads!`)) {
-          await startBookReRead(b);
-        }
-      });
-    }
-    
-    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
-      e.stopPropagation();
-      openEditBookModal(b);
-    });
-    
-    container.appendChild(card);
-  });
-}
 
 async function startBookReRead(b) {
   try {
@@ -2155,43 +2064,7 @@ function setupLogDetailSheet() {
   $('sheet-backdrop').addEventListener('click', closeLogDetailSheet);
 }
 
-function setupWishlist() {
-  // Filter chips
-  $('wishlist-filters').addEventListener('click', e => {
-    const chip = e.target.closest('[data-status]');
-    if (!chip) return;
-    wishlistFilter = chip.dataset.status;
-    $('wishlist-filters').querySelectorAll('button').forEach(c => {
-      const isCur = c.dataset.status === wishlistFilter;
-      c.classList.toggle('active', isCur);
-      c.classList.toggle('bg-gold/15', isCur);
-      c.classList.toggle('text-gold', isCur);
-      c.classList.toggle('font-bold', isCur);
-    });
-    renderWishlist();
-  });
-
-  // Search
-  $('wishlist-search').addEventListener('input', e => {
-    wishlistSearchTerm = e.target.value.toLowerCase();
-    renderWishlist();
-  });
-
-  // FAB
-  $('wishlist-fab').addEventListener('click', () => $('wishlist-modal').classList.add('open'));
-  $('wishlist-modal-close').addEventListener('click', () => $('wishlist-modal').classList.remove('open'));
-  $('wishlist-modal').addEventListener('click', e => { if (e.target === $('wishlist-modal')) $('wishlist-modal').classList.remove('open'); });
-  $('wishlist-modal-save').addEventListener('click', addWishlistItem);
-}
-
-// legacy stubs kept for any remaining internal calls — logic moved to renderBookshelf
-async function renderWishlist() { return renderBookshelf(); }
-async function renderLibrary()  {
-  // Library view no longer exists as a standalone tab — renderBookshelf handles everything
-  if (currentView === 'wishlist') return renderBookshelf();
-}
-function setupWishlist() { /* merged into setupBookshelf */ }
-function setupLibrary() { /* merged into setupBookshelf */ }
+// renderWishlist / renderLibrary / setupWishlist / setupLibrary are defined earlier as stubs delegating to renderBookshelf/setupBookshelf
 
 async function addWishlistItem() {
   const title = $('wl-title').value.trim();
