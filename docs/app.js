@@ -1435,7 +1435,6 @@ async function renderDashboard() {
   // ── Render Charts ──
   renderCharts();
 }
-}
 
 // ── Goals & Projections ───────────────────────────────────────────────────────
 function setupGoals() {
