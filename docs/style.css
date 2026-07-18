@@ -440,8 +440,8 @@ body.light-mode .seg-btn.active {
 .heatmap-day {
   width: 10px;
   height: 10px;
-  background-color: var(--border-color);
-  border-radius: 2px;
+  background-color: rgba(120, 120, 128, 0.18);
+  border-radius: 2.5px;
   transition: background-color 0.3s, transform 0.15s;
   cursor: pointer;
 }
@@ -451,15 +451,15 @@ body.light-mode .seg-btn.active {
   z-index: 10;
 }
 
-.heatmap-tier-1 { background: #0e4429 !important; }
-.heatmap-tier-2 { background: #006d32 !important; }
-.heatmap-tier-3 { background: #26a641 !important; }
-.heatmap-tier-4 { background: #39d353 !important; box-shadow: 0 0 6px rgba(38, 166, 65, 0.45); }
+.heatmap-tier-1 { background-color: #d2f4d3 !important; }
+.heatmap-tier-2 { background-color: #82e0aa !important; }
+.heatmap-tier-3 { background-color: #28b463 !important; }
+.heatmap-tier-4 { background-color: #196f3d !important; box-shadow: 0 0 6px rgba(40, 180, 99, 0.35); }
 
-body.light-mode .heatmap-tier-1 { background: #9be9a8 !important; }
-body.light-mode .heatmap-tier-2 { background: #40c463 !important; }
-body.light-mode .heatmap-tier-3 { background: #30a14e !important; }
-body.light-mode .heatmap-tier-4 { background: #216e39 !important; }
+body.light-mode .heatmap-tier-1 { background-color: #162c21 !important; }
+body.light-mode .heatmap-tier-2 { background-color: #004d25 !important; }
+body.light-mode .heatmap-tier-3 { background-color: #26a641 !important; }
+body.light-mode .heatmap-tier-4 { background-color: #39d353 !important; box-shadow: 0 0 6px rgba(57, 211, 83, 0.45); }
 
 /* ═══════════════════════════════════════════════════════════════
    STOPWATCH TIMER

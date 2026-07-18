@@ -1388,22 +1388,33 @@ async function renderDashboard() {
 
   const bookDiff = targetComp.length - prevComp.length;
   const bookDiffStr = bookDiff >= 0 ? `+${bookDiff}` : `${bookDiff}`;
-  const bookDiffColor = bookDiff >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold';
   
   const pageDiff = targetPagesVal - prevPagesVal;
   const pageDiffStr = pageDiff >= 0 ? `+${fmtNum(pageDiff)}` : `${fmtNum(pageDiff)}`;
-  const pageDiffColor = pageDiff >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold';
 
-  $('yoy-books').innerHTML = `
-    <span style="color: var(--text-primary)" class="font-black">${targetComp.length}</span>
-    <span class="text-[9px] text-slate-400 font-medium ml-1">vs ${prevComp.length} last yr</span>
-    <span class="text-xs ml-2 ${bookDiffColor}">${bookDiffStr}</span>
-  `;
-  $('yoy-pages').innerHTML = `
-    <span style="color: var(--text-primary)" class="font-black">${fmtNum(targetPagesVal)}</span>
-    <span class="text-[9px] text-slate-400 font-medium ml-1">vs ${fmtNum(prevPagesVal)} last yr</span>
-    <span class="text-xs ml-2 ${pageDiffColor}">${pageDiffStr}</span>
-  `;
+  // Calculate percentages for the books comparative bar
+  const maxBooksScale = Math.max(targetComp.length * 1.2, prevComp.length * 1.2, 5);
+  const booksCurrPct = Math.min(100, (targetComp.length / maxBooksScale) * 100);
+  const booksPrevPct = Math.min(100, (prevComp.length / maxBooksScale) * 100);
+
+  // Calculate percentages for the pages comparative bar
+  const maxPagesScale = Math.max(targetPagesVal * 1.2, prevPagesVal * 1.2, 500);
+  const pagesCurrPct = Math.min(100, (targetPagesVal / maxPagesScale) * 100);
+  const pagesPrevPct = Math.min(100, (prevPagesVal / maxPagesScale) * 100);
+
+  $('yoy-books-curr').textContent = targetComp.length;
+  $('yoy-books-prev').textContent = prevComp.length;
+  $('yoy-books-badge').textContent = bookDiffStr;
+  $('yoy-books-badge').className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${bookDiff >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/10'}`;
+  $('yoy-books-fill').style.width = `${booksCurrPct}%`;
+  $('yoy-books-marker').style.left = `${booksPrevPct}%`;
+
+  $('yoy-pages-curr').textContent = fmtNum(targetPagesVal);
+  $('yoy-pages-prev').textContent = fmtNum(prevPagesVal);
+  $('yoy-pages-badge').textContent = pageDiffStr;
+  $('yoy-pages-badge').className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${pageDiff >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/10'}`;
+  $('yoy-pages-fill').style.width = `${pagesCurrPct}%`;
+  $('yoy-pages-marker').style.left = `${pagesPrevPct}%`;
 
   // ── Time-Based Insights Tables ──
   renderTimeBasedTables(logsCache, completions);
@@ -1450,17 +1461,24 @@ async function renderDashboard() {
   const booksYTD = completions.filter(c => c.date.startsWith(String(yearNum))).length;
   const pagesYTD = completions.filter(c => c.date.startsWith(String(yearNum))).reduce((s, c) => s + c.pages, 0);
   
-  const booksToMilestone = Math.max(0, 75 - booksYTD);
-  const pagesToMilestone = Math.max(0, 20000 - pagesYTD);
-  const booksPerDayRate = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0;
-  const pagesPerDayRate = ytdDaysElapsed > 0 ? pagesYTD / ytdDaysElapsed : 0;
+  const bookMilestones = [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 1000];
+  const nextBookMilestone = bookMilestones.find(m => m > totalReads) || 1000;
+  
+  const pageMilestones = [1000, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000, 100000, 200000];
+  const nextPageMilestone = pageMilestones.find(m => m > pagesRead) || 200000;
 
-  const booksETA = calculateETA(booksToMilestone, booksPerDayRate);
-  const pagesETA = calculateETA(pagesToMilestone, pagesPerDayRate);
+  const booksToMilestone = Math.max(0, nextBookMilestone - totalReads);
+  const pagesToMilestone = Math.max(0, nextPageMilestone - pagesRead);
+
+  const booksPerDayRate = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0.05;
+  const pagesPerDayRate = ytdDaysElapsed > 0 ? targetPagesVal / ytdDaysElapsed : 10;
+
+  const booksETA = calculateETA(booksToMilestone, booksPerDayRate > 0 ? booksPerDayRate : 0.05);
+  const pagesETA = calculateETA(pagesToMilestone, pagesPerDayRate > 0 ? pagesPerDayRate : 10);
 
   // Update Year Progress Card
   const daysRemainingInYear = 365 - ytdDaysElapsed;
-  const pagesPerCalendarDay = (pagesYTD / ytdDaysElapsed).toFixed(1);
+  const pagesPerCalendarDay = (targetPagesVal / ytdDaysElapsed).toFixed(1);
   const booksPerMonthYTD = (booksYTD / (ytdDaysElapsed / 30)).toFixed(2);
 
   $('dash-year-progress').innerHTML = `
@@ -1468,7 +1486,7 @@ async function renderDashboard() {
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Elapsed</span><span class="text-slate-200 font-bold">${ytdDaysElapsed}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Remaining</span><span class="text-slate-200 font-bold">${daysRemainingInYear}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Books Completed</span><span class="text-slate-200 font-bold">${booksYTD}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(pagesYTD)}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(targetPagesVal)}</span></div>
       <div class="flex justify-between col-span-2 border-t border-white/5 pt-2 mt-1">
         <span class="text-slate-400 font-medium">Pages/Calendar Day (YTD)</span>
         <span class="text-slate-200 font-bold">${pagesPerCalendarDay}</span>
@@ -1487,10 +1505,10 @@ async function renderDashboard() {
       <div class="flex flex-col gap-1">
         <div class="flex justify-between text-xs font-semibold text-slate-200">
           <span>📚 Next Books Milestone</span>
-          <span>${booksYTD} / 75 Books</span>
+          <span>${totalReads} / ${nextBookMilestone} Books</span>
         </div>
         <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (booksYTD/75)*100)}%"></div>
+          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (totalReads/nextBookMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-slate-400 mt-1">
           <span>To go: <b>${booksToMilestone} books</b></span>
@@ -1502,10 +1520,10 @@ async function renderDashboard() {
       <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
         <div class="flex justify-between text-xs font-semibold text-slate-200">
           <span>📄 Next Pages Milestone</span>
-          <span>${fmtNum(pagesYTD)} / 20k Pages</span>
+          <span>${fmtNum(pagesRead)} / ${fmtNum(nextPageMilestone)} Pages</span>
         </div>
         <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesYTD/20000)*100)}%"></div>
+          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesRead/nextPageMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-slate-400 mt-1">
           <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
@@ -3204,18 +3222,20 @@ function renderActivityHeatmap(logs) {
   const activityMap = {};
   logs.forEach(log => {
     const dStr = log.date;
-    activityMap[dStr] = (activityMap[dStr] || 0) + parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
+    const start = parseInt(log.start_page || 0, 10);
+    const end = parseInt(log.end_page || 0, 10);
+    const pages = parseInt(log.pages_read_today, 10) || parseInt(log.pagesRead, 10) || Math.max(0, end - start) || 0;
+    activityMap[dStr] = (activityMap[dStr] || 0) + pages;
   });
   
   const today = new Date();
-  today.setHours(0,0,0,0);
-  const startTime = today.getTime() - 363 * 24 * 60 * 60 * 1000; // 364 days total (52 full weeks)
+  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   
-  for (let i = 0; i < 364; i++) {
-    const activeDate = new Date(startTime + i * 24 * 60 * 60 * 1000);
-    const year = activeDate.getFullYear();
-    const month = String(activeDate.getMonth() + 1).padStart(2, '0');
-    const day = String(activeDate.getDate()).padStart(2, '0');
+  for (let i = 363; i >= 0; i--) {
+    const activeDate = new Date(todayUTC - i * 24 * 60 * 60 * 1000);
+    const year = activeDate.getUTCFullYear();
+    const month = String(activeDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(activeDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
     
     const pagesRead = activityMap[dateStr] || 0;
@@ -3230,7 +3250,7 @@ function renderActivityHeatmap(logs) {
       else block.classList.add('heatmap-tier-4');
     }
     
-    const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateFormatted = activeDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
     block.setAttribute('title', `${dateFormatted}: ${pagesRead} pages read`);
     
     block.addEventListener('click', (e) => {
@@ -3260,10 +3280,10 @@ function renderActivityHeatmap(logs) {
       tooltip.classList.remove('hidden');
 
       const blockRect = block.getBoundingClientRect();
-      const parentRect = container.getBoundingClientRect();
+      const parentRect = container.parentElement.getBoundingClientRect();
       
       const left = blockRect.left - parentRect.left + (blockRect.width / 2) - 50;
-      const top = blockRect.top - parentRect.top - 55;
+      const top = blockRect.top - parentRect.top - 62;
       
       tooltip.style.left = `${Math.max(5, left)}px`;
       tooltip.style.top = `${top}px`;

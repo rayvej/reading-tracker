@@ -4,7 +4,7 @@ const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css',
+  BASE + 'style.css?v=32',
   BASE + 'app.js?v=32',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',

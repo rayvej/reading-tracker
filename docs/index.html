@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -532,14 +532,35 @@
             <!-- YTD vs Same Date Last Year (YOY card) -->
             <div id="dash-yoy-card" class="glass-panel p-4 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
               <div class="section-label mb-3" style="color: var(--accent)"><i class="fa-solid fa-arrows-left-right text-[10px]"></i> YTD vs Same Date Last Year</div>
-              <div class="grid grid-cols-2 gap-4 divide-x" style="border-color: var(--border)">
-                <div>
-                  <p class="text-xs font-medium" style="color: var(--text-secondary)">Books</p>
-                  <p class="text-lg font-bold mt-0.5" style="color: var(--text-primary)" id="yoy-books">—</p>
+              <div class="flex flex-col gap-4" id="yoy-graphic-container">
+                <!-- Books Comparative Bar -->
+                <div class="flex flex-col gap-1">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-200">Books YTD</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-slate-400 font-semibold"><b class="text-slate-200 text-sm font-black" id="yoy-books-curr">0</b> vs <span id="yoy-books-prev">0</span></span>
+                      <span id="yoy-books-badge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase">0</span>
+                    </div>
+                  </div>
+                  <div class="w-full bg-slate-900/40 rounded-full h-2 overflow-visible border border-white/5 relative mt-1">
+                    <div id="yoy-books-fill" class="bg-gradient-to-r from-coral to-gold h-full rounded-full transition-all" style="width: 0%"></div>
+                    <div id="yoy-books-marker" class="absolute w-[3px] h-3.5 -top-[3px] bg-slate-100 rounded-full shadow border border-slate-900 transition-all" style="left: 0%" title="Last Year"></div>
+                  </div>
                 </div>
-                <div class="pl-4">
-                  <p class="text-xs font-medium" style="color: var(--text-secondary)">Pages</p>
-                  <p class="text-lg font-bold mt-0.5" style="color: var(--text-primary)" id="yoy-pages">—</p>
+
+                <!-- Pages Comparative Bar -->
+                <div class="flex flex-col gap-1 border-t border-white/5 pt-3">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-200">Pages YTD</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-slate-400 font-semibold"><b class="text-slate-200 text-sm font-black" id="yoy-pages-curr">0</b> vs <span id="yoy-pages-prev">0</span></span>
+                      <span id="yoy-pages-badge" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase">0</span>
+                    </div>
+                  </div>
+                  <div class="w-full bg-slate-900/40 rounded-full h-2 overflow-visible border border-white/5 relative mt-1">
+                    <div id="yoy-pages-fill" class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full transition-all" style="width: 0%"></div>
+                    <div id="yoy-pages-marker" class="absolute w-[3px] h-3.5 -top-[3px] bg-slate-100 rounded-full shadow border border-slate-900 transition-all" style="left: 0%" title="Last Year"></div>
+                  </div>
                 </div>
               </div>
             </div>
