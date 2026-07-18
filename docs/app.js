@@ -2291,64 +2291,6 @@ async function renderBookshelf() {
 
     container.appendChild(card);
   });
-}ages || 'N/A'} pg${costText}</div>
-        </div>
-        <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
-      </div>
-
-      <div class="flex flex-wrap gap-1.5 mt-0.5">
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
-      </div>
-
-      ${isAct ? `
-        <div class="flex flex-col gap-1.5 mt-0.5">
-          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Reading Progress</span>
-            <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
-          </div>
-          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
-          </div>
-        </div>
-      ` : ''}
-
-      ${buyHTML}
-      ${notesHTML}
-
-      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
-        <div class="flex gap-3">
-          <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
-          <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
-        </div>
-        <div class="flex gap-1.5">
-          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
-          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
-          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
-        </div>
-      </div>
-    `;
-
-    const compBtn = card.querySelector('[data-action="complete"]');
-    if (compBtn) compBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
-    });
-
-    const rereadBtn = card.querySelector('[data-action="re-read"]');
-    if (rereadBtn) rereadBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
-    });
-
-    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
-      e.stopPropagation();
-      openEditBookModal(b);
-    });
-
-    container.appendChild(card);
-  });
 }
 
 
