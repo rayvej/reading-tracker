@@ -1411,6 +1411,11 @@ async function renderDashboard() {
   }
 
   // ── Up Next List ──
+  const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+  const upNext = books
+    .filter(b => ['Not Started', 'Owned', 'Want to Buy', 'Gifted', 'Borrowed'].includes(b.status))
+    .sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
+    .slice(0, 10);
   const upNextEl = $('dash-up-next-books');
   upNextEl.innerHTML = '';
   if (upNext.length === 0) {
