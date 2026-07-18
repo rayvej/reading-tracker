@@ -54,6 +54,8 @@ let categoryChartMode = window.categoryChartMode || 'pages';
 let librarySearchTerm = '';
 let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';
+let bookshelfStatusFilter = 'All';
+let bookshelfSearchTerm   = '';
 let pinBuffer = '';
 const PIN_LENGTH = 4;
 const SESSION_KEY = 'rt_session';
@@ -270,6 +272,17 @@ async function loadDatabaseData() {
     // Try to load cache first so it works offline/online instantly!
     await loadBooksCache();
     await loadLogsCache();
+
+    // Startup Correction: remap mislabeled New Era logs from cycle 2 to 1
+    const mislabeledLogs = logsCache.filter(l => l.book_title === 'Bahá’u’lláh and the New Era' && parseInt(l.read_cycle || 1, 10) === 2);
+    if (mislabeledLogs.length > 0) {
+      console.log(`[Startup-Correction] Correcting ${mislabeledLogs.length} mislabeled log cycles for New Era`);
+      for (const l of mislabeledLogs) {
+        await updateDoc(doc(db, `users/${uid}/reading_logs/${l.id}`), { read_cycle: 1 });
+        l.read_cycle = 1;
+      }
+    }
+
     populateBookDropdown();
     if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
     
@@ -339,6 +352,9 @@ async function runSeedImport() {
   for (let i = 0; i < seed.reading_logs.length; i += 400) {
     const batch = writeBatch(db);
     seed.reading_logs.slice(i, i + 400).forEach(l => {
+      if (l.book_title === 'Bahá’u’lláh and the New Era' && l.read_cycle === 2) {
+        l.read_cycle = 1;
+      }
       batch.set(doc(logsRef), l);
       progress(`Importing reading logs… (${Math.min(i+400, seed.reading_logs.length)}/${seed.reading_logs.length})`);
     });
@@ -723,16 +739,201 @@ function setupDashboard() {
   }
 }
 
+function getMedian(arr) {
+  if (arr.length === 0) return 0;
+  const s = [...arr].sort((a,b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 !== 0 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+}
+
+function calculateETA(needed, rate) {
+  if (rate <= 0) return 'Never';
+  const daysNeeded = needed / rate;
+  const etaDate = new Date();
+  etaDate.setDate(etaDate.getDate() + daysNeeded);
+  return etaDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function renderMilestones(completions, ytdDaysElapsed) {
+  const bookThresholds = [10, 25, 50, 100];
+  const booksList = $('ms-books-list');
+  if (booksList) {
+    booksList.innerHTML = '';
+    bookThresholds.forEach(t => {
+      let completedDate = null;
+      if (completions.length >= t) {
+        completedDate = completions[t - 1].date;
+      }
+      const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
+      if (completedDate) {
+        item.innerHTML = `<span class="text-slate-400">${t} Books Completed</span><span class="text-emerald-400 font-bold">${fmtDate(completedDate)}</span>`;
+      } else {
+        const needed = t - completions.length;
+        const rate = completions.length / (ytdDaysElapsed || 1);
+        const eta = calculateETA(needed, rate);
+        item.innerHTML = `<span class="text-slate-400">${t} Books Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
+      }
+      booksList.appendChild(item);
+    });
+  }
+
+  const pageThresholds = [1000, 5000, 10000, 15000, 25000];
+  const pagesList = $('ms-pages-list');
+  if (pagesList) {
+    pagesList.innerHTML = '';
+    let runningPages = 0;
+    const milestoneReachedDates = {};
+    completions.forEach(c => {
+      runningPages += c.pages;
+      pageThresholds.forEach(t => {
+        if (runningPages >= t && !milestoneReachedDates[t]) {
+          milestoneReachedDates[t] = c.date;
+        }
+      });
+    });
+
+    pageThresholds.forEach(t => {
+      const completedDate = milestoneReachedDates[t];
+      const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
+      if (completedDate) {
+        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Completed</span><span class="text-emerald-400 font-bold">${fmtDate(completedDate)}</span>`;
+      } else {
+        const needed = t - runningPages;
+        const rate = runningPages / (ytdDaysElapsed || 1);
+        const eta = calculateETA(needed, rate);
+        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
+      }
+      pagesList.appendChild(item);
+    });
+  }
+}
+
+function renderTimeBasedTables(logs, completions) {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthlyData = Array(12).fill(0).map((_, i) => ({ month: monthNames[i], sessions: 0, pages: 0 }));
+  
+  logs.forEach(l => {
+    const m = new Date(l.date).getMonth();
+    if (m >= 0 && m < 12) {
+      monthlyData[m].sessions++;
+      monthlyData[m].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    }
+  });
+
+  const mBody = $('tbl-monthly-body');
+  if (mBody) {
+    mBody.innerHTML = '';
+    monthlyData.forEach(row => {
+      if (row.sessions === 0 && row.pages === 0) return;
+      const tr = el('tr');
+      tr.innerHTML = `
+        <td>${row.month}</td>
+        <td class="text-center tabular-nums">${row.sessions}</td>
+        <td class="text-right font-bold tabular-nums">${fmtNum(row.pages)}</td>
+      `;
+      mBody.appendChild(tr);
+    });
+  }
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayData = Array(7).fill(0).map((_, i) => ({ day: dayNames[i], sessions: 0, pages: 0 }));
+  logs.forEach(l => {
+    const d = new Date(l.date).getDay();
+    if (d >= 0 && d < 7) {
+      dayData[d].sessions++;
+      dayData[d].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    }
+  });
+  const dBody = $('tbl-dayofweek-body');
+  if (dBody) {
+    dBody.innerHTML = '';
+    dayData.forEach(row => {
+      if (row.sessions === 0 && row.pages === 0) return;
+      const avg = row.sessions > 0 ? (row.pages / row.sessions).toFixed(1) : 0;
+      const tr = el('tr');
+      tr.innerHTML = `
+        <td>${row.day}</td>
+        <td class="text-center tabular-nums">${row.sessions}</td>
+        <td class="text-center tabular-nums">${fmtNum(row.pages)}</td>
+        <td class="text-right font-bold tabular-nums">${avg}</td>
+      `;
+      dBody.appendChild(tr);
+    });
+  }
+
+  const seasons = {
+    'Winter ❄️': [11, 0, 1],
+    'Spring 🌸': [2, 3, 4],
+    'Summer ☀️': [5, 6, 7],
+    'Autumn 🍂': [8, 9, 10]
+  };
+  const seasonalData = {};
+  Object.keys(seasons).forEach(s => seasonalData[s] = { sessions: 0, pages: 0 });
+  logs.forEach(l => {
+    const m = new Date(l.date).getMonth();
+    Object.entries(seasons).forEach(([s, months]) => {
+      if (months.includes(m)) {
+        seasonalData[s].sessions++;
+        seasonalData[s].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+      }
+    });
+  });
+  const sBody = $('tbl-seasonal-body');
+  if (sBody) {
+    sBody.innerHTML = '';
+    Object.entries(seasonalData).forEach(([s, row]) => {
+      if (row.sessions === 0 && row.pages === 0) return;
+      const tr = el('tr');
+      tr.innerHTML = `
+        <td>${s}</td>
+        <td class="text-center tabular-nums">${row.sessions}</td>
+        <td class="text-right font-bold tabular-nums">${fmtNum(row.pages)}</td>
+      `;
+      sBody.appendChild(tr);
+    });
+  }
+
+  const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+  const yearlyData = {};
+  years.forEach(y => yearlyData[y] = { books: 0, pages: 0 });
+  
+  completions.forEach(c => {
+    const y = parseInt(c.date.slice(0, 4));
+    if (yearlyData[y]) yearlyData[y].books++;
+  });
+  
+  logs.forEach(l => {
+    const y = parseInt(l.date.slice(0, 4));
+    if (yearlyData[y]) {
+      yearlyData[y].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    }
+  });
+
+  const yBody = $('tbl-yearly-body');
+  if (yBody) {
+    yBody.innerHTML = '';
+    years.slice().reverse().forEach(y => {
+      const row = yearlyData[y];
+      if (row.books === 0 && row.pages === 0) return;
+      const tr = el('tr');
+      tr.innerHTML = `
+        <td>${y}</td>
+        <td class="text-center tabular-nums">${row.books}</td>
+        <td class="text-right font-bold tabular-nums">${fmtNum(row.pages)}</td>
+      `;
+      yBody.appendChild(tr);
+    });
+  }
+}
+
 async function renderDashboard() {
   await loadLogsCache();
   populateYearDropdown(logsCache);
   
   const selectedYear = $('dash-year-select').value;
   
-  // Filter active logs (actual logs from user, excluding synthesized historical completions)
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
   
-  // Filter logs by selected year
   let filteredLogs = logsCache;
   let filteredActiveLogs = activeLogs;
   if (selectedYear !== 'all') {
@@ -740,10 +941,8 @@ async function renderDashboard() {
     filteredActiveLogs = activeLogs.filter(l => l.date.startsWith(selectedYear));
   }
   
-  // Filter books by category tab
   const books = dashFilter === 'all' ? booksCache : booksCache.filter(b => b.collection === dashFilter);
   
-  // Build a precise list of completions (both historical and logged)
   const completions = [];
   const logsByBookCycle = {};
   logsCache.forEach(l => {
@@ -774,10 +973,8 @@ async function renderDashboard() {
     }
   });
 
-  // Filter completions by book category tab
   const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
 
-  // ── 1. Overall Summary ─────────────────────────────────────────
   let totalReads = 0;
   let pagesRead = 0;
   let titlesCount = 0;
@@ -785,20 +982,16 @@ async function renderDashboard() {
   let progressCount = 0;
 
   if (selectedYear === 'all') {
-    // Total Reads: Sum of b.read_count across filtered books
     totalReads = books.reduce((s, b) => s + (b.read_count || 0), 0);
-    
-    // Total Titles: unique books
     titlesCount = books.length;
-    finishedCount = books.filter(b => b.status === 'Finished').length;
+    finishedCount = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)).length;
     progressCount = books.filter(b => b.status === 'In Progress').length;
     
-    // Pages Read G5 Formula: completed pages + active pages + re-reads in progress
     let pagesReadG5 = 0;
     books.forEach(b => {
       pagesReadG5 += (b.read_count || 0) * b.total_pages;
       if (b.status === 'In Progress') {
-        pagesReadG5 += (b.pages_read || 0);
+        pagesReadG5 += (b.pages_read % b.total_pages);
       }
     });
     
@@ -814,7 +1007,6 @@ async function renderDashboard() {
     });
     pagesRead = pagesReadG5 + rereadsInProgress;
   } else {
-    // Specific Year stats based on completions in that year
     const completionsInYear = filteredCompletions.filter(c => c.date.startsWith(selectedYear));
     totalReads = completionsInYear.length;
     pagesRead = completionsInYear.reduce((s, c) => s + c.pages, 0);
@@ -832,10 +1024,9 @@ async function renderDashboard() {
     });
   }
 
-  // Avg pages/book
-  const finishedBooks = books.filter(b => b.status === 'Finished');
+  const finishedBooks = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status));
   const finishedPagesSum = finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0);
-  const avgPagesPerBook = finishedBooks.length > 0 ? Math.round(finishedPagesSum / finishedBooks.length) : 0;
+  const avgPagesPerBook = finishedCount > 0 ? Math.round(finishedPagesSum / finishedCount) : 0;
   
   $('stat-reads').textContent = totalReads;
   $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
@@ -844,27 +1035,25 @@ async function renderDashboard() {
   $('stat-pages').textContent = fmtNum(pagesRead);
   $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
   
-  // Progress %
   const totalPagesInLib = books.reduce((s, b) => s + (b.total_pages || 0), 0);
   const overallPct = totalPagesInLib > 0 ? Math.round((pagesRead / totalPagesInLib) * 100) : 0;
   const pagesRemaining = Math.max(0, totalPagesInLib - pagesRead);
   
   $('stat-pct').textContent = overallPct + '%';
   $('detail-pct').textContent = `Pages left: ${fmtNum(pagesRemaining)}`;
-  
-  // ── 2. Streaks & Activity ──────────────────────────────────────
+
+  // Streaks & Activity
   const streaks = calculateStreaks(activeLogs);
-  $('stat-streak-cur').textContent = `${streaks.current} days`;
-  $('stat-streak-max').textContent = `${streaks.longest} days`;
+  $('stat-streak-cur').textContent = streaks.current;
+  $('stat-streak-max').textContent = streaks.longest;
   
   const allUniqueDays = [...new Set(activeLogs.map(l => l.date))].length;
-  $('stat-days-total').textContent = `${allUniqueDays} days`;
+  $('stat-days-total').textContent = allUniqueDays;
   
   const logPagesSum = activeLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
   const avgPagesPerActiveDay = allUniqueDays > 0 ? (logPagesSum / allUniqueDays).toFixed(1) : 0;
   $('stat-pages-active-avg').textContent = avgPagesPerActiveDay;
   
-  // % Days Read (Month)
   const today = new Date();
   const yearNum = today.getFullYear();
   const monthNum = today.getMonth() + 1;
@@ -874,7 +1063,6 @@ async function renderDashboard() {
   const monthPct = monthDaysCount > 0 ? Math.round((monthUniqueDays / monthDaysCount) * 100) : 0;
   $('stat-days-month-pct').textContent = `${monthPct}%`;
   
-  // % Days Read (YTD)
   const startOfYear = new Date(`${yearNum}-01-01T00:00:00`);
   const diffTimeYtd = Math.abs(today - startOfYear);
   const ytdDaysElapsed = Math.floor(diffTimeYtd / (86400000)) + 1;
@@ -882,29 +1070,207 @@ async function renderDashboard() {
   const ytdUniqueDays = [...new Set(currentYearLogs.map(l => l.date))].length;
   const ytdPct = ytdDaysElapsed > 0 ? Math.round((ytdUniqueDays / ytdDaysElapsed) * 100) : 0;
   $('stat-days-ytd-pct').textContent = `${ytdPct}%`;
+
+  // ── Reading Volume Detail ──
+  const rereadBonus = books.reduce((s, b) => s + ((b.read_count > 1) ? (b.read_count - 1) * b.total_pages : 0), 0);
+  const booksReread = books.filter(b => b.read_count > 1).length;
+  const uniqueAuthors = new Set(books.filter(b => b.author).map(b => b.author)).size;
+  const bahaiFinished = books.filter(b => b.collection === 'Bahai' && (b.read_count > 0 || ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status))).length;
+  const nonbahaiFinished = books.filter(b => b.collection !== 'Bahai' && (b.read_count > 0 || ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status))).length;
+  const pagesIp = books.reduce((s, b) => s + (b.status === 'In Progress' ? (b.pages_read % b.total_pages) : 0), 0);
+  const pagesNs = books.reduce((s, b) => s + (['Not Started', 'Owned'].includes(b.status) ? b.total_pages : 0), 0);
+  const pctRereadBonus = pagesRead - pagesIp > 0 ? ((rereadBonus / (pagesRead - pagesIp)) * 100).toFixed(2) : 0;
+
+  $('sv-total-reads').textContent = totalReads;
+  $('sv-total-pages').textContent = fmtNum(pagesRead);
+  $('sv-reread-bonus').textContent = fmtNum(rereadBonus);
+  $('sv-books-reread').textContent = booksReread;
+  $('sv-unique-authors').textContent = uniqueAuthors;
+  $('sv-bahai-reads').textContent = bahaiFinished;
+  $('sv-nonbahai-reads').textContent = nonbahaiFinished;
+  $('sv-avg-pages').textContent = avgPagesPerBook;
+  $('sv-ip-pages').textContent = fmtNum(pagesIp);
+  $('sv-ns-pages').textContent = fmtNum(pagesNs);
+  $('sv-reread-pct').textContent = `${pctRereadBonus}%`;
+
+  // ── Year Tracking ──
+  const yearsWithCompletions = [...new Set(completions.map(c => c.date.slice(0, 4)))].filter(y => y);
+  const firstYear = yearsWithCompletions.length > 0 ? Math.min(...yearsWithCompletions.map(y => parseInt(y))) : 2018;
+  const recentYear = yearsWithCompletions.length > 0 ? Math.max(...yearsWithCompletions.map(y => parseInt(y))) : 2026;
+  const yearsSince = recentYear - firstYear + 1;
+  const activeYearsCount = yearsWithCompletions.length;
   
-  // ── 3. Year-Over-Year YTD Comparison ───────────────────────────
-  const lastYear = yearNum - 1;
-  const todayMonthDay = todayISO().slice(5); // e.g. "07-17"
+  const booksByYear = {};
+  const pagesByYear = {};
+  completions.forEach(c => {
+    const yr = c.date.slice(0, 4);
+    booksByYear[yr] = (booksByYear[yr] || 0) + 1;
+    pagesByYear[yr] = (pagesByYear[yr] || 0) + c.pages;
+  });
   
-  const countCompletedYTD = (y) => {
-    return completions.filter(c => c.date.startsWith(String(y)) && c.date.slice(5) <= todayMonthDay).length;
-  };
-  const sumPagesCompletedYTD = (y) => {
-    return completions.filter(c => c.date.startsWith(String(y)) && c.date.slice(5) <= todayMonthDay).reduce((s, c) => s + c.pages, 0);
-  };
+  let bestReadsYear = '—', bestReadsCount = 0;
+  let bestPagesYear = '—', bestPagesCount = 0;
+  Object.keys(booksByYear).forEach(yr => {
+    if (booksByYear[yr] > bestReadsCount) {
+      bestReadsCount = booksByYear[yr];
+      bestReadsYear = yr;
+    }
+  });
+  Object.keys(pagesByYear).forEach(yr => {
+    if (pagesByYear[yr] > bestPagesCount) {
+      bestPagesCount = pagesByYear[yr];
+      bestPagesYear = yr;
+    }
+  });
+
+  const medianBooksVal = getMedian(Object.values(booksByYear));
+  const medianPagesVal = getMedian(Object.values(pagesByYear));
+
+  $('yt-years-since').textContent = yearsSince;
+  $('yt-first-year').textContent = firstYear;
+  $('yt-recent-year').textContent = recentYear;
+  $('yt-active-years').textContent = activeYearsCount;
+  $('yt-best-reads-year').textContent = bestReadsYear;
+  $('yt-best-reads-count').textContent = bestReadsCount;
+  $('yt-best-pages-year').textContent = bestPagesYear;
+  $('yt-best-pages-count').textContent = fmtNum(bestPagesCount);
+  $('yt-gaps').textContent = yearsSince - activeYearsCount;
+  $('yt-median-books').textContent = medianBooksVal;
+  $('yt-median-pages').textContent = fmtNum(medianPagesVal);
+
+  // ── Reading Pace ──
+  const bookDurations = [];
+  books.forEach(b => {
+    if (!['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) && b.read_count === 0) return;
+    const blogs = logsCache.filter(l => l.book_title === b.title);
+    if (blogs.length === 0) return;
+    blogs.sort((a,b) => a.date.localeCompare(b.date));
+    const startD = new Date(blogs[0].date);
+    const endD = new Date(blogs[blogs.length - 1].date);
+    const diff = Math.ceil(Math.abs(endD - startD) / 86400000) + 1;
+    bookDurations.push({ title: b.title, days: diff });
+  });
+
+  const avgDaysPerBook = bookDurations.length > 0 ? (bookDurations.reduce((s, x) => s + x.days, 0) / bookDurations.length).toFixed(1) : '—';
+  const fastestBook = bookDurations.length > 0 ? Math.min(...bookDurations.map(x => x.days)) : '—';
+  const slowestBook = bookDurations.length > 0 ? Math.max(...bookDurations.map(x => x.days)) : '—';
+  const medianDaysPerBook = bookDurations.length > 0 ? getMedian(bookDurations.map(x => x.days)) : '—';
+
+  let pagesDayOverall = 0;
+  if (logsCache.length > 0) {
+    const sortedAllLogs = [...logsCache].sort((a,b) => a.date.localeCompare(b.date));
+    const startTrackingDate = new Date(sortedAllLogs[0].date);
+    const daysSinceStart = Math.ceil(Math.abs(today - startTrackingDate) / 86400000) + 1;
+    pagesDayOverall = (pagesRead / daysSinceStart).toFixed(2);
+  }
+
+  const avgReadsYr = (totalReads / activeYearsCount).toFixed(2);
+  const avgPagesYr = (pagesRead / activeYearsCount).toFixed(1);
+  const avgReadsMo = (totalReads / (activeYearsCount * 12)).toFixed(2);
   
-  const thisYearYTDBooks = countCompletedYTD(yearNum);
-  const lastYearYTDBooks = countCompletedYTD(lastYear);
-  const thisYearYTDPages = sumPagesCompletedYTD(yearNum);
-  const lastYearYTDPages = sumPagesCompletedYTD(lastYear);
-  
-  $('yoy-books').textContent = `${thisYearYTDBooks} vs ${lastYearYTDBooks}`;
-  $('yoy-pages').textContent = `${fmtNum(thisYearYTDPages)} vs ${fmtNum(lastYearYTDPages)}`;
-  
+  const totalMins = activeLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
+  const totalHrs = totalMins / 60;
+  const pagesPerHour = totalHrs > 0 ? (pagesRead / totalHrs).toFixed(1) : '—';
+
+  $('rp-avg-reads-yr').textContent = avgReadsYr;
+  $('rp-avg-pages-yr').textContent = fmtNum(avgPagesYr);
+  $('rp-avg-days-book').textContent = avgDaysPerBook;
+  $('rp-fastest').textContent = fastestBook;
+  $('rp-slowest').textContent = slowestBook;
+  $('rp-books-yr').textContent = (totalReads / yearsSince).toFixed(2);
+  $('rp-pages-tracked-yr').textContent = fmtNum((pagesRead / yearsSince).toFixed(1));
+  $('rp-pages-day-overall').textContent = pagesDayOverall;
+  $('rp-median-days').textContent = medianDaysPerBook;
+  $('rp-avg-reads-mo').textContent = avgReadsMo;
+  $('rp-pages-hr').textContent = pagesPerHour;
+
+  // ── Daily Log Insights ──
+  const totalLoggedPages = activeLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const minPagesSession = activeLogs.length > 0 ? Math.min(...activeLogs.map(l => Math.max(0, (l.end_page || 0) - (l.start_page || 0)))) : 0;
+  const maxPagesSession = activeLogs.length > 0 ? Math.max(...activeLogs.map(l => Math.max(0, (l.end_page || 0) - (l.start_page || 0)))) : 0;
+
+  $('li-sessions').textContent = activeLogs.length;
+  $('li-logged-pages').textContent = fmtNum(totalLoggedPages);
+  $('li-minutes').textContent = fmtNum(totalMins);
+  $('li-hours').textContent = totalHrs.toFixed(1);
+  $('li-avg-pages').textContent = activeLogs.length > 0 ? (totalLoggedPages / activeLogs.length).toFixed(1) : 0;
+  $('li-avg-mins').textContent = activeLogs.length > 0 ? (totalMins / activeLogs.length).toFixed(1) : 0;
+  $('li-pace').textContent = totalMins > 0 ? (totalLoggedPages / totalMins).toFixed(2) : 0;
+  $('li-min-pages').textContent = minPagesSession;
+  $('li-max-pages').textContent = maxPagesSession;
+  $('li-min-per-page').textContent = totalLoggedPages > 0 ? (totalMins / totalLoggedPages).toFixed(2) : 0;
+
+  // ── Reading Milestones ──
+  renderMilestones(completions, ytdDaysElapsed);
+
+  // ── Book Length Records ──
+  const finishedInLib = booksCache.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0);
+  let longestBook = '—', shortestBook = '—';
+  let longestTitle = '—', shortestTitle = '—';
+  let medianLength = 0;
+  let booksLarge = 0, booksSmall = 0;
+
+  if (finishedInLib.length > 0) {
+    const sortedByLen = [...finishedInLib].sort((a,b) => a.total_pages - b.total_pages);
+    shortestBook = `${sortedByLen[0].title} (${sortedByLen[0].total_pages} pg)`;
+    longestBook = `${sortedByLen[sortedByLen.length - 1].title} (${sortedByLen[sortedByLen.length - 1].total_pages} pg)`;
+    medianLength = getMedian(finishedInLib.map(b => b.total_pages));
+    booksLarge = booksCache.filter(b => b.total_pages > 500).length;
+    booksSmall = booksCache.filter(b => b.total_pages < 100).length;
+    
+    const sortedByTitleLen = [...booksCache].sort((a,b) => a.title.length - b.title.length);
+    shortestTitle = sortedByTitleLen[0].title;
+    longestTitle = sortedByTitleLen[sortedByTitleLen.length - 1].title;
+  }
+
+  $('rec-longest-book').textContent = longestBook;
+  $('rec-shortest-book').textContent = shortestBook;
+  $('rec-longest-title').textContent = longestTitle;
+  $('rec-shortest-title').textContent = shortestTitle;
+  $('rec-median-length').textContent = medianLength;
+  $('rec-books-large').textContent = booksLarge;
+  $('rec-books-small').textContent = booksSmall;
+
+  // ── Reading Speed Records ──
+  const booksFast = bookDurations.filter(x => x.days <= 7).length;
+  const booksMedium = bookDurations.filter(x => x.days <= 30).length;
+  let speedRecord = '—';
+  if (bookDurations.length > 0) {
+    const record = [...bookDurations].sort((a,b) => a.days - b.days)[0];
+    speedRecord = `${record.title} (${record.days} days)`;
+  }
+  $('rec-speed-fast').textContent = booksFast;
+  $('rec-speed-medium').textContent = booksMedium;
+  $('rec-speed-record').textContent = speedRecord;
+
+  // ── Author & Genre Records ──
+  const authorCounts = {};
+  booksCache.forEach(b => {
+    if (b.author) authorCounts[b.author] = (authorCounts[b.author] || 0) + (b.read_count || 0);
+  });
+  let topAuthor = '—', topAuthorReads = 0;
+  let authorsMulti = 0;
+  Object.keys(authorCounts).forEach(auth => {
+    if (authorCounts[auth] > topAuthorReads) {
+      topAuthorReads = authorCounts[auth];
+      topAuthor = auth;
+    }
+    if (authorCounts[auth] > 1) authorsMulti++;
+  });
+  const booksMultiReads = booksCache.filter(b => b.read_count > 1).length;
+
+  $('rec-top-author').textContent = topAuthor;
+  $('rec-top-author-reads').textContent = topAuthorReads;
+  $('rec-authors-multi').textContent = authorsMulti;
+  $('rec-books-multi-reads').textContent = booksMultiReads;
+
+  // ── YOY Card Visibility ──
   $('dash-yoy-card').classList.toggle('hidden', selectedYear !== 'all' && selectedYear !== String(yearNum));
-  
-  // ── 4. Weekly Velocity ─────────────────────────────────────────
+
+  // ── Time-Based Insights Tables ──
+  renderTimeBasedTables(logsCache, completions);
+
+  // ── Weekly Velocity ──
   const sevenDaysAgoStr = new Date(today.getTime() - 7 * 86400000).toISOString().slice(0, 10);
   const fourteenDaysAgoStr = new Date(today.getTime() - 14 * 86400000).toISOString().slice(0, 10);
   
@@ -941,68 +1307,26 @@ async function renderDashboard() {
       <span>Avg Pages/Day: <b class="text-slate-200">${weekAvg}</b></span>
     </div>
   `;
+
+  // ── Projections & Required Pace ──
+  const booksYTD = completions.filter(c => c.date.startsWith(String(yearNum))).length;
+  const pagesYTD = completions.filter(c => c.date.startsWith(String(yearNum))).reduce((s, c) => s + c.pages, 0);
   
-  // ── 5. Next Milestones ─────────────────────────────────────────
-  const booksYTD = thisYearYTDBooks;
-  const pagesYTD = thisYearYTDPages;
   const booksToMilestone = Math.max(0, 75 - booksYTD);
   const pagesToMilestone = Math.max(0, 20000 - pagesYTD);
-  
-  const booksPerDay = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0;
-  const pagesPerDay = ytdDaysElapsed > 0 ? pagesYTD / ytdDaysElapsed : 0;
-  
-  const calculateETA = (needed, rate) => {
-    if (rate <= 0) return 'Never';
-    const daysNeeded = needed / rate;
-    const etaDate = new Date();
-    etaDate.setDate(etaDate.getDate() + daysNeeded);
-    return etaDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  };
-  const booksETA = calculateETA(booksToMilestone, booksPerDay);
-  const pagesETA = calculateETA(pagesToMilestone, pagesPerDay);
-  
-  $('dash-milestones').innerHTML = `
-    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">⏰ Targets & Milestones</div>
-    
-    <!-- Books Milestone -->
-    <div class="flex flex-col gap-1">
-      <div class="flex justify-between text-xs font-semibold text-slate-200">
-        <span>📚 Next Books Milestone</span>
-        <span>${booksYTD} / 75 Books</span>
-      </div>
-      <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-        <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (booksYTD/75)*100)}%"></div>
-      </div>
-      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-        <span>To go: <b>${booksToMilestone} books</b></span>
-        <span>ETA: <b>${booksETA}</b></span>
-      </div>
-    </div>
-    
-    <!-- Pages Milestone -->
-    <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
-      <div class="flex justify-between text-xs font-semibold text-slate-200">
-        <span>📄 Next Pages Milestone</span>
-        <span>${fmtNum(pagesYTD)} / 20k Pages</span>
-      </div>
-      <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-        <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesYTD/20000)*100)}%"></div>
-      </div>
-      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-        <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
-        <span>ETA: <b>${pagesETA}</b></span>
-      </div>
-    </div>
-  `;
-  
-  // ── 6. Year Progress ───────────────────────────────────────────
+  const booksPerDayRate = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0;
+  const pagesPerDayRate = ytdDaysElapsed > 0 ? pagesYTD / ytdDaysElapsed : 0;
+
+  const booksETA = calculateETA(booksToMilestone, booksPerDayRate);
+  const pagesETA = calculateETA(pagesToMilestone, pagesPerDayRate);
+
+  // Update Year Progress Card
   const daysRemainingInYear = 365 - ytdDaysElapsed;
   const pagesPerCalendarDay = (pagesYTD / ytdDaysElapsed).toFixed(1);
   const booksPerMonthYTD = (booksYTD / (ytdDaysElapsed / 30)).toFixed(2);
-  
+
   $('dash-year-progress').innerHTML = `
-    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">📅 Current Year Progress (${yearNum})</div>
-    <div class="grid grid-cols-2 gap-y-2 gap-x-4 mt-2 text-xs border-t border-white/5 pt-2">
+    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Elapsed</span><span class="text-slate-200 font-bold">${ytdDaysElapsed}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Remaining</span><span class="text-slate-200 font-bold">${daysRemainingInYear}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Books Completed</span><span class="text-slate-200 font-bold">${booksYTD}</span></div>
@@ -1017,8 +1341,43 @@ async function renderDashboard() {
       </div>
     </div>
   `;
-  
-  // ── 7. Currently Reading List ──────────────────────────────────
+
+  // Update Milestone Projections Card
+  $('dash-milestones').innerHTML = `
+    <div class="flex flex-col gap-3.5">
+      <!-- Books Milestone -->
+      <div class="flex flex-col gap-1">
+        <div class="flex justify-between text-xs font-semibold text-slate-200">
+          <span>📚 Next Books Milestone</span>
+          <span>${booksYTD} / 75 Books</span>
+        </div>
+        <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (booksYTD/75)*100)}%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+          <span>To go: <b>${booksToMilestone} books</b></span>
+          <span>ETA: <b>${booksETA}</b></span>
+        </div>
+      </div>
+      
+      <!-- Pages Milestone -->
+      <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
+        <div class="flex justify-between text-xs font-semibold text-slate-200">
+          <span>📄 Next Pages Milestone</span>
+          <span>${fmtNum(pagesYTD)} / 20k Pages</span>
+        </div>
+        <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesYTD/20000)*100)}%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+          <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
+          <span>ETA: <b>${pagesETA}</b></span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── Currently Reading List ──
   const active = books.filter(b => b.status === 'In Progress');
   const activeEl = $('dash-active-books');
   activeEl.innerHTML = '';
@@ -1026,14 +1385,13 @@ async function renderDashboard() {
     activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
   } else {
     active.forEach(b => {
-      // Calculate progress of current cycle
       const pagesReadAccum = b.pages_read || 0;
       const currentCyclePages = pagesReadAccum % b.total_pages;
       const left = b.total_pages - currentCyclePages;
       const estDays = Math.ceil(left / 10);
       const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
       
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5');
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
           <div class="min-w-0">
@@ -1042,76 +1400,41 @@ async function renderDashboard() {
           </div>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">${pct}%</span>
         </div>
-        <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5">
+        <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
           <span>Pages Left: <b>${left}</b></span>
           <span>ETA @ 10pg/day: <b>${estDays} days</b></span>
         </div>
       `;
+      card.addEventListener('click', () => openBookDetailModal(b));
       activeEl.appendChild(card);
     });
   }
-  
-  // ── 8. Up Next List ────────────────────────────────────────────
-  const notStarted = books.filter(b => b.status === 'Not Started');
-  const prioOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
-  const upNext = [...notStarted].sort((a,b) => (prioOrder[a.priority] ?? 2) - (prioOrder[b.priority] ?? 2)).slice(0, 5);
-  
+
+  // ── Up Next List ──
   const upNextEl = $('dash-up-next-books');
   upNextEl.innerHTML = '';
   if (upNext.length === 0) {
     upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
   } else {
     upNext.forEach(b => {
-      const prioColor = b.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border-rose-500/10' : b.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/10' : 'bg-slate-800/40 text-slate-400 border-white/5';
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center gap-3 border border-white/5');
+      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
       card.innerHTML = `
-        <div class="min-w-0">
-          <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
-          <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+            <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase">${b.priority} Prio</span>
         </div>
-        <span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${prioColor}">${b.priority || 'Low'}</span>
       `;
+      card.addEventListener('click', () => openBookDetailModal(b));
       upNextEl.appendChild(card);
     });
   }
-  
-  // ── 9. Recently Finished ───────────────────────────────────────
-  const pastYearTime = today.getTime() - 365 * 86400000;
-  const finishedLogs = logsCache.filter(l => {
-    const book = booksCache.find(b => b.title === l.book_title);
-    return book && l.end_page >= book.total_pages && new Date(l.date + 'T00:00:00').getTime() >= pastYearTime;
-  });
-  
-  // Sort descending by completion date
-  finishedLogs.sort((a, b) => b.date.localeCompare(a.date));
-  
-  const recentEl = $('dash-recent-books');
-  recentEl.innerHTML = '';
-  if (finishedLogs.length === 0) {
-    recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books finished recently</p>';
-  } else {
-    const seenTitles = new Set();
-    finishedLogs.forEach(l => {
-      if (seenTitles.has(l.book_title)) return;
-      seenTitles.add(l.book_title);
-      
-      const book = booksCache.find(b => b.title === l.book_title);
-      const pages = book ? book.total_pages : 0;
-      
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center gap-3 border border-white/5');
-      card.innerHTML = `
-        <div class="min-w-0">
-          <div class="text-xs font-bold text-slate-100 truncate">${l.book_title}</div>
-          <div class="text-[9px] text-slate-400 mt-0.5">${pages} pg · Finished: ${fmtDate(l.date)}</div>
-        </div>
-        <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Done</span>
-      `;
-      recentEl.appendChild(card);
-    });
-  }
-  
-  // Render Chart
+
+  // ── Render Charts ──
   renderCharts();
+}
 }
 
 // ── Goals & Projections ───────────────────────────────────────────────────────
@@ -1465,7 +1788,6 @@ function renderDonutChart() {
   const wrap = $('chart-donut-wrap');
   if (!wrap) return;
 
-  // Compute totals
   let bahaiPg = 0, nonBahaiPg = 0;
   booksCache.forEach(b => {
     const completed = (b.read_count || 0) * (b.total_pages || 0);
@@ -1476,71 +1798,100 @@ function renderDonutChart() {
   });
 
   const total = bahaiPg + nonBahaiPg || 1;
-  const r = 40, cx = 54, cy = 54, sw = 14;
-  const circ = 2 * Math.PI * r;
+  const r = 35, cx = 50, cy = 50, sw = 10;
+  const circ = 2 * Math.PI * r; // ~219.91
   const bahaiDash = (bahaiPg / total) * circ;
   const nonBahaiDash = (nonBahaiPg / total) * circ;
 
   const isDark = !document.body.classList.contains('light-mode');
-  const c1 = isDark ? '#D6A85C' : '#FF9F0A';
-  const c2 = isDark ? '#38BDF8' : '#0A84FF';
+  const c1 = isDark ? '#D6A85C' : '#FF9F0A'; // Bahai (Gold)
+  const c2 = isDark ? '#38BDF8' : '#0A84FF'; // Non-Bahai (Sky Blue)
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
-  const svg = svgEl('svg', { viewBox: '0 0 108 108', width: '108', height: '108', style: 'display:block' });
-  // Track
+  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-28 h-28 shrink-0', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: trackColor, 'stroke-width': sw }));
-  // Non-Baha'i arc
-  svg.appendChild(svgEl('circle', {
-    cx, cy, r, fill: 'none', stroke: c2, 'stroke-width': sw,
-    'stroke-dasharray': circ,
-    'stroke-dashoffset': 0,
-    'stroke-linecap': 'round',
-    transform: `rotate(-90 ${cx} ${cy})`
-  }));
-  // Baha'i arc (on top)
-  const bahaiArc = svgEl('circle', {
-    cx, cy, r, fill: 'none', stroke: c1, 'stroke-width': sw,
-    'stroke-dasharray': `${bahaiDash} ${circ}`,
-    'stroke-dashoffset': 0,
-    'stroke-linecap': 'round',
-    transform: `rotate(-90 ${cx} ${cy})`
-  });
-  bahaiArc.style.transition = 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)';
-  svg.appendChild(bahaiArc);
-  // Center total
-  const totalTxt = svgEl('text', { x: cx, y: cy - 4, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
-    style: `font-size:14px; font-weight:900; fill:${isDark ? '#fff' : '#1c1c1e'}; font-family:-apple-system,sans-serif` });
-  totalTxt.textContent = fmtNum(total);
-  svg.appendChild(totalTxt);
-  const subTxt = svgEl('text', { x: cx, y: cy + 12, 'text-anchor': 'middle',
-    style: `font-size:7px; font-weight:700; fill:${isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)'}; font-family:-apple-system,sans-serif; letter-spacing:0.04em; text-transform:uppercase` });
-  subTxt.textContent = 'TOTAL PGS';
-  svg.appendChild(subTxt);
 
-  // Legend
-  const legend = document.createElement('div');
-  legend.style.cssText = 'display:flex;flex-direction:column;gap:10px;justify-content:center';
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
+  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
+  overlayTotal.textContent = fmtNum(total);
+  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
+  overlayLabel.textContent = 'Pages';
+  centerOverlay.appendChild(overlayTotal);
+  centerOverlay.appendChild(overlayLabel);
+
   const pctBahai = total > 0 ? Math.round(bahaiPg / total * 100) : 0;
   const pctNon   = 100 - pctBahai;
+
+  if (bahaiPg > 0) {
+    const s1 = svgEl('circle', {
+      cx, cy, r, fill: 'none', stroke: c1, 'stroke-width': sw,
+      'stroke-dasharray': `${bahaiDash} ${circ}`,
+      transform: `rotate(-90 ${cx} ${cy})`,
+      class: 'transition-all duration-300 cursor-pointer'
+    });
+    s1.style.transition = 'stroke-width 0.2s ease';
+    s1.addEventListener('mouseenter', () => {
+      s1.setAttribute('stroke-width', (sw + 2).toString());
+      overlayTotal.textContent = fmtNum(bahaiPg);
+      overlayLabel.textContent = `Bahá'í (${pctBahai}%)`;
+    });
+    s1.addEventListener('mouseleave', () => {
+      s1.setAttribute('stroke-width', sw.toString());
+      overlayTotal.textContent = fmtNum(total);
+      overlayLabel.textContent = 'Pages';
+    });
+    svg.appendChild(s1);
+  }
+
+  if (nonBahaiPg > 0) {
+    const startAngle = -90 + (bahaiPg / total) * 360;
+    const s2 = svgEl('circle', {
+      cx, cy, r, fill: 'none', stroke: c2, 'stroke-width': sw,
+      'stroke-dasharray': `${nonBahaiDash} ${circ}`,
+      transform: `rotate(${startAngle} ${cx} ${cy})`,
+      class: 'transition-all duration-300 cursor-pointer'
+    });
+    s2.style.transition = 'stroke-width 0.2s ease';
+    s2.addEventListener('mouseenter', () => {
+      s2.setAttribute('stroke-width', (sw + 2).toString());
+      overlayTotal.textContent = fmtNum(nonBahaiPg);
+      overlayLabel.textContent = `Non-Bahá'í (${pctNon}%)`;
+    });
+    s2.addEventListener('mouseleave', () => {
+      s2.setAttribute('stroke-width', sw.toString());
+      overlayTotal.textContent = fmtNum(total);
+      overlayLabel.textContent = 'Pages';
+    });
+    svg.appendChild(s2);
+  }
+
+  // Legend
+  const legend = el('div', 'flex flex-col gap-2.5 justify-center w-full max-w-[140px]');
   legend.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${c1};flex-shrink:0"></div>
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c1}"></span>
       <div>
-        <div style="font-size:10px;font-weight:700;color:var(--text-primary)">Bahá'í</div>
-        <div style="font-size:11px;font-weight:800;color:${c1}">${pctBahai}%</div>
+        <div class="text-[10px] font-bold text-slate-350">Bahá'í</div>
+        <div class="text-xs font-black text-slate-100">${pctBahai}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(bahaiPg)} pg)</span></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${c2};flex-shrink:0"></div>
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c2}"></span>
       <div>
-        <div style="font-size:10px;font-weight:700;color:var(--text-primary)">Non-Bahá'í</div>
-        <div style="font-size:11px;font-weight:800;color:${c2}">${pctNon}%</div>
+        <div class="text-[10px] font-bold text-slate-350">Non-Bahá'í</div>
+        <div class="text-xs font-black text-slate-100">${pctNon}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(nonBahaiPg)} pg)</span></div>
       </div>
-    </div>`;
+    </div>
+  `;
 
   wrap.innerHTML = '';
-  wrap.appendChild(svg);
-  wrap.appendChild(legend);
+  const flexContainer = el('div', 'flex flex-row items-center justify-around gap-6 py-2 w-full relative');
+  const svgWrapper = el('div', 'relative w-28 h-28 shrink-0');
+  svgWrapper.appendChild(svg);
+  svgWrapper.appendChild(centerOverlay);
+  flexContainer.appendChild(svgWrapper);
+  flexContainer.appendChild(legend);
+  wrap.appendChild(flexContainer);
 }
 
 // ── SPARKLINE — weekly pages over last 12 weeks ───────────────────────────────
@@ -1693,25 +2044,19 @@ function renderRecentLogs() {
   });
 }
 
-// ── Bookshelf & Wishlist Setup (Consolidated) ──────────────────────────────
-let bookshelfStatusFilter = 'All';
-let bookshelfSearchTerm   = '';
-
 function openAddBookModal() {
   $('add-book-modal').classList.add('open');
 }
 
 function setupBookshelf() {
-  // Wire search
   const searchEl = $('wishlist-search');
   if (searchEl) {
     searchEl.addEventListener('input', e => {
-      bookshelfSearchTerm = e.target.value.toLowerCase();
+      bookshelfSearchTerm = e.target.value; // Keep original diacritics for input (normalizer strips them internally!)
       renderBookshelf();
     });
   }
 
-  // Wire filter segment control
   const filterEl = $('bookshelf-filter-status');
   if (filterEl) {
     filterEl.querySelectorAll('[data-bsf]').forEach(btn => {
@@ -1726,29 +2071,18 @@ function setupBookshelf() {
     });
   }
 
-  // Wire Add Book button
   const addTrigger = $('btn-add-book-trigger');
   if (addTrigger) addTrigger.addEventListener('click', openAddBookModal);
 
-  // Wire Add Book modal
   const addClose = $('add-book-close');
   if (addClose) addClose.addEventListener('click', () => $('add-book-modal').classList.remove('open'));
   const addSave = $('add-book-save');
   if (addSave) addSave.addEventListener('click', saveNewBook);
 
-  // Wire Edit Book modal
   const editClose = $('edit-book-close');
   if (editClose) editClose.addEventListener('click', () => $('edit-book-modal').classList.remove('open'));
   const editSave = $('edit-book-save');
   if (editSave) editSave.addEventListener('click', saveEditBook);
-
-  // Wire Wishlist (add-to-wishlist) modal
-  const wlFab = $('wishlist-fab');
-  if (wlFab) { wlFab.classList.add('hidden'); }
-  const wlClose = $('wishlist-modal-close');
-  if (wlClose) wlClose.addEventListener('click', () => $('wishlist-modal').classList.remove('open'));
-  const wlSave = $('wishlist-modal-save');
-  if (wlSave) wlSave.addEventListener('click', addWishlistItem);
 }
 
 async function renderBookshelf() {
@@ -1763,10 +2097,32 @@ async function renderBookshelf() {
 
   const q = bookshelfSearchTerm;
 
-  // Merge legacy wishlist items (de-duplicated by title)
-  const libraryTitles = new Set(booksCache.map(b => b.title.toLowerCase()));
-  const normalizedWishlist = wishlistCache
-    .filter(w => !libraryTitles.has(w.title.toLowerCase()))
+  // Build wishlist properties lookup map
+  const wishlistMap = {};
+  wishlistCache.forEach(w => {
+    wishlistMap[w.title.toLowerCase()] = w;
+  });
+
+  // Merge wishlist metadata directly into library books
+  const libraryItems = booksCache.map(b => {
+    const wl = wishlistMap[b.title.toLowerCase()];
+    return {
+      ...b,
+      collection: b.collection || 'Non-Bahai',
+      group: b.group || 'Other',
+      priority: b.priority || (wl ? wl.priority : 'Low'),
+      est_cost: b.est_cost || (wl ? wl.est_cost : 0),
+      where_to_buy: b.where_to_buy || (wl ? wl.where_to_buy : ''),
+      notes: b.notes || (wl ? wl.notes : ''),
+      total_pages: b.total_pages || 0,
+      _fromWishlist: !!wl || ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status),
+      _isWishlist: false
+    };
+  });
+
+  // Include wishlist-only items that are not yet in the library collection
+  const wishlistOnly = wishlistCache
+    .filter(w => !booksCache.some(b => b.title.toLowerCase() === w.title.toLowerCase()))
     .map(w => ({
       id: w.id,
       title: w.title,
@@ -1781,35 +2137,22 @@ async function renderBookshelf() {
       notes: w.notes || '',
       pages_read: 0,
       read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
+      _fromWishlist: true,
       _isWishlist: true
     }));
 
-  const allItems = [
-    ...booksCache.map(b => ({
-      ...b,
-      collection: b.collection || 'Non-Bahai',
-      group: b.group || 'Other',
-      priority: b.priority || 'Low',
-      est_cost: b.est_cost || 0,
-      where_to_buy: b.where_to_buy || '',
-      notes: b.notes || '',
-      total_pages: b.total_pages || 0,
-      _isWishlist: false
-    })),
-    ...normalizedWishlist
-  ];
+  const allItems = [...libraryItems, ...wishlistOnly];
 
-  // Filter based on search term and selected chip
+  // Filter based on diacritic-insensitive search term and status tab
   let filtered = allItems.filter(item => {
-    // Search matching
     if (q) {
-      const matchTitle = item.title.toLowerCase().includes(q);
-      const matchAuthor = (item.author || '').toLowerCase().includes(q);
-      const matchGroup = (item.group || '').toLowerCase().includes(q);
+      const normalizedQ = normalizeText(q);
+      const matchTitle = normalizeText(item.title).includes(normalizedQ);
+      const matchAuthor = normalizeText(item.author).includes(normalizedQ);
+      const matchGroup = normalizeText(item.group).includes(normalizedQ);
       if (!matchTitle && !matchAuthor && !matchGroup) return false;
     }
 
-    // Tab chips filtering
     if (bookshelfStatusFilter === 'All') return true;
     if (bookshelfStatusFilter === 'Not Started') {
       return ['Not Started', 'Owned'].includes(item.status);
@@ -1821,7 +2164,7 @@ async function renderBookshelf() {
       return ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(item.status);
     }
     if (bookshelfStatusFilter === 'Wishlist') {
-      return ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(item.status) || item._isWishlist;
+      return item._fromWishlist;
     }
     return true;
   });
@@ -1837,7 +2180,6 @@ async function renderBookshelf() {
     const isAct = b.status === 'In Progress';
     const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
 
-    // Elegant high-fidelity badge styling
     let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
     if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
     else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
@@ -1851,18 +2193,15 @@ async function renderBookshelf() {
     };
     const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
 
-    // Progress bar calculations
     const pagesReadAccum = b.pages_read || 0;
     const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
     const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
     const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
 
-    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] transition-all');
+    const card = el('div', 'glass-panel p-4.5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer');
 
-    // Est Cost display
     const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
-    // Where to buy layout
     let buyHTML = '';
     if (b.where_to_buy) {
       const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
@@ -1870,12 +2209,11 @@ async function renderBookshelf() {
         <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
           <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
           <span>Where to Buy:</span>
-          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
+          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
         </div>
       `;
     }
 
-    // Notes display
     let notesHTML = '';
     if (b.notes) {
       notesHTML = `
@@ -1890,6 +2228,71 @@ async function renderBookshelf() {
         <div class="min-w-0 flex-1">
           <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
           <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+        </div>
+        <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+      </div>
+
+      <div class="flex flex-wrap gap-1.5 mt-0.5">
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+      </div>
+
+      ${isAct ? `
+        <div class="flex flex-col gap-1.5 mt-0.5">
+          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+            <span>Reading Progress</span>
+            <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
+          </div>
+          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${buyHTML}
+      ${notesHTML}
+
+      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
+        <div class="flex gap-3">
+          <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
+          <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+        </div>
+        <div class="flex gap-1.5">
+          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
+          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
+          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+        </div>
+      </div>
+    `;
+
+    // Click card to open Detail Modal
+    card.addEventListener('click', e => {
+      // Avoid modal if clicking action buttons
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      openBookDetailModal(b);
+    });
+
+    const compBtn = card.querySelector('[data-action="complete"]');
+    if (compBtn) compBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
+    });
+
+    const rereadBtn = card.querySelector('[data-action="re-read"]');
+    if (rereadBtn) rereadBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
+    });
+
+    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
+      e.stopPropagation();
+      openEditBookModal(b);
+    });
+
+    container.appendChild(card);
+  });
+}ages || 'N/A'} pg${costText}</div>
         </div>
         <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
       </div>
@@ -2352,8 +2755,18 @@ function renderBooksPerYearChart(completions, containerId) {
       width: barWidth, height: Math.max(2, barH),
       rx: '4', ry: '4',
       fill: 'var(--accent)',
-      class: 'transition-all duration-300 hover:opacity-80'
+      class: 'transition-all duration-300 hover:opacity-80 cursor-pointer'
     });
+
+    rect.addEventListener('click', () => {
+      Haptics.click();
+      const select = $('dash-year-select');
+      if (select) {
+        select.value = year;
+        select.dispatchEvent(new Event('change'));
+      }
+    });
+
     svg.appendChild(rect);
 
     const valText = svgEl('text', {
@@ -2429,17 +2842,27 @@ function renderCategoryPieChart(books, containerId) {
   const circumference = 2 * Math.PI * 35; // r=35 -> ~219.91
   let cumulativePercent = 0;
 
-  const chartFlex = el('div', 'flex flex-col sm:flex-row items-center justify-around gap-4 py-2');
-  const svgWrapper = el('div', 'relative w-36 h-36 shrink-0');
+  const chartFlex = el('div', 'flex flex-col sm:flex-row items-center justify-around gap-6 py-2 w-full');
+  const svgWrapper = el('div', 'relative w-28 h-28 shrink-0');
   
   const isDark = !document.body.classList.contains('light-mode');
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
-  // Native SVG, no scaling transform issues
   const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '35', fill: 'none', stroke: trackColor, 'stroke-width': '10' }));
 
-  let legendItems = '';
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
+  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
+  overlayTotal.textContent = fmtNum(total);
+  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
+  overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
+  
+  centerOverlay.appendChild(overlayTotal);
+  centerOverlay.appendChild(overlayLabel);
+  svgWrapper.appendChild(svg);
+  svgWrapper.appendChild(centerOverlay);
+
+  const legendGrid = el('div', 'grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]');
 
   Object.keys(counts).forEach(cat => {
     const count = counts[cat];
@@ -2455,43 +2878,43 @@ function renderCategoryPieChart(books, containerId) {
       stroke: colors[cat],
       'stroke-width': '10',
       'stroke-dasharray': strokeLength + ' ' + circumference,
-      'stroke-dashoffset': '0',
       transform: `rotate(${angle} 50 50)`,
-      class: 'transition-all duration-300 hover:opacity-80'
+      class: 'transition-all duration-300 cursor-pointer'
     });
-    // Remove transformOrigin to prevent browser offset-shifting bugs
-    svg.appendChild(segment);
 
     const valLabel = categoryChartMode === 'pages' ? `${fmtNum(count)} pg` : `(${count})`;
-    legendItems += `
-      <div class="flex items-center gap-2 text-xs">
-        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
-        <span class="font-medium text-neutral-300 truncate max-w-[100px]">${cat}</span>
-        <span class="text-neutral-500 text-[10px] ml-auto">${valLabel}</span>
-      </div>
-    `;
+    const pctVal = Math.round(percent * 100);
 
+    const legendItem = el('div', 'flex items-center gap-2 text-[10px] p-1 rounded-lg border border-transparent transition-all');
+    legendItem.innerHTML = `
+      <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
+      <span class="font-medium text-slate-350 truncate max-w-[100px]">${cat}</span>
+      <span class="text-slate-500 font-bold ml-auto">${valLabel} (${pctVal}%)</span>
+    `;
+    legendGrid.appendChild(legendItem);
+
+    segment.addEventListener('mouseenter', () => {
+      segment.setAttribute('stroke-width', '12');
+      overlayTotal.textContent = fmtNum(count);
+      overlayLabel.textContent = `${cat} (${pctVal}%)`;
+      legendItem.classList.add('bg-white/5', 'border-white/10');
+    });
+
+    segment.addEventListener('mouseleave', () => {
+      segment.setAttribute('stroke-width', '10');
+      overlayTotal.textContent = fmtNum(total);
+      overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
+      legendItem.classList.remove('bg-white/5', 'border-white/10');
+    });
+
+    svg.appendChild(segment);
     cumulativePercent += percent;
   });
 
-  svgWrapper.appendChild(svg);
-
-  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
-  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
-  overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
-  overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
-  
-  centerOverlay.appendChild(overlayTotal);
-  centerOverlay.appendChild(overlayLabel);
-  svgWrapper.appendChild(centerOverlay);
   chartFlex.appendChild(svgWrapper);
-
-  const legendGrid = el('div', 'grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1.5 w-full max-w-[180px]');
-  legendGrid.innerHTML = legendItems;
   chartFlex.appendChild(legendGrid);
-
   svgContainer.appendChild(chartFlex);
+}
 }
 
 // =========================================================================
@@ -2509,35 +2932,59 @@ async function healBookStatuses() {
     
     const maxLogCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
     const rc = b.read_count || 0;
+    let completedCycles = 0;
+    const tot = parseInt(b.total_pages || 0, 10);
+    if (tot <= 0) continue;
     
-    if (maxLogCycle > rc) {
-      const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === maxLogCycle);
-      cycleLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const latestLog = cycleLogs[cycleLogs.length - 1];
-      const endPage = parseInt(latestLog.end_page || 0, 10);
-      const totalPages = parseInt(b.total_pages || 0, 10);
-      
-      const correctStatus = endPage >= totalPages ? 'Finished' : 'In Progress';
-      const currentPagesRead = b.total_pages * rc + endPage;
-      
-      if (b.status !== correctStatus || b.pages_read !== currentPagesRead) {
-        console.log(`[Self-Healing] Book "${b.title}": ${b.status} -> ${correctStatus}, pages_read ${b.pages_read} -> ${currentPagesRead}`);
-        await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
-          status: correctStatus,
-          pages_read: currentPagesRead,
-          read_count: endPage >= totalPages ? rc + 1 : rc
-        });
-        b.status = correctStatus;
-        b.pages_read = currentPagesRead;
-        if (endPage >= totalPages) b.read_count = rc + 1;
-        updatedAny = true;
+    // Calculate completed cycles
+    for (let c = 1; c <= maxLogCycle + 1; c++) {
+      const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === c);
+      if (cycleLogs.length === 0) continue;
+      const maxEnd = Math.max(...cycleLogs.map(l => parseInt(l.end_page || 0, 10)));
+      if (maxEnd >= tot) {
+        completedCycles = Math.max(completedCycles, c);
       }
+    }
+    
+    const activeCycle = completedCycles + 1;
+    const activeLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+    const maxActiveEnd = activeLogs.length > 0 ? Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10))) : 0;
+    
+    let correctStatus = 'Not Started';
+    let currentPagesRead = 0;
+    let correctReadCount = completedCycles;
+    
+    if (maxActiveEnd > 0) {
+      correctStatus = 'In Progress';
+      currentPagesRead = completedCycles * tot + maxActiveEnd;
+    } else {
+      if (completedCycles > 0) {
+        correctStatus = 'Finished';
+        currentPagesRead = completedCycles * tot;
+      } else {
+        const isWishlist = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status);
+        correctStatus = isWishlist ? b.status : 'Not Started';
+        currentPagesRead = 0;
+      }
+    }
+    
+    if (b.status !== correctStatus || b.pages_read !== currentPagesRead || b.read_count !== correctReadCount) {
+      console.log(`[Self-Healing] Book "${b.title}": ${b.status} -> ${correctStatus}, pages_read ${b.pages_read} -> ${currentPagesRead}, read_count ${b.read_count} -> ${correctReadCount}`);
+      await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+        status: correctStatus,
+        pages_read: currentPagesRead,
+        read_count: correctReadCount
+      });
+      b.status = correctStatus;
+      b.pages_read = currentPagesRead;
+      b.read_count = correctReadCount;
+      updatedAny = true;
     }
   }
   if (updatedAny) {
     console.log("[Self-Healing] Database corrected. Refreshing dashboard.");
     if (currentView === 'dashboard') renderDashboard();
-    if (currentView === 'library') renderLibrary();
+    if (currentView === 'wishlist') renderBookshelf();
   }
 }
 
@@ -2610,11 +3057,8 @@ function renderActivityHeatmap(logs) {
     activityMap[dStr] = (activityMap[dStr] || 0) + parseInt(log.pages_read_today || log.pagesRead || Math.max(0, (log.end_page || 0) - (log.start_page || 0)), 10);
   });
   
-  // End heatmap exactly at today (local calendar date)
   const today = new Date();
   today.setHours(0,0,0,0);
-  
-  // Start exactly 364 days ago (local time)
   const startTime = today.getTime() - 364 * 24 * 60 * 60 * 1000;
   
   const isDark = !document.body.classList.contains('light-mode');
@@ -2624,7 +3068,7 @@ function renderActivityHeatmap(logs) {
     const year = activeDate.getFullYear();
     const month = String(activeDate.getMonth() + 1).padStart(2, '0');
     const day = String(activeDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-\t${day}`.replace('\t', '');
+    const dateStr = `${year}-${month}-${day}`;
     
     const pagesRead = activityMap[dateStr] || 0;
     
@@ -2632,12 +3076,10 @@ function renderActivityHeatmap(logs) {
     block.className = 'heatmap-day';
     
     if (pagesRead > 0) {
-      // HSL color range: Sky Blue Hue (200), varying lightness based on page read count
       const lightness = isDark 
         ? Math.max(40, 75 - (pagesRead / 80) * 35) 
         : Math.max(30, 85 - (pagesRead / 80) * 55);
       block.style.backgroundColor = `hsla(200, 85%, ${lightness}%, 1)`;
-      // Small premium ring/shadow for very high reading days (>40 pages)
       if (pagesRead > 40) {
         block.style.boxShadow = `0 0 4px hsla(200, 85%, ${lightness}%, 0.6)`;
       }
@@ -2648,14 +3090,52 @@ function renderActivityHeatmap(logs) {
     const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     block.setAttribute('title', `${dateFormatted}: ${pagesRead} pages read`);
     
-    // Add interactive click tooltip & vibration haptic
-    block.addEventListener('click', () => {
+    block.addEventListener('click', (e) => {
+      e.stopPropagation();
       Haptics.click();
-      showToast(`${dateFormatted}: ${pagesRead} page${pagesRead === 1 ? '' : 's'} read`);
+      
+      const dayLogs = logs.filter(l => l.date === dateStr);
+      const booksDone = dayLogs.filter(l => {
+        const book = booksCache.find(b => b.title === l.book_title);
+        return book && parseInt(l.end_page || 0, 10) >= parseInt(book.total_pages || 0, 10);
+      });
+      const minsTotal = dayLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
+
+      const tooltip = $('heatmap-tooltip');
+      if (!tooltip) return;
+
+      let html = `<div class="text-[10px] text-white font-extrabold mb-1">${dateFormatted}</div>`;
+      html += `<div>📖 <b>${pagesRead}</b> pages read</div>`;
+      if (booksDone.length > 0) {
+        html += `<div class="text-amber-400 mt-0.5">🏆 <b>${booksDone.length}</b> book finished</div>`;
+      }
+      if (minsTotal > 0) {
+        html += `<div class="text-blue-400 mt-0.5">⏱ <b>${minsTotal}</b> min logged</div>`;
+      }
+
+      tooltip.innerHTML = html;
+      tooltip.classList.remove('hidden');
+
+      const blockRect = block.getBoundingClientRect();
+      const parentRect = container.getBoundingClientRect();
+      
+      const left = blockRect.left - parentRect.left + (blockRect.width / 2) - 50;
+      const top = blockRect.top - parentRect.top - 55;
+      
+      tooltip.style.left = `${Math.max(5, left)}px`;
+      tooltip.style.top = `${top}px`;
     });
     
     container.appendChild(block);
   }
+}
+
+if (!window._heatmapTooltipWired) {
+  window._heatmapTooltipWired = true;
+  document.addEventListener('click', () => {
+    const tooltip = document.getElementById('heatmap-tooltip');
+    if (tooltip) tooltip.classList.add('hidden');
+  });
 }
 
 // =========================================================================
@@ -2698,6 +3178,167 @@ function normalizeGroup(groupName) {
 
   return 'Other';
 }
+
+// =========================================================================
+// DIACRITIC-INSENSITIVE NORMALIZER & DRILL-DOWN MODAL
+// =========================================================================
+function normalizeText(str) {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function openBookDetailModal(b) {
+  $('bd-title').textContent = b.title;
+  $('bd-author').textContent = b.author ? `by ${b.author}` : 'Unknown Author';
+  
+  const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
+  const isAct = b.status === 'In Progress';
+  const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+  
+  // Badges
+  let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
+  if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+  else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
+  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+  
+  const prioClasses = {
+    'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
+    'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
+    'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
+  };
+  const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
+  
+  $('bd-badges').innerHTML = `
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+  `;
+  
+  // Progress
+  const pagesReadAccum = b.pages_read || 0;
+  const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
+  const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
+  
+  $('bd-progress-text').textContent = `${isFin ? b.total_pages : currentCyclePages} / ${b.total_pages} pg`;
+  $('bd-cycles-text').textContent = `Cycle: ${readCycle} · Reads: ${b.read_count || 0}`;
+  
+  // Circular progress ring
+  const circle = $('bd-progress-ring');
+  const pctText = $('bd-progress-pct');
+  const dispPct = isFin ? 100 : progressPct;
+  pctText.textContent = `${dispPct}%`;
+  const circumference = 2 * Math.PI * 20; // 125.66
+  const offset = circumference - (dispPct / 100) * circumference;
+  circle.style.strokeDashoffset = offset;
+  
+  // Wishlist details
+  const wlInfo = $('bd-wishlist-info');
+  if (b._fromWishlist || isWl) {
+    wlInfo.classList.remove('hidden');
+    $('bd-cost').textContent = b.est_cost > 0 ? `$${b.est_cost.toFixed(2)}` : '$0.00';
+    $('bd-priority').textContent = b.priority || 'Low';
+    
+    const buyContainer = $('bd-buy-container');
+    buyContainer.innerHTML = '';
+    if (b.where_to_buy) {
+      const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
+      buyContainer.innerHTML = `
+        <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+          <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
+          <span>Where to Buy:</span>
+          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
+        </div>
+      `;
+    }
+  } else {
+    wlInfo.classList.add('hidden');
+  }
+  
+  // Render timeline of logs
+  const timeline = $('bd-timeline');
+  timeline.innerHTML = '';
+  
+  const bookLogs = logsCache.filter(l => l.book_title === b.title);
+  if (bookLogs.length === 0) {
+    timeline.innerHTML = `<div class="text-xs text-slate-500 italic py-2">No read sessions logged yet.</div>`;
+  } else {
+    // Sort chronologically ASCENDING
+    const sortedLogs = [...bookLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    sortedLogs.forEach(l => {
+      const addedPages = parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10);
+      const minutes = l.minutes_spent ? ` · ⏱ ${l.minutes_spent} min` : '';
+      
+      const item = el('div', 'flex flex-col gap-1 relative pl-4');
+      // Timeline bullet indicator
+      const bullet = el('div', 'absolute left-[-16px] top-[4px] w-2 h-2 rounded-full border bg-slate-950 border-white/20');
+      if (l.notes && l.notes.includes('Historical')) bullet.classList.add('bg-emerald-500', 'border-emerald-500/20');
+      else bullet.classList.add('bg-blue-500', 'border-blue-500/20');
+      
+      let notesHTML = '';
+      if (l.notes) {
+        notesHTML = `
+          <div class="text-[11px] text-slate-350 italic px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] mt-1 whitespace-pre-wrap leading-relaxed">
+            <i class="fa-solid fa-quote-left text-[8px] text-slate-500 mr-1 align-top"></i>${l.notes}
+          </div>
+        `;
+      }
+      
+      item.innerHTML = `
+        <div class="flex justify-between items-center text-[10px] font-bold text-slate-400">
+          <span>${l.date}</span>
+          <span class="text-slate-300">Cycle ${l.read_cycle}</span>
+        </div>
+        <div class="text-xs font-bold text-slate-200">
+          Read p. ${l.start_page} – ${l.end_page} <span class="text-emerald-400 font-semibold">(+${addedPages} pg)</span>${minutes}
+        </div>
+        ${notesHTML}
+      `;
+      item.appendChild(bullet);
+      timeline.appendChild(item);
+    });
+  }
+  
+  // Wire action buttons
+  const rereadBtn = $('bd-action-reread');
+  if (rereadBtn) {
+    if (isFin) {
+      rereadBtn.classList.remove('hidden');
+      // recreate listener
+      const newBtn = rereadBtn.cloneNode(true);
+      rereadBtn.parentNode.replaceChild(newBtn, rereadBtn);
+      newBtn.addEventListener('click', async () => {
+        if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) {
+          $('book-detail-modal').classList.remove('open');
+          await startBookReRead(b);
+        }
+      });
+    } else {
+      rereadBtn.classList.add('hidden');
+    }
+  }
+  
+  const editBtn = $('bd-action-edit');
+  if (editBtn) {
+    const newBtn = editBtn.cloneNode(true);
+    editBtn.parentNode.replaceChild(newBtn, editBtn);
+    newBtn.addEventListener('click', () => {
+      $('book-detail-modal').classList.remove('open');
+      openEditBookModal(b);
+    });
+  }
+  
+  // Open modal
+  $('book-detail-modal').classList.add('open');
+}
+
+// Wire detail modal close
+window.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = $('book-detail-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => $('book-detail-modal').classList.remove('open'));
+});
 
 // =========================================================================
 // SMART FORM CYCLE & PROGRESS CALCULATIONS
