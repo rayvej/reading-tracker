@@ -454,46 +454,6 @@
         </section>
 
         <!-- ══════════════════════════════════════════════════════
-             VIEW: LIBRARY
-             ══════════════════════════════════════════════════════ -->
-        <section id="view-library" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-          <div class="p-5 flex flex-col gap-5 animate-fade-in">
-
-            <!-- Header -->
-            <div class="flex justify-between items-center pt-1">
-              <div>
-                <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Library</h2>
-                <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Manage your book inventory</p>
-              </div>
-              <button id="btn-add-book-trigger"
-                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
-                style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
-                <i class="fa-solid fa-plus"></i> Add Book
-              </button>
-            </div>
-
-            <!-- Search -->
-            <div class="relative">
-              <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
-              <input type="search" id="lib-search"
-                class="input input-bordered glass-input w-full pl-10"
-                placeholder="Search title or author…">
-            </div>
-
-            <!-- Status filter chips -->
-            <div class="seg-control" id="lib-filter-status">
-              <button class="seg-btn active" data-status="all">All</button>
-              <button class="seg-btn"        data-status="In Progress">Active</button>
-              <button class="seg-btn"        data-status="Finished">Done</button>
-              <button class="seg-btn"        data-status="Not Started">Unread</button>
-            </div>
-
-            <!-- Book list -->
-            <div class="flex flex-col gap-3" id="lib-books-list"></div>
-          </div>
-        </section>
-
-        <!-- ══════════════════════════════════════════════════════
              VIEW: GOALS
              ══════════════════════════════════════════════════════ -->
         <section id="view-goals" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
@@ -613,15 +573,22 @@
         </section>
 
         <!-- ══════════════════════════════════════════════════════
-             VIEW: WISHLIST
+             VIEW: BOOKSHELF & WISHLIST (Consolidated)
              ══════════════════════════════════════════════════════ -->
         <section id="view-wishlist" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
           <div class="p-5 flex flex-col gap-5 animate-fade-in">
 
             <!-- Header -->
-            <div class="pt-1">
-              <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Wishlist</h2>
-              <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Books you want to read</p>
+            <div class="flex justify-between items-center pt-1">
+              <div>
+                <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Bookshelf</h2>
+                <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your library, wishlist &amp; everything in between</p>
+              </div>
+              <button id="btn-add-book-trigger"
+                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
+                style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
+                <i class="fa-solid fa-plus"></i> Add Book
+              </button>
             </div>
 
             <!-- Search -->
@@ -629,21 +596,20 @@
               <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
               <input type="search" id="wishlist-search"
                 class="input input-bordered glass-input w-full pl-10"
-                placeholder="Search wishlist…">
+                placeholder="Search title, author or group…">
             </div>
 
-            <!-- Status chips -->
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="wishlist-filters">
-              <button class="seg-btn active shrink-0" data-status="all">All</button>
-              <button class="seg-btn shrink-0" data-status="Want to Buy">Want to Buy</button>
-              <button class="seg-btn shrink-0" data-status="Owned">Owned</button>
-              <button class="seg-btn shrink-0" data-status="Owned and Read">Owned &amp; Read</button>
-              <button class="seg-btn shrink-0" data-status="Gifted">Gifted</button>
-              <button class="seg-btn shrink-0" data-status="Borrowed and Read">Borrowed &amp; Read</button>
+            <!-- 5-filter Status Segment Control -->
+            <div class="seg-control" id="bookshelf-filter-status">
+              <button class="seg-btn active" data-bsf="All">All</button>
+              <button class="seg-btn" data-bsf="Not Started">Unread</button>
+              <button class="seg-btn" data-bsf="In Progress">Active</button>
+              <button class="seg-btn" data-bsf="Finished">Done</button>
+              <button class="seg-btn" data-bsf="Wishlist">Wishlist</button>
             </div>
 
-            <!-- List -->
-            <div class="flex flex-col gap-3" id="wishlist-list"></div>
+            <!-- Unified Books + Wishlist Container -->
+            <div class="flex flex-col gap-3" id="bookshelf-list"></div>
           </div>
         </section>
 
@@ -661,17 +627,13 @@
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span>Log</span>
         </button>
-        <button class="tab-item" data-view="library" aria-label="Library">
-          <i class="fa-solid fa-book"></i>
-          <span>Library</span>
-        </button>
         <button class="tab-item" data-view="goals" aria-label="Goals">
           <i class="fa-solid fa-bullseye"></i>
           <span>Goals</span>
         </button>
-        <button class="tab-item" data-view="wishlist" aria-label="Wishlist">
-          <i class="fa-solid fa-bookmark"></i>
-          <span>Wishlist</span>
+        <button class="tab-item" data-view="wishlist" aria-label="Bookshelf">
+          <i class="fa-solid fa-books"></i>
+          <span>Bookshelf</span>
         </button>
       </nav>
 

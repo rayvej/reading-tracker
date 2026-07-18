@@ -256,7 +256,7 @@ async function initApp() {
   setupDashboard();
   setupLibrary();
   setupGoals();
-  setupWishlist();
+  setupBookshelf();
   setupLogDetailSheet();
   setupHaptics();
   showView('dashboard'); // Start on Dashboard
@@ -276,8 +276,7 @@ async function loadDatabaseData() {
     // Refresh active views immediately from cache
     if (currentView === 'dashboard') renderDashboard();
     if (currentView === 'goals')     renderGoals();
-    if (currentView === 'wishlist')  renderWishlist();
-    if (currentView === 'library')   renderLibrary();
+    if (currentView === 'wishlist')  renderBookshelf();
 
     // Run background self-healing for any data status inconsistencies
     healBookStatuses();
@@ -411,12 +410,12 @@ function showView(name) {
   // Refresh content on tab open
   if (name === 'dashboard') renderDashboard();
   if (name === 'goals')     renderGoals();
-  if (name === 'wishlist')  renderWishlist();
-  if (name === 'library')   renderLibrary();
+  if (name === 'wishlist')  renderBookshelf();
   if (name === 'log')       renderLogView();
 
-  // Show/hide wishlist FAB
-  $('wishlist-fab').classList.toggle('hidden', name !== 'wishlist');
+  // Show/hide wishlist FAB (now always hidden — add book is in header)
+  const fab = $('wishlist-fab');
+  if (fab) fab.classList.add('hidden');
 }
 
 // ── Log Form ──────────────────────────────────────────────────────────────────
@@ -1694,40 +1693,198 @@ function renderRecentLogs() {
   });
 }
 
-// ── Book Library Manager ──────────────────────────────────────────────────────
-function setupLibrary() {
-  $('lib-search').addEventListener('input', e => {
-    librarySearchTerm = e.target.value.toLowerCase();
-    renderLibrary();
-  });
-  
-  $('lib-filter-status').querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      libraryStatusFilter = btn.dataset.status;
-      $('lib-filter-status').querySelectorAll('button').forEach(b => {
-        const isCur = b.dataset.status === libraryStatusFilter;
-        b.classList.toggle('active', isCur);
-        b.classList.toggle('bg-white/10', isCur);
-        b.classList.toggle('text-white', isCur);
-        b.classList.toggle('font-bold', isCur);
-      });
-      renderLibrary();
-    });
-  });
-  
-  $('btn-add-book-trigger').addEventListener('click', () => {
-    $('add-book-modal').classList.add('open');
-  });
-  $('add-book-close').addEventListener('click', () => {
-    $('add-book-modal').classList.remove('open');
-  });
-  $('add-book-save').addEventListener('click', saveNewBook);
-  
-  $('edit-book-close').addEventListener('click', () => {
-    $('edit-book-modal').classList.remove('open');
-  });
-  $('edit-book-save').addEventListener('click', saveEditBook);
+// ── Bookshelf & Wishlist Setup (Consolidated) ──────────────────────────────
+let bookshelfStatusFilter = 'All';
+let bookshelfSearchTerm   = '';
+
+function openAddBookModal() {
+  $('add-book-modal').classList.add('open');
 }
+
+function setupBookshelf() {
+  // Wire search
+  const searchEl = $('wishlist-search');
+  if (searchEl) {
+    searchEl.addEventListener('input', e => {
+      bookshelfSearchTerm = e.target.value.toLowerCase();
+      renderBookshelf();
+    });
+  }
+
+  // Wire filter segment control
+  const filterEl = $('bookshelf-filter-status');
+  if (filterEl) {
+    filterEl.querySelectorAll('[data-bsf]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bookshelfStatusFilter = btn.dataset.bsf;
+        filterEl.querySelectorAll('[data-bsf]').forEach(b => {
+          const active = b.dataset.bsf === bookshelfStatusFilter;
+          b.classList.toggle('active', active);
+        });
+        renderBookshelf();
+      });
+    });
+  }
+
+  // Wire Add Book button
+  const addTrigger = $('btn-add-book-trigger');
+  if (addTrigger) addTrigger.addEventListener('click', openAddBookModal);
+
+  // Wire Add Book modal
+  const addClose = $('add-book-close');
+  if (addClose) addClose.addEventListener('click', () => $('add-book-modal').classList.remove('open'));
+  const addSave = $('add-book-save');
+  if (addSave) addSave.addEventListener('click', saveNewBook);
+
+  // Wire Edit Book modal
+  const editClose = $('edit-book-close');
+  if (editClose) editClose.addEventListener('click', () => $('edit-book-modal').classList.remove('open'));
+  const editSave = $('edit-book-save');
+  if (editSave) editSave.addEventListener('click', saveEditBook);
+
+  // Wire Wishlist (add-to-wishlist) modal
+  const wlFab = $('wishlist-fab');
+  if (wlFab) { wlFab.classList.add('hidden'); }
+  const wlClose = $('wishlist-modal-close');
+  if (wlClose) wlClose.addEventListener('click', () => $('wishlist-modal').classList.remove('open'));
+  const wlSave = $('wishlist-modal-save');
+  if (wlSave) wlSave.addEventListener('click', addWishlistItem);
+}
+
+async function renderBookshelf() {
+  await loadBooksCache();
+  if (wishlistCache.length === 0) {
+    const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
+    wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+  }
+
+  const container = $('bookshelf-list');
+  if (!container) return;
+
+  const q = bookshelfSearchTerm;
+
+  // Determine which items to show
+  const showWishlistOnly = bookshelfStatusFilter === 'Wishlist';
+
+  // Combine: real books + wishlist-only items when Wishlist filter active
+  let items = [];
+
+  if (!showWishlistOnly) {
+    // Show books from library, filtered by reading status
+    items = booksCache.filter(b => {
+      if (q && !b.title.toLowerCase().includes(q) && !(b.author || '').toLowerCase().includes(q) && !(b.group || '').toLowerCase().includes(q)) return false;
+      if (bookshelfStatusFilter === 'All') return true;
+      return b.status === bookshelfStatusFilter;
+    });
+  } else {
+    // Show wishlist-only items (not yet in library)
+    const libraryTitles = new Set(booksCache.map(b => b.title.toLowerCase()));
+    items = wishlistCache.filter(w => {
+      if (libraryTitles.has(w.title.toLowerCase())) return false; // already in library
+      if (q && !w.title.toLowerCase().includes(q) && !(w.author || '').toLowerCase().includes(q)) return false;
+      return true;
+    }).map(w => ({ ...w, _isWishlist: true }));
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-slate-400">No books found</div><p class="text-xs text-slate-500">Try a different filter or add a new book</p></div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  items.forEach(item => {
+    if (item._isWishlist) {
+      // Render a wishlist-only card
+      const card = el('div', 'glass-panel p-4 rounded-2xl flex items-start justify-between gap-4 border border-white/5');
+      const prioClasses = { 'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10', 'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10', 'Low': 'bg-slate-800/40 text-slate-400 border-white/5' };
+      const prio = prioClasses[item.priority] || prioClasses['Low'];
+      card.innerHTML = `
+        <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-sm font-bold text-slate-100 leading-tight">${item.title}</span>
+            <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border bg-violet-500/10 text-violet-400 border-violet-500/20">Wishlist</span>
+          </div>
+          <p class="text-[11px] text-slate-400">${item.author || 'Unknown Author'}${item.est_pages > 0 ? ' · ' + fmtNum(item.est_pages) + ' pp' : ''}</p>
+          <div class="flex flex-wrap gap-1.5 mt-0.5">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800/40 text-slate-300 border border-white/5">${item.status || ''}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${prio}">${item.priority || ''}</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    } else {
+      // Render a library book card (same premium cards as Library view)
+      const b = item;
+      const isFin = b.status === 'Finished';
+      const isAct = b.status === 'In Progress';
+      const badgeColor = isFin
+        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
+        : isAct
+          ? 'bg-blue-500/10 text-blue-400 border-blue-500/10'
+          : 'bg-slate-800/40 text-slate-400 border-white/5';
+
+      const pagesReadAccum = b.pages_read || 0;
+      const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+      const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
+      const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
+
+      const card = el('div', 'glass-panel p-4 rounded-3xl border border-white/5 flex flex-col gap-3 relative');
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
+            <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages} pg</div>
+          </div>
+          <span class="shrink-0 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+        </div>
+
+        ${isAct ? `
+          <div class="flex flex-col gap-1.5">
+            <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+              <span>Reading Progress</span>
+              <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
+            </div>
+            <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold">
+          <div class="flex gap-3">
+            <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
+            <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+          </div>
+          <div class="flex gap-1.5">
+            ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
+            ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
+            <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+          </div>
+        </div>
+      `;
+
+      const compBtn = card.querySelector('[data-action="complete"]');
+      if (compBtn) compBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
+      });
+
+      const rereadBtn = card.querySelector('[data-action="re-read"]');
+      if (rereadBtn) rereadBtn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
+      });
+
+      card.querySelector('[data-action="edit"]').addEventListener('click', e => {
+        e.stopPropagation();
+        openEditBookModal(b);
+      });
+
+      container.appendChild(card);
+    }
+  });
+}
+
 
 async function renderLibrary() {
   await loadBooksCache();
@@ -1832,7 +1989,7 @@ async function startBookReRead(b) {
     
     showToast(`✓ Started Cycle ${nextCycle} for "${b.title.slice(0, 20)}…"`, 'success');
     await loadBooksCache();
-    await renderLibrary();
+    await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to start re-read: ' + e.message, 'error');
@@ -1860,7 +2017,7 @@ async function markBookComplete(b) {
     await recalculateBook(b.title, cycle);
     showToast(`✓ Registered completion for "${b.title}"!`, 'success');
     logsCache = [];
-    await renderLibrary();
+    await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to complete book: ' + e.message, 'error');
@@ -1928,7 +2085,7 @@ async function saveNewBook() {
     $('add-book-modal').classList.remove('open');
     showToast(`✓ Book "${title}" successfully registered!`, 'success');
     await loadBooksCache();
-    await renderLibrary();
+    await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to add book: ' + e.message, 'error');
@@ -1966,7 +2123,7 @@ async function saveEditBook() {
     $('edit-book-modal').classList.remove('open');
     showToast('✓ Book details successfully updated!', 'success');
     await loadBooksCache();
-    await renderLibrary();
+    await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to update book: ' + e.message, 'error');
@@ -2027,59 +2184,14 @@ function setupWishlist() {
   $('wishlist-modal-save').addEventListener('click', addWishlistItem);
 }
 
-async function renderWishlist() {
-  // Load if cache empty
-  if (wishlistCache.length === 0) {
-    const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
-    wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    wishlistCache.sort((a, b) => a.title.localeCompare(b.title));
-  }
-
-  let items = wishlistCache;
-  if (wishlistFilter !== 'all') items = items.filter(w => w.status === wishlistFilter);
-  if (wishlistSearchTerm) items = items.filter(w =>
-    w.title.toLowerCase().includes(wishlistSearchTerm) ||
-    (w.author || '').toLowerCase().includes(wishlistSearchTerm)
-  );
-
-  const container = $('wishlist-list');
-  container.innerHTML = '';
-  if (items.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3">
-        <span class="text-4xl">📚</span>
-        <div class="text-sm font-bold text-slate-400">No items found</div>
-        <p class="text-xs text-slate-500">Try a different filter or add a new book</p>
-      </div>`;
-    return;
-  }
-
-  items.forEach(w => {
-    const card = el('div', 'glass-panel p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/5 hover:bg-slate-900/40 transition-all');
-    const info = el('div', 'flex-1 min-w-0 flex flex-col gap-2');
-    const title  = el('div', 'text-sm font-semibold text-slate-100 truncate', w.title);
-    const author = el('div', 'text-xs text-slate-400 truncate -mt-1', w.author || '');
-    const tags   = el('div', 'flex flex-wrap gap-1.5');
-
-    const statusTag = el('span', 'px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-slate-800/40 text-slate-300 border border-white/5', w.status || '');
-    const catTag    = el('span', 'px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-slate-800/40 text-slate-300 border border-white/5', w.category || '');
-    
-    const prioClasses = {
-      'High': 'bg-rose-500/10 text-rose-400 border border-rose-500/10',
-      'Medium': 'bg-amber-500/10 text-amber-400 border border-amber-500/10',
-      'Low': 'bg-slate-800/40 text-slate-400 border border-white/5'
-    };
-    const prioTag   = el('span', `px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${prioClasses[w.priority] || prioClasses['Low']}`, w.priority || '');
-    tags.append(statusTag, catTag, prioTag);
-    info.append(title, author, tags);
-
-    const costVal = w.est_cost > 0 ? `$${w.est_cost.toFixed(2)}` : (w.est_pages > 0 ? `${fmtNum(w.est_pages)} pp` : '');
-    const cost = el('div', 'text-xs font-bold text-slate-200 shrink-0', costVal);
-
-    card.append(info, cost);
-    container.appendChild(card);
-  });
+// legacy stubs kept for any remaining internal calls — logic moved to renderBookshelf
+async function renderWishlist() { return renderBookshelf(); }
+async function renderLibrary()  {
+  // Library view no longer exists as a standalone tab — renderBookshelf handles everything
+  if (currentView === 'wishlist') return renderBookshelf();
 }
+function setupWishlist() { /* merged into setupBookshelf */ }
+function setupLibrary() { /* merged into setupBookshelf */ }
 
 async function addWishlistItem() {
   const title = $('wl-title').value.trim();
