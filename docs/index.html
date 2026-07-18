@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Private reading tracker — log sessions, track progress, manage your library.">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#090A0F">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F7">
+  <meta name="theme-color" id="theme-color-meta" content="#FAF8F5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Reading Tracker">
@@ -43,7 +42,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-[#090A0F] text-white min-h-screen overflow-hidden relative">
+<body class="min-h-screen overflow-hidden relative">
 
   <!-- ── Critical error overlay ── -->
   <script>
@@ -57,10 +56,10 @@
   </script>
 
   <!-- ── Ambient background glow blobs ── -->
-  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div class="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[140px] animate-float-1"></div>
-    <div class="absolute top-[40%] -right-48 w-[460px] h-[460px] rounded-full bg-indigo-600/8 blur-[130px] animate-float-2"></div>
-    <div class="absolute -bottom-48 left-[5%] w-[420px] h-[420px] rounded-full bg-amber-500/5 blur-[120px] animate-float-1"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60">
+    <div class="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-orange-500/12 blur-[140px] animate-float-1"></div>
+    <div class="absolute top-[40%] -right-48 w-[460px] h-[460px] rounded-full bg-rose-600/10 blur-[130px] animate-float-2"></div>
+    <div class="absolute -bottom-48 left-[5%] w-[420px] h-[420px] rounded-full bg-amber-500/8 blur-[120px] animate-float-1"></div>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
@@ -69,7 +68,7 @@
   <div class="relative z-10 flex flex-col h-screen h-[100dvh] max-w-[448px] mx-auto border-x border-white/5" style="background: rgba(9,10,15,0.15)">
 
     <!-- ── SCREEN 1: Google Sign-In ── -->
-    <div id="auth-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8" style="background: rgba(9,10,15,0.96); backdrop-filter: blur(28px)">
+    <div id="auth-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8" style="background: var(--bg-solid); opacity: 0.98; backdrop-filter: blur(28px)">
       <div class="w-full max-w-xs flex flex-col items-center gap-9 text-center animate-fade-in">
         <!-- Logo -->
         <div class="relative group">
@@ -98,7 +97,7 @@
     </div>
 
     <!-- ── SCREEN 2: PIN Lock ── -->
-    <div id="pin-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 hidden" style="background: rgba(9,10,15,0.96); backdrop-filter: blur(28px)">
+    <div id="pin-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 hidden" style="background: var(--bg-solid); opacity: 0.98; backdrop-filter: blur(28px)">
       <div class="w-full max-w-xs flex flex-col items-center gap-8 text-center">
         <div class="flex flex-col items-center gap-3">
           <img src="icon-192.png" class="w-16 h-16 rounded-2xl shadow-xl border border-white/10" alt="">
@@ -131,7 +130,7 @@
     </div>
 
     <!-- ── SCREEN 3: Seeding ── -->
-    <div id="seed-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 hidden" style="background: rgba(9,10,15,0.96); backdrop-filter: blur(28px)">
+    <div id="seed-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 hidden" style="background: var(--bg-solid); opacity: 0.98; backdrop-filter: blur(28px)">
       <div class="w-full max-w-xs flex flex-col items-center gap-6 text-center">
         <div class="loading loading-spinner loading-lg" style="color: var(--gold)"></div>
         <div class="flex flex-col gap-2">
@@ -149,9 +148,8 @@
          ════════════════════════════════════════════════════════════ -->
     <div id="app" class="hidden flex-1 flex flex-col overflow-hidden">
 
-      <!-- ── iOS Navigation Bar Header ── -->
       <header class="flex items-center justify-between px-5 py-3 shrink-0 relative z-30"
-              style="border-bottom: 0.5px solid var(--border); background: rgba(9,10,15,0.7); backdrop-filter: blur(20px)">
+              style="border-bottom: 0.5px solid var(--border-strong); background: var(--bg-card); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);">
         <!-- Logo + Title -->
         <div class="flex items-center gap-2.5">
           <img src="icon-192.png" class="w-8 h-8 rounded-xl border border-white/10" alt="">
@@ -1096,7 +1094,7 @@
   <div id="book-detail-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
        onclick="if(event.target===this)this.classList.remove('open')">
     <div class="sheet-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-    <div class="w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl [.open_&]:translate-y-0 translate-y-10 sm:translate-y-0 sm:scale-95 transition-all duration-300 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] z-10"
+    <div class="w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl [.open_&]:translate-y-0 translate-y-10 sm:translate-y-0 sm:scale-95 transition-all duration-300 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] relative z-[70]"
          style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
       <div class="flex justify-between items-start">
         <div class="flex-1 min-w-0 pr-4">
@@ -1177,6 +1175,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=28"></script>
+  <script type="module" src="app.js?v=29"></script>
 </body>
 </html>

@@ -1,71 +1,73 @@
-/* ─── Reading Tracker — iOS HIG Design System v11 ─────────────────────────── */
+/* ─── Reading Tracker — iOS HIG Design System v12 — Sunset Ambiance ─── */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Dark Mode (default)
+   DESIGN TOKENS — Sunset Ambiance Theme (Default: Light Mode)
    ══════════════════════════════════════════════════════════════ */
 :root {
-  --bg:              #090A0F;
-  --bg-elevated:     #16171C;
-  --bg-card:         rgba(22, 23, 30, 0.82);
-  --bg-input:        rgba(255, 255, 255, 0.04);
-  --bg-input-focus:  rgba(255, 255, 255, 0.06);
-  --text-primary:    #FFFFFF;
-  --text-secondary:  #8E8E93;
-  --text-tertiary:   #48484A;
-  --accent:          #38BDF8;
-  --accent-rgb:      56, 189, 248;
-  --accent2:         #818CF8;
-  --accent2-rgb:     129, 140, 248;
-  --accent3:         #F472B6;
-  --accent3-rgb:     244, 114, 182;
-  --gold:            #D6A85C;
-  --gold-rgb:        214, 168, 92;
-  --gold-light:      #F5D76E;
-  --emerald:         #34D399;
-  --emerald-rgb:     52, 211, 153;
-  --rose:            #FB7185;
-  --rose-rgb:        251, 113, 133;
-  --border:          rgba(255, 255, 255, 0.06);
-  --border-strong:   rgba(255, 255, 255, 0.10);
-  --border-color:    rgba(255, 255, 255, 0.05);
-  --shadow-card:     0 8px 32px rgba(0, 0, 0, 0.45);
-  --blur:            blur(24px) saturate(180%);
+  --bg:              linear-gradient(180deg, #FFEBD1 0%, #FAF8F5 35%, #F5E1E6 100%);
+  --bg-solid:        #FAF8F5;
+  --bg-elevated:     #FFFDFB;
+  --bg-card:         rgba(255, 255, 255, 0.65);
+  --bg-input:        rgba(45, 25, 35, 0.04);
+  --bg-input-focus:  rgba(45, 25, 35, 0.07);
+  --text-primary:    #2D1923;
+  --text-secondary:  #6E5A65;
+  --text-tertiary:   #9C8A93;
+  --accent:          #FF5A1F; /* Sunset Orange */
+  --accent-rgb:      255, 90, 31;
+  --accent2:         #FF8C00;
+  --accent2-rgb:     255, 140, 0;
+  --accent3:         #FF6B6B;
+  --accent3-rgb:     255, 107, 107;
+  --gold:            #E69E24;
+  --gold-rgb:        230, 158, 36;
+  --gold-light:      #FAD02C;
+  --emerald:         #10B981;
+  --emerald-rgb:     16, 185, 129;
+  --rose:            #EF4444;
+  --rose-rgb:        239, 68, 68;
+  --border:          rgba(45, 25, 35, 0.06);
+  --border-strong:   rgba(45, 25, 35, 0.12);
+  --border-color:    rgba(45, 25, 35, 0.04);
+  --shadow-card:     0 10px 30px -10px rgba(45, 25, 35, 0.05);
+  --blur:            blur(20px) saturate(190%);
   --radius:          16px;
   --radius-lg:       20px;
   --radius-xl:       24px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS — Light Mode
+   DESIGN TOKENS — Sunset Twilight Theme (Toggled: Dark Mode)
    ══════════════════════════════════════════════════════════════ */
 body.light-mode {
-  --bg:              #F2F2F7;
-  --bg-elevated:     #FFFFFF;
-  --bg-card:         rgba(255, 255, 255, 0.88);
-  --bg-input:        rgba(0, 0, 0, 0.04);
-  --bg-input-focus:  rgba(0, 0, 0, 0.06);
-  --text-primary:    #1C1C1E;
-  --text-secondary:  #57575C;
-  --text-tertiary:   #8E8E93;
-  --accent:          #0A84FF;
-  --accent-rgb:      10, 132, 255;
-  --accent2:         #5856D6;
-  --accent2-rgb:     88, 86, 214;
-  --accent3:         #FF2D55;
-  --accent3-rgb:     255, 45, 85;
-  --gold:            #FF9F0A;
-  --gold-rgb:        255, 159, 10;
-  --gold-light:      #FFD60A;
-  --emerald:         #30D158;
-  --emerald-rgb:     48, 209, 88;
-  --rose:            #FF3B30;
-  --rose-rgb:        255, 59, 48;
-  --border:          rgba(0, 0, 0, 0.06);
-  --border-strong:   rgba(0, 0, 0, 0.12);
-  --border-color:    rgba(0, 0, 0, 0.06);
-  --shadow-card:     0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+  --bg:              linear-gradient(180deg, #2E1528 0%, #120A13 50%, #080309 100%);
+  --bg-solid:        #120A13;
+  --bg-elevated:     #1B0F1C;
+  --bg-card:         rgba(27, 15, 28, 0.65);
+  --bg-input:        rgba(255, 255, 255, 0.05);
+  --bg-input-focus:  rgba(255, 255, 255, 0.08);
+  --text-primary:    #F5ECEF;
+  --text-secondary:  #9C8A95;
+  --text-tertiary:   #6A5863;
+  --accent:          #FF7F3E; /* Glowing Sunset Orange */
+  --accent-rgb:      255, 127, 62;
+  --accent2:         #FFA36C;
+  --accent2-rgb:     255, 163, 108;
+  --accent3:         #FF8E8E;
+  --accent3-rgb:     255, 142, 142;
+  --gold:            #FFAE19;
+  --gold-rgb:        255, 174, 25;
+  --gold-light:      #FFE047;
+  --emerald:         #34D399;
+  --emerald-rgb:     52, 211, 153;
+  --rose:            #F87171;
+  --rose-rgb:        248, 113, 113;
+  --border:          rgba(255, 255, 255, 0.08);
+  --border-strong:   rgba(255, 255, 255, 0.15);
+  --border-color:    rgba(255, 255, 255, 0.06);
+  --shadow-card:     0 10px 30px -10px rgba(0, 0, 0, 0.55);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -76,15 +78,37 @@ body.light-mode {
 html { height: 100%; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
-  background-color: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  background-attachment: fixed;
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.35s ease, color 0.35s ease;
+  transition: background 0.35s ease, color 0.35s ease;
   overscroll-behavior: none;
-  height: 100%;
+  height: 100dvh;
   min-height: 100dvh;
+}
+
+/* Tactile Active feedback loops */
+.glass-panel,
+.tab-item,
+.btn,
+button,
+.ios-modal-card {
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s, border-color 0.3s;
+}
+
+.glass-panel:active,
+.btn:active,
+button:active,
+.tab-item:active {
+  transform: scale(0.96) !important;
+}
+
+/* Scroll lock & Pull-to-refresh defense */
+.view {
+  overscroll-behavior-y: contain;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -101,7 +125,7 @@ body {
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border: 0.5px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   transition: background 0.35s ease, border-color 0.35s ease;
 }
@@ -156,29 +180,26 @@ body {
    ══════════════════════════════════════════════════════════════ */
 #tab-bar {
   position: fixed;
-  bottom: max(16px, env(safe-area-inset-bottom, 16px));
-  left: 16px;
-  right: 16px;
+  bottom: 0;
+  left: 0;
+  right: 0;
   margin: 0 auto;
-  width: auto;
-  max-width: 450px;
-  height: 68px;
+  width: 100%;
+  max-width: 448px;
+  height: calc(56px + env(safe-area-inset-bottom, 12px));
+  padding-bottom: env(safe-area-inset-bottom, 12px);
   box-sizing: border-box;
-  border-radius: 34px;
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  background: rgba(17, 18, 23, 0.75);
-  border: 0.5px solid var(--border-color);
+  border-radius: 0;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  background: var(--bg-card);
+  border-top: 0.5px solid var(--border-strong);
   z-index: 999;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.4s, border-color 0.4s;
-}
-
-body.light-mode #tab-bar {
-  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 -2px 10px rgba(45, 25, 35, 0.02);
+  transition: background 0.35s, border-color 0.35s;
 }
 
 .tab-item {
@@ -243,7 +264,7 @@ body.light-mode #tab-bar {
 
 /* Safe area padding for scrollable views */
 .safe-padding-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 72px) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -593,7 +614,47 @@ body.light-mode .badge-muted { background: rgba(0,0,0,0.05); }
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* High Contrast Light Mode Overrides */
+/* Sunset Ambiance (Light Mode) overrides for hardcoded dark-mode tailwind classes in HTML */
+body:not(.light-mode) .text-slate-100,
+body:not(.light-mode) .text-slate-200,
+body:not(.light-mode) .text-slate-300,
+body:not(.light-mode) .text-white,
+body:not(.light-mode) h1,
+body:not(.light-mode) h2,
+body:not(.light-mode) h3,
+body:not(.light-mode) h4,
+body:not(.light-mode) .excel-table td,
+body:not(.light-mode) .excel-table th,
+body:not(.light-mode) .excel-table tr,
+body:not(.light-mode) span[id^="ring-"],
+body:not(.light-mode) span[id^="stat-"],
+body:not(.light-mode) span[id^="detail-"],
+body:not(.light-mode) div[id^="stat-"],
+body:not(.light-mode) div[id^="detail-"] {
+  color: var(--text-primary) !important;
+}
+
+body:not(.light-mode) .text-slate-400,
+body:not(.light-mode) .text-slate-500,
+body:not(.light-mode) .label-text,
+body:not(.light-mode) .section-label,
+body:not(.light-mode) .input-hint,
+body:not(.light-mode) p[id^="detail-"] {
+  color: var(--text-secondary) !important;
+}
+
+body:not(.light-mode) .text-neutral-400,
+body:not(.light-mode) .text-zinc-500,
+body:not(.light-mode) .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+body:not(.light-mode) .text-neutral-500,
+body:not(.light-mode) .text-zinc-400 {
+  color: var(--text-primary) !important;
+}
+
+/* Sunset Twilight (Dark Mode) overrides for hardcoded tailwind classes */
 body.light-mode .text-slate-100,
 body.light-mode .text-slate-200,
 body.light-mode .text-slate-300,
@@ -610,7 +671,7 @@ body.light-mode span[id^="stat-"],
 body.light-mode span[id^="detail-"],
 body.light-mode div[id^="stat-"],
 body.light-mode div[id^="detail-"] {
-  color: #1C1C1E !important;
+  color: var(--text-primary) !important;
 }
 
 body.light-mode .text-slate-400,
@@ -619,20 +680,18 @@ body.light-mode .label-text,
 body.light-mode .section-label,
 body.light-mode .input-hint,
 body.light-mode p[id^="detail-"] {
-  color: #57575C !important;
+  color: var(--text-secondary) !important;
 }
 
-
-/* Light Mode Contrast Overrides for Hardcoded Gray Utilities */
 body.light-mode .text-neutral-400,
 body.light-mode .text-zinc-500,
 body.light-mode .text-gray-400 {
-  color: #57575C !important;
+  color: var(--text-secondary) !important;
 }
 
 body.light-mode .text-neutral-500,
 body.light-mode .text-zinc-400 {
-  color: #1C1C1E !important;
+  color: var(--text-primary) !important;
 }
 
 /* Library Card Structural Layout Repairs */

@@ -110,14 +110,22 @@ function showToast(msg, type = '') {
 }
 
 // ── Dark / Light Mode ────────────────────────────────────────────────────────
+function updateMetaThemeColor(isLight) {
+  const meta = document.getElementById('theme-color-meta');
+  if (meta) {
+    meta.setAttribute('content', isLight ? '#FAF8F5' : '#120A13');
+  }
+}
+
 function initTheme() {
   const saved = localStorage.getItem('rt_theme');
-  // Apply saved preference, or keep dark (default)
-  if (saved === 'light') {
+  const isLight = saved === 'light';
+  if (isLight) {
     document.body.classList.add('light-mode');
     const icon = $('theme-icon');
     if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
   }
+  updateMetaThemeColor(isLight);
 }
 
 function toggleTheme() {
@@ -128,6 +136,7 @@ function toggleTheme() {
     icon.classList.toggle('fa-moon', !isLight);
     icon.classList.toggle('fa-sun', isLight);
   }
+  updateMetaThemeColor(isLight);
 }
 
 // ── Screen visibility ─────────────────────────────────────────────────────────
@@ -390,6 +399,57 @@ async function loadLogsCache() {
     const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
     logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   }
+}
+
+async function getMergedBooks() {
+  await loadBooksCache();
+  if (wishlistCache.length === 0) {
+    const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
+    wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+  }
+  
+  const wishlistMap = {};
+  wishlistCache.forEach(w => {
+    wishlistMap[w.title.toLowerCase()] = w;
+  });
+
+  const libraryItems = booksCache.map(b => {
+    const wl = wishlistMap[b.title.toLowerCase()];
+    return {
+      ...b,
+      collection: b.collection || 'Non-Bahai',
+      group: b.group || 'Other',
+      priority: b.priority || (wl ? wl.priority : 'Low'),
+      est_cost: b.est_cost || (wl ? wl.est_cost : 0),
+      where_to_buy: b.where_to_buy || (wl ? wl.where_to_buy : ''),
+      notes: b.notes || (wl ? wl.notes : ''),
+      total_pages: b.total_pages || 0,
+      _fromWishlist: !!wl || ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status),
+      _isWishlist: false
+    };
+  });
+
+  const wishlistOnly = wishlistCache
+    .filter(w => !booksCache.some(b => b.title.toLowerCase() === w.title.toLowerCase()))
+    .map(w => ({
+      id: w.id,
+      title: w.title,
+      author: w.author || '',
+      collection: w.collection || 'Non-Bahai',
+      group: w.category || w.group || 'Other',
+      total_pages: w.est_pages || w.total_pages || 0,
+      priority: w.priority || 'Low',
+      status: w.status || 'Want to Buy',
+      est_cost: w.est_cost || 0,
+      where_to_buy: w.where_to_buy || '',
+      notes: w.notes || '',
+      pages_read: 0,
+      read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
+      _fromWishlist: true,
+      _isWishlist: true
+    }));
+
+  return [...libraryItems, ...wishlistOnly];
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -941,7 +1001,8 @@ async function renderDashboard() {
     filteredActiveLogs = activeLogs.filter(l => l.date.startsWith(selectedYear));
   }
   
-  const books = dashFilter === 'all' ? booksCache : booksCache.filter(b => b.collection === dashFilter);
+  const mergedBooks = await getMergedBooks();
+  const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
   const completions = [];
   const logsByBookCycle = {};
@@ -955,7 +1016,7 @@ async function renderDashboard() {
     const parts = key.split('-');
     const title = parts.slice(0, -1).join('-');
     const cycle = parseInt(parts[parts.length - 1]);
-    const book = booksCache.find(b => b.title === title);
+    const book = mergedBooks.find(b => b.title === title);
     if (book) {
       const tot = book.total_pages;
       const cycleLogs = logsByBookCycle[key];
@@ -1267,6 +1328,49 @@ async function renderDashboard() {
   // ── YOY Card Visibility ──
   $('dash-yoy-card').classList.toggle('hidden', selectedYear !== 'all' && selectedYear !== String(yearNum));
 
+  // ── YTD vs Same Date Last Year (YOY Card calculation) ─────────────────────
+  const todayMMDD = today.toISOString().slice(5, 10); // "MM-DD"
+  const compYear = selectedYear === 'all' ? yearNum : parseInt(selectedYear);
+  
+  const targetYearStart = `${compYear}-01-01`;
+  const targetYearEnd = `${compYear}-${todayMMDD}`;
+  const prevYearStart = `${compYear - 1}-01-01`;
+  const prevYearEnd = `${compYear - 1}-${todayMMDD}`;
+  
+  // Books completed in target year period
+  const targetComp = completions.filter(c => c.date >= targetYearStart && c.date <= targetYearEnd && (dashFilter === 'all' || c.collection === dashFilter));
+  // Books completed in prev year period
+  const prevComp = completions.filter(c => c.date >= prevYearStart && c.date <= prevYearEnd && (dashFilter === 'all' || c.collection === dashFilter));
+  
+  // Pages read in target year period
+  const targetPagesVal = activeLogs
+    .filter(l => l.date >= targetYearStart && l.date <= targetYearEnd && (dashFilter === 'all' || (mergedBooks.find(b => b.title === l.book_title)?.collection === dashFilter)))
+    .reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+    
+  // Pages read in prev year period
+  const prevPagesVal = activeLogs
+    .filter(l => l.date >= prevYearStart && l.date <= prevYearEnd && (dashFilter === 'all' || (mergedBooks.find(b => b.title === l.book_title)?.collection === dashFilter)))
+    .reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+
+  const bookDiff = targetComp.length - prevComp.length;
+  const bookDiffStr = bookDiff >= 0 ? `+${bookDiff}` : `${bookDiff}`;
+  const bookDiffColor = bookDiff >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold';
+  
+  const pageDiff = targetPagesVal - prevPagesVal;
+  const pageDiffStr = pageDiff >= 0 ? `+${fmtNum(pageDiff)}` : `${fmtNum(pageDiff)}`;
+  const pageDiffColor = pageDiff >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold';
+
+  $('yoy-books').innerHTML = `
+    <span style="color: var(--text-primary)" class="font-black">${targetComp.length}</span>
+    <span class="text-[9px] text-slate-400 font-medium ml-1">vs ${prevComp.length} last yr</span>
+    <span class="text-xs ml-2 ${bookDiffColor}">${bookDiffStr}</span>
+  `;
+  $('yoy-pages').innerHTML = `
+    <span style="color: var(--text-primary)" class="font-black">${fmtNum(targetPagesVal)}</span>
+    <span class="text-[9px] text-slate-400 font-medium ml-1">vs ${fmtNum(prevPagesVal)} last yr</span>
+    <span class="text-xs ml-2 ${pageDiffColor}">${pageDiffStr}</span>
+  `;
+
   // ── Time-Based Insights Tables ──
   renderTimeBasedTables(logsCache, completions);
 
@@ -1437,8 +1541,44 @@ async function renderDashboard() {
     });
   }
 
+  // ── Recently Finished List ──
+  const recentEl = $('dash-recent-books');
+  if (recentEl) {
+    recentEl.innerHTML = '';
+    const oneYearAgoStr = new Date(today.getTime() - 365 * 86400000).toISOString().slice(0, 10);
+    const recentCompletions = completions
+      .filter(c => c.date >= oneYearAgoStr && (dashFilter === 'all' || c.collection === dashFilter))
+      .sort((a, b) => b.date.localeCompare(a.date));
+      
+    if (recentCompletions.length === 0) {
+      recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books recently finished</p>';
+    } else {
+      recentCompletions.slice(0, 5).forEach(c => {
+        const book = mergedBooks.find(b => b.title === c.title);
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer');
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-bold text-slate-100 truncate">${c.title}</div>
+              <div class="text-[9px] text-slate-400 truncate mt-0.5">${book ? book.author || '' : ''}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Finished</span>
+          </div>
+          <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
+            <span>Date: <b>${fmtDate(c.date)}</b></span>
+            <span>Pages: <b>${c.pages} pg</b></span>
+          </div>
+        `;
+        if (book) {
+          card.addEventListener('click', () => openBookDetailModal(book));
+        }
+        recentEl.appendChild(card);
+      });
+    }
+  }
+
   // ── Render Charts ──
-  renderCharts();
+  renderCharts(completions);
 }
 
 // ── Goals & Projections ───────────────────────────────────────────────────────
@@ -1523,9 +1663,6 @@ async function renderGoals() {
   $('ring-pages-val').textContent = yearPages >= 1000 ? Math.round(yearPages/100)/10 + 'k' : yearPages;
   $('ring-books-lbl').textContent = `/ ${aBT} bks`;
   $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pgs`;
-
-  // Render Books Read per Year Bar Chart above tables
-  renderBooksPerYearChart(completions, 'chart-books-year-wrap');
 
   // 1. Targets & Completions Table
   const progressStr = (cur, target) => {
@@ -1919,7 +2056,7 @@ function renderBarChart() {
   renderCategoryPieChart(booksCache, 'chart-bar-wrap');
 }
 
-function renderCharts() {
+function renderCharts(completions) {
   const selectedYear = $('dash-year-select').value;
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
   
@@ -1932,6 +2069,10 @@ function renderCharts() {
   renderDonutChart();
   renderBarChart();
   renderActivityHeatmap(filteredActiveLogs);
+  
+  if (completions) {
+    renderBooksPerYearChart(completions, 'chart-books-year-wrap');
+  }
 }
 
 
@@ -2090,62 +2231,12 @@ function setupBookshelf() {
 }
 
 async function renderBookshelf() {
-  await loadBooksCache();
-  if (wishlistCache.length === 0) {
-    const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
-    wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
-  }
+  const allItems = await getMergedBooks();
 
   const container = $('bookshelf-list');
   if (!container) return;
 
   const q = bookshelfSearchTerm;
-
-  // Build wishlist properties lookup map
-  const wishlistMap = {};
-  wishlistCache.forEach(w => {
-    wishlistMap[w.title.toLowerCase()] = w;
-  });
-
-  // Merge wishlist metadata directly into library books
-  const libraryItems = booksCache.map(b => {
-    const wl = wishlistMap[b.title.toLowerCase()];
-    return {
-      ...b,
-      collection: b.collection || 'Non-Bahai',
-      group: b.group || 'Other',
-      priority: b.priority || (wl ? wl.priority : 'Low'),
-      est_cost: b.est_cost || (wl ? wl.est_cost : 0),
-      where_to_buy: b.where_to_buy || (wl ? wl.where_to_buy : ''),
-      notes: b.notes || (wl ? wl.notes : ''),
-      total_pages: b.total_pages || 0,
-      _fromWishlist: !!wl || ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status),
-      _isWishlist: false
-    };
-  });
-
-  // Include wishlist-only items that are not yet in the library collection
-  const wishlistOnly = wishlistCache
-    .filter(w => !booksCache.some(b => b.title.toLowerCase() === w.title.toLowerCase()))
-    .map(w => ({
-      id: w.id,
-      title: w.title,
-      author: w.author || '',
-      collection: w.collection || 'Non-Bahai',
-      group: w.category || w.group || 'Other',
-      total_pages: w.est_pages || w.total_pages || 0,
-      priority: w.priority || 'Low',
-      status: w.status || 'Want to Buy',
-      est_cost: w.est_cost || 0,
-      where_to_buy: w.where_to_buy || '',
-      notes: w.notes || '',
-      pages_read: 0,
-      read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
-      _fromWishlist: true,
-      _isWishlist: true
-    }));
-
-  const allItems = [...libraryItems, ...wishlistOnly];
 
   // Filter based on diacritic-insensitive search term and status tab
   let filtered = allItems.filter(item => {
