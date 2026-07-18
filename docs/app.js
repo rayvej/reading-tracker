@@ -2856,7 +2856,6 @@ function renderCategoryPieChart(books, containerId) {
   chartFlex.appendChild(legendGrid);
   svgContainer.appendChild(chartFlex);
 }
-}
 
 // =========================================================================
 // SECTION 4: RE-READ LOG STATUS EVALUATOR (Fixes multi-cycle progress bugs)
