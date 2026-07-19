@@ -46,6 +46,7 @@ let booksCache = [];          // all book docs { id, ...data }
 let wishlistCache = [];       // all wishlist items
 let logsCache = [];           // cached reading logs
 let goalsCache = {};
+let dashboardStats = null;
 let currentView       = 'dashboard'; // Start on dashboard as default premium screen
 let dashFilter        = 'all';
 let dashYearFilter    = 'all';
@@ -167,13 +168,14 @@ initTheme();
 // ── Auth ──────────────────────────────────────────────────────────────────────
 $('btn-google-signin').addEventListener('click', async () => {
   try {
-    if (isMobile) {
-      await signInWithRedirect(auth, gp);
-    } else {
-      await signInWithPopup(auth, gp);
-    }
+    await signInWithPopup(auth, gp);
   } catch (e) {
-    showToast('Sign-in failed: ' + e.message, 'error');
+    console.warn("Popup blocked or failed, attempting redirect fallback:", e);
+    try {
+      await signInWithRedirect(auth, gp);
+    } catch (err) {
+      showToast('Sign-in failed: ' + err.message, 'error');
+    }
   }
 });
 
@@ -1061,6 +1063,245 @@ function renderTimeBasedTables(logs, completions) {
       yBody.appendChild(tr);
     });
   }
+function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startDate, endDate, dashFilter) {
+  let pagesRead = 0;
+  const completionsInPeriod = completions.filter(c => c.date >= startDate && c.date <= endDate && (dashFilter === 'all' || c.collection === dashFilter));
+  
+  const logsByBook = {};
+  logsCache.forEach(l => {
+    if (l.date >= startDate && l.date <= endDate) {
+      const title = l.book_title;
+      if (!title) return;
+      if (!logsByBook[title]) logsByBook[title] = 0;
+      logsByBook[title] += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    }
+  });
+
+  const processedBooks = new Set();
+  completionsInPeriod.forEach(c => {
+    processedBooks.add(c.title);
+  });
+  
+  Object.keys(logsByBook).forEach(title => {
+    processedBooks.add(title);
+  });
+
+  const todayStr = todayISO();
+  const includesToday = (endDate >= todayStr);
+  if (includesToday) {
+    mergedBooks.forEach(b => {
+      if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
+        if (dashFilter === 'all' || b.collection === dashFilter) {
+          processedBooks.add(b.title);
+        }
+      }
+    });
+  }
+
+  processedBooks.forEach(title => {
+    const book = mergedBooks.find(b => b.title === title);
+    const tot = book ? parseInt(book.total_pages || 0, 10) : 0;
+    const compsCount = completionsInPeriod.filter(c => c.title === title).length;
+    let libPages = compsCount * tot;
+    
+    if (includesToday && book && book.status === 'In Progress') {
+      libPages += (book.pages_read || 0);
+    }
+
+    const logPages = logsByBook[title] || 0;
+    pagesRead += Math.max(libPages, logPages);
+  });
+
+  return pagesRead;
+}
+
+function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
+  const completions = [];
+  const logsByBookCycle = {};
+  
+  logsCache.forEach(l => {
+    const key = `${l.book_title}-${l.read_cycle || 1}`;
+    if (!logsByBookCycle[key]) logsByBookCycle[key] = [];
+    logsByBookCycle[key].push(l);
+  });
+
+  // Calculate completions from logs
+  Object.keys(logsByBookCycle).forEach(key => {
+    const parts = key.split('-');
+    const title = parts.slice(0, -1).join('-');
+    const cycle = parseInt(parts[parts.length - 1], 10);
+    const book = mergedBooks.find(b => b.title === title);
+    if (book) {
+      const tot = parseInt(book.total_pages || 0, 10);
+      const cycleLogs = logsByBookCycle[key];
+      const compLogs = cycleLogs.filter(l => (l.end_page || 0) >= tot);
+      if (compLogs.length > 0 && tot > 0) {
+        compLogs.sort((a,b) => a.date.localeCompare(b.date));
+        completions.push({
+          title,
+          cycle,
+          date: compLogs[0].date,
+          pages: tot,
+          collection: book.collection || 'Non-Bahai',
+          category: book.group || book.category || 'Other',
+          ownership: book.ownership || 'Owned'
+        });
+      }
+    }
+  });
+
+  // Blend in finished books that don't have matching daily logs
+  mergedBooks.forEach(b => {
+    const rc = b.read_count || 0;
+    const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || rc > 0;
+    if (isFinished) {
+      const existingCount = completions.filter(c => c.title === b.title).length;
+      const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
+      for (let i = 0; i < neededCount; i++) {
+        completions.push({
+          title: b.title,
+          cycle: existingCount + i + 1,
+          date: '2020-01-01', // placeholder for missing logs
+          pages: b.total_pages || 0,
+          collection: b.collection || 'Non-Bahai',
+          category: b.group || b.category || 'Other',
+          ownership: b.ownership || 'Owned'
+        });
+      }
+    }
+  });
+
+  completions.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Reconciled stats by book and year
+  const bookYearStats = {};
+  mergedBooks.forEach(b => {
+    bookYearStats[b.title] = {
+      book: b,
+      years: {}
+    };
+  });
+
+  // Process logs
+  logsCache.forEach(l => {
+    const title = l.book_title;
+    if (!title) return;
+    if (!bookYearStats[title]) {
+      bookYearStats[title] = {
+        book: {
+          title,
+          total_pages: l.book_pages || 0,
+          collection: l.collection || 'Non-Bahai',
+          group: 'Other',
+          category: 'Other',
+          ownership: 'Wishlist'
+        },
+        years: {}
+      };
+    }
+    const year = l.date.slice(0, 4);
+    if (!bookYearStats[title].years[year]) {
+      bookYearStats[title].years[year] = { logPages: 0, completions: 0, libPages: 0 };
+    }
+    const delta = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    bookYearStats[title].years[year].logPages += delta;
+  });
+
+  // Distribute completions
+  completions.forEach(c => {
+    const title = c.title;
+    const year = c.date.slice(0, 4);
+    if (!bookYearStats[title]) return;
+    if (!bookYearStats[title].years[year]) {
+      bookYearStats[title].years[year] = { logPages: 0, completions: 0, libPages: 0 };
+    }
+    bookYearStats[title].years[year].completions += 1;
+    bookYearStats[title].years[year].libPages += c.pages;
+  });
+
+  // Add current active progress of In Progress books to the current year
+  const currentYearStr = new Date().getFullYear().toString();
+  mergedBooks.forEach(b => {
+    if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
+      const title = b.title;
+      if (!bookYearStats[title].years[currentYearStr]) {
+        bookYearStats[title].years[currentYearStr] = { logPages: 0, completions: 0, libPages: 0 };
+      }
+      bookYearStats[title].years[currentYearStr].libPages += b.pages_read;
+    }
+  });
+
+  // Reconciled totals
+  let totalReads = 0;
+  let pagesRead = 0;
+  
+  const categoryPages = {};
+  const categoryBooks = {};
+  let bahaiPages = 0, nonBahaiPages = 0;
+  let bahaiBooks = 0, nonBahaiBooks = 0;
+
+  const activeTitles = new Set();
+  const finishedTitles = new Set();
+
+  Object.keys(bookYearStats).forEach(title => {
+    const entry = bookYearStats[title];
+    const b = entry.book;
+
+    if (dashFilter !== 'all' && b.collection !== dashFilter) return;
+
+    let bookTotalPagesInFilter = 0;
+    let bookTotalCompletionsInFilter = 0;
+
+    Object.keys(entry.years).forEach(year => {
+      const yearStat = entry.years[year];
+      const reconciledPagesInYear = Math.max(yearStat.libPages, yearStat.logPages);
+      
+      const inSelectedYear = (selectedYear === 'all' || year === selectedYear);
+      if (inSelectedYear) {
+        pagesRead += reconciledPagesInYear;
+        totalReads += yearStat.completions;
+        bookTotalPagesInFilter += reconciledPagesInYear;
+        bookTotalCompletionsInFilter += yearStat.completions;
+
+        if (reconciledPagesInYear > 0 || yearStat.completions > 0) {
+          if (yearStat.completions > 0) {
+            finishedTitles.add(title);
+          } else {
+            activeTitles.add(title);
+          }
+        }
+      }
+    });
+
+    const cat = normalizeGroup(b.group || b.category || 'Other');
+    categoryPages[cat] = (categoryPages[cat] || 0) + bookTotalPagesInFilter;
+    categoryBooks[cat] = (categoryBooks[cat] || 0) + bookTotalCompletionsInFilter;
+
+    if (b.collection === 'Bahai') {
+      bahaiPages += bookTotalPagesInFilter;
+      bahaiBooks += bookTotalCompletionsInFilter;
+    } else {
+      nonBahaiPages += bookTotalPagesInFilter;
+      nonBahaiBooks += bookTotalCompletionsInFilter;
+    }
+  });
+
+  const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
+
+  return {
+    totalReads,
+    pagesRead,
+    titlesCount: (selectedYear === 'all') ? mergedBooks.filter(b => (dashFilter === 'all' || b.collection === dashFilter)).length : activeTitles.size + finishedTitles.size,
+    finishedCount: (selectedYear === 'all') ? mergedBooks.filter(b => (dashFilter === 'all' || b.collection === dashFilter) && ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)).length : finishedTitles.size,
+    progressCount: (selectedYear === 'all') ? mergedBooks.filter(b => (dashFilter === 'all' || b.collection === dashFilter) && b.status === 'In Progress').length : activeTitles.size,
+    categoryPages,
+    categoryBooks,
+    bahaiPages,
+    nonBahaiPages,
+    bahaiBooks,
+    nonBahaiBooks,
+    completions: filteredCompletions
+  };
 }
 
 async function renderDashboard() {
@@ -1081,88 +1322,15 @@ async function renderDashboard() {
   const mergedBooks = await getMergedBooks();
   const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
-  const completions = [];
-  const logsByBookCycle = {};
-  logsCache.forEach(l => {
-    const key = `${l.book_title}-${l.read_cycle || 1}`;
-    if (!logsByBookCycle[key]) logsByBookCycle[key] = [];
-    logsByBookCycle[key].push(l);
-  });
-
-  Object.keys(logsByBookCycle).forEach(key => {
-    const parts = key.split('-');
-    const title = parts.slice(0, -1).join('-');
-    const cycle = parseInt(parts[parts.length - 1]);
-    const book = mergedBooks.find(b => b.title === title);
-    if (book) {
-      const tot = book.total_pages;
-      const cycleLogs = logsByBookCycle[key];
-      const compLogs = cycleLogs.filter(l => l.end_page >= tot);
-      if (compLogs.length > 0) {
-        compLogs.sort((a,b) => a.date.localeCompare(b.date));
-        completions.push({
-          title,
-          cycle,
-          date: compLogs[0].date,
-          pages: tot,
-          collection: book.collection
-        });
-      }
-    }
-  });
-
-  // Blend in finished books that don't have matching daily logs
-  mergedBooks.forEach(b => {
-    const rc = b.read_count || 0;
-    const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || rc > 0;
-    if (isFinished) {
-      const existingCount = completions.filter(c => c.title === b.title).length;
-      const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
-      for (let i = 0; i < neededCount; i++) {
-        completions.push({
-          title: b.title,
-          cycle: existingCount + i + 1,
-          date: '2020-01-01',
-          pages: b.total_pages,
-          collection: b.collection
-        });
-      }
-    }
-  });
-
-  completions.sort((a, b) => a.date.localeCompare(b.date));
-
-  const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
-
-  let totalReads = 0;
-  let pagesRead = 0;
-  let titlesCount = 0;
-  let finishedCount = 0;
-  let progressCount = 0;
-
-  if (selectedYear === 'all') {
-    totalReads = books.reduce((s, b) => s + (b.read_count || 0), 0);
-    titlesCount = books.length;
-    finishedCount = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)).length;
-    progressCount = books.filter(b => b.status === 'In Progress').length;
-    pagesRead = books.reduce((s, b) => s + ((b.read_count || 0) * (b.total_pages || 0)) + (b.status === 'In Progress' ? (b.pages_read || 0) : 0), 0);
-  } else {
-    const completionsInYear = filteredCompletions.filter(c => c.date.startsWith(selectedYear));
-    totalReads = completionsInYear.length;
-    pagesRead = filteredLogs.filter(l => l.date.startsWith(selectedYear)).reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-
-    const activeTitles = new Set(filteredLogs.filter(l => {
-      const book = books.find(b => b.title === l.book_title);
-      return !!book;
-    }).map(l => l.book_title));
-    titlesCount = activeTitles.size;
-
-    activeTitles.forEach(t => {
-      const hasFinished = completionsInYear.some(c => c.title === t);
-      if (hasFinished) finishedCount++;
-      else progressCount++;
-    });
-  }
+  const stats = getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter);
+  dashboardStats = stats;
+  const completions = stats.completions;
+  const filteredCompletions = completions;
+  const totalReads = stats.totalReads;
+  const pagesRead = stats.pagesRead;
+  const titlesCount = stats.titlesCount;
+  const finishedCount = stats.finishedCount;
+  const progressCount = stats.progressCount;
 
   const finishedBooks = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status));
   const finishedPagesSum = finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0);
@@ -1341,7 +1509,7 @@ async function renderDashboard() {
   $('li-min-per-page').textContent = totalLoggedPages > 0 ? (totalMins / totalLoggedPages).toFixed(2) : 0;
 
   // ── Reading Milestones ──
-  renderMilestones(filteredCompletions, ytdDaysElapsed);
+  renderMilestones(stats.completions, ytdDaysElapsed);
 
   // ── Book Length Records ──
   const finishedInLib = booksCache.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0);
@@ -1422,14 +1590,10 @@ async function renderDashboard() {
   const prevComp = completions.filter(c => c.date >= prevYearStart && c.date <= prevYearEnd && (dashFilter === 'all' || c.collection === dashFilter));
   
   // Pages read in target year period
-  const targetPagesVal = activeLogs
-    .filter(l => l.date >= targetYearStart && l.date <= targetYearEnd && (dashFilter === 'all' || (mergedBooks.find(b => b.title === l.book_title)?.collection === dashFilter)))
-    .reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const targetPagesVal = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, targetYearStart, targetYearEnd, dashFilter);
     
   // Pages read in prev year period
-  const prevPagesVal = activeLogs
-    .filter(l => l.date >= prevYearStart && l.date <= prevYearEnd && (dashFilter === 'all' || (mergedBooks.find(b => b.title === l.book_title)?.collection === dashFilter)))
-    .reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const prevPagesVal = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, prevYearStart, prevYearEnd, dashFilter);
 
   const bookDiff = targetComp.length - prevComp.length;
   const bookDiffStr = bookDiff >= 0 ? `+${bookDiff}` : `${bookDiff}`;
@@ -1503,27 +1667,33 @@ async function renderDashboard() {
   `;
 
   // ── Projections & Required Pace ──
-  const booksYTD = completions.filter(c => c.date.startsWith(String(yearNum))).length;
-  const pagesYTD = completions.filter(c => c.date.startsWith(String(yearNum))).reduce((s, c) => s + c.pages, 0);
+  const currentYearStr = String(yearNum);
+  const currentYearStats = getReconciledStats(mergedBooks, logsCache, currentYearStr, dashFilter);
+  const booksYTD = currentYearStats.totalReads;
+  const pagesYTD = currentYearStats.pagesRead;
   
+  const lifetimeStats = getReconciledStats(mergedBooks, logsCache, 'all', dashFilter);
+  const lifetimeReads = lifetimeStats.totalReads;
+  const lifetimePages = lifetimeStats.pagesRead;
+
   const bookMilestones = [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 1000];
-  const nextBookMilestone = bookMilestones.find(m => m > totalReads) || 1000;
+  const nextBookMilestone = bookMilestones.find(m => m > lifetimeReads) || 1000;
   
   const pageMilestones = [1000, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000, 100000, 200000];
-  const nextPageMilestone = pageMilestones.find(m => m > pagesRead) || 200000;
+  const nextPageMilestone = pageMilestones.find(m => m > lifetimePages) || 200000;
 
-  const booksToMilestone = Math.max(0, nextBookMilestone - totalReads);
-  const pagesToMilestone = Math.max(0, nextPageMilestone - pagesRead);
+  const booksToMilestone = Math.max(0, nextBookMilestone - lifetimeReads);
+  const pagesToMilestone = Math.max(0, nextPageMilestone - lifetimePages);
 
   const booksPerDayRate = ytdDaysElapsed > 0 ? booksYTD / ytdDaysElapsed : 0.05;
-  const pagesPerDayRate = ytdDaysElapsed > 0 ? targetPagesVal / ytdDaysElapsed : 10;
+  const pagesPerDayRate = ytdDaysElapsed > 0 ? pagesYTD / ytdDaysElapsed : 10;
 
   const booksETA = calculateETA(booksToMilestone, booksPerDayRate > 0 ? booksPerDayRate : 0.05);
   const pagesETA = calculateETA(pagesToMilestone, pagesPerDayRate > 0 ? pagesPerDayRate : 10);
 
   // Update Year Progress Card
   const daysRemainingInYear = 365 - ytdDaysElapsed;
-  const pagesPerCalendarDay = (targetPagesVal / ytdDaysElapsed).toFixed(1);
+  const pagesPerCalendarDay = (pagesYTD / ytdDaysElapsed).toFixed(1);
   const booksPerMonthYTD = (booksYTD / (ytdDaysElapsed / 30)).toFixed(2);
 
   $('dash-year-progress').innerHTML = `
@@ -1531,7 +1701,7 @@ async function renderDashboard() {
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Elapsed</span><span class="text-slate-200 font-bold">${ytdDaysElapsed}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Remaining</span><span class="text-slate-200 font-bold">${daysRemainingInYear}</span></div>
       <div class="flex justify-between"><span class="text-slate-400 font-medium">Books Completed</span><span class="text-slate-200 font-bold">${booksYTD}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(targetPagesVal)}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(pagesYTD)}</span></div>
       <div class="flex justify-between col-span-2 border-t border-white/5 pt-2 mt-1">
         <span class="text-slate-400 font-medium">Pages/Calendar Day (YTD)</span>
         <span class="text-slate-200 font-bold">${pagesPerCalendarDay}</span>
@@ -1550,10 +1720,10 @@ async function renderDashboard() {
       <div class="flex flex-col gap-1">
         <div class="flex justify-between text-xs font-semibold text-slate-200">
           <span>📚 Next Books Milestone</span>
-          <span>${totalReads} / ${nextBookMilestone} Books</span>
+          <span>${lifetimeReads} / ${nextBookMilestone} Books</span>
         </div>
         <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (totalReads/nextBookMilestone)*100)}%"></div>
+          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (lifetimeReads/nextBookMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-slate-400 mt-1">
           <span>To go: <b>${booksToMilestone} books</b></span>
@@ -1565,10 +1735,10 @@ async function renderDashboard() {
       <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
         <div class="flex justify-between text-xs font-semibold text-slate-200">
           <span>📄 Next Pages Milestone</span>
-          <span>${fmtNum(pagesRead)} / ${fmtNum(nextPageMilestone)} Pages</span>
+          <span>${fmtNum(lifetimePages)} / ${fmtNum(nextPageMilestone)} Pages</span>
         </div>
         <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
-          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (pagesRead/nextPageMilestone)*100)}%"></div>
+          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (lifetimePages/nextPageMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-slate-400 mt-1">
           <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
@@ -1695,55 +1865,31 @@ async function renderGoals() {
   const year  = today.getFullYear();
   const startOfYearISO = `${year}-01-01`;
   const startOfMonthISO = `${year}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+  const todayISOStr = todayISO();
 
   // Filter active logs (user session logs)
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
 
   // Year to Date stats
   const yearLogs = activeLogs.filter(l => l.date >= startOfYearISO && l.date <= `${year}-12-31`);
-  const yearPages = yearLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
   const yearSessions = yearLogs.length;
   const yearMinutes = yearLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
 
   // Month to Date stats
   const monthLogs = yearLogs.filter(l => l.date >= startOfMonthISO);
-  const monthPages = monthLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
   const monthSessions = monthLogs.length;
   const monthMinutes = monthLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
 
-  // Build completions list
-  const completions = [];
-  const logsByBookCycle = {};
-  logsCache.forEach(l => {
-    const key = `${l.book_title}-${l.read_cycle || 1}`;
-    if (!logsByBookCycle[key]) logsByBookCycle[key] = [];
-    logsByBookCycle[key].push(l);
-  });
+  const mergedBooks = await getMergedBooks();
+  const stats = getReconciledStats(mergedBooks, logsCache, 'all', 'all');
+  const completions = stats.completions;
 
-  Object.keys(logsByBookCycle).forEach(key => {
-    const parts = key.split('-');
-    const title = parts.slice(0, -1).join('-');
-    const cycle = parseInt(parts[parts.length - 1]);
-    const book = booksCache.find(b => b.title === title);
-    if (book) {
-      const tot = book.total_pages;
-      const cycleLogs = logsByBookCycle[key];
-      const compLogs = cycleLogs.filter(l => l.end_page >= tot);
-      if (compLogs.length > 0) {
-        compLogs.sort((a,b) => a.date.localeCompare(b.date));
-        completions.push({
-          title,
-          cycle,
-          date: compLogs[0].date,
-          pages: tot
-        });
-      }
-    }
-  });
+  // Calculate pages and books completed YTD and Month using reconciled engine
+  const yearPages = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startOfYearISO, `${year}-12-31`, 'all');
+  const yearBooks = completions.filter(c => c.date >= startOfYearISO && c.date <= `${year}-12-31`).length;
 
-  // Calculate books completed YTD and Month
-  const yearBooks = completions.filter(c => c.date.startsWith(String(year))).length;
-  const monthBooks = completions.filter(c => c.date.startsWith(String(year)) && c.date >= startOfMonthISO).length;
+  const monthPages = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startOfMonthISO, todayISOStr, 'all');
+  const monthBooks = completions.filter(c => c.date >= startOfMonthISO && c.date <= todayISOStr).length;
 
   const aBT = goalsCache.annual_books_target  || 12;
   const aPT = goalsCache.annual_pages_target  || 3000;
@@ -2027,19 +2173,29 @@ function renderDonutChart() {
   if (!wrap) return;
 
   let bahaiVal = 0, nonBahaiVal = 0;
-  booksCache.forEach(b => {
+  if (dashboardStats) {
     if (collectionChartMode === 'pages') {
-      const completed = (b.read_count || 0) * (b.total_pages || 0);
-      const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
-      const tot = completed + active;
-      if (b.collection === 'Bahai') bahaiVal += tot;
-      else nonBahaiVal += tot;
+      bahaiVal = dashboardStats.bahaiPages;
+      nonBahaiVal = dashboardStats.nonBahaiPages;
     } else {
-      const tot = b.read_count || 0;
-      if (b.collection === 'Bahai') bahaiVal += tot;
-      else nonBahaiVal += tot;
+      bahaiVal = dashboardStats.bahaiBooks;
+      nonBahaiVal = dashboardStats.nonBahaiBooks;
     }
-  });
+  } else {
+    booksCache.forEach(b => {
+      if (collectionChartMode === 'pages') {
+        const completed = (b.read_count || 0) * (b.total_pages || 0);
+        const active = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
+        const tot = completed + active;
+        if (b.collection === 'Bahai') bahaiVal += tot;
+        else nonBahaiVal += tot;
+      } else {
+        const tot = b.read_count || 0;
+        if (b.collection === 'Bahai') bahaiVal += tot;
+        else nonBahaiVal += tot;
+      }
+    });
+  }
 
   const total = bahaiVal + nonBahaiVal || 1;
   const r = 35, cx = 50, cy = 50, sw = 10;
@@ -3044,23 +3200,30 @@ function renderCategoryPieChart(books, containerId) {
     'Other': 0
   };
 
-  books.forEach(book => {
-    const groupVal = book.group || book.group_name || book.reading_group || book.category || 'Other';
-    const normalized = normalizeGroup(groupVal);
-    
-    let val = 0;
-    if (categoryChartMode === 'pages') {
-      val = ((book.read_count || 0) * (book.total_pages || 0)) + (book.status === 'In Progress' ? (book.pages_read || 0) : 0);
-    } else {
-      val = book.read_count || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(book.status) ? 1 : 0);
-    }
-    
-    if (counts[normalized] !== undefined) {
-      counts[normalized] += val;
-    } else {
-      counts['Other'] += val;
-    }
-  });
+  if (dashboardStats) {
+    const source = categoryChartMode === 'pages' ? dashboardStats.categoryPages : dashboardStats.categoryBooks;
+    Object.keys(counts).forEach(cat => {
+      counts[cat] = source[cat] || 0;
+    });
+  } else {
+    books.forEach(book => {
+      const groupVal = book.group || book.group_name || book.reading_group || book.category || 'Other';
+      const normalized = normalizeGroup(groupVal);
+      
+      let val = 0;
+      if (categoryChartMode === 'pages') {
+        val = ((book.read_count || 0) * (book.total_pages || 0)) + (book.status === 'In Progress' ? (book.pages_read || 0) : 0);
+      } else {
+        val = book.read_count || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(book.status) ? 1 : 0);
+      }
+      
+      if (counts[normalized] !== undefined) {
+        counts[normalized] += val;
+      } else {
+        counts['Other'] += val;
+      }
+    });
+  }
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   if (total === 0) {
