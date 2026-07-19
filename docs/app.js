@@ -3907,16 +3907,14 @@ function openVerificationModal(text, pageNumber) {
   if (!modal || !textField || !pageField) return;
   textField.value = text || "";
   pageField.value = pageNumber || "";
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
+  modal.classList.add('open');
   Haptics.success();
 }
 
 function closeVerificationModal() {
   const modal = document.getElementById('ocr-verify-modal');
   if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    modal.classList.remove('open');
   }
 }
 
