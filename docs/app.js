@@ -1063,6 +1063,8 @@ function renderTimeBasedTables(logs, completions) {
       yBody.appendChild(tr);
     });
   }
+}
+
 function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startDate, endDate, dashFilter) {
   let pagesRead = 0;
   const completionsInPeriod = completions.filter(c => c.date >= startDate && c.date <= endDate && (dashFilter === 'all' || c.collection === dashFilter));
