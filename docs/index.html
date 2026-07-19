@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=33">
+  <link rel="stylesheet" href="style.css?v=36">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -253,8 +253,20 @@
 
               <!-- Notes -->
               <div class="form-control">
-                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
-                <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" placeholder="Reflections, insights…"></textarea>
+                <label class="label py-1 flex items-center justify-between">
+                  <span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span>
+                  <button type="button" id="scan-page-trigger" class="inline-flex items-center gap-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-sky-500/20 active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-camera"></i> Scan Page
+                  </button>
+                </label>
+                <div class="relative w-full">
+                  <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" placeholder="Reflections, insights…"></textarea>
+                  <div id="ocr-loading-spinner" class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center gap-2 hidden z-20">
+                    <div class="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-xs text-sky-400 font-bold">Scanning Page...</span>
+                  </div>
+                </div>
+                <input type="file" id="scan-page-file" accept="image/*" capture="environment" class="hidden">
               </div>
 
               <button id="log-submit"
@@ -824,6 +836,14 @@
               <button class="seg-btn" data-bsf="Wishlist">Wishlist</button>
             </div>
 
+            <!-- Ownership Filter Segment Control -->
+            <div class="seg-control mt-2" id="bookshelf-filter-ownership">
+              <button class="seg-btn active" data-bfo="All">All</button>
+              <button class="seg-btn" data-bfo="Owned">Owned</button>
+              <button class="seg-btn" data-bfo="Borrowed">Borrowed</button>
+              <button class="seg-btn" data-bfo="Wishlist">Wishlist</button>
+            </div>
+
             <!-- Unified Books + Wishlist Container -->
             <div class="flex flex-col gap-3" id="bookshelf-list"></div>
           </div>
@@ -1231,6 +1251,46 @@
     <i class="fa-solid fa-plus text-xl"></i>
   </button>
 
+  <!-- Glassmorphic OCR Verification Modal -->
+  <div id="ocr-verify-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-4">
+    <!-- Blur Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeVerificationModal()"></div>
+    
+    <!-- Modal Content Card -->
+    <div class="relative w-full max-w-lg bg-[#111217] border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Sunset Glow Top Orb inside modal -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="p-6 flex flex-col space-y-4 z-10 overflow-y-auto">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-lg font-bold text-white">Verify Transcribed Text</h3>
+            <p class="text-xs text-neutral-400 mt-0.5">Edit or clean up any scanned entries before logging.</p>
+          </div>
+          <button onclick="closeVerificationModal()" class="text-neutral-400 hover:text-white p-1 rounded-lg bg-white/5 border border-white/5"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <!-- Verbatim Transcribed Quote -->
+        <div class="space-y-1.5">
+          <label class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Scanned Text (Verbatim)</label>
+          <textarea id="ocr-verify-text" class="w-full h-44 bg-black/40 border border-white/5 rounded-xl p-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all font-serif resize-none"></textarea>
+        </div>
+        
+        <!-- Page number recognition -->
+        <div class="space-y-1.5">
+          <label class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Identified Page Number</label>
+          <input type="number" id="ocr-verify-page" placeholder="Corner page number if visible..." class="w-full bg-black/40 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all">
+        </div>
+        
+        <!-- Call to Actions -->
+        <div class="flex gap-3 pt-2">
+          <button onclick="closeVerificationModal()" class="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 text-neutral-300 font-semibold text-xs py-3 rounded-xl transition-all active:scale-95">Discard</button>
+          <button onclick="commitVerifiedScan()" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-3 rounded-xl shadow-lg transition-all active:scale-95">Confirm & Append</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
@@ -1239,6 +1299,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=33"></script>
+  <script type="module" src="app.js?v=36"></script>
 </body>
 </html>

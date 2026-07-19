@@ -56,6 +56,7 @@ let librarySearchTerm = '';
 let libraryStatusFilter = 'all';
 let wishlistSearchTerm= '';
 let bookshelfStatusFilter = 'All';
+let bookshelfOwnershipFilter = 'All';
 let bookshelfSearchTerm   = '';
 let pinBuffer = '';
 const PIN_LENGTH = 4;
@@ -425,6 +426,20 @@ async function getMergedBooks() {
 
   const libraryItems = booksCache.map(b => {
     const wl = wishlistMap[b.title.toLowerCase()];
+    
+    let ownership = 'Owned';
+    if (b.status === 'Borrowed' || b.status === 'Borrowed and Read') {
+      ownership = 'Borrowed';
+    } else if (b.status === 'Want to Buy' || b.status === 'Wishlist') {
+      ownership = 'Wishlist';
+    } else if (wl) {
+      if (wl.status === 'Borrowed' || wl.status === 'Borrowed and Read') {
+        ownership = 'Borrowed';
+      } else if (wl.status === 'Want to Buy' || wl.status === 'Wishlist') {
+        ownership = 'Wishlist';
+      }
+    }
+    
     return {
       ...b,
       collection: b.collection || 'Non-Bahai',
@@ -435,29 +450,40 @@ async function getMergedBooks() {
       notes: b.notes || (wl ? wl.notes : ''),
       total_pages: b.total_pages || 0,
       _fromWishlist: !!wl || ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status),
-      _isWishlist: false
+      _isWishlist: false,
+      ownership: ownership
     };
   });
 
   const wishlistOnly = wishlistCache
     .filter(w => !booksCache.some(b => b.title.toLowerCase() === w.title.toLowerCase()))
-    .map(w => ({
-      id: w.id,
-      title: w.title,
-      author: w.author || '',
-      collection: w.collection || 'Non-Bahai',
-      group: w.category || w.group || 'Other',
-      total_pages: w.est_pages || w.total_pages || 0,
-      priority: w.priority || 'Low',
-      status: w.status || 'Want to Buy',
-      est_cost: w.est_cost || 0,
-      where_to_buy: w.where_to_buy || '',
-      notes: w.notes || '',
-      pages_read: 0,
-      read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
-      _fromWishlist: true,
-      _isWishlist: true
-    }));
+    .map(w => {
+      let ownership = 'Wishlist';
+      if (w.status === 'Owned' || w.status === 'Owned and Read' || w.status === 'Gifted' || w.status === 'Gifted and Read') {
+        ownership = 'Owned';
+      } else if (w.status === 'Borrowed' || w.status === 'Borrowed and Read') {
+        ownership = 'Borrowed';
+      }
+      
+      return {
+        id: w.id,
+        title: w.title,
+        author: w.author || '',
+        collection: w.collection || 'Non-Bahai',
+        group: w.category || w.group || 'Other',
+        total_pages: w.est_pages || w.total_pages || 0,
+        priority: w.priority || 'Low',
+        status: w.status || 'Want to Buy',
+        est_cost: w.est_cost || 0,
+        where_to_buy: w.where_to_buy || '',
+        notes: w.notes || '',
+        pages_read: 0,
+        read_count: (w.status === 'Owned and Read' || w.status === 'Borrowed and Read') ? 1 : 0,
+        _fromWishlist: true,
+        _isWishlist: true,
+        ownership: ownership
+      };
+    });
 
   return [...libraryItems, ...wishlistOnly];
 }
@@ -860,11 +886,11 @@ function renderMilestones(completions, ytdDaysElapsed) {
       }
       const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
       if (completedDate) {
-        item.innerHTML = `<span class="text-slate-400">${t} Books Completed</span><span class="text-emerald-400 font-bold">${fmtDate(completedDate)}</span>`;
+        item.innerHTML = `<span class="text-slate-400">${t} Books Finished</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
       } else {
         const needed = t - completions.length;
         const rate = completions.length / (ytdDaysElapsed || 1);
-        const eta = calculateETA(needed, rate);
+        const eta = calculateETA(needed, rate > 0 ? rate : 0.05);
         item.innerHTML = `<span class="text-slate-400">${t} Books Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
       }
       booksList.appendChild(item);
@@ -875,13 +901,30 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const pagesList = $('ms-pages-list');
   if (pagesList) {
     pagesList.innerHTML = '';
+    
+    const pageEvents = [];
+    completions.forEach(c => {
+      pageEvents.push({ pages: c.pages, date: c.date });
+    });
+    
+    booksCache.forEach(b => {
+      if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
+        if (dashFilter === 'all' || b.collection === dashFilter) {
+          pageEvents.push({ pages: b.pages_read, date: todayISO() });
+        }
+      }
+    });
+    
+    pageEvents.sort((a, b) => a.date.localeCompare(b.date));
+    
     let runningPages = 0;
     const milestoneReachedDates = {};
-    completions.forEach(c => {
-      runningPages += c.pages;
+    
+    pageEvents.forEach(evt => {
+      runningPages += evt.pages;
       pageThresholds.forEach(t => {
         if (runningPages >= t && !milestoneReachedDates[t]) {
-          milestoneReachedDates[t] = c.date;
+          milestoneReachedDates[t] = evt.date;
         }
       });
     });
@@ -890,11 +933,11 @@ function renderMilestones(completions, ytdDaysElapsed) {
       const completedDate = milestoneReachedDates[t];
       const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
       if (completedDate) {
-        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Completed</span><span class="text-emerald-400 font-bold">${fmtDate(completedDate)}</span>`;
+        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Read</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
       } else {
         const needed = t - runningPages;
         const rate = runningPages / (ytdDaysElapsed || 1);
-        const eta = calculateETA(needed, rate);
+        const eta = calculateETA(needed, rate > 0 ? rate : 10);
         item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
       }
       pagesList.appendChild(item);
@@ -1068,6 +1111,27 @@ async function renderDashboard() {
     }
   });
 
+  // Blend in finished books that don't have matching daily logs
+  mergedBooks.forEach(b => {
+    const rc = b.read_count || 0;
+    const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || rc > 0;
+    if (isFinished) {
+      const existingCount = completions.filter(c => c.title === b.title).length;
+      const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
+      for (let i = 0; i < neededCount; i++) {
+        completions.push({
+          title: b.title,
+          cycle: existingCount + i + 1,
+          date: '2020-01-01',
+          pages: b.total_pages,
+          collection: b.collection
+        });
+      }
+    }
+  });
+
+  completions.sort((a, b) => a.date.localeCompare(b.date));
+
   const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
 
   let totalReads = 0;
@@ -1081,30 +1145,11 @@ async function renderDashboard() {
     titlesCount = books.length;
     finishedCount = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)).length;
     progressCount = books.filter(b => b.status === 'In Progress').length;
-    
-    let pagesReadG5 = 0;
-    books.forEach(b => {
-      pagesReadG5 += (b.read_count || 0) * b.total_pages;
-      if (b.status === 'In Progress') {
-        pagesReadG5 += (b.pages_read % b.total_pages);
-      }
-    });
-    
-    let rereadsInProgress = 0;
-    activeLogs.forEach(l => {
-      const book = books.find(b => b.title === l.book_title);
-      if (book) {
-        const rc = book.read_count || 0;
-        if (l.read_cycle > rc && l.read_cycle > 1) {
-          rereadsInProgress += Math.max(0, l.end_page - l.start_page);
-        }
-      }
-    });
-    pagesRead = pagesReadG5 + rereadsInProgress;
+    pagesRead = books.reduce((s, b) => s + ((b.read_count || 0) * (b.total_pages || 0)) + (b.status === 'In Progress' ? (b.pages_read || 0) : 0), 0);
   } else {
     const completionsInYear = filteredCompletions.filter(c => c.date.startsWith(selectedYear));
     totalReads = completionsInYear.length;
-    pagesRead = completionsInYear.reduce((s, c) => s + c.pages, 0);
+    pagesRead = filteredLogs.filter(l => l.date.startsWith(selectedYear)).reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
 
     const activeTitles = new Set(filteredLogs.filter(l => {
       const book = books.find(b => b.title === l.book_title);
@@ -1296,7 +1341,7 @@ async function renderDashboard() {
   $('li-min-per-page').textContent = totalLoggedPages > 0 ? (totalMins / totalLoggedPages).toFixed(2) : 0;
 
   // ── Reading Milestones ──
-  renderMilestones(completions, ytdDaysElapsed);
+  renderMilestones(filteredCompletions, ytdDaysElapsed);
 
   // ── Book Length Records ──
   const finishedInLib = booksCache.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0);
@@ -2275,6 +2320,20 @@ function setupBookshelf() {
     });
   }
 
+  const ownershipFilterEl = $('bookshelf-filter-ownership');
+  if (ownershipFilterEl) {
+    ownershipFilterEl.querySelectorAll('[data-bfo]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bookshelfOwnershipFilter = btn.dataset.bfo;
+        ownershipFilterEl.querySelectorAll('[data-bfo]').forEach(b => {
+          const active = b.dataset.bfo === bookshelfOwnershipFilter;
+          b.classList.toggle('active', active);
+        });
+        renderBookshelf();
+      });
+    });
+  }
+
   const addTrigger = $('btn-add-book-trigger');
   if (addTrigger) addTrigger.addEventListener('click', openAddBookModal);
 
@@ -2297,7 +2356,7 @@ async function renderBookshelf() {
 
   const q = bookshelfSearchTerm;
 
-  // Filter based on diacritic-insensitive search term and status tab
+  // Filter based on diacritic-insensitive search term, status tab, and ownership tab
   let filtered = allItems.filter(item => {
     if (q) {
       const normalizedQ = normalizeText(q);
@@ -2307,19 +2366,23 @@ async function renderBookshelf() {
       if (!matchTitle && !matchAuthor && !matchGroup) return false;
     }
 
-    if (bookshelfStatusFilter === 'All') return true;
+    // 1. Status Filter
     if (bookshelfStatusFilter === 'Not Started') {
-      return ['Not Started', 'Owned'].includes(item.status);
+      if (!['Not Started', 'Owned', 'Gifted', 'Borrowed'].includes(item.status)) return false;
+    } else if (bookshelfStatusFilter === 'In Progress') {
+      if (item.status !== 'In Progress') return false;
+    } else if (bookshelfStatusFilter === 'Finished') {
+      if (!['Finished', 'Owned and Read', 'Borrowed and Read', 'Gifted and Read'].includes(item.status)) return false;
+    } else if (bookshelfStatusFilter === 'Wishlist') {
+      // Wishlist tab should ONLY include books that are not owned
+      if (item.ownership !== 'Wishlist') return false;
     }
-    if (bookshelfStatusFilter === 'In Progress') {
-      return item.status === 'In Progress';
+
+    // 2. Ownership Filter
+    if (bookshelfOwnershipFilter !== 'All') {
+      if (item.ownership !== bookshelfOwnershipFilter) return false;
     }
-    if (bookshelfStatusFilter === 'Finished') {
-      return ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(item.status);
-    }
-    if (bookshelfStatusFilter === 'Wishlist') {
-      return item._fromWishlist;
-    }
+
     return true;
   });
 
@@ -2339,6 +2402,11 @@ async function renderBookshelf() {
     else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
     else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
     else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+
+    let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
+    if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+    else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+    else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
 
     const prioClasses = {
       'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
@@ -2390,6 +2458,7 @@ async function renderBookshelf() {
         <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
         <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
         <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
       </div>
 
       ${isAct ? `
@@ -2981,9 +3050,9 @@ function renderCategoryPieChart(books, containerId) {
     
     let val = 0;
     if (categoryChartMode === 'pages') {
-      val = book.pages_read || ((book.status === 'Finished') ? (book.total_pages * (book.read_count || 1)) : 0);
+      val = ((book.read_count || 0) * (book.total_pages || 0)) + (book.status === 'In Progress' ? (book.pages_read || 0) : 0);
     } else {
-      val = book.read_count || (book.status === 'Finished' ? 1 : 0);
+      val = book.read_count || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(book.status) ? 1 : 0);
     }
     
     if (counts[normalized] !== undefined) {
@@ -3231,14 +3300,13 @@ function renderActivityHeatmap(logs) {
   console.log(`[Heatmap Debug] input logs: ${logs.length}, map size: ${Object.keys(activityMap).length}`);
   
   const today = new Date();
-  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   let activeCellsCount = 0;
   
   for (let i = 363; i >= 0; i--) {
-    const activeDate = new Date(todayUTC - i * 24 * 60 * 60 * 1000);
-    const year = activeDate.getUTCFullYear();
-    const month = String(activeDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(activeDate.getUTCDate()).padStart(2, '0');
+    const activeDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    const year = activeDate.getFullYear();
+    const month = String(activeDate.getMonth() + 1).padStart(2, '0');
+    const day = String(activeDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
     
     const pagesRead = activityMap[dateStr] || 0;
@@ -3254,7 +3322,7 @@ function renderActivityHeatmap(logs) {
       else block.classList.add('heatmap-tier-4');
     }
     
-    const dateFormatted = activeDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
+    const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     block.setAttribute('title', `${dateFormatted}: ${pagesRead} pages read`);
     
     block.addEventListener('click', (e) => {
@@ -3376,6 +3444,11 @@ function openBookDetailModal(b) {
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
   else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
   
+  let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
+  if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+  else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
+
   const prioClasses = {
     'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
     'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
@@ -3388,6 +3461,7 @@ function openBookDetailModal(b) {
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
   `;
   
   // Progress
@@ -3620,3 +3694,342 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// =========================================================================
+// SECTION 10: OCR PAGE SCANNER INTEGRATION
+// =========================================================================
+const SCANNER_CONFIG = {
+  dbName: "OfflineScanDB",
+  storeName: "scans",
+  dbVersion: 1,
+  apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key="
+};
+
+let dbInstance = null;
+
+function initIndexedDB() {
+  return new Promise((resolve, reject) => {
+    if (dbInstance) return resolve(dbInstance);
+    const request = indexedDB.open(SCANNER_CONFIG.dbName, SCANNER_CONFIG.dbVersion);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(SCANNER_CONFIG.storeName)) {
+        db.createObjectStore(SCANNER_CONFIG.storeName, { keyPath: "id", autoIncrement: true });
+      }
+    };
+    request.onsuccess = (event) => {
+      dbInstance = event.target.result;
+      resolve(dbInstance);
+    };
+    request.onerror = (event) => {
+      console.error("IndexedDB initialization failure: ", event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+async function saveScanOffline(base64Data, mimeType, bookTitle) {
+  const db = await initIndexedDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCANNER_CONFIG.storeName], "readwrite");
+    const store = transaction.objectStore(SCANNER_CONFIG.storeName);
+    const record = {
+      imageData: base64Data,
+      mimeType: mimeType,
+      bookTitle: bookTitle,
+      timestamp: Date.now()
+    };
+    const request = store.add(record);
+    request.onsuccess = () => {
+      Haptics.success();
+      resolve(request.result);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getPendingScans() {
+  const db = await initIndexedDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCANNER_CONFIG.storeName], "readonly");
+    const store = transaction.objectStore(SCANNER_CONFIG.storeName);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function deletePendingScan(id) {
+  const db = await initIndexedDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCANNER_CONFIG.storeName], "readwrite");
+    const store = transaction.objectStore(SCANNER_CONFIG.storeName);
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function triggerPageScan() {
+  Haptics.click();
+  const fileInput = document.getElementById('scan-page-file');
+  if (fileInput) {
+    fileInput.click();
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+}
+
+function showToastNotification(message) {
+  showToast(message, 'success');
+}
+
+async function handlePageScan(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const notesField = document.getElementById('log-notes');
+  if (!notesField) return;
+
+  const activeBook = document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book';
+
+  if (!navigator.onLine) {
+    Haptics.nudge();
+    try {
+      const base64Data = await fileToBase64(file);
+      await saveScanOffline(base64Data, file.type || "image/jpeg", activeBook);
+      notesField.placeholder = "Offline: Page captured! Syncing automatically when back online.";
+      showToastNotification("Captured offline! Quote was saved and queued for background transcription.");
+    } catch (err) {
+      console.error("Failed to queue scan offline: ", err);
+    } finally {
+      event.target.value = '';
+    }
+    return;
+  }
+
+  // Show loading spinner
+  const spinner = document.getElementById('ocr-loading-spinner');
+  if (spinner) spinner.classList.remove('hidden');
+  
+  notesField.disabled = true;
+  const originalPlaceholder = notesField.placeholder;
+  notesField.placeholder = "Scanning page layout, transcribing passages, and detecting corner page numbers... Please wait.";
+  notesField.style.opacity = "0.7";
+  Haptics.nudge();
+
+  try {
+    const base64Data = await fileToBase64(file);
+    const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
+    openVerificationModal(result.text, result.pageNumber);
+  } catch (error) {
+    console.error("Transcribing service failed: ", error.message);
+    notesField.placeholder = "Failed to transcribe. Tap camera icon to retry.";
+    showToast("Failed to transcribe page photograph. Please try again.", "error");
+    Haptics.nudge();
+  } finally {
+    notesField.disabled = false;
+    notesField.placeholder = originalPlaceholder;
+    notesField.style.opacity = "1";
+    if (spinner) spinner.classList.add('hidden');
+    event.target.value = '';
+  }
+}
+
+async function requestTranscriptionFromGemini(base64Data, mimeType) {
+  const promptText = "Perform meticulous optical character recognition (OCR) on this page photograph. Transcribe all readable paragraphs verbatim inside chronological correct line breaks. Then, check the page corners to extract the printed page integer, if visible. Return strictly as a formatted JSON object.";
+  const payload = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: promptText },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          text: { 
+            type: "STRING", 
+            description: "Verbatim transcribe of all readable passages on the page." 
+          },
+          pageNumber: { 
+            type: "INTEGER", 
+            description: "The printed page number found in the margins, if visible. Null if missing." 
+          }
+        },
+        required: ["text"]
+      }
+    }
+  };
+
+  const response = await fetch(SCANNER_CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cloud parser rejected request with status: ${response.status}`);
+  }
+
+  const resultData = await response.json();
+  const textBody = resultData.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!textBody) {
+    throw new Error("Transcribing algorithm returned an empty payload.");
+  }
+  return JSON.parse(textBody);
+}
+
+function openVerificationModal(text, pageNumber) {
+  const modal = document.getElementById('ocr-verify-modal');
+  const textField = document.getElementById('ocr-verify-text');
+  const pageField = document.getElementById('ocr-verify-page');
+  if (!modal || !textField || !pageField) return;
+  textField.value = text || "";
+  pageField.value = pageNumber || "";
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  Haptics.success();
+}
+
+function closeVerificationModal() {
+  const modal = document.getElementById('ocr-verify-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function commitVerifiedScan() {
+  const textVal = document.getElementById('ocr-verify-text').value.trim();
+  const pageVal = document.getElementById('ocr-verify-page').value.trim();
+  const notesField = document.getElementById('log-notes');
+  const endPageField = document.getElementById('log-end');
+  
+  if (textVal && notesField) {
+    const existing = notesField.value;
+    const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${textVal}"` : `[Scanned Page Quote]:\n"${textVal}"`;
+    notesField.value = formattedQuote;
+  }
+  if (pageVal && endPageField) {
+    endPageField.value = pageVal;
+    endPageField.dispatchEvent(new Event('input', { bubbles: true }));
+    endPageField.dispatchEvent(new Event('change', { bubbles: true }));
+    endPageField.classList.add('ring-2', 'ring-sky-400');
+    setTimeout(() => endPageField.classList.remove('ring-2', 'ring-sky-400'), 1500);
+  }
+  closeVerificationModal();
+  Haptics.success();
+  showToastNotification("Transcription successfully added to your active log draft!");
+}
+
+async function processOfflineSyncQueue() {
+  if (!navigator.onLine) return;
+  const pending = await getPendingScans();
+  if (pending.length === 0) return;
+  showToastNotification(`Connection restored! Syncing ${pending.length} pending offline page scans...`);
+  for (const scan of pending) {
+    try {
+      const result = await requestTranscriptionFromGemini(scan.imageData, scan.mimeType);
+      let localShelf = JSON.parse(localStorage.getItem('scanned_shelf') || '[]');
+      localShelf.push({
+        id: scan.id,
+        bookTitle: scan.bookTitle,
+        text: result.text,
+        pageNumber: result.pageNumber,
+        timestamp: scan.timestamp
+      });
+      localStorage.setItem('scanned_shelf', JSON.stringify(localShelf));
+      await deletePendingScan(scan.id);
+    } catch (err) {
+      console.error(`Syncing failure on record ${scan.id}: `, err);
+    }
+  }
+  Haptics.success();
+  renderPendingShelfNotifiers();
+}
+
+function renderPendingShelfNotifiers() {
+  const localShelf = JSON.parse(localStorage.getItem('scanned_shelf') || '[]');
+  const containerId = 'scanned-shelf-notifiers';
+  let container = document.getElementById(containerId);
+  const notesField = document.getElementById('log-notes');
+  if (!notesField) return;
+  if (localShelf.length === 0) {
+    if (container) container.remove();
+    return;
+  }
+  if (!container) {
+    container = document.createElement('div');
+    container.id = containerId;
+    container.className = 'mt-3 space-y-2 w-full';
+    notesField.parentElement.appendChild(container);
+  }
+  container.innerHTML = localShelf.map((item, idx) => `
+    <div class="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 flex justify-between items-center gap-3">
+      <div class="text-left min-w-0 flex-1">
+        <span class="text-[9px] font-bold text-sky-400 uppercase tracking-wider block">Background Scan Sync Available</span>
+        <span class="text-xs text-white font-medium block truncate">Draft: ${item.bookTitle}</span>
+      </div>
+      <div class="flex gap-1.5 shrink-0">
+        <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-white/5 border border-white/5 text-xs"><i class="fa-solid fa-trash"></i></button>
+        <button onclick="loadScannedShelfItem(${idx})" class="bg-sky-500 hover:bg-sky-600 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg">Load Scan</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.discardScannedShelfItem = function(idx) {
+  let localShelf = JSON.parse(localStorage.getItem('scanned_shelf') || '[]');
+  localShelf.splice(idx, 1);
+  localStorage.setItem('scanned_shelf', JSON.stringify(localShelf));
+  renderPendingShelfNotifiers();
+};
+
+window.loadScannedShelfItem = function(idx) {
+  let localShelf = JSON.parse(localStorage.getItem('scanned_shelf') || '[]');
+  const item = localShelf[idx];
+  if (item) {
+    openVerificationModal(item.text, item.pageNumber);
+    window.discardScannedShelfItem(idx);
+  }
+};
+
+window.triggerPageScan = triggerPageScan;
+window.closeVerificationModal = closeVerificationModal;
+window.commitVerifiedScan = commitVerifiedScan;
+
+function bindScannerEvents() {
+  const trigger = document.getElementById('scan-page-trigger');
+  if (trigger) trigger.onclick = triggerPageScan;
+  const fileInput = document.getElementById('scan-page-file');
+  if (fileInput) fileInput.onchange = handlePageScan;
+}
+
+// Run scanner setup
+(function initScannerOnRuntime() {
+  bindScannerEvents();
+  initIndexedDB();
+  window.addEventListener('online', processOfflineSyncQueue);
+  setTimeout(renderPendingShelfNotifiers, 1200);
+})();
