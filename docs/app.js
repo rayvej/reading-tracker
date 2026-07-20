@@ -445,7 +445,7 @@ async function getMergedBooks() {
     return {
       ...b,
       collection: b.collection || 'Non-Bahai',
-      group: b.group || 'Other',
+      group: b.group || b.group_name || b.reading_group || b.category || 'Other',
       priority: b.priority || (wl ? wl.priority : 'Low'),
       est_cost: b.est_cost || (wl ? wl.est_cost : 0),
       where_to_buy: b.where_to_buy || (wl ? wl.where_to_buy : ''),
@@ -472,7 +472,7 @@ async function getMergedBooks() {
         title: w.title,
         author: w.author || '',
         collection: w.collection || 'Non-Bahai',
-        group: w.category || w.group || 'Other',
+        group: w.group || w.group_name || w.reading_group || w.category || 'Other',
         total_pages: w.est_pages || w.total_pages || 0,
         priority: w.priority || 'Low',
         status: w.status || 'Want to Buy',
@@ -1145,7 +1145,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
           date: compLogs[0].date,
           pages: tot,
           collection: book.collection || 'Non-Bahai',
-          category: book.group || book.category || 'Other',
+          category: book.group || book.group_name || book.reading_group || book.category || 'Other',
           ownership: book.ownership || 'Owned'
         });
       }
@@ -1166,7 +1166,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
           date: '2020-01-01', // placeholder for missing logs
           pages: b.total_pages || 0,
           collection: b.collection || 'Non-Bahai',
-          category: b.group || b.category || 'Other',
+          category: b.group || b.group_name || b.reading_group || b.category || 'Other',
           ownership: b.ownership || 'Owned'
         });
       }
@@ -1275,7 +1275,8 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
       }
     });
 
-    const cat = normalizeGroup(b.group || b.category || 'Other');
+    const groupVal = b.group || b.group_name || b.reading_group || b.category || 'Other';
+    const cat = normalizeGroup(groupVal, b.collection, b.title, b.author);
     categoryPages[cat] = (categoryPages[cat] || 0) + bookTotalPagesInFilter;
     categoryBooks[cat] = (categoryBooks[cat] || 0) + bookTotalCompletionsInFilter;
 
@@ -3210,7 +3211,7 @@ function renderCategoryPieChart(books, containerId) {
   } else {
     books.forEach(book => {
       const groupVal = book.group || book.group_name || book.reading_group || book.category || 'Other';
-      const normalized = normalizeGroup(groupVal);
+      const normalized = normalizeGroup(groupVal, book.collection, book.title, book.author);
       
       let val = 0;
       if (categoryChartMode === 'pages') {
@@ -3542,38 +3543,58 @@ if (!window._heatmapTooltipWired) {
 // =========================================================================
 // ROBUST GROUP NORMALIZATION (Fixes "Other" category bug)
 // =========================================================================
-function normalizeGroup(groupName) {
-  if (!groupName) return 'Other';
+function normalizeGroup(groupName, collection = '', title = '', author = '') {
+  const raw = (groupName || '').trim();
+  const clean = raw.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const cleanAlnum = clean.replace(/[^a-z0-9]/g, "");
   
-  const clean = groupName.toLowerCase().trim()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+  const tClean = (title || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const aClean = (author || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+  // 1. Writings
   if (
-    clean.includes('writing') || 
-    clean.includes('bahaullah') || 
-    clean.includes('thebab') || 
-    clean.includes('abdulbaha') || 
-    clean.includes('shoghieffendi') ||
-    clean.includes('aqdas') ||
-    clean.includes('iqan')
+    cleanAlnum.includes('writing') ||
+    cleanAlnum.includes('bahaullah') ||
+    cleanAlnum.includes('thebab') ||
+    cleanAlnum.includes('abdulbaha') ||
+    cleanAlnum.includes('shoghieffendi') ||
+    cleanAlnum.includes('aqdas') ||
+    cleanAlnum.includes('iqan') ||
+    cleanAlnum.includes('gitanjali') ||
+    aClean.includes("bahaullah") ||
+    aClean.includes("the bab") ||
+    aClean.includes("abdul-baha") ||
+    aClean.includes("abdulbaha") ||
+    aClean.includes("shoghi effendi")
   ) {
     return 'Writings';
   }
-  
-  if (clean.includes('aboutthefaith') || clean.includes('about')) {
-    return 'About the Faith';
-  }
-  
-  if (clean.includes('compilation')) {
+
+  // 2. Compilations
+  if (cleanAlnum.includes('compilation') || tClean.includes('compilation') || tClean.includes('selections from')) {
     return 'Compilations';
   }
-  
-  if (clean.includes('fiction') && !clean.includes('non')) {
+
+  // 3. About the Faith
+  if (cleanAlnum.includes('aboutthefaith') || cleanAlnum.includes('about') || cleanAlnum === 'bahai') {
+    return 'About the Faith';
+  }
+
+  // 4. Non-Fiction
+  if (cleanAlnum.includes('nonfiction') || clean.includes('non-fiction')) {
+    return 'Non-Fiction';
+  }
+
+  // 5. Fiction
+  if (cleanAlnum.includes('fiction') && !cleanAlnum.includes('non')) {
     return 'Fiction';
   }
-  
-  if (clean.includes('nonfiction')) {
+
+  // 6. Smart Fallbacks for 'Other' / empty categories based on Collection
+  if (collection === 'Bahai') {
+    return 'About the Faith';
+  } else if (collection === 'Non-Bahai') {
     return 'Non-Fiction';
   }
 
