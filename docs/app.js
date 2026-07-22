@@ -3712,17 +3712,7 @@ function renderBookCard(b) {
     return card;
   }
 
-  // Full Detailed List Card (with Touch Swipe Wrapper)
-  const wrapper = el('div', 'bookshelf-swipe-wrapper bookshelf-card-item');
-
-  const actionsContainer = el('div', 'bookshelf-swipe-actions');
-  actionsContainer.innerHTML = `
-    ${isAct ? `<button class="btn btn-xs rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 h-10 px-3 font-bold text-xs" data-swipe="complete">Complete</button>` : ''}
-    <button class="btn btn-xs rounded-xl bg-white/10 text-slate-200 border border-white/10 h-10 px-3 font-bold text-xs" data-swipe="edit">Edit</button>
-    <button class="btn btn-xs rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 h-10 px-3 font-bold text-xs" data-swipe="delete">Delete</button>
-  `;
-
-  const card = el('div', `bookshelf-swipe-card glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+  const card = el('div', `bookshelf-card-item glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
 
   const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
@@ -3824,29 +3814,7 @@ function renderBookCard(b) {
     openEditBookModal(b);
   });
 
-  // Swipe Action Listeners
-  actionsContainer.querySelectorAll('[data-swipe]').forEach(btn => {
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
-      const action = btn.dataset.swipe;
-      card.style.transform = 'translateX(0px)';
-      if (action === 'complete') {
-        if (confirm(`Mark "${b.title}" completed?`)) await markBookComplete(b);
-      } else if (action === 'edit') {
-        openEditBookModal(b);
-      } else if (action === 'delete') {
-        await deleteBook(b);
-      }
-    });
-  });
-
-  // Bind Touch Swipe Gestures
-  enableSwipeActions(card);
-
-  wrapper.appendChild(actionsContainer);
-  wrapper.appendChild(card);
-
-  return wrapper;
+  return card;
 }
 
 function enableSwipeActions(card) {
@@ -5268,15 +5236,6 @@ function openBookDetailModal(b) {
     });
   }
 
-  const deleteBtn = $('bd-action-delete');
-  if (deleteBtn) {
-    const newBtn = deleteBtn.cloneNode(true);
-    deleteBtn.parentNode.replaceChild(newBtn, deleteBtn);
-    newBtn.addEventListener('click', () => {
-      deleteBook(b);
-    });
-  }
-  
   // Open modal
   $('book-detail-modal').classList.add('open');
 }
