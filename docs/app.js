@@ -893,10 +893,7 @@ function setupDashboard() {
       btn.addEventListener('click', () => {
         dashHeatmapTimeframe = btn.dataset.range;
         tfBox.querySelectorAll('button').forEach(b => {
-          const isActive = b.dataset.range === dashHeatmapTimeframe;
-          b.classList.toggle('text-white', isActive);
-          b.classList.toggle('bg-white/10', isActive);
-          b.classList.toggle('text-slate-400', !isActive);
+          b.classList.toggle('active', b.dataset.range === dashHeatmapTimeframe);
         });
         transitionView(() => {
           const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
@@ -913,10 +910,7 @@ function setupDashboard() {
       btn.addEventListener('click', () => {
         collectionChartMode = btn.dataset.mode;
         donutToggle.querySelectorAll('button').forEach(b => {
-          const isActive = b.dataset.mode === collectionChartMode;
-          b.classList.toggle('text-white', isActive);
-          b.classList.toggle('bg-white/10', isActive);
-          b.classList.toggle('text-slate-400', !isActive);
+          b.classList.toggle('active', b.dataset.mode === collectionChartMode);
         });
         transitionView(() => renderDonutChart());
       });
@@ -930,10 +924,7 @@ function setupDashboard() {
       btn.addEventListener('click', () => {
         categoryChartMode = btn.dataset.mode;
         catToggle.querySelectorAll('button').forEach(b => {
-          const isActive = b.dataset.mode === categoryChartMode;
-          b.classList.toggle('text-white', isActive);
-          b.classList.toggle('bg-white/10', isActive);
-          b.classList.toggle('text-slate-400', !isActive);
+          b.classList.toggle('active', b.dataset.mode === categoryChartMode);
         });
         transitionView(() => renderBarChart());
       });
@@ -947,11 +938,7 @@ function setupDashboard() {
       btn.addEventListener('click', () => {
         const targetTab = btn.dataset.tab;
         insightsTabBar.querySelectorAll('button').forEach(b => {
-          const isActive = b.dataset.tab === targetTab;
-          b.classList.toggle('text-white', isActive);
-          b.classList.toggle('bg-white/10', isActive);
-          b.classList.toggle('shadow-md', isActive);
-          b.classList.toggle('text-slate-400', !isActive);
+          b.classList.toggle('active', b.dataset.tab === targetTab);
         });
         document.querySelectorAll('.insights-tab-panel').forEach(panel => {
           const isActive = panel.id === `insights-panel-${targetTab}`;

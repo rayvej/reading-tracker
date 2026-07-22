@@ -392,14 +392,13 @@ body.light-mode #tab-bar {
    ══════════════════════════════════════════════════════════════ */
 .seg-control {
   display: flex;
-  background: rgba(120, 120, 128, 0.12);
-  border-radius: 10px;
-  padding: 2.5px;
-  gap: 2px;
+  background: var(--bg-input);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
   width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
 }
 .seg-control::-webkit-scrollbar {
   display: none;
@@ -410,10 +409,10 @@ body.light-mode #tab-bar {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  border-radius: 8px;
-  padding: 6px 4px;
+  border-radius: 9px;
+  padding: 6px 8px;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
@@ -423,11 +422,12 @@ body.light-mode #tab-bar {
 .seg-btn.active {
   background: var(--bg-elevated);
   color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-weight: 800;
 }
 
 body.light-mode .seg-btn.active {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* ═══════════════════════════════════════════════════════════════
