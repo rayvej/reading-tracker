@@ -1255,26 +1255,41 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     let bookTotalPagesInFilter = 0;
     let bookTotalCompletionsInFilter = 0;
 
-    Object.keys(entry.years).forEach(year => {
-      const yearStat = entry.years[year];
-      const reconciledPagesInYear = Math.max(yearStat.libPages, yearStat.logPages);
-      
-      const inSelectedYear = (selectedYear === 'all' || year === selectedYear);
-      if (inSelectedYear) {
-        pagesRead += reconciledPagesInYear;
-        totalReads += yearStat.completions;
-        bookTotalPagesInFilter += reconciledPagesInYear;
-        bookTotalCompletionsInFilter += yearStat.completions;
+    if (selectedYear === 'all') {
+      let p = (b.read_count || 0) * (b.total_pages || 0);
+      if (b.status === 'In Progress') p += (b.pages_read || 0);
+      const rc = b.read_count || 0;
+      let rereadProgPages = 0;
+      logsCache.forEach(l => {
+        if (l.book_title === b.title && (l.read_cycle || 1) > rc && (l.read_cycle || 1) > 1) {
+          rereadProgPages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+        }
+      });
+      bookTotalPagesInFilter = p + rereadProgPages;
+      bookTotalCompletionsInFilter = b.read_count || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) ? 1 : 0);
+      pagesRead += bookTotalPagesInFilter;
+      totalReads += bookTotalCompletionsInFilter;
+    } else {
+      Object.keys(entry.years).forEach(year => {
+        const yearStat = entry.years[year];
+        const reconciledPagesInYear = Math.max(yearStat.libPages, yearStat.logPages);
+        
+        if (year === selectedYear) {
+          pagesRead += reconciledPagesInYear;
+          totalReads += yearStat.completions;
+          bookTotalPagesInFilter += reconciledPagesInYear;
+          bookTotalCompletionsInFilter += yearStat.completions;
 
-        if (reconciledPagesInYear > 0 || yearStat.completions > 0) {
-          if (yearStat.completions > 0) {
-            finishedTitles.add(title);
-          } else {
-            activeTitles.add(title);
+          if (reconciledPagesInYear > 0 || yearStat.completions > 0) {
+            if (yearStat.completions > 0) {
+              finishedTitles.add(title);
+            } else {
+              activeTitles.add(title);
+            }
           }
         }
-      }
-    });
+      });
+    }
 
     const groupVal = b.group || b.group_name || b.reading_group || b.category || 'Other';
     const cat = normalizeGroup(groupVal, b.collection, b.title, b.author);
