@@ -487,7 +487,7 @@ async function getMergedBooks() {
       };
     });
 
-  return [...libraryItems, ...wishlistOnly];
+  return libraryItems;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
