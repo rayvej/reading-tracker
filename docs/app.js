@@ -7,6 +7,11 @@ window.addEventListener('error', e => {
   document.body.appendChild(errDiv);
 });
 window.addEventListener('unhandledrejection', e => {
+  const reasonStr = String(e.reason || '');
+  if (reasonStr.includes('ServiceWorker') || reasonStr.includes('sw.js') || reasonStr.includes('Failed to fetch') || reasonStr.includes('unknown error occurred when fetching')) {
+    console.warn('Suppressed ServiceWorker update rejection:', e.reason);
+    return;
+  }
   const errDiv = document.createElement('div');
   errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
   errDiv.textContent = `Promise Reject: ${e.reason}`;
@@ -4048,7 +4053,9 @@ if ('serviceWorker' in navigator) {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-      reg.update();
+      if (reg && reg.update) {
+        reg.update().catch(err => console.warn('SW update ignored error:', err));
+      }
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (newWorker) {
@@ -4062,7 +4069,7 @@ if ('serviceWorker' in navigator) {
           });
         }
       });
-    });
+    }).catch(err => console.warn('SW register ignored error:', err));
   });
 }
 
