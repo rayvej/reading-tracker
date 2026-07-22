@@ -1495,7 +1495,10 @@ function renderLiveSessionBanner(books, logs) {
 
   if (titleEl) titleEl.textContent = activeBook.title;
   if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${remaining} pg left (${pct}%)`;
-  if (barEl) barEl.style.width = `${pct}%`;
+  if (barEl) {
+    barEl.style.width = `${pct}%`;
+    barEl.style.background = 'linear-gradient(90deg, var(--gold), var(--gold-light))';
+  }
 
   const estDays = Math.max(1, Math.ceil(remaining / 15));
   if (etaBadgeEl) {
