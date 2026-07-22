@@ -1000,7 +1000,9 @@ function renderMilestones(completions, ytdDaysElapsed) {
   // ── BOOKS MILESTONES ──
   const bookThresholds = getDynamicBookThresholds(currentBookCount);
   const booksCountBadge = $('ms-books-count-badge');
-  if (booksCountBadge) booksCountBadge.textContent = `${currentBookCount} Read`;
+  if (booksCountBadge) {
+    booksCountBadge.innerHTML = `<span class="font-extrabold text-[11px]">${fmtNum(currentBookCount)}</span> <span class="text-[9.5px] opacity-75 font-semibold">Read</span>`;
+  }
 
   const passedBooks = [];
   let nextBookGoal = null;
@@ -1022,18 +1024,18 @@ function renderMilestones(completions, ytdDaysElapsed) {
   if (booksFeaturedEl) {
     if (nextBookGoal) {
       booksFeaturedEl.innerHTML = `
-        <div class="p-3 rounded-xl border flex flex-col gap-2 relative overflow-hidden" style="background: rgba(var(--gold-rgb), 0.06); border-color: rgba(var(--gold-rgb), 0.25)">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
-              <i class="fa-solid fa-bullseye text-[11px]" style="color: var(--gold)"></i> Next: ${nextBookGoal.target} Books
+        <div class="p-3.5 rounded-2xl border flex flex-col gap-2.5 relative overflow-hidden" style="background: rgba(var(--gold-rgb), 0.07); border-color: rgba(var(--gold-rgb), 0.28)">
+          <div class="flex justify-between items-center gap-2">
+            <span class="font-bold text-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap" style="color: var(--text-primary)">
+              <i class="fa-solid fa-bullseye text-[12px]" style="color: var(--gold)"></i> Next: ${fmtNum(nextBookGoal.target)} Books
             </span>
-            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-amber-500/15 text-amber-500 border border-amber-500/20">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0 border" style="background: rgba(var(--gold-rgb), 0.18); color: var(--gold); border-color: rgba(var(--gold-rgb), 0.35)">
               ETA: ${nextBookGoal.eta}
             </span>
           </div>
-          <div class="flex justify-between items-center text-[10px] font-semibold" style="color: var(--text-secondary)">
-            <span>${nextBookGoal.current} / ${nextBookGoal.target} books</span>
-            <span class="font-bold tabular-nums" style="color: var(--text-primary)">${nextBookGoal.pct}%</span>
+          <div class="flex justify-between items-center text-[10.5px] font-semibold" style="color: var(--text-secondary)">
+            <span>${fmtNum(nextBookGoal.current)} / ${fmtNum(nextBookGoal.target)} books</span>
+            <span class="font-black tabular-nums text-xs" style="color: var(--text-primary)">${nextBookGoal.pct}%</span>
           </div>
           <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
             <div class="h-full rounded-full transition-all duration-500" style="width: ${nextBookGoal.pct}%; background: linear-gradient(90deg, var(--gold), var(--accent))"></div>
@@ -1049,10 +1051,12 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const booksBadgesEl = $('ms-books-badges');
   if (booksBadgesEl) {
     booksBadgesEl.innerHTML = passedBooks.reverse().map(b => `
-      <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border transition-transform hover:scale-105" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
-        <i class="fa-solid fa-circle-check text-[9.5px]"></i>
-        <span>${b.target} Books</span>
-        <span class="text-[9px] font-normal opacity-75">${b.date}</span>
+      <div class="flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <div class="flex items-center gap-2 whitespace-nowrap font-bold">
+          <i class="fa-solid fa-circle-check text-[11px]"></i>
+          <span>${fmtNum(b.target)} Books</span>
+        </div>
+        <span class="text-[10px] font-medium opacity-80 whitespace-nowrap">${b.date}</span>
       </div>
     `).join('');
   }
@@ -1079,7 +1083,9 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const pageThresholds = getDynamicPageThresholds(runningPages);
 
   const pagesCountBadge = $('ms-pages-count-badge');
-  if (pagesCountBadge) pagesCountBadge.textContent = `${fmtNum(runningPages)} Pages`;
+  if (pagesCountBadge) {
+    pagesCountBadge.innerHTML = `<span class="font-extrabold text-[11px]">${fmtNum(runningPages)}</span> <span class="text-[9.5px] opacity-75 font-semibold">Pages</span>`;
+  }
 
   // Re-calculate dates with exact thresholds
   runningPages = 0;
@@ -1116,18 +1122,18 @@ function renderMilestones(completions, ytdDaysElapsed) {
   if (pagesFeaturedEl) {
     if (nextPageGoal) {
       pagesFeaturedEl.innerHTML = `
-        <div class="p-3 rounded-xl border flex flex-col gap-2 relative overflow-hidden" style="background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.25)">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
-              <i class="fa-solid fa-bullseye text-[11px]" style="color: var(--emerald)"></i> Next: ${fmtNum(nextPageGoal.target)} Pages
+        <div class="p-3.5 rounded-2xl border flex flex-col gap-2.5 relative overflow-hidden" style="background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.28)">
+          <div class="flex justify-between items-center gap-2">
+            <span class="font-bold text-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap" style="color: var(--text-primary)">
+              <i class="fa-solid fa-bullseye text-[12px]" style="color: var(--emerald)"></i> Next: ${fmtNum(nextPageGoal.target)} Pages
             </span>
-            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0 border" style="background: rgba(16, 185, 129, 0.18); color: var(--emerald); border-color: rgba(16, 185, 129, 0.35)">
               ETA: ${nextPageGoal.eta}
             </span>
           </div>
-          <div class="flex justify-between items-center text-[10px] font-semibold" style="color: var(--text-secondary)">
+          <div class="flex justify-between items-center text-[10.5px] font-semibold" style="color: var(--text-secondary)">
             <span>${fmtNum(nextPageGoal.current)} / ${fmtNum(nextPageGoal.target)} pages</span>
-            <span class="font-bold tabular-nums" style="color: var(--text-primary)">${nextPageGoal.pct}%</span>
+            <span class="font-black tabular-nums text-xs" style="color: var(--text-primary)">${nextPageGoal.pct}%</span>
           </div>
           <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
             <div class="h-full rounded-full transition-all duration-500" style="width: ${nextPageGoal.pct}%; background: linear-gradient(90deg, #38BDF8, #34D399)"></div>
@@ -1143,10 +1149,12 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const pagesBadgesEl = $('ms-pages-badges');
   if (pagesBadgesEl) {
     pagesBadgesEl.innerHTML = passedPages.reverse().map(p => `
-      <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border transition-transform hover:scale-105" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
-        <i class="fa-solid fa-circle-check text-[9.5px]"></i>
-        <span>${fmtNum(p.target)} Pages</span>
-        <span class="text-[9px] font-normal opacity-75">${p.date}</span>
+      <div class="flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <div class="flex items-center gap-2 whitespace-nowrap font-bold">
+          <i class="fa-solid fa-circle-check text-[11px]"></i>
+          <span>${fmtNum(p.target)} Pages</span>
+        </div>
+        <span class="text-[10px] font-medium opacity-80 whitespace-nowrap">${p.date}</span>
       </div>
     `).join('');
   }

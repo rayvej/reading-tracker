@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=55">
+  <link rel="stylesheet" href="style.css?v=56">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -554,26 +554,26 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Books milestones -->
               <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                  <span class="section-label" style="color: var(--text-secondary)">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="section-label shrink-0" style="color: var(--text-secondary)">
                     <i class="fa-solid fa-trophy text-[11px]" style="color: var(--gold)"></i> Books Milestones
                   </span>
-                  <span id="ms-books-count-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background: var(--bg-input); color: var(--text-primary)">0 Total</span>
+                  <span id="ms-books-count-badge" class="px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shrink-0 border" style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary)">0 Books</span>
                 </div>
                 <div id="ms-books-featured"></div>
-                <div class="flex flex-wrap gap-1.5" id="ms-books-badges"></div>
+                <div class="flex flex-col gap-2" id="ms-books-badges"></div>
               </div>
 
               <!-- Pages milestones -->
               <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                  <span class="section-label" style="color: var(--text-secondary)">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="section-label shrink-0" style="color: var(--text-secondary)">
                     <i class="fa-solid fa-medal text-[11px]" style="color: var(--emerald)"></i> Pages Milestones
                   </span>
-                  <span id="ms-pages-count-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background: var(--bg-input); color: var(--text-primary)">0 Total</span>
+                  <span id="ms-pages-count-badge" class="px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shrink-0 border" style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary)">0 Pages</span>
                 </div>
                 <div id="ms-pages-featured"></div>
-                <div class="flex flex-wrap gap-1.5" id="ms-pages-badges"></div>
+                <div class="flex flex-col gap-2" id="ms-pages-badges"></div>
               </div>
             </div>
 
@@ -1755,6 +1755,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=55"></script>
+  <script type="module" src="app.js?v=56"></script>
 </body>
 </html>
