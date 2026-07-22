@@ -925,6 +925,10 @@ function setupDashboard() {
           b.classList.toggle('text-slate-400', !isActive);
         });
         transitionView(() => renderBarChart());
+      });
+    });
+  }
+
   // Insights Hub Tab Switcher
   const insightsTabBar = document.getElementById('insights-tab-bar');
   if (insightsTabBar) {
