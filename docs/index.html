@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="style.css?v=45">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -386,43 +386,7 @@
               </div>
             </div>
 
-            <!-- Format & Ownership Distribution Card -->
-            <div id="dash-format-ownership" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-shapes text-[10px]" style="color: var(--accent2)"></i> Format &amp; Ownership Mix</span>
-              <div class="flex flex-col gap-3 text-xs">
-                <!-- Medium split bar -->
-                <div class="flex flex-col gap-1">
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-400 font-semibold">Reading Medium</span>
-                    <span id="fmt-medium-ratio" class="text-slate-200 font-bold">100% Physical</span>
-                  </div>
-                  <div class="w-full bg-slate-900/50 rounded-full h-2 overflow-hidden border border-white/5 flex">
-                    <div id="fmt-bar-physical" class="bg-emerald-400 h-full transition-all" style="width: 100%" title="Physical Books"></div>
-                    <div id="fmt-bar-digital" class="bg-blue-400 h-full transition-all" style="width: 0%" title="Digital / Audio"></div>
-                  </div>
-                  <div class="flex justify-between text-[9px] text-slate-400 font-semibold mt-0.5">
-                    <span><i class="fa-solid fa-book text-[8px] text-emerald-400"></i> Physical: <b id="fmt-cnt-physical" class="text-slate-200">0</b></span>
-                    <span><i class="fa-solid fa-tablet-screen-button text-[8px] text-blue-400"></i> Digital: <b id="fmt-cnt-digital" class="text-slate-200">0</b></span>
-                  </div>
-                </div>
 
-                <!-- Ownership split bar -->
-                <div class="flex flex-col gap-1 border-t border-white/5 pt-2.5">
-                  <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-slate-400 font-semibold">Library Ownership</span>
-                    <span id="fmt-own-ratio" class="text-slate-200 font-bold">100% Owned</span>
-                  </div>
-                  <div class="w-full bg-slate-900/50 rounded-full h-2 overflow-hidden border border-white/5 flex">
-                    <div id="fmt-bar-owned" class="bg-gold h-full transition-all" style="width: 100%" title="Owned"></div>
-                    <div id="fmt-bar-borrowed" class="bg-purple-400 h-full transition-all" style="width: 0%" title="Borrowed / Other"></div>
-                  </div>
-                  <div class="flex justify-between text-[9px] text-slate-400 font-semibold mt-0.5">
-                    <span><i class="fa-solid fa-house-user text-[8px] text-gold"></i> Owned: <b id="fmt-cnt-owned" class="text-slate-200">0</b></span>
-                    <span><i class="fa-solid fa-hand-holding-hand text-[8px] text-purple-400"></i> Borrowed: <b id="fmt-cnt-borrowed" class="text-slate-200">0</b></span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <!-- Reading Volume Card -->
             <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
@@ -1659,6 +1623,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=44"></script>
+  <script type="module" src="app.js?v=45"></script>
 </body>
 </html>

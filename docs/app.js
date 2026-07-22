@@ -516,7 +516,7 @@ async function getMergedBooks() {
       };
     });
 
-  return [...libraryItems, ...wishlistOnly];
+  return libraryItems;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -891,6 +891,23 @@ function setupDashboard() {
           const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
           renderActivityHeatmap(activeLogs);
         });
+      });
+    });
+  }
+
+  // Collection Split toggle (Pages vs Books)
+  const donutToggle = document.getElementById('donut-chart-toggle');
+  if (donutToggle) {
+    donutToggle.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        collectionChartMode = btn.dataset.mode;
+        donutToggle.querySelectorAll('button').forEach(b => {
+          const isActive = b.dataset.mode === collectionChartMode;
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('bg-white/10', isActive);
+          b.classList.toggle('text-slate-400', !isActive);
+        });
+        transitionView(() => renderDonutChart());
       });
     });
   }
@@ -1427,7 +1444,26 @@ function renderLiveSessionBanner(books, logs) {
     return;
   }
 
-  const activeBook = inProgress[0];
+  // Find the In Progress book that was last logged
+  const bookLastLogMap = new Map();
+  (logs || []).forEach(l => {
+    if (!l.book_title || !l.date) return;
+    const existing = bookLastLogMap.get(l.book_title);
+    if (!existing || l.date.localeCompare(existing) > 0) {
+      bookLastLogMap.set(l.book_title, l.date);
+    }
+  });
+
+  const sortedInProgress = [...inProgress].sort((a, b) => {
+    const dateA = bookLastLogMap.get(a.title) || '';
+    const dateB = bookLastLogMap.get(b.title) || '';
+    if (dateA && dateB) return dateB.localeCompare(dateA);
+    if (dateA) return -1;
+    if (dateB) return 1;
+    return a.title.localeCompare(b.title);
+  });
+
+  const activeBook = sortedInProgress[0];
   const total = activeBook.total_pages || 1;
   const read = (activeBook.pages_read || 0) % total;
   const pct = Math.min(100, Math.round((read / total) * 100));
@@ -1573,9 +1609,8 @@ async function renderDashboard() {
   const mergedBooks = await getMergedBooks();
   const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
-  // Render Live Banner & Format Mix Card
+  // Render Live Banner
   renderLiveSessionBanner(books, logsCache);
-  renderFormatOwnershipCard(books);
 
   const stats = getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter);
   dashboardStats = stats;
@@ -3007,8 +3042,8 @@ function renderDonutChart() {
   }
 
   const total = bahaiVal + nonBahaiVal || 1;
-  const r = 35, cx = 50, cy = 50, sw = 10;
-  const circ = 2 * Math.PI * r; // ~219.91
+  const r = 37, cx = 50, cy = 50, sw = 8;
+  const circ = 2 * Math.PI * r; // ~232.48
   const bahaiDash = (bahaiVal / total) * circ;
   const nonBahaiDash = (nonBahaiVal / total) * circ;
 
@@ -3017,13 +3052,13 @@ function renderDonutChart() {
   const c2 = isDark ? '#38BDF8' : '#0A84FF'; // Non-Bahai (Sky Blue)
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
-  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-28 h-28 shrink-0', style: 'display:block' });
+  const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: trackColor, 'stroke-width': sw }));
 
-  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none');
-  const overlayTotal = el('span', 'text-xl font-extrabold text-white');
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-1');
+  const overlayTotal = el('span', 'text-base font-black text-slate-100 tracking-tight');
   overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[9px] uppercase tracking-wider text-neutral-400');
+  const overlayLabel = el('span', 'text-[9px] font-bold uppercase tracking-wider text-slate-400 text-center mt-0.5 max-w-[80px] leading-tight');
   overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
   centerOverlay.appendChild(overlayTotal);
   centerOverlay.appendChild(overlayLabel);
@@ -3102,7 +3137,7 @@ function renderDonutChart() {
 
   wrap.innerHTML = '';
   const flexContainer = el('div', 'flex flex-row items-center justify-around gap-6 py-2 w-full relative');
-  const svgWrapper = el('div', 'relative w-28 h-28 shrink-0');
+  const svgWrapper = el('div', 'relative w-36 h-36 shrink-0 flex items-center justify-center');
   svgWrapper.appendChild(svg);
   svgWrapper.appendChild(centerOverlay);
   flexContainer.appendChild(svgWrapper);
@@ -4629,22 +4664,23 @@ function renderCategoryPieChart(books, containerId) {
     'Other': '#64748B'            // Slate Muted
   };
 
-  const circumference = 2 * Math.PI * 35; // r=35 -> ~219.91
+  const r = 37, sw = 8;
+  const circumference = 2 * Math.PI * r; // r=37 -> ~232.48
   let cumulativePercent = 0;
 
   const chartFlex = el('div', 'flex flex-col items-center justify-center gap-6 py-3 w-full');
-  const svgWrapper = el('div', 'relative w-32 h-32 shrink-0');
+  const svgWrapper = el('div', 'relative w-36 h-36 shrink-0 flex items-center justify-center');
   
   const isDark = document.body.classList.contains('light-mode');
   const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
 
   const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
-  svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '35', fill: 'none', stroke: trackColor, 'stroke-width': '10' }));
+  svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '37', fill: 'none', stroke: trackColor, 'stroke-width': '8' }));
 
-  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-2');
-  const overlayTotal = el('span', 'text-2xl font-black text-slate-100');
+  const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-1');
+  const overlayTotal = el('span', 'text-base font-black text-slate-100 tracking-tight');
   overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[8px] font-bold tracking-wider text-slate-400 uppercase text-center mt-0.5 max-w-[84px] leading-tight');
+  const overlayLabel = el('span', 'text-[9px] font-bold tracking-wider text-slate-400 uppercase text-center mt-0.5 max-w-[80px] leading-tight');
   overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
   
   centerOverlay.appendChild(overlayTotal);
@@ -4663,10 +4699,10 @@ function renderCategoryPieChart(books, containerId) {
     const angle = -90 + cumulativePercent * 360;
 
     const segment = svgEl('circle', {
-      cx: '50', cy: '50', r: '35',
+      cx: '50', cy: '50', r: '37',
       fill: 'none',
       stroke: colors[cat],
-      'stroke-width': '10',
+      'stroke-width': '8',
       'stroke-dasharray': strokeLength + ' ' + circumference,
       transform: `rotate(${angle} 50 50)`,
       class: 'transition-all duration-300 cursor-pointer'
