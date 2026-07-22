@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=45">
+  <link rel="stylesheet" href="style.css?v=46">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -388,74 +388,160 @@
 
 
 
-            <!-- Reading Volume Card -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-book-bookmark text-[10px]" style="color: var(--gold)"></i> Reading Volume Detail</span>
-              <div class="flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Reads (incl. re-reads)</span><span class="text-slate-200 font-bold tabular-nums" id="sv-total-reads">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Pages (incl. re-reads)</span><span class="text-slate-200 font-bold tabular-nums" id="sv-total-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Re-read Bonus Pages</span><span class="text-slate-200 font-bold tabular-nums" id="sv-reread-bonus">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Books Re-read</span><span class="text-slate-200 font-bold tabular-nums" id="sv-books-reread">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Unique Authors</span><span class="text-slate-200 font-bold tabular-nums" id="sv-unique-authors">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Bahá'í Books Read</span><span class="text-slate-200 font-bold tabular-nums" id="sv-bahai-reads">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Non-Bahá'í Books Read</span><span class="text-slate-200 font-bold tabular-nums" id="sv-nonbahai-reads">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Pages per Book</span><span class="text-slate-200 font-bold tabular-nums" id="sv-avg-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Pages Read in In-Progress</span><span class="text-slate-200 font-bold tabular-nums" id="sv-ip-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Pages in Not-Started Books</span><span class="text-slate-200 font-bold tabular-nums" id="sv-ns-pages">—</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">% Re-read Bonus</span><span class="text-slate-200 font-bold tabular-nums" id="sv-reread-pct">—</span></div>
+            <!-- ════════════════════════════════════════════════════════════
+                 iOS 18 GLASSMORPHISM INSIGHTS BENTO HUB
+                 ════════════════════════════════════════════════════════════ -->
+            <div class="glass-panel p-4 rounded-3xl flex flex-col gap-4 border border-white/10 shadow-2xl relative overflow-hidden">
+              <!-- Segmented Control Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-white/10 pb-3">
+                <span class="section-label text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
+                  <i class="fa-solid fa-chart-line text-[11px] text-amber-400"></i> Analytics &amp; Insights
+                </span>
+                <div id="insights-tab-bar" class="seg-control flex bg-slate-900/60 p-1 rounded-2xl border border-white/10 max-w-full overflow-x-auto no-scrollbar">
+                  <button data-tab="volume" class="seg-btn px-3 py-1 text-[10px] font-bold rounded-xl transition-all duration-200 text-white bg-white/10 shadow-md flex items-center gap-1">
+                    <i class="fa-solid fa-book-bookmark text-[9px]"></i> Volume
+                  </button>
+                  <button data-tab="years" class="seg-btn px-3 py-1 text-[10px] font-bold rounded-xl transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    <i class="fa-solid fa-calendar-days text-[9px]"></i> Years
+                  </button>
+                  <button data-tab="pace" class="seg-btn px-3 py-1 text-[10px] font-bold rounded-xl transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    <i class="fa-solid fa-gauge text-[9px]"></i> Pace
+                  </button>
+                  <button data-tab="sessions" class="seg-btn px-3 py-1 text-[10px] font-bold rounded-xl transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    <i class="fa-solid fa-clock text-[9px]"></i> Sessions
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <!-- Year Tracking Card -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-calendar-days text-[10px]" style="color: var(--accent)"></i> Year Tracking</span>
-              <div class="flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Years Since Tracking Began</span><span class="text-slate-200 font-bold tabular-nums" id="yt-years-since">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">First Year Read</span><span class="text-slate-200 font-bold tabular-nums" id="yt-first-year">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Most Recent Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-recent-year">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Active Reading Years</span><span class="text-slate-200 font-bold tabular-nums" id="yt-active-years">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Best Year (by Reads)</span><span class="text-slate-200 font-bold tabular-nums" id="yt-best-reads-year">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Best Year Count</span><span class="text-slate-200 font-bold tabular-nums" id="yt-best-reads-count">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Best Year (by Pages)</span><span class="text-slate-200 font-bold tabular-nums" id="yt-best-pages-year">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Most Pages in a Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-best-pages-count">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Inactive Years (gaps)</span><span class="text-slate-200 font-bold tabular-nums" id="yt-gaps">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Median Books/Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-median-books">—</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">Median Pages/Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-median-pages">—</span></div>
-              </div>
-            </div>
+              <!-- TAB PANELS CONTAINER -->
+              <div class="w-full">
+                <!-- PANEL 1: VOLUME -->
+                <div id="insights-panel-volume" class="insights-tab-panel flex flex-col gap-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gradient-to-br from-amber-500/10 to-transparent p-3.5 rounded-2xl border border-amber-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                        <span>Total Reads</span>
+                        <i class="fa-solid fa-book-open"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="sv-total-reads">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium">Incl. re-reads</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-500/10 to-transparent p-3.5 rounded-2xl border border-emerald-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                        <span>Total Pages</span>
+                        <i class="fa-solid fa-file-lines"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="sv-total-pages">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium">Lifetime volume</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-2xl border border-white/5">
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Re-read Bonus Pages</span><span class="text-slate-200 font-bold tabular-nums" id="sv-reread-bonus">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Books Re-read</span><span class="text-slate-200 font-bold tabular-nums" id="sv-books-reread">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Unique Authors</span><span class="text-slate-200 font-bold tabular-nums" id="sv-unique-authors">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Bahá'í Reads</span><span class="text-slate-200 font-bold tabular-nums" id="sv-bahai-reads">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Non-Bahá'í Reads</span><span class="text-slate-200 font-bold tabular-nums" id="sv-nonbahai-reads">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Pages / Book</span><span class="text-slate-200 font-bold tabular-nums" id="sv-avg-pages">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">In-Progress Pages</span><span class="text-slate-200 font-bold tabular-nums" id="sv-ip-pages">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Unread Backlog Pages</span><span class="text-slate-200 font-bold tabular-nums" id="sv-ns-pages">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">% Re-read Bonus</span><span class="text-slate-200 font-bold tabular-nums" id="sv-reread-pct">—</span></div>
+                  </div>
+                </div>
 
-            <!-- Reading Pace Card -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-gauge text-[10px]" style="color: var(--accent2)"></i> Reading Pace</span>
-              <div class="flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Reads per Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-reads-yr">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Pages per Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-pages-yr">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Days per Book</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-days-book">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Fastest Book Read (days)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-fastest">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Slowest Book Read (days)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-slowest">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Books per Year (overall)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-books-yr">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Pages per Tracked Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-pages-tracked-yr">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Pages per Day (overall)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-pages-day-overall">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Median Days per Book</span><span class="text-slate-200 font-bold tabular-nums" id="rp-median-days">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Reads per Month</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-reads-mo">—</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">Pages per Hour</span><span class="text-slate-200 font-bold tabular-nums" id="rp-pages-hr">—</span></div>
-              </div>
-            </div>
+                <!-- PANEL 2: YEARS -->
+                <div id="insights-panel-years" class="insights-tab-panel hidden flex flex-col gap-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gradient-to-br from-sky-500/10 to-transparent p-3.5 rounded-2xl border border-sky-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-sky-400 uppercase tracking-wider">
+                        <span>Best Year (Reads)</span>
+                        <i class="fa-solid fa-crown"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="yt-best-reads-year">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium"><b id="yt-best-reads-count" class="text-slate-200">0</b> books completed</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500/10 to-transparent p-3.5 rounded-2xl border border-purple-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                        <span>Best Year (Pages)</span>
+                        <i class="fa-solid fa-fire"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="yt-best-pages-year">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium"><b id="yt-best-pages-count" class="text-slate-200">0</b> pages read</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-2xl border border-white/5">
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Years Tracking</span><span class="text-slate-200 font-bold tabular-nums" id="yt-years-since">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">First Year Read</span><span class="text-slate-200 font-bold tabular-nums" id="yt-first-year">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Most Recent Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-recent-year">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Active Reading Years</span><span class="text-slate-200 font-bold tabular-nums" id="yt-active-years">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Inactive Years (gaps)</span><span class="text-slate-200 font-bold tabular-nums" id="yt-gaps">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Median Books/Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-median-books">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Median Pages/Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="yt-median-pages">—</span></div>
+                  </div>
+                </div>
 
-            <!-- Daily Log Insights Card -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-clock text-[10px]" style="color: var(--accent3)"></i> Daily Log Insights</span>
-              <div class="flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Reading Sessions</span><span class="text-slate-200 font-bold tabular-nums" id="li-sessions">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Logged Pages</span><span class="text-slate-200 font-bold tabular-nums" id="li-logged-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Reading Minutes</span><span class="text-slate-200 font-bold tabular-nums" id="li-minutes">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Total Hours Read</span><span class="text-slate-200 font-bold tabular-nums" id="li-hours">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Pages per Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-avg-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Avg Minutes per Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-avg-mins">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Reading Pace (pages/min)</span><span class="text-slate-200 font-bold tabular-nums" id="li-pace">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Min Pages per Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-min-pages">—</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-slate-400">Max Pages per Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-max-pages">—</span></div>
-                <div class="flex justify-between"><span class="text-slate-400 font-medium">Minutes per Page</span><span class="text-slate-200 font-bold tabular-nums" id="li-min-per-page">—</span></div>
+                <!-- PANEL 3: PACE -->
+                <div id="insights-panel-pace" class="insights-tab-panel hidden flex flex-col gap-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gradient-to-br from-blue-500/10 to-transparent p-3.5 rounded-2xl border border-blue-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                        <span>Avg Days/Book</span>
+                        <i class="fa-solid fa-hourglass-half"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="rp-avg-days-book">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium">Completion speed</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-500/10 to-transparent p-3.5 rounded-2xl border border-indigo-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                        <span>Pages / Hour</span>
+                        <i class="fa-solid fa-bolt"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="rp-pages-hr">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium">Reading rate</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-2xl border border-white/5">
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Reads per Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-reads-yr">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Pages per Active Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-pages-yr">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Fastest Book (days)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-fastest">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Slowest Book (days)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-slowest">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Books per Year (overall)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-books-yr">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Pages/Tracked Year</span><span class="text-slate-200 font-bold tabular-nums" id="rp-pages-tracked-yr">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Pages/Day (overall)</span><span class="text-slate-200 font-bold tabular-nums" id="rp-pages-day-overall">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Median Days/Book</span><span class="text-slate-200 font-bold tabular-nums" id="rp-median-days">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Avg Reads/Month</span><span class="text-slate-200 font-bold tabular-nums" id="rp-avg-reads-mo">—</span></div>
+                  </div>
+                </div>
+
+                <!-- PANEL 4: SESSIONS -->
+                <div id="insights-panel-sessions" class="insights-tab-panel hidden flex flex-col gap-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gradient-to-br from-pink-500/10 to-transparent p-3.5 rounded-2xl border border-pink-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-pink-400 uppercase tracking-wider">
+                        <span>Sessions</span>
+                        <i class="fa-solid fa-layer-group"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="li-sessions">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium">Logged sessions</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-rose-500/10 to-transparent p-3.5 rounded-2xl border border-rose-500/20 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                        <span>Hours Logged</span>
+                        <i class="fa-solid fa-stopwatch"></i>
+                      </div>
+                      <div class="text-2xl font-black text-slate-100 tabular-nums" id="li-hours">—</div>
+                      <div class="text-[9px] text-slate-400 font-medium"><b id="li-minutes" class="text-slate-200">0</b> total minutes</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-900/40 p-3 rounded-2xl border border-white/5">
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Total Logged Pages</span><span class="text-slate-200 font-bold tabular-nums" id="li-logged-pages">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Pages / Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-avg-pages">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Avg Mins / Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-avg-mins">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Reading Pace (pg/min)</span><span class="text-slate-200 font-bold tabular-nums" id="li-pace">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Min Pages / Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-min-pages">—</span></div>
+                    <div class="flex justify-between border-b sm:border-b-0 border-white/5 pb-1.5 sm:pb-0"><span class="text-slate-400">Max Pages / Session</span><span class="text-slate-200 font-bold tabular-nums" id="li-max-pages">—</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400 font-medium">Minutes per Page</span><span class="text-slate-200 font-bold tabular-nums" id="li-min-per-page">—</span></div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1623,6 +1709,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=45"></script>
+  <script type="module" src="app.js?v=46"></script>
 </body>
 </html>

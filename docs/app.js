@@ -925,6 +925,26 @@ function setupDashboard() {
           b.classList.toggle('text-slate-400', !isActive);
         });
         transitionView(() => renderBarChart());
+  // Insights Hub Tab Switcher
+  const insightsTabBar = document.getElementById('insights-tab-bar');
+  if (insightsTabBar) {
+    insightsTabBar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        insightsTabBar.querySelectorAll('button').forEach(b => {
+          const isActive = b.dataset.tab === targetTab;
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('bg-white/10', isActive);
+          b.classList.toggle('shadow-md', isActive);
+          b.classList.toggle('text-slate-400', !isActive);
+        });
+        document.querySelectorAll('.insights-tab-panel').forEach(panel => {
+          const isActive = panel.id === `insights-panel-${targetTab}`;
+          panel.classList.toggle('hidden', !isActive);
+          if (isActive) {
+            panel.classList.add('animate-fade-in');
+          }
+        });
       });
     });
   }
@@ -1629,7 +1649,7 @@ async function renderDashboard() {
   $('stat-reads').textContent = totalReads;
   $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
   $('stat-titles').textContent = titlesCount;
-  $('detail-titles').textContent = `Finished: ${finishedCount} · Active: ${progressCount}`;
+  $('detail-titles').textContent = `Finished: ${totalReads} · Active: ${progressCount}`;
   $('stat-pages').textContent = fmtNum(pagesRead);
   $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
   
