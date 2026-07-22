@@ -2867,24 +2867,9 @@ async function renderGoals() {
   `;
 
   // 3. Long-Term Milestones
-  const pagesReadG5 = booksCache.reduce((s, b) => {
-    let p = (b.read_count || 0) * b.total_pages;
-    if (b.status === 'In Progress') p += (b.pages_read || 0);
-    return s + p;
-  }, 0);
-  
-  let rereadsPages = 0;
-  activeLogs.forEach(l => {
-    const book = booksCache.find(b => b.title === l.book_title);
-    if (book) {
-      const rc = book.read_count || 0;
-      if (l.read_cycle > rc && l.read_cycle > 1) {
-        rereadsPages += Math.max(0, l.end_page - l.start_page);
-      }
-    }
-  });
-  const totalPagesReadLifetime = pagesReadG5 + rereadsPages;
-  const totalReadsLifetime = booksCache.reduce((s, b) => s + (b.read_count || 0), 0);
+  const lifetimeStats = getReconciledStats(booksCache, logsCache, 'all', 'all');
+  const totalPagesReadLifetime = lifetimeStats.pagesRead;
+  const totalReadsLifetime = lifetimeStats.totalReads;
 
   const inProgressBooks = booksCache.filter(b => b.status === 'In Progress');
   const pagesLeftIP = inProgressBooks.reduce((s, b) => s + Math.max(0, b.total_pages - b.pages_read), 0);
