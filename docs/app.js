@@ -742,37 +742,44 @@ async function submitLog() {
 }
 
 async function recalculateBook(title, cycle) {
+  // Find this book in cache
+  const book = booksCache.find(b => b.title === title);
+  if (!book) return;
+  const tot = parseInt(book.total_pages || 0, 10);
+  const rc = parseInt(book.read_count || 0, 10);
+
   // Get all logs for this book
   const logsSnap = await getDocs(query(
     collection(db, `users/${uid}/reading_logs`),
     where('book_title', '==', title)
   ));
+  const logs = logsSnap.docs.map(d => d.data());
 
-  // Group by cycle → max end_page per cycle
-  const cycleMaxes = {};
-  for (const d of logsSnap.docs) {
-    const { read_cycle, end_page } = d.data();
-    if (cycleMaxes[read_cycle] === undefined || end_page > cycleMaxes[read_cycle]) {
-      cycleMaxes[read_cycle] = end_page;
+  // Calculate completed cycles safely
+  const maxLogCycle = logs.length > 0 ? Math.max(...logs.map(l => parseInt(l.read_cycle || 1, 10))) : 1;
+  let completedCycles = 0;
+  for (let c = 1; c <= maxLogCycle + 1; c++) {
+    const cycleLogs = logs.filter(l => parseInt(l.read_cycle || 1, 10) === c);
+    if (cycleLogs.length === 0) continue;
+    const maxEnd = Math.max(...cycleLogs.map(l => parseInt(l.end_page || 0, 10)));
+    const isHistorical = cycleLogs.some(l => l.notes && l.notes.includes('Historical cycle'));
+    if (maxEnd >= tot || isHistorical || c <= rc) {
+      completedCycles = Math.max(completedCycles, c);
     }
   }
 
-  // Find this book in cache
-  const book = booksCache.find(b => b.title === title);
-  if (!book) return;
-  const tot = book.total_pages;
+  const finalReadCount = Math.max(rc, completedCycles);
+  const activeCycle = Math.max(finalReadCount + 1, cycle);
+  const activeLogs = logs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+  const maxActiveEnd = activeLogs.length > 0 ? Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10))) : 0;
 
-  const logs = logsSnap.docs.map(d => d.data());
-  const newStatus = evaluateBookReadingProgress(book, logs);
-
-  const completedCycles = Object.values(cycleMaxes).filter(m => m >= tot).length;
-  const maxCurrentCycle = cycleMaxes[cycle] ?? 0;
+  const newStatus = (maxActiveEnd >= tot) ? 'Finished' : (maxActiveEnd > 0 ? 'In Progress' : book.status);
 
   let newPagesRead;
   if (newStatus === 'Finished') {
     newPagesRead = tot;
   } else if (newStatus === 'In Progress') {
-    newPagesRead = (tot > 0 && maxCurrentCycle > tot) ? (maxCurrentCycle % tot) : maxCurrentCycle;
+    newPagesRead = (tot > 0 && maxActiveEnd > tot) ? (maxActiveEnd % tot) : maxActiveEnd;
   } else {
     newPagesRead = 0;
   }
@@ -785,11 +792,15 @@ async function recalculateBook(title, cycle) {
     await updateDoc(booksSnap.docs[0].ref, {
       status: newStatus,
       pages_read: newPagesRead,
-      read_count: completedCycles
+      read_count: finalReadCount
     });
     // Update local cache too
     const cached = booksCache.find(b => b.title === title);
-    if (cached) { cached.status = newStatus; cached.pages_read = newPagesRead; cached.read_count = completedCycles; }
+    if (cached) {
+      cached.status = newStatus;
+      cached.pages_read = newPagesRead;
+      cached.read_count = finalReadCount;
+    }
   }
 }
 
