@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=54">
+  <link rel="stylesheet" href="style.css?v=55">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -554,13 +554,26 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Books milestones -->
               <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-trophy text-[10px] text-amber-500"></i> Books Read Milestones</span>
-                <div class="flex flex-col gap-2 text-xs" id="ms-books-list"></div>
+                <div class="flex items-center justify-between">
+                  <span class="section-label" style="color: var(--text-secondary)">
+                    <i class="fa-solid fa-trophy text-[11px]" style="color: var(--gold)"></i> Books Milestones
+                  </span>
+                  <span id="ms-books-count-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background: var(--bg-input); color: var(--text-primary)">0 Total</span>
+                </div>
+                <div id="ms-books-featured"></div>
+                <div class="flex flex-wrap gap-1.5" id="ms-books-badges"></div>
               </div>
+
               <!-- Pages milestones -->
               <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-medal text-[10px] text-emerald-500"></i> Pages Read Milestones</span>
-                <div class="flex flex-col gap-2 text-xs" id="ms-pages-list"></div>
+                <div class="flex items-center justify-between">
+                  <span class="section-label" style="color: var(--text-secondary)">
+                    <i class="fa-solid fa-medal text-[11px]" style="color: var(--emerald)"></i> Pages Milestones
+                  </span>
+                  <span id="ms-pages-count-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background: var(--bg-input); color: var(--text-primary)">0 Total</span>
+                </div>
+                <div id="ms-pages-featured"></div>
+                <div class="flex flex-wrap gap-1.5" id="ms-pages-badges"></div>
               </div>
             </div>
 
@@ -1742,6 +1755,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=54"></script>
+  <script type="module" src="app.js?v=55"></script>
 </body>
 </html>

@@ -967,79 +967,188 @@ function calculateETA(needed, rate) {
   return etaDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
+function getDynamicBookThresholds(currentCount) {
+  const base = [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 5000, 10000];
+  const thresholds = base.filter(t => t <= currentCount);
+  const remaining = base.filter(t => t > currentCount);
+  const upcoming = remaining.slice(0, 2);
+  while (upcoming.length < 2) {
+    const last = upcoming.length > 0 ? upcoming[upcoming.length - 1] : (thresholds.length > 0 ? thresholds[thresholds.length - 1] : 100);
+    upcoming.push(last * 2);
+  }
+  return [...thresholds, ...upcoming];
+}
+
+function getDynamicPageThresholds(currentPages) {
+  const base = [1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000, 75000, 100000, 150000, 200000, 250000, 500000, 1000000];
+  const thresholds = base.filter(t => t <= currentPages);
+  const remaining = base.filter(t => t > currentPages);
+  const upcoming = remaining.slice(0, 2);
+  while (upcoming.length < 2) {
+    const last = upcoming.length > 0 ? upcoming[upcoming.length - 1] : (thresholds.length > 0 ? thresholds[thresholds.length - 1] : 10000);
+    upcoming.push(last * 2);
+  }
+  return [...thresholds, ...upcoming];
+}
+
 function renderMilestones(completions, ytdDaysElapsed) {
   const currentYrStr = String(new Date().getFullYear());
   const ytdCompletionsCount = completions.filter(c => c.date && c.date.startsWith(currentYrStr)).length;
   const bookRate = (ytdDaysElapsed > 0 && ytdCompletionsCount > 0) ? (ytdCompletionsCount / ytdDaysElapsed) : (completions.length / Math.max(1, ytdDaysElapsed));
+  const currentBookCount = completions.length;
 
-  const bookThresholds = [10, 25, 50, 100];
-  const booksList = $('ms-books-list');
-  if (booksList) {
-    booksList.innerHTML = '';
-    bookThresholds.forEach(t => {
-      let completedDate = null;
-      if (completions.length >= t) {
-        completedDate = completions[t - 1].date;
-      }
-      const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
-      if (completedDate) {
-        item.innerHTML = `<span class="text-slate-400">${t} Books Finished</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
-      } else {
-        const needed = t - completions.length;
-        const eta = calculateETA(needed, bookRate > 0 ? bookRate : 0.05);
-        item.innerHTML = `<span class="text-slate-400">${t} Books Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
-      }
-      booksList.appendChild(item);
-    });
+  // ── BOOKS MILESTONES ──
+  const bookThresholds = getDynamicBookThresholds(currentBookCount);
+  const booksCountBadge = $('ms-books-count-badge');
+  if (booksCountBadge) booksCountBadge.textContent = `${currentBookCount} Read`;
+
+  const passedBooks = [];
+  let nextBookGoal = null;
+
+  bookThresholds.forEach(t => {
+    if (completions.length >= t) {
+      const date = completions[t - 1].date;
+      passedBooks.push({ target: t, date: date === '2020-01-01' ? 'Completed' : fmtDate(date) });
+    } else if (!nextBookGoal) {
+      const needed = t - completions.length;
+      const eta = calculateETA(needed, bookRate > 0 ? bookRate : 0.05);
+      const pct = Math.min(100, Math.round((currentBookCount / t) * 100));
+      nextBookGoal = { target: t, current: currentBookCount, needed, eta, pct };
+    }
+  });
+
+  // Featured Next Book Goal Card
+  const booksFeaturedEl = $('ms-books-featured');
+  if (booksFeaturedEl) {
+    if (nextBookGoal) {
+      booksFeaturedEl.innerHTML = `
+        <div class="p-3 rounded-xl border flex flex-col gap-2 relative overflow-hidden" style="background: rgba(var(--gold-rgb), 0.06); border-color: rgba(var(--gold-rgb), 0.25)">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
+              <i class="fa-solid fa-bullseye text-[11px]" style="color: var(--gold)"></i> Next: ${nextBookGoal.target} Books
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-amber-500/15 text-amber-500 border border-amber-500/20">
+              ETA: ${nextBookGoal.eta}
+            </span>
+          </div>
+          <div class="flex justify-between items-center text-[10px] font-semibold" style="color: var(--text-secondary)">
+            <span>${nextBookGoal.current} / ${nextBookGoal.target} books</span>
+            <span class="font-bold tabular-nums" style="color: var(--text-primary)">${nextBookGoal.pct}%</span>
+          </div>
+          <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-500" style="width: ${nextBookGoal.pct}%; background: linear-gradient(90deg, var(--gold), var(--accent))"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      booksFeaturedEl.innerHTML = '';
+    }
   }
 
-  const pageThresholds = [1000, 5000, 10000, 15000, 25000];
-  const pagesList = $('ms-pages-list');
-  if (pagesList) {
-    pagesList.innerHTML = '';
-    
-    const pageEvents = [];
-    completions.forEach(c => {
-      pageEvents.push({ pages: c.pages, date: c.date });
-    });
-    
-    booksCache.forEach(b => {
-      if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
-        if (dashFilter === 'all' || b.collection === dashFilter) {
-          pageEvents.push({ pages: b.pages_read, date: todayISO() });
-        }
+  // Passed Books Badges
+  const booksBadgesEl = $('ms-books-badges');
+  if (booksBadgesEl) {
+    booksBadgesEl.innerHTML = passedBooks.reverse().map(b => `
+      <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border transition-transform hover:scale-105" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <i class="fa-solid fa-circle-check text-[9.5px]"></i>
+        <span>${b.target} Books</span>
+        <span class="text-[9px] font-normal opacity-75">${b.date}</span>
+      </div>
+    `).join('');
+  }
+
+  // ── PAGES MILESTONES ──
+  const pageEvents = [];
+  completions.forEach(c => {
+    pageEvents.push({ pages: c.pages, date: c.date });
+  });
+  booksCache.forEach(b => {
+    if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
+      if (dashFilter === 'all' || b.collection === dashFilter) {
+        pageEvents.push({ pages: b.pages_read, date: todayISO() });
       }
-    });
-    
-    pageEvents.sort((a, b) => a.date.localeCompare(b.date));
-    
-    let runningPages = 0;
-    const milestoneReachedDates = {};
-    
-    pageEvents.forEach(evt => {
-      runningPages += evt.pages;
-      pageThresholds.forEach(t => {
-        if (runningPages >= t && !milestoneReachedDates[t]) {
-          milestoneReachedDates[t] = evt.date;
-        }
-      });
-    });
+    }
+  });
+  pageEvents.sort((a, b) => a.date.localeCompare(b.date));
 
-    const ytdPagesVal = pageEvents.filter(e => e.date && e.date.startsWith(currentYrStr)).reduce((s, e) => s + e.pages, 0);
-    const pageRate = (ytdDaysElapsed > 0 && ytdPagesVal > 0) ? (ytdPagesVal / ytdDaysElapsed) : (runningPages / Math.max(1, ytdDaysElapsed));
+  let runningPages = 0;
+  pageEvents.forEach(evt => {
+    runningPages += evt.pages;
+  });
 
+  const pageThresholds = getDynamicPageThresholds(runningPages);
+
+  const pagesCountBadge = $('ms-pages-count-badge');
+  if (pagesCountBadge) pagesCountBadge.textContent = `${fmtNum(runningPages)} Pages`;
+
+  // Re-calculate dates with exact thresholds
+  runningPages = 0;
+  const milestoneReachedDates = {};
+  pageEvents.forEach(evt => {
+    runningPages += evt.pages;
     pageThresholds.forEach(t => {
-      const completedDate = milestoneReachedDates[t];
-      const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
-      if (completedDate) {
-        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Read</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
-      } else {
-        const needed = t - runningPages;
-        const eta = calculateETA(needed, pageRate > 0 ? pageRate : 10);
-        item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
+      if (runningPages >= t && !milestoneReachedDates[t]) {
+        milestoneReachedDates[t] = evt.date;
       }
-      pagesList.appendChild(item);
     });
+  });
+
+  const ytdPagesVal = pageEvents.filter(e => e.date && e.date.startsWith(currentYrStr)).reduce((s, e) => s + e.pages, 0);
+  const pageRate = (ytdDaysElapsed > 0 && ytdPagesVal > 0) ? (ytdPagesVal / ytdDaysElapsed) : (runningPages / Math.max(1, ytdDaysElapsed));
+
+  const passedPages = [];
+  let nextPageGoal = null;
+
+  pageThresholds.forEach(t => {
+    const completedDate = milestoneReachedDates[t];
+    if (completedDate) {
+      passedPages.push({ target: t, date: completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate) });
+    } else if (!nextPageGoal) {
+      const needed = t - runningPages;
+      const eta = calculateETA(needed, pageRate > 0 ? pageRate : 10);
+      const pct = Math.min(100, Math.round((runningPages / t) * 100));
+      nextPageGoal = { target: t, current: runningPages, needed, eta, pct };
+    }
+  });
+
+  // Featured Next Page Goal Card
+  const pagesFeaturedEl = $('ms-pages-featured');
+  if (pagesFeaturedEl) {
+    if (nextPageGoal) {
+      pagesFeaturedEl.innerHTML = `
+        <div class="p-3 rounded-xl border flex flex-col gap-2 relative overflow-hidden" style="background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.25)">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
+              <i class="fa-solid fa-bullseye text-[11px]" style="color: var(--emerald)"></i> Next: ${fmtNum(nextPageGoal.target)} Pages
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+              ETA: ${nextPageGoal.eta}
+            </span>
+          </div>
+          <div class="flex justify-between items-center text-[10px] font-semibold" style="color: var(--text-secondary)">
+            <span>${fmtNum(nextPageGoal.current)} / ${fmtNum(nextPageGoal.target)} pages</span>
+            <span class="font-bold tabular-nums" style="color: var(--text-primary)">${nextPageGoal.pct}%</span>
+          </div>
+          <div class="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-500" style="width: ${nextPageGoal.pct}%; background: linear-gradient(90deg, #38BDF8, #34D399)"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      pagesFeaturedEl.innerHTML = '';
+    }
+  }
+
+  // Passed Pages Badges
+  const pagesBadgesEl = $('ms-pages-badges');
+  if (pagesBadgesEl) {
+    pagesBadgesEl.innerHTML = passedPages.reverse().map(p => `
+      <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border transition-transform hover:scale-105" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <i class="fa-solid fa-circle-check text-[9.5px]"></i>
+        <span>${fmtNum(p.target)} Pages</span>
+        <span class="text-[9px] font-normal opacity-75">${p.date}</span>
+      </div>
+    `).join('');
   }
 }
 
