@@ -936,7 +936,11 @@ function setupDashboard() {
       btn.addEventListener('click', () => {
         const targetTab = btn.dataset.tab;
         insightsTabBar.querySelectorAll('button').forEach(b => {
-          b.classList.toggle('active', b.dataset.tab === targetTab);
+          const isActive = b.dataset.tab === targetTab;
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('bg-white/10', isActive);
+          b.classList.toggle('shadow-md', isActive);
+          b.classList.toggle('text-slate-400', !isActive);
         });
         document.querySelectorAll('.insights-tab-panel').forEach(panel => {
           const isActive = panel.id === `insights-panel-${targetTab}`;
@@ -1649,31 +1653,31 @@ async function renderDashboard() {
   const finishedPagesSum = finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0);
   const avgPagesPerBook = finishedCount > 0 ? Math.round(finishedPagesSum / finishedCount) : 0;
   
-  if ($('stat-reads')) $('stat-reads').textContent = totalReads;
-  if ($('detail-reads')) $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
-  if ($('stat-titles')) $('stat-titles').textContent = titlesCount;
-  if ($('detail-titles')) $('detail-titles').textContent = `Finished: ${totalReads} · Active: ${progressCount}`;
-  if ($('stat-pages')) $('stat-pages').textContent = fmtNum(pagesRead);
-  if ($('detail-pages')) $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
+  $('stat-reads').textContent = totalReads;
+  $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
+  $('stat-titles').textContent = titlesCount;
+  $('detail-titles').textContent = `Finished: ${totalReads} · Active: ${progressCount}`;
+  $('stat-pages').textContent = fmtNum(pagesRead);
+  $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
   
   const totalPagesInLib = books.reduce((s, b) => s + (b.total_pages || 0), 0);
   const overallPct = totalPagesInLib > 0 ? Math.round((pagesRead / totalPagesInLib) * 100) : 0;
   const pagesRemaining = Math.max(0, totalPagesInLib - pagesRead);
   
-  if ($('stat-pct')) $('stat-pct').textContent = overallPct + '%';
-  if ($('detail-pct')) $('detail-pct').textContent = `Pages left: ${fmtNum(pagesRemaining)}`;
+  $('stat-pct').textContent = overallPct + '%';
+  $('detail-pct').textContent = `Pages left: ${fmtNum(pagesRemaining)}`;
 
   // Streaks & Activity
   const streaks = calculateStreaks(activeLogs);
-  if ($('stat-streak-cur')) $('stat-streak-cur').textContent = streaks.current;
-  if ($('stat-streak-max')) $('stat-streak-max').textContent = streaks.longest;
+  $('stat-streak-cur').textContent = streaks.current;
+  $('stat-streak-max').textContent = streaks.longest;
   
   const allUniqueDays = [...new Set(activeLogs.map(l => l.date))].length;
-  if ($('stat-days-total')) $('stat-days-total').textContent = allUniqueDays;
+  $('stat-days-total').textContent = allUniqueDays;
   
   const logPagesSum = activeLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
   const avgPagesPerActiveDay = allUniqueDays > 0 ? (logPagesSum / allUniqueDays).toFixed(1) : 0;
-  if ($('stat-pages-active-avg')) $('stat-pages-active-avg').textContent = avgPagesPerActiveDay;
+  $('stat-pages-active-avg').textContent = avgPagesPerActiveDay;
   
   const today = new Date();
   const yearNum = today.getFullYear();
@@ -1682,7 +1686,7 @@ async function renderDashboard() {
   const currentMonthLogs = activeLogs.filter(l => l.date.startsWith(`${yearNum}-${String(monthNum).padStart(2, '0')}`));
   const monthUniqueDays = [...new Set(currentMonthLogs.map(l => l.date))].length;
   const monthPct = monthDaysCount > 0 ? Math.round((monthUniqueDays / monthDaysCount) * 100) : 0;
-  if ($('stat-days-month-pct')) $('stat-days-month-pct').textContent = `${monthPct}%`;
+  $('stat-days-month-pct').textContent = `${monthPct}%`;
   
   const startOfYear = new Date(`${yearNum}-01-01T00:00:00`);
   const diffTimeYtd = Math.abs(today - startOfYear);
@@ -1690,7 +1694,7 @@ async function renderDashboard() {
   const currentYearLogs = activeLogs.filter(l => l.date.startsWith(String(yearNum)));
   const ytdUniqueDays = [...new Set(currentYearLogs.map(l => l.date))].length;
   const ytdPct = ytdDaysElapsed > 0 ? Math.round((ytdUniqueDays / ytdDaysElapsed) * 100) : 0;
-  if ($('stat-days-ytd-pct')) $('stat-days-ytd-pct').textContent = `${ytdPct}%`;
+  $('stat-days-ytd-pct').textContent = `${ytdPct}%`;
 
   // ── Reading Volume Detail ──
   const rereadBonus = books.reduce((s, b) => s + ((b.read_count > 1) ? (b.read_count - 1) * b.total_pages : 0), 0);
