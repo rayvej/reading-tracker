@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=43">
+  <link rel="stylesheet" href="style.css?v=44">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -311,6 +311,26 @@
               <button class="seg-btn"        data-col="Non-Bahai" role="tab">Non-Bahá'í</button>
             </div>
 
+            <!-- ── LIVE READING SESSION BANNER (iOS Style) ── -->
+            <div id="dash-live-session" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden" style="border-color: rgba(var(--accent-rgb),0.25)">
+              <div class="flex justify-between items-center">
+                <span class="section-label text-[10px]" style="color: var(--accent)"><i class="fa-solid fa-circle-play text-[9px] animate-pulse"></i> Active Reading Live Banner</span>
+                <span id="dash-live-eta-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
+              </div>
+              <div class="flex items-center gap-3.5 mt-0.5">
+                <div class="w-10 h-14 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                  <i class="fa-solid fa-book text-slate-500 text-lg"></i>
+                </div>
+                <div class="min-w-0 flex-1 flex flex-col justify-center">
+                  <div id="dash-live-title" class="text-xs font-black text-slate-100 truncate">No book currently in progress</div>
+                  <div id="dash-live-author" class="text-[10px] text-slate-400 truncate mt-0.5">Select a book to start reading</div>
+                  <div class="w-full bg-slate-900/60 rounded-full h-1.5 overflow-hidden border border-white/5 mt-2">
+                    <div id="dash-live-bar" class="bg-gradient-to-r from-coral to-gold h-full transition-all" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- ── SUBHEADER: LIFETIME STATISTICS ── -->
             <div class="text-[10px] font-black tracking-widest text-slate-500 uppercase mt-4 border-b border-white/5 pb-2">Lifetime Statistics</div>
 
@@ -362,6 +382,44 @@
                   <div>Pages/Active Day: <b class="text-slate-200" id="stat-pages-active-avg">—</b></div>
                   <div>% Days (Month): <b class="text-slate-200" id="stat-days-month-pct">—</b></div>
                   <div>% Days (YTD): <b class="text-slate-200" id="stat-days-ytd-pct">—</b></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Format & Ownership Distribution Card -->
+            <div id="dash-format-ownership" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+              <span class="section-label"><i class="fa-solid fa-shapes text-[10px]" style="color: var(--accent2)"></i> Format &amp; Ownership Mix</span>
+              <div class="flex flex-col gap-3 text-xs">
+                <!-- Medium split bar -->
+                <div class="flex flex-col gap-1">
+                  <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-slate-400 font-semibold">Reading Medium</span>
+                    <span id="fmt-medium-ratio" class="text-slate-200 font-bold">100% Physical</span>
+                  </div>
+                  <div class="w-full bg-slate-900/50 rounded-full h-2 overflow-hidden border border-white/5 flex">
+                    <div id="fmt-bar-physical" class="bg-emerald-400 h-full transition-all" style="width: 100%" title="Physical Books"></div>
+                    <div id="fmt-bar-digital" class="bg-blue-400 h-full transition-all" style="width: 0%" title="Digital / Audio"></div>
+                  </div>
+                  <div class="flex justify-between text-[9px] text-slate-400 font-semibold mt-0.5">
+                    <span><i class="fa-solid fa-book text-[8px] text-emerald-400"></i> Physical: <b id="fmt-cnt-physical" class="text-slate-200">0</b></span>
+                    <span><i class="fa-solid fa-tablet-screen-button text-[8px] text-blue-400"></i> Digital: <b id="fmt-cnt-digital" class="text-slate-200">0</b></span>
+                  </div>
+                </div>
+
+                <!-- Ownership split bar -->
+                <div class="flex flex-col gap-1 border-t border-white/5 pt-2.5">
+                  <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-slate-400 font-semibold">Library Ownership</span>
+                    <span id="fmt-own-ratio" class="text-slate-200 font-bold">100% Owned</span>
+                  </div>
+                  <div class="w-full bg-slate-900/50 rounded-full h-2 overflow-hidden border border-white/5 flex">
+                    <div id="fmt-bar-owned" class="bg-gold h-full transition-all" style="width: 100%" title="Owned"></div>
+                    <div id="fmt-bar-borrowed" class="bg-purple-400 h-full transition-all" style="width: 0%" title="Borrowed / Other"></div>
+                  </div>
+                  <div class="flex justify-between text-[9px] text-slate-400 font-semibold mt-0.5">
+                    <span><i class="fa-solid fa-house-user text-[8px] text-gold"></i> Owned: <b id="fmt-cnt-owned" class="text-slate-200">0</b></span>
+                    <span><i class="fa-solid fa-hand-holding-hand text-[8px] text-purple-400"></i> Borrowed: <b id="fmt-cnt-borrowed" class="text-slate-200">0</b></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -527,9 +585,13 @@
 
             <!-- Reading Intensity Grid (GitHub-style) -->
             <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl relative">
-              <div class="flex justify-between items-center">
+              <div class="flex justify-between items-center gap-2">
                 <span class="section-label"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-tertiary)">Past Year</span>
+                <div class="flex bg-white/5 p-0.5 rounded-lg border border-white/5" id="dash-heatmap-tf">
+                  <button class="px-2 py-0.5 text-[8px] font-bold rounded-md active:scale-95 transition-all text-white bg-white/10" data-range="pastYear">Past Year</button>
+                  <button class="px-2 py-0.5 text-[8px] font-bold rounded-md active:scale-95 transition-all text-slate-400" data-range="thisYear">This Year</button>
+                  <button class="px-2 py-0.5 text-[8px] font-bold rounded-md active:scale-95 transition-all text-slate-400" data-range="allTime">All Time</button>
+                </div>
               </div>
               <div id="heatmap-container" class="heatmap-grid no-scrollbar">
                 <!-- Rendered dynamically by JS -->
@@ -657,33 +719,6 @@
               </div>
             </div>
 
-            <!-- ── CURRENTLY READING ── -->
-            <div>
-              <div class="section-label mb-3">
-                <span class="w-2 h-2 rounded-full animate-pulse" style="background: var(--accent)"></span>
-                Currently Reading
-              </div>
-              <div class="scroll-carousel" id="dash-active-books"></div>
-            </div>
-
-            <!-- ── UP NEXT ── -->
-            <div>
-              <div class="section-label mb-3">
-                <span class="w-2 h-2 rounded-full" style="background: var(--gold)"></span>
-                Up Next
-              </div>
-              <div class="scroll-carousel" id="dash-up-next-books"></div>
-            </div>
-
-            <!-- ── RECENTLY FINISHED ── -->
-            <div>
-              <div class="section-label mb-3">
-                <span class="w-2 h-2 rounded-full" style="background: var(--emerald)"></span>
-                Recently Finished (Past Year)
-              </div>
-              <div class="scroll-carousel" id="dash-recent-books"></div>
-            </div>
-
           </div>
         </section>
 
@@ -706,17 +741,82 @@
               </button>
             </div>
 
+            <!-- iOS Segmented Timeframe Switcher -->
+            <div class="flex p-1 rounded-2xl bg-black/25 backdrop-blur-md border border-white/5" id="goals-timeframe-switcher">
+              <button class="flex-1 py-2 rounded-xl text-[11px] font-extrabold transition-all text-amber-400 bg-amber-500/10 shadow-sm active" data-timeframe="all">All Goals</button>
+              <button class="flex-1 py-2 rounded-xl text-[11px] font-extrabold transition-all text-slate-400 hover:text-slate-200" data-timeframe="annual">Annual</button>
+              <button class="flex-1 py-2 rounded-xl text-[11px] font-extrabold transition-all text-slate-400 hover:text-slate-200" data-timeframe="monthly">Monthly</button>
+              <button class="flex-1 py-2 rounded-xl text-[11px] font-extrabold transition-all text-slate-400 hover:text-slate-200" data-timeframe="daily">Daily</button>
+            </div>
+
+            <!-- Daily Ring & Streak Card (Section: Daily / All) -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-4 goals-sec-daily" id="goals-daily-card">
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-fire text-amber-500 text-[11px] animate-pulse"></i> Daily Reading Goal</span>
+                <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-black" id="streak-badge-header">
+                  <i class="fa-solid fa-flame"></i> <span id="streak-count-val">0 Day Streak</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-5">
+                <!-- Daily Pages Ring -->
+                <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
+                  <svg class="absolute -rotate-90 w-full h-full drop-shadow-[0_0_8px_rgba(245,158,11,0.25)]" viewBox="0 0 110 110">
+                    <circle class="fill-none" cx="55" cy="55" r="46" stroke-width="7" style="stroke: var(--bg-input)"/>
+                    <circle class="fill-none ring-fill transition-all duration-700 ease-out" id="ring-daily-fill" cx="55" cy="55" r="46" stroke-width="7"
+                            stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round" stroke="url(#ring-gold-gradient)"/>
+                  </svg>
+                  <div class="text-center">
+                    <div class="text-xl font-black tabular-nums text-slate-100" id="ring-daily-val">0</div>
+                    <div class="text-[8px] font-bold uppercase text-slate-400" id="ring-daily-lbl">/ 20 pgs</div>
+                  </div>
+                </div>
+                <!-- Daily Info & 7-day Activity Dots -->
+                <div class="flex flex-col gap-2 min-w-0 flex-1">
+                  <div class="text-xs font-semibold text-slate-200" id="daily-status-msg">Read 20 pages today to keep your streak alive!</div>
+                  <div class="flex justify-between items-center bg-black/20 p-2 rounded-xl border border-white/5 mt-1" id="streak-dots-container"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Smart Assistant Card -->
+            <div class="glass-panel p-4 rounded-2xl flex items-center gap-3.5 border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-transparent goals-sec-all" id="goals-assistant-card">
+              <div class="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 text-sm">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+              </div>
+              <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Reading Assistant</div>
+                <div class="text-xs font-semibold text-slate-200 leading-snug" id="goals-assistant-msg">Loading reading recommendations…</div>
+              </div>
+            </div>
+
             <!-- Annual progress rings -->
-            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-4">
-              <span class="section-label"><i class="fa-solid fa-bullseye text-[10px]" style="color: var(--accent)"></i> Annual Targets</span>
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-4 goals-sec-annual">
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-bullseye text-[10px]" style="color: var(--accent)"></i> Annual Targets</span>
+                <span id="goals-year-pct" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/10">YTD Progress</span>
+              </div>
               <div class="flex justify-around gap-4">
+                <!-- SVG Gradient Defs -->
+                <svg class="absolute w-0 h-0" aria-hidden="true" focusable="false">
+                  <defs>
+                    <linearGradient id="ring-gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--gold-light)" />
+                      <stop offset="100%" stop-color="var(--gold)" />
+                    </linearGradient>
+                    <linearGradient id="ring-emerald-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#34d399" />
+                      <stop offset="100%" stop-color="var(--emerald)" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
                 <!-- Books ring -->
                 <div class="flex flex-col items-center gap-2">
                   <div class="relative w-24 h-24 flex items-center justify-center">
-                    <svg class="absolute -rotate-90 w-full h-full" viewBox="0 0 110 110">
+                    <svg class="absolute -rotate-90 w-full h-full drop-shadow-[0_0_8px_rgba(245,158,11,0.2)]" viewBox="0 0 110 110">
                       <circle class="fill-none" cx="55" cy="55" r="46" stroke-width="7" style="stroke: var(--bg-input)"/>
-                      <circle class="fill-none ring-fill" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="7"
-                              stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round" style="stroke: var(--gold)"/>
+                      <circle class="fill-none ring-fill transition-all duration-700 ease-out" id="ring-books-fill" cx="55" cy="55" r="46" stroke-width="7"
+                              stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round" stroke="url(#ring-gold-gradient)"/>
                     </svg>
                     <div class="text-center">
                       <div class="text-xl font-black tabular-nums" style="color: var(--text-primary)" id="ring-books-val">0</div>
@@ -728,10 +828,10 @@
                 <!-- Pages ring -->
                 <div class="flex flex-col items-center gap-2">
                   <div class="relative w-24 h-24 flex items-center justify-center">
-                    <svg class="absolute -rotate-90 w-full h-full" viewBox="0 0 110 110">
+                    <svg class="absolute -rotate-90 w-full h-full drop-shadow-[0_0_8px_rgba(16,185,129,0.2)]" viewBox="0 0 110 110">
                       <circle class="fill-none" cx="55" cy="55" r="46" stroke-width="7" style="stroke: var(--bg-input)"/>
-                      <circle class="fill-none ring-fill" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="7"
-                              stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round" style="stroke: var(--emerald)"/>
+                      <circle class="fill-none ring-fill transition-all duration-700 ease-out" id="ring-pages-fill" cx="55" cy="55" r="46" stroke-width="7"
+                              stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round" stroke="url(#ring-emerald-gradient)"/>
                     </svg>
                     <div class="text-center">
                       <div class="text-xl font-black tabular-nums" style="color: var(--text-primary)" id="ring-pages-val">0</div>
@@ -743,10 +843,30 @@
               </div>
             </div>
 
+            <!-- Cumulative Trajectory Chart (Section: Annual / All) -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-3 goals-sec-annual" id="goals-trajectory-card">
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-chart-line text-[10px]" style="color: var(--accent2)"></i> Reading Trajectory YTD</span>
+                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/10" id="trajectory-status-lbl">Target Slope</span>
+              </div>
+              <div class="w-full h-44 relative overflow-hidden" id="goals-trajectory-chart"></div>
+              <div class="flex justify-between items-center text-[9px] text-slate-400 pt-1 border-t border-white/5 font-semibold">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 rounded bg-emerald-400 inline-block"></span> Actual Reading</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 rounded bg-amber-400/60 inline-block border-t border-dashed border-amber-400"></span> Target Pace</span>
+              </div>
+            </div>
 
+            <!-- Gamified Achievement Badges Grid -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col gap-3.5 goals-sec-all" id="goals-achievements-card">
+              <div class="flex justify-between items-center">
+                <span class="section-label"><i class="fa-solid fa-award text-[10px]" style="color: var(--gold)"></i> Reading Achievements</span>
+                <span class="text-[9px] font-black text-amber-400 uppercase" id="badges-unlocked-count">0 / 6 Unlocked</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2.5" id="goals-badges-grid"></div>
+            </div>
 
             <!-- Targets table -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 goals-sec-all">
               <span class="section-label"><i class="fa-solid fa-table-list text-[10px]" style="color: var(--accent2)"></i> Targets &amp; Completions</span>
               <div class="overflow-x-auto no-scrollbar">
                 <table class="excel-table">
@@ -762,7 +882,7 @@
             </div>
 
             <!-- Pace check -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 goals-sec-annual">
               <span class="section-label"><i class="fa-solid fa-gauge-high text-[10px]" style="color: var(--accent3)"></i> Required Pace</span>
               <div class="overflow-x-auto no-scrollbar">
                 <table class="excel-table">
@@ -778,7 +898,7 @@
             </div>
 
             <!-- Long-term projections -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 goals-sec-annual">
               <span class="section-label"><i class="fa-solid fa-chart-gantt text-[10px]" style="color: var(--gold)"></i> Milestones &amp; ETAs</span>
               <div class="overflow-x-auto no-scrollbar">
                 <table class="excel-table">
@@ -792,7 +912,7 @@
             </div>
 
             <!-- Currently reading ETAs -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 goals-sec-all">
               <span class="section-label"><i class="fa-solid fa-book-open-reader text-[10px]" style="color: var(--accent)"></i> Reading ETAs</span>
               <div class="flex flex-col gap-3" id="goals-reading-etas"></div>
             </div>
@@ -819,12 +939,50 @@
               </button>
             </div>
 
-            <!-- Search -->
-            <div class="relative">
-              <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
-              <input type="search" id="wishlist-search"
-                class="input input-bordered glass-input w-full pl-10"
-                placeholder="Search title, author or group…">
+            <!-- Top Library Stats Summary Banner -->
+            <div id="bookshelf-stats-banner" class="glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-2 border border-white/5">
+              <div class="flex items-center gap-3 text-xs font-bold text-slate-300">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-book-bookmark text-gold text-xs"></i> <span id="st-total-books">0</span> books</span>
+                <span class="text-white/10">|</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-file-lines text-accent text-xs"></i> <span id="st-total-pages">0</span> pg</span>
+                <span class="text-white/10">|</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-tag text-emerald-400 text-xs"></i> <span id="st-total-val">$0</span> est</span>
+              </div>
+            </div>
+
+            <!-- Header Controls & Toggles -->
+            <div id="bookshelf-controls-bar" class="flex items-center justify-between gap-2">
+              <div class="flex gap-1.5">
+                <button id="btn-view-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 border-white/10 text-slate-300">
+                  <i class="fa-solid fa-list text-[10px]"></i> <span id="btn-view-mode-text">Grid</span>
+                </button>
+                <button id="btn-grouping-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 border-white/10 text-slate-300">
+                  <i class="fa-solid fa-folder-tree text-[10px]"></i> <span id="btn-grouping-mode-text">Grouped</span>
+                </button>
+              </div>
+              <button id="btn-select-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-white/5 border-white/10 text-slate-300">
+                <i class="fa-solid fa-square-check text-[10px]"></i> <span id="btn-select-mode-text">Select</span>
+              </button>
+            </div>
+
+            <!-- Active Filter Chips Bar -->
+            <div id="bookshelf-active-filters" class="flex flex-wrap gap-1.5 items-center hidden"></div>
+
+            <!-- Search & Sort -->
+            <div class="flex gap-2 items-center">
+              <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
+                <input type="search" id="wishlist-search"
+                  class="input input-bordered glass-input w-full pl-10 text-xs"
+                  placeholder="Search title, author, group, collection or notes…">
+              </div>
+              <select id="bookshelf-sort-select" class="select select-bordered glass-input text-xs font-bold shrink-0 min-h-10 h-10 px-2.5" aria-label="Sort books">
+                <option value="title-asc">Sort: A-Z</option>
+                <option value="title-desc">Sort: Z-A</option>
+                <option value="priority-high">Sort: Priority</option>
+                <option value="progress-desc">Sort: Progress %</option>
+                <option value="author-asc">Sort: Author</option>
+              </select>
             </div>
 
             <!-- 5-filter Status Segment Control -->
@@ -837,11 +995,27 @@
             </div>
 
             <!-- Ownership Filter Segment Control -->
-            <div class="seg-control mt-2" id="bookshelf-filter-ownership">
+            <div class="seg-control mt-1" id="bookshelf-filter-ownership">
               <button class="seg-btn active" data-bfo="All">All</button>
               <button class="seg-btn" data-bfo="Owned">Owned</button>
               <button class="seg-btn" data-bfo="Borrowed">Borrowed</button>
               <button class="seg-btn" data-bfo="Wishlist">Wishlist</button>
+            </div>
+
+            <!-- Sticky Multi-Select Batch Actions Bar -->
+            <div id="bookshelf-batch-bar" class="sticky top-2 z-30 glass-panel p-3 rounded-2xl border border-gold/30 shadow-2xl flex items-center justify-between gap-2 hidden">
+              <span class="text-xs font-bold text-gold" id="batch-selected-count">0 selected</span>
+              <div class="flex items-center gap-2">
+                <select id="batch-status-select" class="select select-bordered glass-input text-xs font-bold h-8 min-h-8 px-2 py-0">
+                  <option value="" disabled selected>Move to…</option>
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Finished">Finished</option>
+                  <option value="Want to Buy">Wishlist</option>
+                </select>
+                <button id="btn-batch-delete" class="btn btn-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 h-8 min-h-8 px-2.5 font-bold">Delete</button>
+                <button id="btn-batch-cancel" class="btn btn-xs bg-white/10 hover:bg-white/20 text-slate-300 border border-white/10 h-8 min-h-8 px-2 font-bold">Cancel</button>
+              </div>
             </div>
 
             <!-- Unified Books + Wishlist Container -->
@@ -941,7 +1115,7 @@
   <div id="goals-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
        style="background: rgba(0,0,0,0); backdrop-filter: blur(0px)" 
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300"
+    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto no-scrollbar"
          style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
       <div class="flex items-center justify-between">
         <span class="text-lg font-bold" style="color: var(--text-primary)">Edit Goals</span>
@@ -950,18 +1124,79 @@
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Annual Books</span></label>
-        <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-books" min="1" max="365" placeholder="12"></div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Annual Pages</span></label>
-        <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-pages" min="1" placeholder="3000"></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Monthly Books</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-books" min="1" placeholder="1"></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Monthly Pages</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-pages" min="1" placeholder="300"></div>
+
+      <!-- Quick Preset Profiles -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Quick Goal Presets</span>
+        <div class="grid grid-cols-4 gap-1.5" id="goals-preset-chips">
+          <button type="button" class="py-1.5 rounded-xl text-[9px] font-extrabold border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 text-slate-300" data-preset="casual">Casual<br><span class="text-[7px] text-slate-400 font-normal">6 bks/yr</span></button>
+          <button type="button" class="py-1.5 rounded-xl text-[9px] font-extrabold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 text-amber-300" data-preset="consistent">Consistent<br><span class="text-[7px] text-amber-400/70 font-normal">12 bks/yr</span></button>
+          <button type="button" class="py-1.5 rounded-xl text-[9px] font-extrabold border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 text-slate-300" data-preset="avid">Avid<br><span class="text-[7px] text-slate-400 font-normal">24 bks/yr</span></button>
+          <button type="button" class="py-1.5 rounded-xl text-[9px] font-extrabold border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 text-slate-300" data-preset="voracious">Voracious<br><span class="text-[7px] text-slate-400 font-normal">52 bks/yr</span></button>
+        </div>
       </div>
+
+      <!-- Daily Targets Section -->
+      <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 border-b border-white/5 pb-1 pt-1">Daily Targets</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Daily Pages</span></label>
+          <div class="flex items-center gap-1">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-daily-pages" data-step-dir="-1">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1" id="goal-daily-pages" min="1" placeholder="20" onfocus="this.select()">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-daily-pages" data-step-dir="1">+</button>
+          </div>
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Daily Minutes</span></label>
+          <div class="flex items-center gap-1">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-daily-minutes" data-step-dir="-1">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1" id="goal-daily-minutes" min="1" placeholder="20" onfocus="this.select()">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-daily-minutes" data-step-dir="1">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Annual Targets Section -->
+      <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 border-b border-white/5 pb-1 pt-1">Annual Targets</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Books</span></label>
+          <div class="flex items-center gap-1">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-annual-books" data-step-dir="-1">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1" id="goal-annual-books" min="1" max="365" placeholder="12" onfocus="this.select()">
+            <button type="button" class="w-8 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 active:scale-90 shrink-0" data-step-id="goal-annual-books" data-step-dir="1">+</button>
+          </div>
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Pages</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-pages" min="1" placeholder="3000" onfocus="this.select()">
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Sessions</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-sessions" min="1" placeholder="100" onfocus="this.select()">
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Minutes</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-minutes" min="1" placeholder="3000" onfocus="this.select()">
+        </div>
+      </div>
+
+      <!-- Monthly Targets Section -->
+      <div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 border-b border-white/5 pb-1 pt-1">Monthly Targets</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Books</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-books" min="1" placeholder="1" onfocus="this.select()"></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Pages</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-pages" min="1" placeholder="300" onfocus="this.select()"></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Sessions</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-sessions" min="1" placeholder="10" onfocus="this.select()"></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Minutes</span></label>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-minutes" min="1" placeholder="300" onfocus="this.select()"></div>
+      </div>
+
       <button id="goals-modal-save"
-        class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
+        class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] mt-2"
         style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
         Save Goals
       </button>
@@ -1102,10 +1337,20 @@
         </button>
       </div>
       <input type="hidden" id="eb-book-id">
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Title</span></label>
-        <input type="text" class="input input-bordered glass-input w-full opacity-70" id="eb-title" readonly></div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Title *</span></label>
+        <input type="text" class="input input-bordered glass-input w-full" id="eb-title" placeholder="Book title"></div>
+      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Author</span></label>
+        <input type="text" class="input input-bordered glass-input w-full" id="eb-author" placeholder="Author name"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Total Pages</span></label>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Collection</span></label>
+          <select class="select select-bordered glass-input w-full" id="eb-collection">
+            <option value="Bahai">Bahá'í</option><option value="Non-Bahai">Non-Bahá'í</option>
+          </select></div>
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
+          <input type="text" class="input input-bordered glass-input w-full" id="eb-group" placeholder="e.g. Writings, Fiction"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Total Pages *</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="eb-pages" min="1"></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Completed Cycles</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="eb-read-count" min="0"></div>
@@ -1136,11 +1381,17 @@
         <input type="text" class="input input-bordered glass-input w-full" id="eb-where-to-buy" placeholder="Store name or URL"></div>
       <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
         <textarea class="textarea textarea-bordered glass-input w-full h-16 resize-none" id="eb-notes" placeholder="Notes..."></textarea></div>
-      <button id="edit-book-save"
-        class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-        style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
-        Save Changes
-      </button>
+      <div class="flex flex-col gap-2 mt-1">
+        <button id="edit-book-save"
+          class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
+          style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
+          Save Changes
+        </button>
+        <button id="edit-book-delete" type="button"
+          class="w-full py-3 rounded-2xl font-bold text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can text-xs"></i> Delete Book
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1245,6 +1496,7 @@
       <div class="flex gap-2.5 mt-2 pt-3 border-t border-white/5">
         <button id="bd-action-reread" class="flex-1 py-3 rounded-xl font-bold text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 transition-all active:scale-[0.98] hidden">Start Re-Read</button>
         <button id="bd-action-edit" class="flex-1 py-3 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 transition-all active:scale-[0.98]">Edit Book</button>
+        <button id="bd-action-delete" class="py-3 px-3.5 rounded-xl font-bold text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all active:scale-[0.98] shrink-0" title="Delete Book"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     </div>
   </div>
@@ -1364,6 +1616,42 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       CHART DRILL-DOWN MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-chart-drilldown" class="modal-overlay hidden z-[900]" role="dialog" aria-modal="true" aria-labelledby="drilldown-modal-title">
+    <div class="modal-box max-w-md w-full glass-modal rounded-3xl p-5 border border-white/10 flex flex-col gap-4 animate-scale-up">
+      <div class="flex justify-between items-center border-b border-white/5 pb-3">
+        <div>
+          <h3 id="drilldown-modal-title" class="text-base font-black tracking-tight text-slate-100">Category Books</h3>
+          <p id="drilldown-modal-subtitle" class="text-[10px] font-medium text-slate-400 mt-0.5">Showing filtered library titles</p>
+        </div>
+        <button onclick="document.getElementById('modal-chart-drilldown').classList.add('hidden')" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="drilldown-modal-list" class="flex flex-col gap-2 max-h-[60vh] overflow-y-auto no-scrollbar pr-1"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       HEATMAP DAY INSPECTOR MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-heatmap-day" class="modal-overlay hidden z-[900]" role="dialog" aria-modal="true" aria-labelledby="heatmap-day-modal-title">
+    <div class="modal-box max-w-md w-full glass-modal rounded-3xl p-5 border border-white/10 flex flex-col gap-4 animate-scale-up">
+      <div class="flex justify-between items-center border-b border-white/5 pb-3">
+        <div>
+          <h3 id="heatmap-day-modal-title" class="text-base font-black tracking-tight text-slate-100">Session Logs</h3>
+          <p id="heatmap-day-modal-subtitle" class="text-[10px] font-medium text-slate-400 mt-0.5">Reading activity overview</p>
+        </div>
+        <button onclick="document.getElementById('modal-heatmap-day').classList.add('hidden')" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="heatmap-day-modal-content" class="flex flex-col gap-3.5 max-h-[60vh] overflow-y-auto no-scrollbar"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
@@ -1371,6 +1659,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=43"></script>
+  <script type="module" src="app.js?v=44"></script>
 </body>
 </html>

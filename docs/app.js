@@ -64,6 +64,11 @@ let wishlistSearchTerm= '';
 let bookshelfStatusFilter = 'All';
 let bookshelfOwnershipFilter = 'All';
 let bookshelfSearchTerm   = '';
+let bookshelfSortOrder    = 'title-asc';
+let bookshelfViewMode     = 'list';   // 'list' | 'grid'
+let bookshelfGrouping     = 'none';   // 'none' | 'group'
+let bookshelfSelectMode   = false;
+let bookshelfSelectedIds  = new Set();
 let pinBuffer = '';
 const PIN_LENGTH = 4;
 const SESSION_KEY = 'rt_session';
@@ -196,6 +201,7 @@ $('btn-signout').addEventListener('click', async () => {
 getRedirectResult(auth).catch(() => {});
 
 onAuthStateChanged(auth, async user => {
+  if (window.isMockAuth) return;
   if (!user) { showScreen('auth-screen'); return; }
   uid = user.uid;
   const hasSession = sessionStorage.getItem(SESSION_KEY) === uid;
@@ -407,23 +413,41 @@ async function runSeedImport() {
 
 // ── Books Cache ───────────────────────────────────────────────────────────────
 async function loadBooksCache() {
-  const snap = await getDocs(collection(db, `users/${uid}/books`));
-  booksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  booksCache.sort((a, b) => a.title.localeCompare(b.title));
+  if (booksCache.length > 0) return;
+  try {
+    if (db && uid) {
+      const snap = await getDocs(collection(db, `users/${uid}/books`));
+      booksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      booksCache.sort((a, b) => a.title.localeCompare(b.title));
+    }
+  } catch (e) {
+    console.warn('[Cache] Using cached books array:', e.message);
+  }
 }
 
 async function loadLogsCache() {
-  if (logsCache.length === 0) {
-    const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
-    logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (logsCache.length > 0) return;
+  try {
+    if (db && uid) {
+      const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
+      logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+  } catch (e) {
+    console.warn('[Cache] Using cached logs array:', e.message);
   }
 }
 
 async function getMergedBooks() {
   await loadBooksCache();
   if (wishlistCache.length === 0) {
-    const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
-    wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+    try {
+      if (db && uid) {
+        const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
+        wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+      }
+    } catch (e) {
+      console.warn('[Cache] Using cached wishlist array:', e.message);
+    }
   }
   
   const wishlistMap = {};
@@ -492,7 +516,7 @@ async function getMergedBooks() {
       };
     });
 
-  return libraryItems;
+  return [...libraryItems, ...wishlistOnly];
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -772,8 +796,9 @@ async function recalculateBook(title, cycle) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function populateYearDropdown(logs) {
   const sel = $('dash-year-select');
-  if (sel.options.length > 1) return; // already populated
-  const years = [...new Set(logs.map(l => l.date.slice(0, 4)))].sort((a,b) => b - a);
+  if (!sel) return;
+  const years = [...new Set(logs.map(l => l.date.slice(0, 4)))].filter(y => y && y.length === 4).sort((a,b) => b - a);
+  const currentSelected = sel.value || dashYearFilter || 'all';
   sel.innerHTML = '<option value="all">All Time</option>';
   years.forEach(y => {
     const opt = el('option', '', y);
@@ -781,7 +806,11 @@ function populateYearDropdown(logs) {
     opt.textContent = y;
     sel.appendChild(opt);
   });
-  sel.value = dashYearFilter;
+  if (Array.from(sel.options).some(o => o.value === currentSelected)) {
+    sel.value = currentSelected;
+  } else {
+    sel.value = 'all';
+  }
 }
 
 function calculateStreaks(logs) {
@@ -837,14 +866,34 @@ function setupDashboard() {
     $('dash-seg').querySelectorAll('.seg-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.col === dashFilter);
     });
-    renderDashboard();
+    transitionView(() => renderDashboard());
   });
 
   // Year filter
   $('dash-year-select').addEventListener('change', e => {
     dashYearFilter = e.target.value;
-    renderDashboard();
+    transitionView(() => renderDashboard());
   });
+
+  // Heatmap timeframe selector
+  const tfBox = $('dash-heatmap-tf');
+  if (tfBox) {
+    tfBox.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dashHeatmapTimeframe = btn.dataset.range;
+        tfBox.querySelectorAll('button').forEach(b => {
+          const isActive = b.dataset.range === dashHeatmapTimeframe;
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('bg-white/10', isActive);
+          b.classList.toggle('text-slate-400', !isActive);
+        });
+        transitionView(() => {
+          const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+          renderActivityHeatmap(activeLogs);
+        });
+      });
+    });
+  }
 
   // Category toggle (Pages vs Books)
   const catToggle = document.getElementById('cat-chart-toggle');
@@ -858,7 +907,7 @@ function setupDashboard() {
           b.classList.toggle('bg-white/10', isActive);
           b.classList.toggle('text-slate-400', !isActive);
         });
-        renderBarChart(); // Re-render Category pie chart
+        transitionView(() => renderBarChart());
       });
     });
   }
@@ -880,6 +929,10 @@ function calculateETA(needed, rate) {
 }
 
 function renderMilestones(completions, ytdDaysElapsed) {
+  const currentYrStr = String(new Date().getFullYear());
+  const ytdCompletionsCount = completions.filter(c => c.date && c.date.startsWith(currentYrStr)).length;
+  const bookRate = (ytdDaysElapsed > 0 && ytdCompletionsCount > 0) ? (ytdCompletionsCount / ytdDaysElapsed) : (completions.length / Math.max(1, ytdDaysElapsed));
+
   const bookThresholds = [10, 25, 50, 100];
   const booksList = $('ms-books-list');
   if (booksList) {
@@ -894,8 +947,7 @@ function renderMilestones(completions, ytdDaysElapsed) {
         item.innerHTML = `<span class="text-slate-400">${t} Books Finished</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
       } else {
         const needed = t - completions.length;
-        const rate = completions.length / (ytdDaysElapsed || 1);
-        const eta = calculateETA(needed, rate > 0 ? rate : 0.05);
+        const eta = calculateETA(needed, bookRate > 0 ? bookRate : 0.05);
         item.innerHTML = `<span class="text-slate-400">${t} Books Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
       }
       booksList.appendChild(item);
@@ -934,6 +986,9 @@ function renderMilestones(completions, ytdDaysElapsed) {
       });
     });
 
+    const ytdPagesVal = pageEvents.filter(e => e.date && e.date.startsWith(currentYrStr)).reduce((s, e) => s + e.pages, 0);
+    const pageRate = (ytdDaysElapsed > 0 && ytdPagesVal > 0) ? (ytdPagesVal / ytdDaysElapsed) : (runningPages / Math.max(1, ytdDaysElapsed));
+
     pageThresholds.forEach(t => {
       const completedDate = milestoneReachedDates[t];
       const item = el('div', 'flex justify-between border-b border-white/5 pb-1.5 last:border-0 last:pb-0');
@@ -941,8 +996,7 @@ function renderMilestones(completions, ytdDaysElapsed) {
         item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Read</span><span class="text-emerald-400 font-bold">${completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate)}</span>`;
       } else {
         const needed = t - runningPages;
-        const rate = runningPages / (ytdDaysElapsed || 1);
-        const eta = calculateETA(needed, rate > 0 ? rate : 10);
+        const eta = calculateETA(needed, pageRate > 0 ? pageRate : 10);
         item.innerHTML = `<span class="text-slate-400">${fmtNum(t)} Pages Milestone</span><span class="text-amber-400 font-bold">ETA: ${eta}</span>`;
       }
       pagesList.appendChild(item);
@@ -955,7 +1009,9 @@ function renderTimeBasedTables(logs, completions) {
   const monthlyData = Array(12).fill(0).map((_, i) => ({ month: monthNames[i], sessions: 0, pages: 0 }));
   
   logs.forEach(l => {
-    const m = new Date(l.date).getMonth();
+    if (!l.date) return;
+    const parts = l.date.split('-');
+    const m = parseInt(parts[1], 10) - 1;
     if (m >= 0 && m < 12) {
       monthlyData[m].sessions++;
       monthlyData[m].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
@@ -980,7 +1036,8 @@ function renderTimeBasedTables(logs, completions) {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayData = Array(7).fill(0).map((_, i) => ({ day: dayNames[i], sessions: 0, pages: 0 }));
   logs.forEach(l => {
-    const d = new Date(l.date).getDay();
+    if (!l.date) return;
+    const d = new Date(l.date + 'T00:00:00').getDay();
     if (d >= 0 && d < 7) {
       dayData[d].sessions++;
       dayData[d].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
@@ -1012,7 +1069,8 @@ function renderTimeBasedTables(logs, completions) {
   const seasonalData = {};
   Object.keys(seasons).forEach(s => seasonalData[s] = { sessions: 0, pages: 0 });
   logs.forEach(l => {
-    const m = new Date(l.date).getMonth();
+    if (!l.date) return;
+    const m = parseInt(l.date.split('-')[1], 10) - 1;
     Object.entries(seasons).forEach(([s, months]) => {
       if (months.includes(m)) {
         seasonalData[s].sessions++;
@@ -1121,7 +1179,14 @@ function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startD
   return pagesRead;
 }
 
+const reconciledStatsCache = new Map();
+
 function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
+  const cacheKey = `${selectedYear}:${dashFilter}:${mergedBooks.length}:${logsCache.length}`;
+  if (reconciledStatsCache.has(cacheKey)) {
+    return reconciledStatsCache.get(cacheKey);
+  }
+
   const completions = [];
   const logsByBookCycle = {};
   
@@ -1312,7 +1377,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
 
   const filteredCompletions = completions.filter(c => dashFilter === 'all' || c.collection === dashFilter);
 
-  return {
+  const resultStats = {
     totalReads,
     pagesRead,
     titlesCount: (selectedYear === 'all') ? mergedBooks.filter(b => (dashFilter === 'all' || b.collection === dashFilter)).length : activeTitles.size + finishedTitles.size,
@@ -1326,6 +1391,168 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     nonBahaiBooks,
     completions: filteredCompletions
   };
+
+  reconciledStatsCache.set(cacheKey, resultStats);
+  return resultStats;
+}
+
+let dashHeatmapTimeframe = 'pastYear';
+
+function transitionView(fn) {
+  if (document.startViewTransition) {
+    document.startViewTransition(fn);
+  } else {
+    fn();
+  }
+}
+
+function renderLiveSessionBanner(books, logs) {
+  const banner = $('dash-live-session');
+  if (!banner) return;
+  
+  const inProgress = books.filter(b => b.status === 'In Progress');
+  const titleEl = $('dash-live-title');
+  const authorEl = $('dash-live-author');
+  const barEl = $('dash-live-bar');
+  const etaBadgeEl = $('dash-live-eta-badge');
+
+  if (inProgress.length === 0) {
+    if (titleEl) titleEl.textContent = 'No book currently in progress';
+    if (authorEl) authorEl.textContent = 'Select a book from your bookshelf to begin';
+    if (barEl) barEl.style.width = '0%';
+    if (etaBadgeEl) {
+      etaBadgeEl.textContent = 'Standby';
+      etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-800 text-slate-400 border border-white/5';
+    }
+    return;
+  }
+
+  const activeBook = inProgress[0];
+  const total = activeBook.total_pages || 1;
+  const read = (activeBook.pages_read || 0) % total;
+  const pct = Math.min(100, Math.round((read / total) * 100));
+  const remaining = total - read;
+
+  if (titleEl) titleEl.textContent = activeBook.title;
+  if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${remaining} pg left (${pct}%)`;
+  if (barEl) barEl.style.width = `${pct}%`;
+
+  const estDays = Math.max(1, Math.ceil(remaining / 15));
+  if (etaBadgeEl) {
+    etaBadgeEl.textContent = `Finish in ~${estDays} days`;
+    etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  }
+}
+
+function renderFormatOwnershipCard(books) {
+  const card = $('dash-format-ownership');
+  if (!card) return;
+
+  let physical = 0, digital = 0;
+  let owned = 0, borrowed = 0;
+
+  books.forEach(b => {
+    const isDigital = (b.format || '').toLowerCase().includes('audio') || (b.format || '').toLowerCase().includes('ebook') || (b.format || '').toLowerCase().includes('digital');
+    if (isDigital) digital++;
+    else physical++;
+
+    const isBorrowed = (b.ownership || b.status || '').toLowerCase().includes('borrowed') || (b.ownership || '').toLowerCase().includes('library');
+    if (isBorrowed) borrowed++;
+    else owned++;
+  });
+
+  const totMedium = physical + digital || 1;
+  const physPct = Math.round((physical / totMedium) * 100);
+  const digPct = 100 - physPct;
+
+  const totOwn = owned + borrowed || 1;
+  const ownPct = Math.round((owned / totOwn) * 100);
+  const borPct = 100 - ownPct;
+
+  if ($('fmt-medium-ratio')) $('fmt-medium-ratio').textContent = `${physPct}% Physical`;
+  if ($('fmt-bar-physical')) $('fmt-bar-physical').style.width = `${physPct}%`;
+  if ($('fmt-bar-digital')) $('fmt-bar-digital').style.width = `${digPct}%`;
+  if ($('fmt-cnt-physical')) $('fmt-cnt-physical').textContent = physical;
+  if ($('fmt-cnt-digital')) $('fmt-cnt-digital').textContent = digital;
+
+  if ($('fmt-own-ratio')) $('fmt-own-ratio').textContent = `${ownPct}% Owned`;
+  if ($('fmt-bar-owned')) $('fmt-bar-owned').style.width = `${ownPct}%`;
+  if ($('fmt-bar-borrowed')) $('fmt-bar-borrowed').style.width = `${borPct}%`;
+  if ($('fmt-cnt-owned')) $('fmt-cnt-owned').textContent = owned;
+  if ($('fmt-cnt-borrowed')) $('fmt-cnt-borrowed').textContent = borrowed;
+}
+
+function openChartDrilldownModal(categoryOrCollectionName, categoryBooksList) {
+  const modal = $('modal-chart-drilldown');
+  if (!modal) return;
+  if ($('drilldown-modal-title')) $('drilldown-modal-title').textContent = categoryOrCollectionName;
+  if ($('drilldown-modal-subtitle')) $('drilldown-modal-subtitle').textContent = `${categoryBooksList.length} titles in this segment`;
+
+  const listEl = $('drilldown-modal-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  if (categoryBooksList.length === 0) {
+    listEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No books found in this selection.</p>';
+  } else {
+    categoryBooksList.forEach(b => {
+      const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0;
+      const statusColor = isFinished ? 'emerald' : b.status === 'In Progress' ? 'blue' : 'amber';
+      const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex justify-between items-center gap-3 active:scale-[0.99] cursor-pointer hover:bg-white/[0.06] transition-all');
+      row.innerHTML = `
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-slate-200 truncate">${b.title}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'} · ${b.total_pages || 0} pg</div>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-${statusColor}-500/10 text-${statusColor}-400 border border-${statusColor}-500/20">${b.status}</span>
+      `;
+      row.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        openBookDetailModal(b);
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
+  const modal = $('modal-heatmap-day');
+  if (!modal) return;
+  const dateFormatted = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  if ($('heatmap-day-modal-title')) $('heatmap-day-modal-title').textContent = dateFormatted;
+  
+  const totalPages = dayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const totalMins = dayLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
+  if ($('heatmap-day-modal-subtitle')) $('heatmap-day-modal-subtitle').textContent = `${dayLogs.length} sessions · ${totalPages} pages · ${totalMins} mins`;
+
+  const contentEl = $('heatmap-day-modal-content');
+  if (!contentEl) return;
+  contentEl.innerHTML = '';
+
+  if (dayLogs.length === 0) {
+    contentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">No reading logs recorded for this day.</p>';
+  } else {
+    dayLogs.forEach(l => {
+      const pagesRead = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+      const card = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5');
+      card.innerHTML = `
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-slate-100 truncate flex-1 pr-2">${l.book_title}</span>
+          <span class="text-xs font-black text-emerald-400 tabular-nums">+${pagesRead} pg</span>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+          <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
+          <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified time'}</span>
+        </div>
+        ${l.notes ? `<div class="text-[10px] text-slate-300 italic bg-white/5 p-2 rounded-xl mt-1 border border-white/5">${l.notes}</div>` : ''}
+      `;
+      contentEl.appendChild(card);
+    });
+  }
+
+  modal.classList.remove('hidden');
 }
 
 async function renderDashboard() {
@@ -1346,6 +1573,10 @@ async function renderDashboard() {
   const mergedBooks = await getMergedBooks();
   const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
+  // Render Live Banner & Format Mix Card
+  renderLiveSessionBanner(books, logsCache);
+  renderFormatOwnershipCard(books);
+
   const stats = getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter);
   dashboardStats = stats;
   const completions = stats.completions;
@@ -1536,7 +1767,7 @@ async function renderDashboard() {
   renderMilestones(stats.completions, ytdDaysElapsed);
 
   // ── Book Length Records ──
-  const finishedInLib = booksCache.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0);
+  const finishedInLib = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0);
   let longestBook = '—', shortestBook = '—';
   let longestTitle = '—', shortestTitle = '—';
   let medianLength = 0;
@@ -1547,10 +1778,10 @@ async function renderDashboard() {
     shortestBook = `${sortedByLen[0].title} (${sortedByLen[0].total_pages} pg)`;
     longestBook = `${sortedByLen[sortedByLen.length - 1].title} (${sortedByLen[sortedByLen.length - 1].total_pages} pg)`;
     medianLength = getMedian(finishedInLib.map(b => b.total_pages));
-    booksLarge = booksCache.filter(b => b.total_pages > 500).length;
-    booksSmall = booksCache.filter(b => b.total_pages < 100).length;
+    booksLarge = books.filter(b => b.total_pages > 500).length;
+    booksSmall = books.filter(b => b.total_pages < 100).length;
     
-    const sortedByTitleLen = [...booksCache].sort((a,b) => a.title.length - b.title.length);
+    const sortedByTitleLen = [...books].sort((a,b) => a.title.length - b.title.length);
     shortestTitle = sortedByTitleLen[0].title;
     longestTitle = sortedByTitleLen[sortedByTitleLen.length - 1].title;
   }
@@ -1577,7 +1808,7 @@ async function renderDashboard() {
 
   // ── Author & Genre Records ──
   const authorCounts = {};
-  booksCache.forEach(b => {
+  books.forEach(b => {
     if (b.author) authorCounts[b.author] = (authorCounts[b.author] || 0) + (b.read_count || 0);
   });
   let topAuthor = '—', topAuthorReads = 0;
@@ -1589,7 +1820,7 @@ async function renderDashboard() {
     }
     if (authorCounts[auth] > 1) authorsMulti++;
   });
-  const booksMultiReads = booksCache.filter(b => b.read_count > 1).length;
+  const booksMultiReads = books.filter(b => b.read_count > 1).length;
 
   $('rec-top-author').textContent = topAuthor;
   $('rec-top-author-reads').textContent = topAuthorReads;
@@ -1775,34 +2006,36 @@ async function renderDashboard() {
   // ── Currently Reading List ──
   const active = books.filter(b => b.status === 'In Progress');
   const activeEl = $('dash-active-books');
-  activeEl.innerHTML = '';
-  if (active.length === 0) {
-    activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
-  } else {
-    active.forEach(b => {
-      const pagesReadAccum = b.pages_read || 0;
-      const currentCyclePages = pagesReadAccum % b.total_pages;
-      const left = b.total_pages - currentCyclePages;
-      const estDays = Math.ceil(left / 10);
-      const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
-      
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-3">
-          <div class="min-w-0">
-            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
-            <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+  if (activeEl) {
+    activeEl.innerHTML = '';
+    if (active.length === 0) {
+      activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
+    } else {
+      active.forEach(b => {
+        const pagesReadAccum = b.pages_read || 0;
+        const currentCyclePages = pagesReadAccum % b.total_pages;
+        const left = b.total_pages - currentCyclePages;
+        const estDays = Math.ceil(left / 10);
+        const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
+        
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-3">
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+              <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">${pct}%</span>
           </div>
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">${pct}%</span>
-        </div>
-        <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
-          <span>Pages Left: <b>${left}</b></span>
-          <span>ETA @ 10pg/day: <b>${estDays} days</b></span>
-        </div>
-      `;
-      card.addEventListener('click', () => openBookDetailModal(b));
-      activeEl.appendChild(card);
-    });
+          <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
+            <span>Pages Left: <b>${left}</b></span>
+            <span>ETA @ 10pg/day: <b>${estDays} days</b></span>
+          </div>
+        `;
+        card.addEventListener('click', () => openBookDetailModal(b));
+        activeEl.appendChild(card);
+      });
+    }
   }
 
   // ── Up Next List ──
@@ -1812,24 +2045,26 @@ async function renderDashboard() {
     .sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
     .slice(0, 10);
   const upNextEl = $('dash-up-next-books');
-  upNextEl.innerHTML = '';
-  if (upNext.length === 0) {
-    upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
-  } else {
-    upNext.forEach(b => {
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-3">
-          <div class="min-w-0">
-            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
-            <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+  if (upNextEl) {
+    upNextEl.innerHTML = '';
+    if (upNext.length === 0) {
+      upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
+    } else {
+      upNext.forEach(b => {
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-3">
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+              <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase">${b.priority} Prio</span>
           </div>
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase">${b.priority} Prio</span>
-        </div>
-      `;
-      card.addEventListener('click', () => openBookDetailModal(b));
-      upNextEl.appendChild(card);
-    });
+        `;
+        card.addEventListener('click', () => openBookDetailModal(b));
+        upNextEl.appendChild(card);
+      });
+    }
   }
 
   // ── Recently Finished List ──
@@ -1872,18 +2107,489 @@ async function renderDashboard() {
   renderCharts(completions);
 }
 
-// ── Goals & Projections ───────────────────────────────────────────────────────
+// ── Goals Helpers: Streaks, Charts & Badges ──────────────────────────────
+
+function triggerHaptic() {
+  if (typeof window.triggerHaptic === 'function') {
+    window.triggerHaptic();
+  } else if (navigator.vibrate) {
+    try { navigator.vibrate(10); } catch(e){}
+  }
+}
+
+function calculateStreak(logs) {
+  const active = logs.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  const datesSet = new Set(active.filter(l => (l.end_page || 0) > (l.start_page || 0)).map(l => l.date));
+  
+  const today = new Date();
+  const dateToStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  
+  let currentStreak = 0;
+  let checkDate = new Date(today);
+  
+  // Check if today has a log, if not check yesterday
+  let todayStr = dateToStr(today);
+  let hasToday = datesSet.has(todayStr);
+  
+  if (!hasToday) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+  
+  while (datesSet.has(dateToStr(checkDate))) {
+    currentStreak++;
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+  
+  // Generate 7-day history dots (Mon to Sun of current week or past 7 days)
+  const dots = [];
+  const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dStr = dateToStr(d);
+    const dayLabel = dayNames[d.getDay()];
+    dots.push({
+      day: dayLabel,
+      date: dStr,
+      active: datesSet.has(dStr),
+      isToday: dStr === todayStr
+    });
+  }
+  
+  return { currentStreak, hasToday, dots };
+}
+
+function renderDailyCard(activeLogs, dailyPagesTarget) {
+  const todayStr = todayISO();
+  const todayLogs = activeLogs.filter(l => l.date === todayStr);
+  const todayPages = todayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  
+  const dTarget = dailyPagesTarget || 20;
+  const CIRC = 289;
+  const pct = Math.min(1, todayPages / dTarget);
+  
+  if ($('ring-daily-fill')) $('ring-daily-fill').style.strokeDashoffset = CIRC - CIRC * pct;
+  if ($('ring-daily-val'))  $('ring-daily-val').textContent = todayPages;
+  if ($('ring-daily-lbl'))  $('ring-daily-lbl').textContent = `/ ${dTarget} pgs`;
+
+  const streakData = calculateStreak(activeLogs);
+  if ($('streak-count-val')) $('streak-count-val').textContent = `${streakData.currentStreak} Day Streak`;
+
+  const msgEl = $('daily-status-msg');
+  if (msgEl) {
+    if (todayPages >= dTarget) {
+      msgEl.textContent = `🎉 Daily goal achieved! Keep the ${streakData.currentStreak}-day momentum going.`;
+    } else if (todayPages > 0) {
+      msgEl.textContent = `${dTarget - todayPages} more pages today to complete your daily goal!`;
+    } else {
+      msgEl.textContent = `Read ${dTarget} pages today to extend your ${streakData.currentStreak}-day streak!`;
+    }
+  }
+
+  const dotsContainer = $('streak-dots-container');
+  if (dotsContainer) {
+    dotsContainer.innerHTML = streakData.dots.map(d => `
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-[8px] font-bold text-slate-400 uppercase">${d.day}</span>
+        <div class="w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+          d.active ? 'bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black shadow-sm shadow-amber-500/30 text-[10px]' : 
+          (d.isToday ? 'border border-amber-400/50 bg-amber-400/10 text-amber-300 text-[8px]' : 'bg-white/5 border border-white/10 text-slate-600 text-[8px]')
+        }">
+          ${d.active ? '✓' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function renderTrajectoryChart(yearPages, aPT, activeLogs) {
+  const container = $('goals-trajectory-chart');
+  if (!container) return;
+  
+  const today = new Date();
+  const curYear = today.getFullYear();
+  const curMonthIndex = today.getMonth(); // 0 to 11
+
+  // Monthly cumulative pages YTD
+  const monthCumPages = Array(12).fill(0);
+  let runSum = 0;
+  for (let m = 0; m <= curMonthIndex; m++) {
+    const endOfMonthISO = `${curYear}-${String(m + 1).padStart(2, '0')}-31`;
+    const logsUpToMonth = activeLogs.filter(l => l.date >= `${curYear}-01-01` && l.date <= endOfMonthISO);
+    runSum = logsUpToMonth.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+    monthCumPages[m] = runSum;
+  }
+
+  const width = container.clientWidth || 320;
+  const height = container.clientHeight || 176;
+  const padL = 25, padR = 15, padT = 15, padB = 25;
+  const graphW = width - padL - padR;
+  const graphH = height - padT - padB;
+
+  const maxVal = Math.max(aPT, ...monthCumPages, 100);
+
+  // Helper points
+  const targetPoints = [];
+  const actualPoints = [];
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+
+  for (let i = 0; i < 12; i++) {
+    const x = padL + (i / 11) * graphW;
+    const targetY = padT + graphH - (( (i + 1) / 12 * aPT) / maxVal) * graphH;
+    targetPoints.push({ x, y: targetY });
+
+    if (i <= curMonthIndex) {
+      const actY = padT + graphH - (monthCumPages[i] / maxVal) * graphH;
+      actualPoints.push({ x, y: actY });
+    }
+  }
+
+  const targetPathStr = targetPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const actualPathStr = actualPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  
+  let areaPathStr = '';
+  if (actualPoints.length > 0) {
+    const lastP = actualPoints[actualPoints.length - 1];
+    areaPathStr = `${actualPathStr} L ${lastP.x.toFixed(1)} ${padT + graphH} L ${actualPoints[0].x.toFixed(1)} ${padT + graphH} Z`;
+  }
+
+  // Update status badge
+  const currentActual = monthCumPages[curMonthIndex] || yearPages;
+  const currentTargetReq = Math.round(((curMonthIndex + 1) / 12) * aPT);
+  const statusLbl = $('trajectory-status-lbl');
+  if (statusLbl) {
+    const diff = currentActual - currentTargetReq;
+    if (diff >= 0) {
+      statusLbl.className = "text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      statusLbl.textContent = `+${fmtNum(diff)} pgs Ahead`;
+    } else {
+      statusLbl.className = "text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+      statusLbl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
+    }
+  }
+
+  container.innerHTML = `
+    <svg class="w-full h-full" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <linearGradient id="actualAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#34d399" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#34d399" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid lines -->
+      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="rgba(255,255,255,0.1)" />
+      
+      <!-- Target Pace Line -->
+      <path d="${targetPathStr}" fill="none" stroke="rgba(245, 158, 11, 0.4)" stroke-width="1.5" stroke-dasharray="4,3" />
+
+      <!-- Actual Area Fill -->
+      ${areaPathStr ? `<path d="${areaPathStr}" fill="url(#actualAreaGrad)" />` : ''}
+
+      <!-- Actual Pace Line -->
+      ${actualPathStr ? `<path d="${actualPathStr}" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" />` : ''}
+
+      <!-- Data Dots -->
+      ${actualPoints.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#10b981" stroke="#064e3b" stroke-width="1.5"/>`).join('')}
+
+      <!-- Month Labels -->
+      ${months.map((m, i) => {
+        const x = padL + (i / 11) * graphW;
+        return `<text x="${x.toFixed(1)}" y="${height - 5}" text-anchor="middle" font-size="8" font-weight="bold" fill="${i <= curMonthIndex ? '#94a3b8' : '#475569'}">${m}</text>`;
+      }).join('')}
+    </svg>
+  `;
+}
+
+function renderAchievementBadges(stats, streak, logsCache, yearBooks, aBT) {
+  const container = $('goals-badges-grid');
+  if (!container) return;
+
+  const totalReads = stats.totalReads || 0;
+  const totalPages = stats.totalPages || 0;
+  const maxMonthPages = stats.maxMonthPages || 0;
+
+  const badges = [
+    {
+      id: 'first_step',
+      icon: 'fa-rocket',
+      title: 'First Step',
+      desc: 'Log 1 session',
+      unlocked: logsCache.length > 0,
+      progress: `${Math.min(1, logsCache.length)}/1`
+    },
+    {
+      id: 'streak_master',
+      icon: 'fa-fire',
+      title: '7-Day Streak',
+      desc: '7 days reading',
+      unlocked: streak.currentStreak >= 7,
+      progress: `${Math.min(7, streak.currentStreak)}/7d`
+    },
+    {
+      id: 'bookworm',
+      icon: 'fa-book-open',
+      title: 'Bookworm',
+      desc: 'Read 10 books',
+      unlocked: totalReads >= 10,
+      progress: `${Math.min(10, totalReads)}/10`
+    },
+    {
+      id: 'century',
+      icon: 'fa-award',
+      title: '50+ Club',
+      desc: 'Read 50 books',
+      unlocked: totalReads >= 50,
+      progress: `${Math.min(50, totalReads)}/50`
+    },
+    {
+      id: 'marathoner',
+      icon: 'fa-bolt',
+      title: 'Marathoner',
+      desc: '1,000 pg / mo',
+      unlocked: maxMonthPages >= 1000,
+      progress: `${Math.min(1000, maxMonthPages)}/1k`
+    },
+    {
+      id: 'crusher',
+      icon: 'fa-trophy',
+      title: 'Goal Crusher',
+      desc: 'Hit annual target',
+      unlocked: yearBooks >= aBT,
+      progress: `${Math.min(aBT, yearBooks)}/${aBT}`
+    }
+  ];
+
+  const unlockedCount = badges.filter(b => b.unlocked).length;
+  if ($('badges-unlocked-count')) $('badges-unlocked-count').textContent = `${unlockedCount} / ${badges.length} Unlocked`;
+
+  container.innerHTML = badges.map(b => `
+    <div class="flex flex-col items-center text-center p-2.5 rounded-2xl border transition-all ${
+      b.unlocked 
+        ? 'bg-gradient-to-b from-amber-500/10 to-amber-500/5 border-amber-500/30 text-amber-300 shadow-md shadow-amber-500/5' 
+        : 'bg-black/20 border-white/5 text-slate-500 opacity-60'
+    }">
+      <div class="w-8 h-8 rounded-xl flex items-center justify-center mb-1 text-sm ${
+        b.unlocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/5 text-slate-600'
+      }">
+        <i class="fa-solid ${b.icon}"></i>
+      </div>
+      <div class="text-[10px] font-extrabold text-slate-200 truncate w-full leading-tight">${b.title}</div>
+      <div class="text-[8px] font-semibold text-slate-400 mt-0.5">${b.unlocked ? '✓ Unlocked' : b.progress}</div>
+    </div>
+  `).join('');
+}
+
+function renderReadingAssistant(yearBooks, aBT, mergedBooks, activeLogs) {
+  const msgEl = $('goals-assistant-msg');
+  if (!msgEl) return;
+
+  const today = new Date();
+  const curYear = today.getFullYear();
+  const dayOfYear = Math.floor((today - new Date(`${curYear}-01-01`)) / 86400000) + 1;
+  const daysInYear = (curYear % 4 === 0) ? 366 : 365;
+  const daysLeft = daysInYear - dayOfYear;
+
+  const booksLeft = Math.max(0, aBT - yearBooks);
+
+  if (booksLeft === 0) {
+    msgEl.textContent = `🏆 Incredible! You've already reached your ${aBT}-book target for ${curYear}. Keep reading for extra milestones!`;
+    return;
+  }
+
+  // Calculate average target length
+  const yearPages = activeLogs.filter(l => l.date >= `${curYear}-01-01`).reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const avgPageRate = yearPages / Math.max(1, dayOfYear);
+  const projTotalPagesLeft = Math.round(avgPageRate * daysLeft);
+  const avgTargetPageCount = Math.round(projTotalPagesLeft / booksLeft);
+
+  msgEl.textContent = `To reach your ${aBT}-book goal by Dec 31 (${daysLeft} days left), your remaining ${booksLeft} books should average ~${avgTargetPageCount > 50 ? avgTargetPageCount : 250} pages each at your current pace.`;
+}
+
+function setupGoalsTimeframeSwitcher() {
+  const switcher = $('goals-timeframe-switcher');
+  if (!switcher) return;
+
+  switcher.querySelectorAll('button[data-timeframe]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      triggerHaptic();
+      const tf = btn.dataset.timeframe;
+
+      switcher.querySelectorAll('button').forEach(b => {
+        const isActive = b.dataset.timeframe === tf;
+        b.classList.toggle('text-amber-400', isActive);
+        b.classList.toggle('bg-amber-500/10', isActive);
+        b.classList.toggle('shadow-sm', isActive);
+        b.classList.toggle('text-slate-400', !isActive);
+      });
+
+      // Filter sections
+      const viewGoals = $('view-goals');
+      if (!viewGoals) return;
+
+      const dailySecs = viewGoals.querySelectorAll('.goals-sec-daily');
+      const annualSecs = viewGoals.querySelectorAll('.goals-sec-annual');
+      const allSecs = viewGoals.querySelectorAll('.goals-sec-all');
+
+      if (tf === 'all') {
+        dailySecs.forEach(s => s.classList.remove('hidden'));
+        annualSecs.forEach(s => s.classList.remove('hidden'));
+        allSecs.forEach(s => s.classList.remove('hidden'));
+      } else if (tf === 'daily') {
+        dailySecs.forEach(s => s.classList.remove('hidden'));
+        annualSecs.forEach(s => s.classList.add('hidden'));
+        allSecs.forEach(s => s.classList.remove('hidden'));
+      } else if (tf === 'annual') {
+        dailySecs.forEach(s => s.classList.add('hidden'));
+        annualSecs.forEach(s => s.classList.remove('hidden'));
+        allSecs.forEach(s => s.classList.remove('hidden'));
+      } else if (tf === 'monthly') {
+        dailySecs.forEach(s => s.classList.add('hidden'));
+        annualSecs.forEach(s => s.classList.add('hidden'));
+        allSecs.forEach(s => s.classList.remove('hidden'));
+      }
+    });
+  });
+}
+
+function setupGoalsPresetsAndSteppers() {
+  // Setup Presets
+  const presetChips = $('goals-preset-chips');
+  if (presetChips) {
+    presetChips.querySelectorAll('button[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        triggerHaptic();
+        const p = btn.dataset.preset;
+        if (p === 'casual') {
+          $('goal-daily-pages').value = 15;
+          $('goal-daily-minutes').value = 15;
+          $('goal-annual-books').value = 6;
+          $('goal-annual-pages').value = 1800;
+          $('goal-annual-sessions').value = 50;
+          $('goal-annual-minutes').value = 1800;
+          $('goal-monthly-books').value = 1;
+          $('goal-monthly-pages').value = 150;
+          $('goal-monthly-sessions').value = 5;
+          $('goal-monthly-minutes').value = 150;
+        } else if (p === 'consistent') {
+          $('goal-daily-pages').value = 20;
+          $('goal-daily-minutes').value = 20;
+          $('goal-annual-books').value = 12;
+          $('goal-annual-pages').value = 3000;
+          $('goal-annual-sessions').value = 100;
+          $('goal-annual-minutes').value = 3000;
+          $('goal-monthly-books').value = 1;
+          $('goal-monthly-pages').value = 300;
+          $('goal-monthly-sessions').value = 10;
+          $('goal-monthly-minutes').value = 300;
+        } else if (p === 'avid') {
+          $('goal-daily-pages').value = 30;
+          $('goal-daily-minutes').value = 30;
+          $('goal-annual-books').value = 24;
+          $('goal-annual-pages').value = 6000;
+          $('goal-annual-sessions').value = 150;
+          $('goal-annual-minutes').value = 6000;
+          $('goal-monthly-books').value = 2;
+          $('goal-monthly-pages').value = 500;
+          $('goal-monthly-sessions').value = 15;
+          $('goal-monthly-minutes').value = 500;
+        } else if (p === 'voracious') {
+          $('goal-daily-pages').value = 50;
+          $('goal-daily-minutes').value = 45;
+          $('goal-annual-books').value = 52;
+          $('goal-annual-pages').value = 15000;
+          $('goal-annual-sessions').value = 250;
+          $('goal-annual-minutes').value = 15000;
+          $('goal-monthly-books').value = 4;
+          $('goal-monthly-pages').value = 1250;
+          $('goal-monthly-sessions').value = 20;
+          $('goal-monthly-minutes').value = 1250;
+        }
+
+        presetChips.querySelectorAll('button').forEach(b => {
+          const isSelected = b === btn;
+          b.classList.toggle('border-amber-500/30', isSelected);
+          b.classList.toggle('bg-amber-500/10', isSelected);
+          b.classList.toggle('text-amber-300', isSelected);
+          b.classList.toggle('border-white/10', !isSelected);
+          b.classList.toggle('bg-white/5', !isSelected);
+          b.classList.toggle('text-slate-300', !isSelected);
+        });
+      });
+    });
+  }
+
+  // Setup Steppers
+  const goalsModal = $('goals-modal');
+  if (goalsModal) {
+    goalsModal.querySelectorAll('button[data-step-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        triggerHaptic();
+        const targetId = btn.dataset.stepId;
+        const dir = parseInt(btn.dataset.stepDir, 10);
+        const input = $(targetId);
+        if (input) {
+          const cur = parseInt(input.value, 10) || 0;
+          input.value = Math.max(1, cur + dir);
+        }
+      });
+    });
+  }
+}
+
+// ── Goals & Projections Main ──────────────────────────────────────────────────
 function setupGoals() {
   $('btn-edit-goals').addEventListener('click', openGoalsModal);
   $('goals-modal-close').addEventListener('click', closeGoalsModal);
   $('goals-modal').addEventListener('click', e => { if (e.target === $('goals-modal')) closeGoalsModal(); });
   $('goals-modal-save').addEventListener('click', saveGoals);
+
+  setupGoalsTimeframeSwitcher();
+  setupGoalsPresetsAndSteppers();
 }
+window.setupGoals = setupGoals;
+window.openGoalsModal = openGoalsModal;
+window.closeGoalsModal = closeGoalsModal;
+window.saveGoals = saveGoals;
+window.renderGoals = renderGoals;
 
 async function renderGoals() {
-  // Load goals config
-  const gSnap = await getDoc(doc(db, `users/${uid}/goals/config`));
-  goalsCache  = gSnap.exists() ? gSnap.data() : { annual_books_target:12, annual_pages_target:3000, monthly_books_target:1, monthly_pages_target:300 };
+  // Default goals configuration schema
+  const defaultGoals = {
+    daily_pages_target: 20,
+    daily_minutes_target: 20,
+    annual_books_target: 12,
+    annual_pages_target: 3000,
+    annual_sessions_target: 100,
+    annual_minutes_target: 3000,
+    monthly_books_target: 1,
+    monthly_pages_target: 300,
+    monthly_sessions_target: 10,
+    monthly_minutes_target: 300
+  };
+
+  // Load goals config safely with localStorage fallback
+  let gSnap = null;
+  try {
+    if (db && uid) gSnap = await getDoc(doc(db, `users/${uid}/goals/config`));
+  } catch (e) {
+    console.warn('[Goals] Using cached goals config:', e.message);
+  }
+
+  let localStoredGoals = null;
+  try {
+    const rawLocal = localStorage.getItem('goals_cache');
+    if (rawLocal) localStoredGoals = JSON.parse(rawLocal);
+  } catch(e){}
+
+  goalsCache = (gSnap && typeof gSnap.exists === 'function' && gSnap.exists()) 
+    ? { ...defaultGoals, ...gSnap.data() } 
+    : { ...defaultGoals, ...(localStoredGoals || goalsCache) };
+
+  try {
+    localStorage.setItem('goals_cache', JSON.stringify(goalsCache));
+  } catch(e){}
 
   const today = new Date();
   const year  = today.getFullYear();
@@ -1893,6 +2599,9 @@ async function renderGoals() {
 
   // Filter active logs (user session logs)
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+
+  // Render Daily Ring & Streak
+  renderDailyCard(activeLogs, goalsCache.daily_pages_target || 20);
 
   // Year to Date stats
   const yearLogs = activeLogs.filter(l => l.date >= startOfYearISO && l.date <= `${year}-12-31`);
@@ -1915,21 +2624,39 @@ async function renderGoals() {
   const monthPages = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startOfMonthISO, todayISOStr, 'all');
   const monthBooks = completions.filter(c => c.date >= startOfMonthISO && c.date <= todayISOStr).length;
 
-  const aBT = goalsCache.annual_books_target  || 12;
-  const aPT = goalsCache.annual_pages_target  || 3000;
-  const mBT = goalsCache.monthly_books_target || 1;
-  const mPT = goalsCache.monthly_pages_target || 300;
+  const aBT = goalsCache.annual_books_target     || 12;
+  const aPT = goalsCache.annual_pages_target     || 3000;
+  const aST = goalsCache.annual_sessions_target  || 100;
+  const aMT = goalsCache.annual_minutes_target   || 3000;
+
+  const mBT = goalsCache.monthly_books_target    || 1;
+  const mPT = goalsCache.monthly_pages_target    || 300;
+  const mST = goalsCache.monthly_sessions_target || 10;
+  const mMT = goalsCache.monthly_minutes_target  || 300;
+
+  // Render Trajectory SVG Chart
+  renderTrajectoryChart(yearPages, aPT, activeLogs);
+
+  // Calculate Streak & Render Badges
+  const streak = calculateStreak(activeLogs);
+  renderAchievementBadges(stats, streak, logsCache, yearBooks, aBT);
+
+  // Render Smart Reading Assistant
+  renderReadingAssistant(yearBooks, aBT, mergedBooks, activeLogs);
 
   // Ring fills
   const CIRC = 289;
   const bPct = Math.min(1, yearBooks / aBT);
   const pPct = Math.min(1, yearPages / aPT);
-  $('ring-books-fill').style.strokeDashoffset = CIRC - CIRC * bPct;
-  $('ring-pages-fill').style.strokeDashoffset = CIRC - CIRC * pPct;
-  $('ring-books-val').textContent = yearBooks;
-  $('ring-pages-val').textContent = yearPages >= 1000 ? Math.round(yearPages/100)/10 + 'k' : yearPages;
-  $('ring-books-lbl').textContent = `/ ${aBT} bks`;
-  $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pgs`;
+  if ($('ring-books-fill')) $('ring-books-fill').style.strokeDashoffset = CIRC - CIRC * bPct;
+  if ($('ring-pages-fill')) $('ring-pages-fill').style.strokeDashoffset = CIRC - CIRC * pPct;
+  if ($('ring-books-val'))  $('ring-books-val').textContent = yearBooks;
+  if ($('ring-pages-val'))  $('ring-pages-val').textContent = yearPages >= 1000 ? Math.round(yearPages/100)/10 + 'k' : yearPages;
+  if ($('ring-books-lbl'))  $('ring-books-lbl').textContent = `/ ${aBT} bks`;
+  if ($('ring-pages-lbl'))  $('ring-pages-lbl').textContent = `/ ${aPT >= 1000 ? Math.round(aPT/100)/10 + 'k' : aPT} pgs`;
+
+  const overallYearPct = Math.round(((yearBooks / aBT) + (yearPages / aPT)) / 2 * 100);
+  if ($('goals-year-pct')) $('goals-year-pct').textContent = `${overallYearPct}% YTD Pace`;
 
   // 1. Targets & Completions Table
   const progressStr = (cur, target) => {
@@ -1953,15 +2680,15 @@ async function renderGoals() {
     </tr>
     <tr>
       <td>Sessions This Month</td>
-      <td class="text-center font-bold text-slate-300">10</td>
+      <td class="text-center font-bold text-slate-300">${mST}</td>
       <td class="text-center font-bold text-slate-300">${monthSessions}</td>
-      <td>${progressStr(monthSessions, 10)}</td>
+      <td>${progressStr(monthSessions, mST)}</td>
     </tr>
     <tr>
       <td>Minutes This Month</td>
-      <td class="text-center font-bold text-slate-300">300</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(mMT)}</td>
       <td class="text-center font-bold text-slate-300">${fmtNum(monthMinutes)}</td>
-      <td>${progressStr(monthMinutes, 300)}</td>
+      <td>${progressStr(monthMinutes, mMT)}</td>
     </tr>
     <tr class="border-t border-white/5 bg-white/2">
       <td>Books This Year</td>
@@ -1977,15 +2704,15 @@ async function renderGoals() {
     </tr>
     <tr>
       <td>Sessions This Year</td>
-      <td class="text-center font-bold text-slate-300">100</td>
+      <td class="text-center font-bold text-slate-300">${aST}</td>
       <td class="text-center font-bold text-slate-300">${yearSessions}</td>
-      <td>${progressStr(yearSessions, 100)}</td>
+      <td>${progressStr(yearSessions, aST)}</td>
     </tr>
     <tr>
       <td>Minutes Reading YTD</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(3000)}</td>
+      <td class="text-center font-bold text-slate-300">${fmtNum(aMT)}</td>
       <td class="text-center font-bold text-slate-300">${fmtNum(yearMinutes)}</td>
-      <td>${progressStr(yearMinutes, 3000)}</td>
+      <td>${progressStr(yearMinutes, aMT)}</td>
     </tr>
   `;
 
@@ -2000,11 +2727,22 @@ async function renderGoals() {
   const currentSessionsPace = (yearSessions / Math.max(0.1, weeksElapsed)).toFixed(1);
   const currentMinutesPace = (yearMinutes / Math.max(1, dayOfYear)).toFixed(1);
 
+  const reqBooksPace = (aBT / 12).toFixed(1);
+  const reqPagesPace = (aPT / daysInYear).toFixed(1);
+  const reqSessionsPace = (aST / 52).toFixed(1);
+  const reqMinutesPace = (aMT / daysInYear).toFixed(1);
+
   const statusBadge = (cur, req) => {
-    const ok = parseFloat(cur) >= parseFloat(req);
+    const curVal = parseFloat(cur);
+    const reqVal = parseFloat(req);
+    if (reqVal <= 0) return `<span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">✓ On Track</span>`;
+    const pct = Math.round((curVal / reqVal) * 100);
+    const ok = curVal >= reqVal;
+    const diffPct = pct - 100;
+    const label = ok ? (diffPct > 0 ? `+${diffPct}% Ahead` : '✓ On Track') : `${diffPct}% Behind`;
     return `<span class="px-2 py-0.5 rounded-full text-[8px] font-black border uppercase ${
       ok ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border-rose-500/10'
-    }">${ok ? '✓ On Track' : 'Behind'}</span>`;
+    }">${label}</span>`;
   };
 
   const estYearEnd = (curRate, unit) => {
@@ -2014,36 +2752,36 @@ async function renderGoals() {
   $('pace-table-body').innerHTML = `
     <tr>
       <td>Books</td>
-      <td class="text-center">1.0 /mo</td>
+      <td class="text-center">${reqBooksPace} /mo</td>
       <td class="text-center font-extrabold text-slate-200">${currentBooksPace} /mo</td>
-      <td class="text-right">${statusBadge(currentBooksPace, 1.0)}</td>
+      <td class="text-right">${statusBadge(currentBooksPace, reqBooksPace)}</td>
     </tr>
     <tr class="text-[8px] text-slate-400">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearBooks/Math.max(1, dayOfYear), daysInYear)} books</b></td>
     </tr>
     <tr>
       <td>Pages</td>
-      <td class="text-center">${(aPT/daysInYear).toFixed(1)} /day</td>
+      <td class="text-center">${reqPagesPace} /day</td>
       <td class="text-center font-extrabold text-slate-200">${currentPagesPace} /day</td>
-      <td class="text-right">${statusBadge(currentPagesPace, aPT/daysInYear)}</td>
+      <td class="text-right">${statusBadge(currentPagesPace, reqPagesPace)}</td>
     </tr>
     <tr class="text-[8px] text-slate-400">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentPagesPace, daysInYear))} pages</b></td>
     </tr>
     <tr>
       <td>Sessions</td>
-      <td class="text-center">1.9 /wk</td>
+      <td class="text-center">${reqSessionsPace} /wk</td>
       <td class="text-center font-extrabold text-slate-200">${currentSessionsPace} /wk</td>
-      <td class="text-right">${statusBadge(currentSessionsPace, 1.9)}</td>
+      <td class="text-right">${statusBadge(currentSessionsPace, reqSessionsPace)}</td>
     </tr>
     <tr class="text-[8px] text-slate-400">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearSessions/Math.max(1, dayOfYear), daysInYear)} sessions</b></td>
     </tr>
     <tr>
       <td>Minutes</td>
-      <td class="text-center">${(3000/daysInYear).toFixed(1)} /day</td>
+      <td class="text-center">${reqMinutesPace} /day</td>
       <td class="text-center font-extrabold text-slate-200">${currentMinutesPace} /day</td>
-      <td class="text-right">${statusBadge(currentMinutesPace, 3000/daysInYear)}</td>
+      <td class="text-right">${statusBadge(currentMinutesPace, reqMinutesPace)}</td>
     </tr>
     <tr class="text-[8px] text-slate-400">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentMinutesPace, daysInYear))} minutes</b></td>
@@ -2075,11 +2813,15 @@ async function renderGoals() {
   
   const calculateETA = (needed, dailyRate) => {
     if (needed <= 0) return '✓ Achieved!';
-    if (dailyRate <= 0) return 'Never (Pace is 0)';
+    if (!dailyRate || dailyRate <= 0.001) return 'Needs faster pace';
     const daysNeeded = needed / dailyRate;
+    if (daysNeeded > 365 * 5) return '> 5 years';
     const eta = new Date();
     eta.setDate(eta.getDate() + daysNeeded);
-    return eta.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateStr = eta.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const monthsNeeded = Math.round(daysNeeded / 30.4);
+    const relStr = daysNeeded < 30 ? `~${Math.round(daysNeeded)}d` : (monthsNeeded < 12 ? `~${monthsNeeded}m` : `~${(daysNeeded/365).toFixed(1)}y`);
+    return `${dateStr} (${relStr})`;
   };
 
   const pagesPerDayRate = yearPages / Math.max(1, dayOfYear);
@@ -2117,12 +2859,12 @@ async function renderGoals() {
     etasContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
   } else {
     inProgressBooks.forEach(b => {
-      const left = b.total_pages - b.pages_read;
-      const pct = Math.round((b.pages_read / b.total_pages) * 100);
+      const left = Math.max(0, b.total_pages - b.pages_read);
+      const pct = Math.min(100, Math.round((b.pages_read / Math.max(1, b.total_pages)) * 100));
       
       const bookLogs = activeLogs.filter(l => l.book_title === b.title);
-      let avgRate = 0.5;
-      let lastReadStr = 'Not started';
+      let avgRate = 0;
+      let lastReadStr = 'Not logged recently';
       
       if (bookLogs.length > 0) {
         bookLogs.sort((a,b) => a.date.localeCompare(b.date));
@@ -2132,25 +2874,28 @@ async function renderGoals() {
         const daysDiff = Math.ceil(Math.abs(newestDate - oldestDate) / 86400000) + 1;
         const totalLoggedPages = bookLogs.reduce((s, l) => s + Math.max(0, l.end_page - l.start_page), 0);
         avgRate = totalLoggedPages / daysDiff;
-        if (avgRate <= 0) avgRate = 0.5;
-        
         lastReadStr = fmtDate(bookLogs[bookLogs.length - 1].date);
       }
+
+      // Hybrid rate blending for accurate & sensible ETAs
+      const effectiveRate = avgRate > 0 ? (0.6 * avgRate + 0.4 * pagesPerDayRate) : pagesPerDayRate;
+      const bookETA = calculateETA(left, effectiveRate);
       
-      const bookETA = calculateETA(left, avgRate);
-      
-      const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5');
+      const card = el('div', 'glass-panel p-4 rounded-2xl flex flex-col gap-2.5 border border-white/5');
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
-          <div class="min-w-0">
-            <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-extrabold text-slate-100 truncate">${b.title}</div>
             <div class="text-[9px] text-slate-400 mt-0.5">Last read: ${lastReadStr} · ${left} pages left (${pct}%)</div>
           </div>
-          <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">Active</span>
+          <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase shrink-0">${pct}%</span>
         </div>
-        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1 border-t border-white/5 pt-2 font-semibold">
-          <span>Pace: <b class="text-slate-200">${avgRate.toFixed(1)} pg/day</b></span>
-          <span>ETA: <b class="text-gold">${bookETA}</b></span>
+        <div class="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background: linear-gradient(90deg, var(--gold), var(--gold-light))"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-0.5 border-t border-white/5 pt-2 font-semibold">
+          <span>Pace: <b class="text-slate-200">${effectiveRate.toFixed(1)} pg/day</b></span>
+          <span>ETA: <b class="text-amber-300 font-bold">${bookETA}</b></span>
         </div>
       `;
       etasContainer.appendChild(card);
@@ -2159,23 +2904,63 @@ async function renderGoals() {
 }
 
 function openGoalsModal() {
-  $('goal-annual-books').value  = goalsCache.annual_books_target  || 12;
-  $('goal-annual-pages').value  = goalsCache.annual_pages_target  || 3000;
-  $('goal-monthly-books').value = goalsCache.monthly_books_target || 1;
-  $('goal-monthly-pages').value = goalsCache.monthly_pages_target || 300;
+  if ($('goal-daily-pages'))      $('goal-daily-pages').value      = goalsCache.daily_pages_target      || 20;
+  if ($('goal-daily-minutes'))    $('goal-daily-minutes').value    = goalsCache.daily_minutes_target    || 20;
+  if ($('goal-annual-books'))     $('goal-annual-books').value     = goalsCache.annual_books_target     || 12;
+  if ($('goal-annual-pages'))     $('goal-annual-pages').value     = goalsCache.annual_pages_target     || 3000;
+  if ($('goal-annual-sessions'))  $('goal-annual-sessions').value  = goalsCache.annual_sessions_target  || 100;
+  if ($('goal-annual-minutes'))   $('goal-annual-minutes').value   = goalsCache.annual_minutes_target   || 3000;
+  if ($('goal-monthly-books'))    $('goal-monthly-books').value    = goalsCache.monthly_books_target    || 1;
+  if ($('goal-monthly-pages'))    $('goal-monthly-pages').value    = goalsCache.monthly_pages_target    || 300;
+  if ($('goal-monthly-sessions')) $('goal-monthly-sessions').value = goalsCache.monthly_sessions_target || 10;
+  if ($('goal-monthly-minutes'))  $('goal-monthly-minutes').value  = goalsCache.monthly_minutes_target  || 300;
   $('goals-modal').classList.add('open');
 }
 function closeGoalsModal() { $('goals-modal').classList.remove('open'); }
 
 async function saveGoals() {
-  const data = {
-    annual_books_target:  parseInt($('goal-annual-books').value)  || 12,
-    annual_pages_target:  parseInt($('goal-annual-pages').value)  || 3000,
-    monthly_books_target: parseInt($('goal-monthly-books').value) || 1,
-    monthly_pages_target: parseInt($('goal-monthly-pages').value) || 300,
+  const parseVal = (id, fallback) => {
+    const raw = $(id)?.value;
+    if (raw === undefined || raw === null || raw.trim() === '') return fallback;
+    const v = parseInt(raw, 10);
+    return (!isNaN(v) && v > 0) ? v : fallback;
   };
-  await setDoc(doc(db, `users/${uid}/goals/config`), data, { merge: true });
+
+  // Check for invalid negative inputs
+  const inputs = ['goal-daily-pages', 'goal-daily-minutes',
+                  'goal-annual-books', 'goal-annual-pages', 'goal-annual-sessions', 'goal-annual-minutes',
+                  'goal-monthly-books', 'goal-monthly-pages', 'goal-monthly-sessions', 'goal-monthly-minutes'];
+  for (const id of inputs) {
+    const raw = $(id)?.value;
+    if (raw && parseInt(raw, 10) <= 0) {
+      showToast('Target goals must be positive numbers', 'error');
+      return;
+    }
+  }
+
+  const data = {
+    daily_pages_target:      parseVal('goal-daily-pages', 20),
+    daily_minutes_target:    parseVal('goal-daily-minutes', 20),
+    annual_books_target:     parseVal('goal-annual-books', 12),
+    annual_pages_target:     parseVal('goal-annual-pages', 3000),
+    annual_sessions_target:  parseVal('goal-annual-sessions', 100),
+    annual_minutes_target:   parseVal('goal-annual-minutes', 3000),
+    monthly_books_target:    parseVal('goal-monthly-books', 1),
+    monthly_pages_target:    parseVal('goal-monthly-pages', 300),
+    monthly_sessions_target: parseVal('goal-monthly-sessions', 10),
+    monthly_minutes_target:  parseVal('goal-monthly-minutes', 300),
+  };
+
+  try {
+    if (db && uid) await setDoc(doc(db, `users/${uid}/goals/config`), data, { merge: true });
+  } catch (e) {
+    console.warn('[Goals] Local save only (offline/auth):', e.message);
+  }
   goalsCache = data;
+  try {
+    localStorage.setItem('goals_cache', JSON.stringify(goalsCache));
+  } catch(e){}
+
   closeGoalsModal();
   showToast('Goals updated ✓', 'success');
   renderGoals();
@@ -2264,6 +3049,9 @@ function renderDonutChart() {
       overlayTotal.textContent = fmtNum(total);
       overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
     });
+    s1.addEventListener('click', () => {
+      openChartDrilldownModal("Bahá'í Collection", booksCache.filter(b => b.collection === 'Bahai'));
+    });
     svg.appendChild(s1);
   }
 
@@ -2285,6 +3073,9 @@ function renderDonutChart() {
       s2.setAttribute('stroke-width', sw.toString());
       overlayTotal.textContent = fmtNum(total);
       overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
+    });
+    s2.addEventListener('click', () => {
+      openChartDrilldownModal("Non-Bahá'í Collection", booksCache.filter(b => b.collection === 'Non-Bahai'));
     });
     svg.appendChild(s2);
   }
@@ -2505,7 +3296,15 @@ function setupBookshelf() {
   const searchEl = $('wishlist-search');
   if (searchEl) {
     searchEl.addEventListener('input', e => {
-      bookshelfSearchTerm = e.target.value; // Keep original diacritics for input (normalizer strips them internally!)
+      bookshelfSearchTerm = e.target.value;
+      renderBookshelf();
+    });
+  }
+
+  const sortEl = $('bookshelf-sort-select');
+  if (sortEl) {
+    sortEl.addEventListener('change', e => {
+      bookshelfSortOrder = e.target.value;
       renderBookshelf();
     });
   }
@@ -2538,6 +3337,72 @@ function setupBookshelf() {
     });
   }
 
+  // View mode toggle (List vs Grid)
+  const viewBtn = $('btn-view-mode');
+  if (viewBtn) {
+    viewBtn.addEventListener('click', () => {
+      bookshelfViewMode = bookshelfViewMode === 'list' ? 'grid' : 'list';
+      $('btn-view-mode-text').textContent = bookshelfViewMode === 'list' ? 'Grid' : 'List';
+      const icon = viewBtn.querySelector('i');
+      if (icon) {
+        icon.className = bookshelfViewMode === 'list' ? 'fa-solid fa-border-all text-[10px]' : 'fa-solid fa-list text-[10px]';
+      }
+      renderBookshelf();
+    });
+  }
+
+  // Grouping mode toggle (Flat vs Grouped)
+  const groupBtn = $('btn-grouping-mode');
+  if (groupBtn) {
+    groupBtn.addEventListener('click', () => {
+      bookshelfGrouping = bookshelfGrouping === 'none' ? 'group' : 'none';
+      $('btn-grouping-mode-text').textContent = bookshelfGrouping === 'none' ? 'Grouped' : 'Flat';
+      groupBtn.classList.toggle('bg-gold/10', bookshelfGrouping === 'group');
+      groupBtn.classList.toggle('text-gold', bookshelfGrouping === 'group');
+      renderBookshelf();
+    });
+  }
+
+  // Multi-Select mode toggle
+  const selectBtn = $('btn-select-mode');
+  if (selectBtn) {
+    selectBtn.addEventListener('click', () => {
+      bookshelfSelectMode = !bookshelfSelectMode;
+      bookshelfSelectedIds.clear();
+      $('btn-select-mode-text').textContent = bookshelfSelectMode ? 'Cancel' : 'Select';
+      selectBtn.classList.toggle('bg-gold/20', bookshelfSelectMode);
+      selectBtn.classList.toggle('text-gold', bookshelfSelectMode);
+      $('bookshelf-batch-bar').classList.toggle('hidden', !bookshelfSelectMode);
+      updateBatchBarUI();
+      renderBookshelf();
+    });
+  }
+
+  // Batch actions
+  const batchStatus = $('batch-status-select');
+  if (batchStatus) {
+    batchStatus.addEventListener('change', async e => {
+      const val = e.target.value;
+      if (val) {
+        await batchUpdateStatus(val);
+        e.target.value = '';
+      }
+    });
+  }
+
+  const batchDelete = $('btn-batch-delete');
+  if (batchDelete) batchDelete.addEventListener('click', batchDeleteBooks);
+
+  const batchCancel = $('btn-batch-cancel');
+  if (batchCancel) batchCancel.addEventListener('click', () => {
+    bookshelfSelectMode = false;
+    bookshelfSelectedIds.clear();
+    $('btn-select-mode-text').textContent = 'Select';
+    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('bookshelf-batch-bar').classList.add('hidden');
+    renderBookshelf();
+  });
+
   const addTrigger = $('btn-add-book-trigger');
   if (addTrigger) addTrigger.addEventListener('click', openAddBookModal);
 
@@ -2550,27 +3415,50 @@ function setupBookshelf() {
   if (editClose) editClose.addEventListener('click', () => $('edit-book-modal').classList.remove('open'));
   const editSave = $('edit-book-save');
   if (editSave) editSave.addEventListener('click', saveEditBook);
+
+  const editDelete = $('edit-book-delete');
+  if (editDelete) editDelete.addEventListener('click', () => {
+    if (activeBookObjectForEdit) deleteBook(activeBookObjectForEdit);
+  });
+}
+
+function updateBatchBarUI() {
+  const countEl = $('batch-selected-count');
+  if (countEl) countEl.textContent = `${bookshelfSelectedIds.size} selected`;
 }
 
 async function renderBookshelf() {
   const allItems = await getMergedBooks();
+
+  // 1. Calculate top stats summary
+  const totalBooks = allItems.length;
+  const totalPages = allItems.reduce((s, b) => s + (b.total_pages || 0), 0);
+  const totalVal   = allItems.reduce((s, b) => s + (b.est_cost || 0), 0);
+
+  if ($('st-total-books')) $('st-total-books').textContent = totalBooks;
+  if ($('st-total-pages')) $('st-total-pages').textContent = fmtNum(totalPages);
+  if ($('st-total-val'))   $('st-total-val').textContent   = `$${totalVal.toFixed(0)}`;
 
   const container = $('bookshelf-list');
   if (!container) return;
 
   const q = bookshelfSearchTerm;
 
-  // Filter based on diacritic-insensitive search term, status tab, and ownership tab
+  // Filter based on diacritic-insensitive search term across multiple fields, status tab, and ownership tab
   let filtered = allItems.filter(item => {
     if (q) {
       const normalizedQ = normalizeText(q);
       const matchTitle = normalizeText(item.title).includes(normalizedQ);
       const matchAuthor = normalizeText(item.author).includes(normalizedQ);
       const matchGroup = normalizeText(item.group).includes(normalizedQ);
-      if (!matchTitle && !matchAuthor && !matchGroup) return false;
+      const matchCollection = normalizeText(item.collection).includes(normalizedQ);
+      const matchNotes = normalizeText(item.notes).includes(normalizedQ);
+      const matchPriority = normalizeText(item.priority).includes(normalizedQ);
+      const matchStatus = normalizeText(item.status).includes(normalizedQ);
+      const matchWhere = normalizeText(item.where_to_buy).includes(normalizedQ);
+      if (!matchTitle && !matchAuthor && !matchGroup && !matchCollection && !matchNotes && !matchPriority && !matchStatus && !matchWhere) return false;
     }
 
-    // 1. Status Filter
     if (bookshelfStatusFilter === 'Not Started') {
       if (!['Not Started', 'Owned', 'Gifted', 'Borrowed'].includes(item.status)) return false;
     } else if (bookshelfStatusFilter === 'In Progress') {
@@ -2578,11 +3466,9 @@ async function renderBookshelf() {
     } else if (bookshelfStatusFilter === 'Finished') {
       if (!['Finished', 'Owned and Read', 'Borrowed and Read', 'Gifted and Read'].includes(item.status)) return false;
     } else if (bookshelfStatusFilter === 'Wishlist') {
-      // Wishlist tab should ONLY include books that are not owned
       if (item.ownership !== 'Wishlist') return false;
     }
 
-    // 2. Ownership Filter
     if (bookshelfOwnershipFilter !== 'All') {
       if (item.ownership !== bookshelfOwnershipFilter) return false;
     }
@@ -2590,135 +3476,410 @@ async function renderBookshelf() {
     return true;
   });
 
+  // Render Active Filter Chips
+  renderActiveFilterChips();
+
+  // Apply sorting
+  filtered.sort((a, b) => {
+    if (bookshelfSortOrder === 'title-desc') {
+      return b.title.localeCompare(a.title);
+    } else if (bookshelfSortOrder === 'priority-high') {
+      const pRank = { High: 3, Medium: 2, Low: 1 };
+      return (pRank[b.priority] || 1) - (pRank[a.priority] || 1);
+    } else if (bookshelfSortOrder === 'progress-desc') {
+      const aProg = a.total_pages > 0 ? (a.pages_read || 0) / a.total_pages : 0;
+      const bProg = b.total_pages > 0 ? (b.pages_read || 0) / b.total_pages : 0;
+      return bProg - aProg;
+    } else if (bookshelfSortOrder === 'author-asc') {
+      return (a.author || '').localeCompare(b.author || '');
+    }
+    return a.title.localeCompare(b.title);
+  });
+
+  // View Transitions API
+  if (document.startViewTransition) {
+    document.startViewTransition(() => renderBookshelfContent(container, filtered));
+  } else {
+    renderBookshelfContent(container, filtered);
+  }
+}
+
+function renderActiveFilterChips() {
+  const chipContainer = $('bookshelf-active-filters');
+  if (!chipContainer) return;
+
+  const chips = [];
+  if (bookshelfSearchTerm) chips.push(`Search: "${bookshelfSearchTerm}"`);
+  if (bookshelfStatusFilter !== 'All') chips.push(`Status: ${bookshelfStatusFilter}`);
+  if (bookshelfOwnershipFilter !== 'All') chips.push(`Ownership: ${bookshelfOwnershipFilter}`);
+  if (bookshelfSortOrder !== 'title-asc') {
+    const sortLabels = { 'title-desc': 'Z-A', 'priority-high': 'Priority', 'progress-desc': 'Progress %', 'author-asc': 'Author' };
+    chips.push(`Sort: ${sortLabels[bookshelfSortOrder] || bookshelfSortOrder}`);
+  }
+
+  if (chips.length === 0) {
+    chipContainer.classList.add('hidden');
+    chipContainer.innerHTML = '';
+    return;
+  }
+
+  chipContainer.classList.remove('hidden');
+  chipContainer.innerHTML = `
+    ${chips.map(c => `<span class="filter-chip">${c}</span>`).join('')}
+    <button id="btn-clear-filters" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95">
+      <i class="fa-solid fa-xmark text-[9px]"></i> Clear Filters
+    </button>
+  `;
+
+  const clearBtn = $('btn-clear-filters');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    bookshelfSearchTerm = '';
+    if ($('wishlist-search')) $('wishlist-search').value = '';
+    bookshelfStatusFilter = 'All';
+    $('bookshelf-filter-status')?.querySelectorAll('[data-bsf]').forEach(b => b.classList.toggle('active', b.dataset.bsf === 'All'));
+    bookshelfOwnershipFilter = 'All';
+    $('bookshelf-filter-ownership')?.querySelectorAll('[data-bfo]').forEach(b => b.classList.toggle('active', b.dataset.bfo === 'All'));
+    bookshelfSortOrder = 'title-asc';
+    if ($('bookshelf-sort-select')) $('bookshelf-sort-select').value = 'title-asc';
+    renderBookshelf();
+  });
+}
+
+function renderBookshelfContent(container, filtered) {
+  container.innerHTML = '';
+
   if (filtered.length === 0) {
     container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-slate-400">No books found</div><p class="text-xs text-slate-500">Try a different filter or add a new book</p></div>`;
     return;
   }
 
-  container.innerHTML = '';
-  filtered.forEach(b => {
-    const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
-    const isAct = b.status === 'In Progress';
-    const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+  if (bookshelfGrouping === 'group') {
+    // Group books by item.group
+    const groups = {};
+    filtered.forEach(b => {
+      const g = b.group || 'Other';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(b);
+    });
 
-    let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
-    if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
-    else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
-    else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
-    else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+    Object.keys(groups).sort().forEach(groupName => {
+      const groupItems = groups[groupName];
 
-    let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
-    if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
-    else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
-    else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
-
-    const prioClasses = {
-      'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
-      'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
-      'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
-    };
-    const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
-
-    const pagesReadAccum = b.pages_read || 0;
-    const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
-    const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
-    const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
-
-    const card = el('div', 'glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer');
-
-    const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
-
-    let buyHTML = '';
-    if (b.where_to_buy) {
-      const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
-      buyHTML = `
-        <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-          <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
-          <span>Where to Buy:</span>
-          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
-        </div>
+      const section = el('div', 'flex flex-col gap-2 mb-2');
+      const header = el('div', 'bookshelf-section-header flex items-center justify-between text-xs font-black tracking-tight text-slate-200');
+      header.innerHTML = `
+        <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-amber-400 text-xs"></i> ${groupName}</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/10 text-slate-300">${groupItems.length}</span>
       `;
-    }
+      section.appendChild(header);
 
-    let notesHTML = '';
-    if (b.notes) {
-      notesHTML = `
-        <div class="text-[11px] text-slate-300 italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
-          <i class="fa-solid fa-quote-left text-[9px] text-slate-500 mr-1 align-top"></i>${b.notes}
-        </div>
-      `;
-    }
+      const itemsContainer = el('div', bookshelfViewMode === 'grid' ? 'bookshelf-grid' : 'flex flex-col gap-3');
+      groupItems.forEach(b => itemsContainer.appendChild(renderBookCard(b)));
+      section.appendChild(itemsContainer);
+
+      container.appendChild(section);
+    });
+  } else {
+    container.className = bookshelfViewMode === 'grid' ? 'bookshelf-grid' : 'flex flex-col gap-3';
+    filtered.forEach(b => container.appendChild(renderBookCard(b)));
+  }
+}
+
+function renderBookCard(b) {
+  const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
+  const isAct = b.status === 'In Progress';
+  const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+
+  let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
+  if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+  else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
+  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+
+  let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
+  if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
+  else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
+
+  const prioClasses = {
+    'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
+    'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
+    'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
+  };
+  const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
+
+  const pagesReadAccum = b.pages_read || 0;
+  const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
+  const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
+
+  const isChecked = bookshelfSelectedIds.has(b.id);
+
+  if (bookshelfViewMode === 'grid') {
+    // 2-Column Compact Grid Card
+    const card = el('div', `bookshelf-card-item glass-panel p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+    card.dataset.id = b.id;
 
     card.innerHTML = `
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">&#8203;${b.title}</div>
-          <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
-        </div>
-        <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+      ${bookshelfSelectMode ? `
+        <input type="checkbox" class="checkbox checkbox-xs checkbox-warning absolute top-3 right-3 z-10" ${isChecked ? 'checked' : ''}>
+      ` : ''}
+      <div class="min-w-0 pr-4">
+        <div class="text-xs font-bold text-slate-100 leading-tight line-clamp-2">${b.title}</div>
+        <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'}</div>
       </div>
-
-      <div class="flex flex-wrap gap-1.5 mt-0.5">
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
+      <div class="flex flex-wrap gap-1">
+        <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
+        <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${b.priority}</span>
       </div>
-
       ${isAct ? `
-        <div class="flex flex-col gap-1.5 mt-0.5">
-          <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Reading Progress</span>
-            <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
-          </div>
-          <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
-          </div>
+        <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1 overflow-hidden mt-0.5">
+          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
         </div>
       ` : ''}
-
-      ${buyHTML}
-      ${notesHTML}
-
-      <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
-        <div class="flex gap-3">
-          <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
-          <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
-        </div>
-        <div class="flex gap-1.5">
-          ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
-          ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
-          <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
-        </div>
-      </div>
     `;
 
-    // Click card to open Detail Modal
     card.addEventListener('click', e => {
-      // Avoid modal if clicking action buttons
-      if (e.target.closest('button') || e.target.closest('a')) return;
+      if (bookshelfSelectMode) {
+        if (bookshelfSelectedIds.has(b.id)) bookshelfSelectedIds.delete(b.id);
+        else bookshelfSelectedIds.add(b.id);
+        updateBatchBarUI();
+        renderBookshelf();
+        return;
+      }
       openBookDetailModal(b);
     });
 
-    const compBtn = card.querySelector('[data-action="complete"]');
-    if (compBtn) compBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
-    });
+    return card;
+  }
 
-    const rereadBtn = card.querySelector('[data-action="re-read"]');
-    if (rereadBtn) rereadBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
-    });
+  // Full Detailed List Card (with Touch Swipe Wrapper)
+  const wrapper = el('div', 'bookshelf-swipe-wrapper bookshelf-card-item');
 
-    card.querySelector('[data-action="edit"]').addEventListener('click', e => {
-      e.stopPropagation();
-      openEditBookModal(b);
-    });
+  const actionsContainer = el('div', 'bookshelf-swipe-actions');
+  actionsContainer.innerHTML = `
+    ${isAct ? `<button class="btn btn-xs rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 h-10 px-3 font-bold text-xs" data-swipe="complete">Complete</button>` : ''}
+    <button class="btn btn-xs rounded-xl bg-white/10 text-slate-200 border border-white/10 h-10 px-3 font-bold text-xs" data-swipe="edit">Edit</button>
+    <button class="btn btn-xs rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 h-10 px-3 font-bold text-xs" data-swipe="delete">Delete</button>
+  `;
 
-    container.appendChild(card);
+  const card = el('div', `bookshelf-swipe-card glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+
+  const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
+
+  let buyHTML = '';
+  if (b.where_to_buy) {
+    const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
+    buyHTML = `
+      <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+        <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
+        <span>Where to Buy:</span>
+        ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
+      </div>
+    `;
+  }
+
+  let notesHTML = '';
+  if (b.notes) {
+    notesHTML = `
+      <div class="text-[11px] text-slate-300 italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
+        <i class="fa-solid fa-quote-left text-[9px] text-slate-500 mr-1 align-top"></i>${b.notes}
+      </div>
+    `;
+  }
+
+  card.innerHTML = `
+    <div class="flex items-start justify-between gap-3">
+      ${bookshelfSelectMode ? `
+        <input type="checkbox" class="checkbox checkbox-sm checkbox-warning mt-0.5 shrink-0" ${isChecked ? 'checked' : ''}>
+      ` : ''}
+      <div class="min-w-0 flex-1">
+        <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">&#8203;${b.title}</div>
+        <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+      </div>
+      <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+    </div>
+
+    <div class="flex flex-wrap gap-1.5 mt-0.5">
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
+    </div>
+
+    ${isAct ? `
+      <div class="flex flex-col gap-1.5 mt-0.5">
+        <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+          <span>Reading Progress</span>
+          <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
+        </div>
+        <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
+          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+        </div>
+      </div>
+    ` : ''}
+
+    ${buyHTML}
+    ${notesHTML}
+
+    <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
+      <div class="flex gap-3">
+        <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
+        <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+      </div>
+      <div class="flex gap-1.5">
+        ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
+        ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
+        <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+      </div>
+    </div>
+  `;
+
+  // Click card
+  card.addEventListener('click', e => {
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    if (bookshelfSelectMode) {
+      if (bookshelfSelectedIds.has(b.id)) bookshelfSelectedIds.delete(b.id);
+      else bookshelfSelectedIds.add(b.id);
+      updateBatchBarUI();
+      renderBookshelf();
+      return;
+    }
+    openBookDetailModal(b);
   });
+
+  const compBtn = card.querySelector('[data-action="complete"]');
+  if (compBtn) compBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
+  });
+
+  const rereadBtn = card.querySelector('[data-action="re-read"]');
+  if (rereadBtn) rereadBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
+  });
+
+  card.querySelector('[data-action="edit"]').addEventListener('click', e => {
+    e.stopPropagation();
+    openEditBookModal(b);
+  });
+
+  // Swipe Action Listeners
+  actionsContainer.querySelectorAll('[data-swipe]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const action = btn.dataset.swipe;
+      card.style.transform = 'translateX(0px)';
+      if (action === 'complete') {
+        if (confirm(`Mark "${b.title}" completed?`)) await markBookComplete(b);
+      } else if (action === 'edit') {
+        openEditBookModal(b);
+      } else if (action === 'delete') {
+        await deleteBook(b);
+      }
+    });
+  });
+
+  // Bind Touch Swipe Gestures
+  enableSwipeActions(card);
+
+  wrapper.appendChild(actionsContainer);
+  wrapper.appendChild(card);
+
+  return wrapper;
+}
+
+function enableSwipeActions(card) {
+  let startX = 0;
+  let currentX = 0;
+  let isSwiping = false;
+
+  card.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    isSwiping = true;
+  }, { passive: true });
+
+  card.addEventListener('touchmove', e => {
+    if (!isSwiping) return;
+    const diff = e.touches[0].clientX - startX;
+    if (diff < 0) {
+      currentX = Math.max(-140, diff);
+      card.style.transform = `translateX(${currentX}px)`;
+    }
+  }, { passive: true });
+
+  card.addEventListener('touchend', () => {
+    isSwiping = false;
+    if (currentX < -60) {
+      card.style.transform = 'translateX(-120px)';
+    } else {
+      card.style.transform = 'translateX(0px)';
+    }
+    currentX = 0;
+  });
+}
+
+async function batchUpdateStatus(newStatus) {
+  if (bookshelfSelectedIds.size === 0) return;
+  if (!confirm(`Move ${bookshelfSelectedIds.size} selected book(s) to "${newStatus}"?`)) return;
+
+  try {
+    const allBooks = await getMergedBooks();
+    const selectedBooks = allBooks.filter(b => bookshelfSelectedIds.has(b.id));
+
+    for (const b of selectedBooks) {
+      if (b._isWishlist) {
+        await updateDoc(doc(db, `users/${uid}/wishlist/${b.id}`), { status: newStatus });
+      } else {
+        await updateDoc(doc(db, `users/${uid}/books/${b.id}`), { status: newStatus });
+      }
+    }
+
+    showToast(`✓ Updated ${selectedBooks.length} book(s) to "${newStatus}"`, 'success');
+    bookshelfSelectMode = false;
+    bookshelfSelectedIds.clear();
+    $('btn-select-mode-text').textContent = 'Select';
+    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('bookshelf-batch-bar').classList.add('hidden');
+    booksCache = [];
+    wishlistCache = [];
+    await loadBooksCache();
+    await renderBookshelf();
+  } catch (e) {
+    showToast('Failed batch update: ' + e.message, 'error');
+  }
+}
+
+async function batchDeleteBooks() {
+  if (bookshelfSelectedIds.size === 0) return;
+  if (!confirm(`Are you sure you want to delete ${bookshelfSelectedIds.size} selected book(s)? This cannot be undone.`)) return;
+
+  try {
+    const allBooks = await getMergedBooks();
+    const selectedBooks = allBooks.filter(b => bookshelfSelectedIds.has(b.id));
+
+    for (const b of selectedBooks) {
+      if (b._isWishlist) {
+        await deleteDoc(doc(db, `users/${uid}/wishlist/${b.id}`));
+      } else {
+        await deleteDoc(doc(db, `users/${uid}/books/${b.id}`));
+      }
+    }
+
+    showToast(`✓ Deleted ${selectedBooks.length} book(s)`, 'success');
+    bookshelfSelectMode = false;
+    bookshelfSelectedIds.clear();
+    $('btn-select-mode-text').textContent = 'Select';
+    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('bookshelf-batch-bar').classList.add('hidden');
+    booksCache = [];
+    wishlistCache = [];
+    await loadBooksCache();
+    await renderBookshelf();
+  } catch (e) {
+    showToast('Failed batch delete: ' + e.message, 'error');
+  }
 }
 
 
@@ -2868,12 +4029,18 @@ async function saveNewBook() {
   }
 }
 
+let activeBookObjectForEdit = null;
+
 function openEditBookModal(b) {
+  activeBookObjectForEdit = b;
   $('eb-book-id').value = b.id;
-  $('eb-title').value = b.title;
-  $('eb-pages').value = b.total_pages;
+  $('eb-title').value = b.title || '';
+  $('eb-author').value = b.author || '';
+  $('eb-collection').value = b.collection === 'Bahai' ? 'Bahai' : 'Non-Bahai';
+  $('eb-group').value = b.group || '';
+  $('eb-pages').value = b.total_pages || '';
   $('eb-read-count').value = b.read_count || 0;
-  $('eb-status').value = b.status;
+  $('eb-status').value = b.status || 'Not Started';
   $('eb-progress').value = b.status === 'In Progress' ? (b.pages_read || 0) : 0;
   $('eb-priority').value = b.priority || 'Low';
   $('eb-cost').value = b.est_cost || 0;
@@ -2884,6 +4051,10 @@ function openEditBookModal(b) {
 
 async function saveEditBook() {
   const id = $('eb-book-id').value;
+  const title = $('eb-title').value.trim();
+  const author = $('eb-author').value.trim() || null;
+  const collectionVal = $('eb-collection').value;
+  const groupVal = $('eb-group').value.trim() || 'Other';
   const pages = parseInt($('eb-pages').value);
   const rc = parseInt($('eb-read-count').value) || 0;
   const status = $('eb-status').value;
@@ -2892,11 +4063,18 @@ async function saveEditBook() {
   const cost = parseFloat($('eb-cost').value) || 0;
   const buyLink = $('eb-where-to-buy').value.trim() || '';
   const notes = $('eb-notes').value.trim() || '';
-  
+
+  if (!title) { showToast('Please enter a book title.', 'error'); return; }
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
-  
+
   try {
     const updates = {
+      title: title,
+      author: author,
+      collection: collectionVal,
+      group: groupVal,
+      group_name: groupVal,
+      reading_group: groupVal,
       total_pages: pages,
       read_count: rc,
       status: status,
@@ -2906,15 +4084,31 @@ async function saveEditBook() {
       where_to_buy: buyLink,
       notes: notes
     };
-    
-    await updateDoc(doc(db, `users/${uid}/books/${id}`), updates);
+
+    if (activeBookObjectForEdit && activeBookObjectForEdit._isWishlist) {
+      await updateDoc(doc(db, `users/${uid}/wishlist/${id}`), {
+        title: title,
+        author: author || '',
+        category: groupVal,
+        priority: prio,
+        status: status,
+        est_pages: pages,
+        est_cost: cost,
+        where_to_buy: buyLink,
+        notes: notes
+      });
+    } else {
+      await updateDoc(doc(db, `users/${uid}/books/${id}`), updates);
+    }
 
     // Sync with corresponding legacy wishlist items by title if they exist
-    const bookTitle = $('eb-title').value;
-    const wlSnap = await getDocs(query(collection(db, `users/${uid}/wishlist`), where('title', '==', bookTitle)));
+    const wlSnap = await getDocs(query(collection(db, `users/${uid}/wishlist`), where('title', '==', title)));
     if (!wlSnap.empty) {
       for (const d of wlSnap.docs) {
         await updateDoc(doc(db, `users/${uid}/wishlist/${d.id}`), {
+          title: title,
+          author: author || '',
+          category: groupVal,
           priority: prio,
           status: status,
           est_pages: pages,
@@ -2923,30 +4117,44 @@ async function saveEditBook() {
           notes: notes
         });
       }
-    } else if (['Want to Buy', 'Owned', 'Gifted', 'Borrowed'].includes(status)) {
-      // Create legacy wishlist entry if it is moved to a wishlist status
-      await addDoc(collection(db, `users/${uid}/wishlist`), {
-        title: bookTitle,
-        author: '',
-        category: 'Other',
-        priority: prio,
-        status: status,
-        est_pages: pages,
-        est_cost: cost,
-        where_to_buy: buyLink,
-        notes: notes,
-        date_added: todayISO()
-      });
     }
-    
+
     $('edit-book-modal').classList.remove('open');
     showToast('✓ Book details successfully updated!', 'success');
+    booksCache = [];
     wishlistCache = [];
     await loadBooksCache();
     await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to update book: ' + e.message, 'error');
+  }
+}
+
+async function deleteBook(b) {
+  if (!b) return;
+  if (!confirm(`Are you sure you want to delete "${b.title}"? This cannot be undone.`)) return;
+
+  try {
+    if (b._isWishlist) {
+      await deleteDoc(doc(db, `users/${uid}/wishlist/${b.id}`));
+    } else {
+      await deleteDoc(doc(db, `users/${uid}/books/${b.id}`));
+      const wlSnap = await getDocs(query(collection(db, `users/${uid}/wishlist`), where('title', '==', b.title)));
+      for (const d of wlSnap.docs) {
+        await deleteDoc(doc(db, `users/${uid}/wishlist/${d.id}`));
+      }
+    }
+    $('edit-book-modal').classList.remove('open');
+    $('book-detail-modal').classList.remove('open');
+    showToast(`✓ Deleted "${b.title.slice(0, 20)}…"`, 'success');
+    booksCache = [];
+    wishlistCache = [];
+    await loadBooksCache();
+    await renderBookshelf();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to delete book: ' + e.message, 'error');
   }
 }
 
@@ -3489,6 +4697,18 @@ function renderCategoryPieChart(books, containerId) {
       legendItem.classList.remove('bg-white/5', 'border-white/10');
     });
 
+    legendItem.classList.add('cursor-pointer');
+    const openCatDrilldown = () => {
+      const matched = books.filter(b => {
+        const groupVal = b.group || b.group_name || b.reading_group || b.category || 'Other';
+        return normalizeGroup(groupVal, b.collection, b.title, b.author) === cat;
+      });
+      openChartDrilldownModal(`${cat} Category`, matched);
+    };
+
+    segment.addEventListener('click', openCatDrilldown);
+    legendItem.addEventListener('click', openCatDrilldown);
+
     svg.appendChild(segment);
     cumulativePercent += percent;
   });
@@ -3641,12 +4861,23 @@ function renderActivityHeatmap(logs) {
     activityMap[dStr] = (activityMap[dStr] || 0) + pages;
   });
 
-  console.log(`[Heatmap Debug] input logs: ${logs.length}, map size: ${Object.keys(activityMap).length}`);
-  
   const today = new Date();
+  let daysCount = 363;
+
+  if (dashHeatmapTimeframe === 'thisYear') {
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    daysCount = Math.max(7, Math.floor((today - startOfYear) / 86400000));
+  } else if (dashHeatmapTimeframe === 'allTime') {
+    const allDates = Object.keys(activityMap).sort();
+    if (allDates.length > 0) {
+      const earliest = new Date(allDates[0] + 'T00:00:00');
+      daysCount = Math.min(1095, Math.max(363, Math.floor((today - earliest) / 86400000)));
+    }
+  }
+
   let activeCellsCount = 0;
   
-  for (let i = 363; i >= 0; i--) {
+  for (let i = daysCount; i >= 0; i--) {
     const activeDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
     const year = activeDate.getFullYear();
     const month = String(activeDate.getMonth() + 1).padStart(2, '0');
@@ -3671,43 +4902,19 @@ function renderActivityHeatmap(logs) {
     
     block.addEventListener('click', (e) => {
       e.stopPropagation();
-      Haptics.click();
+      triggerHaptic();
       
       const dayLogs = logs.filter(l => l.date === dateStr);
       const booksDone = dayLogs.filter(l => {
         const book = booksCache.find(b => b.title === l.book_title);
         return book && parseInt(l.end_page || 0, 10) >= parseInt(book.total_pages || 0, 10);
       });
-      const minsTotal = dayLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
 
-      const tooltip = $('heatmap-tooltip');
-      if (!tooltip) return;
-
-      let html = `<div class="text-[10px] text-white font-extrabold mb-1">${dateFormatted}</div>`;
-      html += `<div>📖 <b>${pagesRead}</b> pages read</div>`;
-      if (booksDone.length > 0) {
-        html += `<div class="text-amber-400 mt-0.5">🏆 <b>${booksDone.length}</b> book finished</div>`;
-      }
-      if (minsTotal > 0) {
-        html += `<div class="text-blue-400 mt-0.5">⏱ <b>${minsTotal}</b> min logged</div>`;
-      }
-
-      tooltip.innerHTML = html;
-      tooltip.classList.remove('hidden');
-
-      const blockRect = block.getBoundingClientRect();
-      const parentRect = container.parentElement.getBoundingClientRect();
-      
-      const left = blockRect.left - parentRect.left + (blockRect.width / 2) - 50;
-      const top = blockRect.top - parentRect.top - 62;
-      
-      tooltip.style.left = `${Math.max(5, left)}px`;
-      tooltip.style.top = `${top}px`;
+      openHeatmapDayModal(dateStr, dayLogs, booksDone);
     });
     
     container.appendChild(block);
   }
-  console.log(`[Heatmap Debug] Rendered ${activeCellsCount} active cells out of 364`);
 }
 
 if (!window._heatmapTooltipWired) {
@@ -4000,6 +5207,15 @@ function openBookDetailModal(b) {
       openEditBookModal(b);
     });
   }
+
+  const deleteBtn = $('bd-action-delete');
+  if (deleteBtn) {
+    const newBtn = deleteBtn.cloneNode(true);
+    deleteBtn.parentNode.replaceChild(newBtn, deleteBtn);
+    newBtn.addEventListener('click', () => {
+      deleteBook(b);
+    });
+  }
   
   // Open modal
   $('book-detail-modal').classList.add('open');
@@ -4045,6 +5261,7 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 if ('serviceWorker' in navigator) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (window.isMockAuth) return;
     if (!refreshing) {
       refreshing = true;
       window.location.reload();
@@ -4061,6 +5278,7 @@ if ('serviceWorker' in navigator) {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated') {
+              if (window.isMockAuth) return;
               if (!refreshing) {
                 refreshing = true;
                 window.location.reload();
@@ -4405,6 +5623,17 @@ function bindScannerEvents() {
   const fileInput = document.getElementById('scan-page-file');
   if (fileInput) fileInput.onchange = handlePageScan;
 }
+
+window.renderDashboard = renderDashboard;
+window.showScreen = showScreen;
+window.showView = showView;
+window.setUid = (id) => { uid = id; };
+window.getBooksCache = () => booksCache;
+window.setBooksCache = (arr) => { booksCache = arr; if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); };
+window.getLogsCache = () => logsCache;
+window.setLogsCache = (arr) => { logsCache = arr; if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); };
+window.getWishlistCache = () => wishlistCache;
+window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); };
 
 // Run scanner setup
 (function initScannerOnRuntime() {
