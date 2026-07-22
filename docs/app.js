@@ -1938,11 +1938,20 @@ async function renderDashboard() {
   // ── YTD vs Same Date Last Year (YOY Card calculation) ─────────────────────
   const todayMMDD = today.toISOString().slice(5, 10); // "MM-DD"
   const compYear = selectedYear === 'all' ? yearNum : parseInt(selectedYear);
+  const prevYear = compYear - 1;
   
   const targetYearStart = `${compYear}-01-01`;
   const targetYearEnd = `${compYear}-${todayMMDD}`;
-  const prevYearStart = `${compYear - 1}-01-01`;
-  const prevYearEnd = `${compYear - 1}-${todayMMDD}`;
+  const prevYearStart = `${prevYear}-01-01`;
+  const prevYearEnd = `${prevYear}-${todayMMDD}`;
+  
+  // Format readable date span for badge (e.g. "Jan 1 – Jul 22")
+  const monthName = today.toLocaleString('en-US', { month: 'short' });
+  const dayNum = today.getDate();
+  const dateSpanStr = `Jan 1 – ${monthName} ${dayNum}`;
+
+  const rangeBadge = $('yoy-date-range-badge');
+  if (rangeBadge) rangeBadge.textContent = dateSpanStr;
   
   // Books completed in target year period
   const targetComp = completions.filter(c => c.date >= targetYearStart && c.date <= targetYearEnd && (dashFilter === 'all' || c.collection === dashFilter));
@@ -1951,39 +1960,62 @@ async function renderDashboard() {
   
   // Pages read in target year period
   const targetPagesVal = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, targetYearStart, targetYearEnd, dashFilter);
-    
   // Pages read in prev year period
   const prevPagesVal = getReconciledPagesForPeriod(mergedBooks, logsCache, completions, prevYearStart, prevYearEnd, dashFilter);
 
   const bookDiff = targetComp.length - prevComp.length;
-  const bookDiffStr = bookDiff >= 0 ? `+${bookDiff}` : `${bookDiff}`;
+  const bookDiffStr = bookDiff >= 0 ? `+${bookDiff} ahead` : `${bookDiff} behind`;
   
   const pageDiff = targetPagesVal - prevPagesVal;
-  const pageDiffStr = pageDiff >= 0 ? `+${fmtNum(pageDiff)}` : `${fmtNum(pageDiff)}`;
+  const pageDiffStr = pageDiff >= 0 ? `+${fmtNum(pageDiff)} ahead` : `${fmtNum(pageDiff)} behind`;
 
-  // Calculate percentages for the books comparative bar
-  const maxBooksScale = Math.max(targetComp.length * 1.2, prevComp.length * 1.2, 5);
-  const booksCurrPct = Math.min(100, (targetComp.length / maxBooksScale) * 100);
-  const booksPrevPct = Math.min(100, (prevComp.length / maxBooksScale) * 100);
+  // Scale bars relative to the higher of the two values
+  const maxBooks = Math.max(targetComp.length, prevComp.length, 1);
+  const booksCurrPct = (targetComp.length / maxBooks) * 100;
+  const booksPrevPct = (prevComp.length / maxBooks) * 100;
 
-  // Calculate percentages for the pages comparative bar
-  const maxPagesScale = Math.max(targetPagesVal * 1.2, prevPagesVal * 1.2, 500);
-  const pagesCurrPct = Math.min(100, (targetPagesVal / maxPagesScale) * 100);
-  const pagesPrevPct = Math.min(100, (prevPagesVal / maxPagesScale) * 100);
+  const maxPages = Math.max(targetPagesVal, prevPagesVal, 1);
+  const pagesCurrPct = (targetPagesVal / maxPages) * 100;
+  const pagesPrevPct = (prevPagesVal / maxPages) * 100;
 
-  $('yoy-books-curr').textContent = targetComp.length;
-  $('yoy-books-prev').textContent = prevComp.length;
-  $('yoy-books-badge').textContent = bookDiffStr;
-  $('yoy-books-badge').className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${bookDiff >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/10'}`;
-  $('yoy-books-fill').style.width = `${booksCurrPct}%`;
-  $('yoy-books-marker').style.left = `${booksPrevPct}%`;
+  // Labels & Values
+  const bCurrLbl = $('yoy-books-curr-label');
+  const bPrevLbl = $('yoy-books-prev-label');
+  if (bCurrLbl) bCurrLbl.textContent = `${compYear} (This Year)`;
+  if (bPrevLbl) bPrevLbl.textContent = `${prevYear} (Same Date)`;
 
-  $('yoy-pages-curr').textContent = fmtNum(targetPagesVal);
-  $('yoy-pages-prev').textContent = fmtNum(prevPagesVal);
-  $('yoy-pages-badge').textContent = pageDiffStr;
-  $('yoy-pages-badge').className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${pageDiff >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/10'}`;
-  $('yoy-pages-fill').style.width = `${pagesCurrPct}%`;
-  $('yoy-pages-marker').style.left = `${pagesPrevPct}%`;
+  if ($('yoy-books-curr')) $('yoy-books-curr').textContent = targetComp.length;
+  if ($('yoy-books-prev')) $('yoy-books-prev').textContent = prevComp.length;
+  
+  const bBadge = $('yoy-books-badge');
+  if (bBadge) {
+    bBadge.textContent = bookDiffStr;
+    bBadge.className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${bookDiff >= 0 ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/15 text-rose-500 border border-rose-500/20'}`;
+  }
+  
+  const booksCurrFill = $('yoy-books-curr-fill');
+  const booksPrevFill = $('yoy-books-prev-fill');
+  if (booksCurrFill) booksCurrFill.style.width = `${booksCurrPct}%`;
+  if (booksPrevFill) booksPrevFill.style.width = `${booksPrevPct}%`;
+
+  const pCurrLbl = $('yoy-pages-curr-label');
+  const pPrevLbl = $('yoy-pages-prev-label');
+  if (pCurrLbl) pCurrLbl.textContent = `${compYear} (This Year)`;
+  if (pPrevLbl) pPrevLbl.textContent = `${prevYear} (Same Date)`;
+
+  if ($('yoy-pages-curr')) $('yoy-pages-curr').textContent = fmtNum(targetPagesVal);
+  if ($('yoy-pages-prev')) $('yoy-pages-prev').textContent = fmtNum(prevPagesVal);
+  
+  const pBadge = $('yoy-pages-badge');
+  if (pBadge) {
+    pBadge.textContent = pageDiffStr;
+    pBadge.className = `px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${pageDiff >= 0 ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/15 text-rose-500 border border-rose-500/20'}`;
+  }
+
+  const pagesCurrFill = $('yoy-pages-curr-fill');
+  const pagesPrevFill = $('yoy-pages-prev-fill');
+  if (pagesCurrFill) pagesCurrFill.style.width = `${pagesCurrPct}%`;
+  if (pagesPrevFill) pagesPrevFill.style.width = `${pagesPrevPct}%`;
 
   // ── Time-Based Insights Tables ──
   renderTimeBasedTables(logsCache, completions);
