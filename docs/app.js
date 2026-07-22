@@ -1367,17 +1367,21 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     let bookTotalCompletionsInFilter = 0;
 
     if (selectedYear === 'all') {
-      let p = (b.read_count || 0) * (b.total_pages || 0);
-      if (b.status === 'In Progress') p += (b.pages_read || 0);
       const rc = b.read_count || 0;
-      let rereadProgPages = 0;
-      logsCache.forEach(l => {
-        if (l.book_title === b.title && (l.read_cycle || 1) > rc && (l.read_cycle || 1) > 1) {
-          rereadProgPages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+      const tot = b.total_pages || 1;
+      let activeCyclePages = 0;
+      if (b.status === 'In Progress') {
+        const activeCycle = rc + 1;
+        const activeLogs = logsCache.filter(l => l.book_title === b.title && parseInt(l.read_cycle || 1, 10) === activeCycle);
+        if (activeLogs.length > 0) {
+          const maxActiveEnd = Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10)));
+          activeCyclePages = maxActiveEnd % tot;
+        } else {
+          activeCyclePages = (b.pages_read || 0) % tot;
         }
-      });
-      bookTotalPagesInFilter = p + rereadProgPages;
-      bookTotalCompletionsInFilter = b.read_count || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) ? 1 : 0);
+      }
+      bookTotalPagesInFilter = (rc * (b.total_pages || 0)) + activeCyclePages;
+      bookTotalCompletionsInFilter = rc || (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) ? 1 : 0);
       pagesRead += bookTotalPagesInFilter;
       totalReads += bookTotalCompletionsInFilter;
     } else {
@@ -1489,9 +1493,21 @@ function renderLiveSessionBanner(books, logs) {
 
   const activeBook = sortedInProgress[0];
   const total = activeBook.total_pages || 1;
-  const read = (activeBook.pages_read || 0) % total;
+  const bookLogs = (logs || []).filter(l => l.book_title === activeBook.title);
+  const maxLogCycle = bookLogs.length > 0 ? Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10))) : 1;
+  const activeCycle = Math.max((activeBook.read_count || 0) + 1, maxLogCycle);
+  const activeLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
+
+  let read = 0;
+  if (activeLogs.length > 0) {
+    const maxActiveEnd = Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10)));
+    read = maxActiveEnd % total;
+  } else {
+    read = (activeBook.pages_read || 0) % total;
+  }
+
   const pct = Math.min(100, Math.round((read / total) * 100));
-  const remaining = total - read;
+  const remaining = Math.max(0, total - read);
 
   if (titleEl) titleEl.textContent = activeBook.title;
   if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${remaining} pg left (${pct}%)`;
@@ -4773,18 +4789,19 @@ async function healBookStatuses() {
       const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === c);
       if (cycleLogs.length === 0) continue;
       const maxEnd = Math.max(...cycleLogs.map(l => parseInt(l.end_page || 0, 10)));
-      if (maxEnd >= tot) {
+      const isHistorical = cycleLogs.some(l => l.notes && l.notes.includes('Historical cycle'));
+      if (maxEnd >= tot || isHistorical || c <= rc) {
         completedCycles = Math.max(completedCycles, c);
       }
     }
     
-    const activeCycle = completedCycles + 1;
+    const activeCycle = Math.max(completedCycles + 1, (b.status === 'In Progress' ? rc + 1 : completedCycles));
     const activeLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
     const maxActiveEnd = activeLogs.length > 0 ? Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10))) : 0;
     
-    let correctStatus = 'Not Started';
+    let correctStatus = b.status;
     let currentPagesRead = 0;
-    let correctReadCount = completedCycles;
+    let correctReadCount = Math.max(rc, completedCycles);
     
     if (maxActiveEnd > 0) {
       correctStatus = 'In Progress';

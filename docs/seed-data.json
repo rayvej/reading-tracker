@@ -1115,10 +1115,10 @@
       "group_name": "About the Faith",
       "author": "Nabil-i-Azam",
       "title": "The Dawn-Breakers",
-      "total_pages": 488,
-      "pages_read": 488,
+      "total_pages": 668,
+      "pages_read": 108,
       "read_count": 2,
-      "status": "Finished"
+      "status": "In Progress"
     },
     {
       "collection": "Bahai",
@@ -5289,6 +5289,15 @@
       "end_page": 201,
       "minutes_spent": null,
       "notes": "Historical cycle 1"
+    },
+    {
+      "date": "2026-07-22",
+      "book_title": "The Dawn-Breakers",
+      "read_cycle": 3,
+      "start_page": 88,
+      "end_page": 108,
+      "minutes_spent": 30,
+      "notes": null
     }
   ],
   "wishlist": [
