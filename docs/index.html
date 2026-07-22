@@ -39,7 +39,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style.css?v=42">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -86,7 +86,7 @@
         <!-- Google Sign-In -->
         <button id="btn-google-signin"
           class="flex items-center gap-3 w-full justify-center px-6 py-4 rounded-2xl font-semibold text-sm border transition-all active:scale-[0.98]"
-          style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); color: #fff">
+          style="background: var(--bg-card); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)">
           <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -925,6 +925,13 @@
              style="background: var(--bg-input); color: var(--text-primary); border: 0.5px solid var(--border-strong)"
              id="detail-log-notes">No notes for this session.</div>
       </div>
+      
+      <!-- Footer Action -->
+      <div class="flex gap-2.5 mt-2">
+        <button id="btn-edit-active-detail-log" class="w-full py-3 rounded-xl font-bold text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <i class="fa-solid fa-pen text-xs"></i> Edit Session
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1288,6 +1295,74 @@
     </div>
   </div>
 
+  <!-- Glassmorphic Edit Past Log Modal -->
+  <div id="edit-log-modal" class="ios-modal-overlay">
+    <!-- Blur Backdrop -->
+    <div class="absolute inset-0" onclick="closeEditLogModal()"></div>
+    
+    <!-- Modal Content Card -->
+    <div class="ios-modal-card relative flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start">
+        <div>
+          <h3 id="edit-log-title" class="text-base font-bold text-slate-100">Edit Reading Session</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Modify date, pages, cycle, or notes for this entry.</p>
+        </div>
+        <button onclick="closeEditLogModal()" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style="background: var(--bg-input); color: var(--text-secondary)">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      
+      <input type="hidden" id="edit-log-id">
+      
+      <!-- Date -->
+      <div class="form-control">
+        <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Session Date</span></label>
+        <input type="date" id="edit-log-date" class="input input-bordered glass-input w-full text-xs text-slate-200">
+      </div>
+      
+      <!-- Pages Grid -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Start Page</span></label>
+          <input type="number" id="edit-log-start" min="0" placeholder="0" class="input input-bordered glass-input w-full text-xs text-slate-200">
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">End Page</span></label>
+          <input type="number" id="edit-log-end" min="0" placeholder="0" class="input input-bordered glass-input w-full text-xs text-slate-200">
+        </div>
+      </div>
+      
+      <!-- Cycle & Minutes Grid -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reading Cycle</span></label>
+          <input type="number" id="edit-log-cycle" min="1" placeholder="1" class="input input-bordered glass-input w-full text-xs text-slate-200">
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Minutes Spent</span></label>
+          <input type="number" id="edit-log-minutes" min="0" placeholder="0" class="input input-bordered glass-input w-full text-xs text-slate-200">
+        </div>
+      </div>
+      
+      <!-- Notes -->
+      <div class="form-control">
+        <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes &amp; Quotes</span></label>
+        <textarea id="edit-log-notes" class="textarea textarea-bordered glass-input w-full h-24 resize-none text-xs text-slate-200" placeholder="Session notes..."></textarea>
+      </div>
+      
+      <!-- Actions -->
+      <div class="flex flex-col gap-2 mt-2">
+        <div class="flex gap-2.5">
+          <button onclick="closeEditLogModal()" class="flex-1 py-3 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 transition-all active:scale-[0.98]">Cancel</button>
+          <button onclick="saveLogEdit()" class="flex-1 py-3 rounded-xl font-bold text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 transition-all active:scale-[0.98]">Save Changes</button>
+        </div>
+        <button onclick="deleteLogEntry()" class="w-full py-2.5 rounded-xl font-bold text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash-can text-xs"></i> Delete Log Entry
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
@@ -1296,6 +1371,6 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=41"></script>
+  <script type="module" src="app.js?v=42"></script>
 </body>
 </html>

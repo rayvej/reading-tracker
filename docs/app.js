@@ -741,11 +741,9 @@ async function recalculateBook(title, cycle) {
 
   let newPagesRead;
   if (newStatus === 'Finished') {
-    newPagesRead = tot * completedCycles;
+    newPagesRead = tot;
   } else if (newStatus === 'In Progress') {
-    const prevCompleted = Object.entries(cycleMaxes)
-      .filter(([c, m]) => parseInt(c) !== cycle && m >= tot).length;
-    newPagesRead = tot * prevCompleted + maxCurrentCycle;
+    newPagesRead = (tot > 0 && maxCurrentCycle > tot) ? (maxCurrentCycle % tot) : maxCurrentCycle;
   } else {
     newPagesRead = 0;
   }
@@ -1107,7 +1105,8 @@ function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startD
     let libPages = compsCount * tot;
     
     if (includesToday && book && book.status === 'In Progress') {
-      libPages += (book.pages_read || 0);
+      const activeProg = (tot > 0 && (book.pages_read || 0) > tot) ? ((book.pages_read || 0) % tot) : (book.pages_read || 0);
+      libPages += activeProg;
     }
 
     const logPages = logsByBook[title] || 0;
@@ -1229,7 +1228,9 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
       if (!bookYearStats[title].years[currentYearStr]) {
         bookYearStats[title].years[currentYearStr] = { logPages: 0, completions: 0, libPages: 0 };
       }
-      bookYearStats[title].years[currentYearStr].libPages += b.pages_read;
+      const tot = parseInt(b.total_pages || 0, 10);
+      const activeProg = (tot > 0 && (b.pages_read || 0) > tot) ? ((b.pages_read || 0) % tot) : (b.pages_read || 0);
+      bookYearStats[title].years[currentYearStr].libPages += activeProg;
     }
   });
 
@@ -2437,16 +2438,40 @@ function renderRecentLogs() {
     return;
   }
   
-  activeLogs.slice(0, 5).forEach(l => {
-    const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-white/5 hover:bg-slate-900/30 transition-all cursor-pointer');
-    const pages = l.end_page - l.start_page;
+  activeLogs.slice(0, 10).forEach(l => {
+    const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-white/5 hover:bg-slate-900/30 transition-all cursor-pointer group relative overflow-hidden');
+    const pages = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    
     card.innerHTML = `
       <div class="min-w-0 flex-1">
-        <div class="text-xs font-bold text-slate-100 truncate">${l.book_title}</div>
-        <div class="text-[9px] text-slate-400 mt-0.5">${pages} pg · Cycle ${l.read_cycle} · ${fmtDate(l.date)}</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-100 truncate">${l.book_title}</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-gold/15 text-gold border border-gold/20 shrink-0">+${pages} pg</span>
+        </div>
+        <div class="text-[9px] text-slate-400 mt-0.5 flex items-center gap-2">
+          <span>Cycle ${l.read_cycle || 1}</span>
+          <span>•</span>
+          <span>pp. ${l.start_page || 0} → ${l.end_page || 0}</span>
+          <span>•</span>
+          <span>${fmtDate(l.date)}</span>
+        </div>
       </div>
-      <div class="text-xs font-bold text-slate-200">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
+      <div class="flex items-center gap-2">
+        <div class="text-xs font-bold text-slate-200">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
+        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-slate-400 border border-white/10 flex items-center justify-center transition-all shrink-0 active:scale-95" title="Edit Log">
+          <i class="fa-solid fa-pen text-[10px]"></i>
+        </button>
+      </div>
     `;
+    
+    const editBtn = card.querySelector('[data-edit-log-id]');
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEditLogModal(l);
+      });
+    }
+    
     card.addEventListener('click', () => openLogDetailModal(l));
     container.appendChild(card);
   });
@@ -2905,16 +2930,29 @@ async function saveEditBook() {
   }
 }
 
-// ── Log Detail — iOS Bottom Sheet ────────────────────────────────────────────
+// ── Log Detail & Historical Log CRUD ─────────────────────────────────────────
+let activeLogObject = null;
+
 function openLogDetailModal(l) {
+  activeLogObject = l;
   // Populate sheet fields
   $('detail-log-title').textContent = l.book_title;
   $('detail-log-date').textContent = fmtDate(l.date);
   $('detail-log-cycle').textContent = `Cycle ${l.read_cycle || 1}`;
-  const pages = (l.end_page || 0) - (l.start_page || 0);
-  $('detail-log-pages').textContent = `pp. ${l.start_page} → ${l.end_page} (${pages} pgs)`;
+  const pages = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+  $('detail-log-pages').textContent = `pp. ${l.start_page || 0} → ${l.end_page || 0} (${pages} pgs)`;
   $('detail-log-minutes').textContent = l.minutes_spent ? `${l.minutes_spent} min` : '—';
   $('detail-log-notes').textContent = l.notes || 'No notes recorded.';
+  
+  // Attach edit button listener
+  const editBtn = $('btn-edit-active-detail-log');
+  if (editBtn) {
+    editBtn.onclick = () => {
+      closeLogDetailSheet();
+      openEditLogModal(l);
+    };
+  }
+  
   // Open sheet
   $('log-detail-sheet').classList.add('open');
   $('sheet-backdrop').classList.add('open');
@@ -2926,8 +2964,128 @@ function closeLogDetailSheet() {
 }
 
 function setupLogDetailSheet() {
-  $('log-detail-close').addEventListener('click', closeLogDetailSheet);
-  $('sheet-backdrop').addEventListener('click', closeLogDetailSheet);
+  const closeBtn = $('log-detail-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeLogDetailSheet);
+  const backdrop = $('sheet-backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeLogDetailSheet);
+}
+
+// ── Historical Reading Log CRUD Modal Functions ──────────────────────────────
+let currentEditingLog = null;
+
+function openEditLogModal(l) {
+  if (!l) return;
+  currentEditingLog = l;
+  $('edit-log-id').value = l.id || '';
+  $('edit-log-title').textContent = `Edit Log — ${l.book_title}`;
+  $('edit-log-date').value = l.date || todayISO();
+  $('edit-log-start').value = parseInt(l.start_page || 0, 10);
+  $('edit-log-end').value = parseInt(l.end_page || 0, 10);
+  $('edit-log-cycle').value = parseInt(l.read_cycle || 1, 10);
+  $('edit-log-minutes').value = l.minutes_spent ? parseInt(l.minutes_spent, 10) : '';
+  $('edit-log-notes').value = l.notes || '';
+
+  $('edit-log-modal').classList.add('open');
+  Haptics.click();
+}
+
+function closeEditLogModal() {
+  $('edit-log-modal').classList.remove('open');
+  currentEditingLog = null;
+}
+
+async function saveLogEdit() {
+  const logId = $('edit-log-id').value;
+  if (!logId || !currentEditingLog) {
+    showToast('Error: No log entry selected for editing', 'error');
+    return;
+  }
+
+  const date = $('edit-log-date').value;
+  const start = parseInt($('edit-log-start').value, 10) || 0;
+  const end = parseInt($('edit-log-end').value, 10);
+  const cycle = parseInt($('edit-log-cycle').value, 10) || 1;
+  const mins = parseInt($('edit-log-minutes').value, 10) || null;
+  const notes = $('edit-log-notes').value.trim() || null;
+
+  if (!date) { showToast('Please enter a date.', 'error'); return; }
+  if (isNaN(end) || end <= 0) { showToast('Please enter a valid end page.', 'error'); return; }
+  if (end <= start) { showToast('End page must be greater than start page.', 'error'); return; }
+
+  try {
+    const originalTitle = currentEditingLog.book_title;
+    const logRef = doc(db, `users/${uid}/reading_logs/${logId}`);
+
+    await updateDoc(logRef, {
+      date,
+      start_page: start,
+      end_page: end,
+      read_cycle: cycle,
+      minutes_spent: mins,
+      notes,
+      updated_at: serverTimestamp()
+    });
+
+    // Recalculate book status and pages read
+    await recalculateBook(originalTitle, cycle);
+
+    // Invalidate logsCache & reload fresh state
+    logsCache = [];
+    await loadLogsCache();
+
+    closeEditLogModal();
+    closeLogDetailSheet();
+
+    if (currentView === 'log') {
+      renderRecentLogs();
+      renderActivityHeatmap(logsCache);
+    } else if (currentView === 'dashboard') {
+      renderDashboard();
+    }
+
+    Haptics.success();
+    showToast('✓ Reading log updated successfully!', 'success');
+  } catch (e) {
+    showToast('Failed to update log: ' + e.message, 'error');
+    console.error(e);
+  }
+}
+
+async function deleteLogEntry() {
+  if (!currentEditingLog) return;
+  const logId = currentEditingLog.id;
+  const title = currentEditingLog.book_title;
+  const cycle = currentEditingLog.read_cycle || 1;
+
+  if (!confirm(`Are you sure you want to delete this log entry for "${title}"?`)) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, `users/${uid}/reading_logs/${logId}`));
+
+    // Recalculate book status and pages read
+    await recalculateBook(title, cycle);
+
+    logsCache = [];
+    await loadLogsCache();
+
+    closeEditLogModal();
+    closeLogDetailSheet();
+
+    if (currentView === 'log') {
+      renderRecentLogs();
+      renderActivityHeatmap(logsCache);
+    } else if (currentView === 'dashboard') {
+      renderDashboard();
+    }
+
+    Haptics.success();
+    showToast('✓ Reading log entry deleted.', 'success');
+  } catch (e) {
+    showToast('Failed to delete log: ' + e.message, 'error');
+    console.error(e);
+  }
 }
 
 // Legacy stubs to prevent ReferenceErrors after consolidation
@@ -3359,11 +3517,11 @@ async function healBookStatuses() {
     
     if (maxActiveEnd > 0) {
       correctStatus = 'In Progress';
-      currentPagesRead = completedCycles * tot + maxActiveEnd;
+      currentPagesRead = (tot > 0 && maxActiveEnd > tot) ? (maxActiveEnd % tot) : maxActiveEnd;
     } else {
       if (completedCycles > 0) {
         correctStatus = 'Finished';
-        currentPagesRead = completedCycles * tot;
+        currentPagesRead = tot;
       } else {
         const isWishlist = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status);
         correctStatus = isWishlist ? b.status : 'Not Started';
@@ -3865,14 +4023,26 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 // SERVICE WORKER AUTO-UPDATE RELOAD
 // =========================================================================
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.update();
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated') {
-              window.location.reload();
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
             }
           });
         }
@@ -4202,6 +4372,10 @@ window.loadScannedShelfItem = function(idx) {
 window.triggerPageScan = triggerPageScan;
 window.closeVerificationModal = closeVerificationModal;
 window.commitVerifiedScan = commitVerifiedScan;
+window.openEditLogModal = openEditLogModal;
+window.closeEditLogModal = closeEditLogModal;
+window.saveLogEdit = saveLogEdit;
+window.deleteLogEntry = deleteLogEntry;
 
 function bindScannerEvents() {
   const trigger = document.getElementById('scan-page-trigger');
