@@ -2992,20 +2992,19 @@ async function renderDashboard() {
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(book, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
-              <div class="text-xs font-bold text-slate-100 truncate">${c.title}</div>
+              <div class="flex justify-between items-start gap-2">
+                <div class="text-xs font-bold text-slate-100 truncate">${c.title}</div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase shrink-0">Finished</span>
+              </div>
               <div class="text-[9px] text-slate-400 truncate mt-0.5">${book.author || ''}</div>
-              <div class="text-[9px] text-emerald-400 font-semibold mt-1">Finished ${fmtDate(c.date)}</div>
+              <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
+                <span>Date: <b>${fmtDate(c.date)}</b></span>
+                <span>Pages: <b>${c.pages} pg</b></span>
+              </div>
             </div>
           </div>
         `;
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Finished</span>
-          </div>
-          <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
-            <span>Date: <b>${fmtDate(c.date)}</b></span>
-            <span>Pages: <b>${c.pages} pg</b></span>
-          </div>
-        `;
-        if (book) {
+        if (book && book.id) {
           card.addEventListener('click', () => openBookDetailModal(book));
         }
         recentEl.appendChild(card);
