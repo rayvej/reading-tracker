@@ -4467,6 +4467,8 @@ async function renderBookshelf() {
   if ($('st-total-pages')) $('st-total-pages').textContent = fmtNum(totalPages);
   if ($('st-total-val'))   $('st-total-val').textContent   = `$${totalVal.toFixed(0)}`;
 
+  if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf(allItems);
+
   const container = $('bookshelf-list');
   if (!container) return;
 
@@ -7806,13 +7808,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof setEditorialTheme === 'function') setEditorialTheme(savedTheme);
 })();
 
-window.render3DSpineBookshelf = function() {
+window.render3DSpineBookshelf = async function(items) {
   const shelfContainer = document.getElementById('bookshelf-3d-shelf');
   if (!shelfContainer) return;
-  const list = (typeof booksCache !== 'undefined' && Array.isArray(booksCache) && booksCache.length) 
-    ? booksCache 
-    : (Array.isArray(window.booksCache) ? window.booksCache : []);
-  const books = list.slice(0, 24);
+  
+  let list = items;
+  if (!list || !list.length) {
+    if (typeof getMergedBooks === 'function') {
+      try {
+        list = await getMergedBooks();
+      } catch (err) {}
+    }
+  }
+  if (!list || !list.length) {
+    list = (typeof booksCache !== 'undefined' && Array.isArray(booksCache) && booksCache.length) 
+      ? booksCache 
+      : (Array.isArray(window.booksCache) ? window.booksCache : []);
+  }
+
+  const books = (list || []).slice(0, 24);
   if (!books.length) {
     shelfContainer.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center w-full font-mono">No books loaded in shelf</div>';
     return;
