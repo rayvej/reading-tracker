@@ -1766,9 +1766,9 @@ function renderMilestones(completions, ytdDaysElapsed) {
       booksFeaturedEl.innerHTML = `
         <div class="p-3.5 rounded-2xl border flex flex-col gap-2.5 relative overflow-hidden" style="background: rgba(var(--gold-rgb), 0.07); border-color: rgba(var(--gold-rgb), 0.28)">
           <div class="flex justify-between items-center gap-2 min-w-0">
-            <span class="font-bold text-xs flex items-center gap-1.5 min-w-0 truncate" style="color: var(--text-primary)">
+            <span class="font-bold text-xs flex items-center gap-1.5 min-w-0" style="color: var(--text-primary)">
               <i class="fa-solid fa-bullseye text-[12px] shrink-0" style="color: var(--gold)"></i>
-              <span class="truncate">Next: ${fmtNum(nextBookGoal.target)} Books</span>
+              <span class="whitespace-nowrap font-extrabold">Next: ${fmtNum(nextBookGoal.target)} Books</span>
             </span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0 border ml-auto" style="background: rgba(var(--gold-rgb), 0.18); color: var(--gold); border-color: rgba(var(--gold-rgb), 0.35)">
               ETA: ${nextBookGoal.eta}
@@ -1792,12 +1792,12 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const booksBadgesEl = $('ms-books-badges');
   if (booksBadgesEl) {
     booksBadgesEl.innerHTML = passedBooks.reverse().map(b => `
-      <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
-        <div class="flex items-center gap-2 min-w-0 font-bold truncate">
+      <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <div class="flex items-center gap-1.5 min-w-0 font-bold shrink-0">
           <i class="fa-solid fa-circle-check text-[11px] shrink-0"></i>
-          <span class="truncate">${fmtNum(b.target)} Books</span>
+          <span class="whitespace-nowrap font-extrabold">${fmtNum(b.target)} Books</span>
         </div>
-        <span class="text-[10px] font-medium opacity-80 whitespace-nowrap shrink-0 ml-auto">${b.date}</span>
+        <span class="text-[10px] font-medium opacity-85 whitespace-nowrap shrink-0 ml-auto">${b.date}</span>
       </div>
     `).join('');
   }
@@ -1865,9 +1865,9 @@ function renderMilestones(completions, ytdDaysElapsed) {
       pagesFeaturedEl.innerHTML = `
         <div class="p-3.5 rounded-2xl border flex flex-col gap-2.5 relative overflow-hidden" style="background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.28)">
           <div class="flex justify-between items-center gap-2 min-w-0">
-            <span class="font-bold text-xs flex items-center gap-1.5 min-w-0 truncate" style="color: var(--text-primary)">
+            <span class="font-bold text-xs flex items-center gap-1.5 min-w-0" style="color: var(--text-primary)">
               <i class="fa-solid fa-bullseye text-[12px] shrink-0" style="color: var(--emerald)"></i>
-              <span class="truncate">Next: ${fmtNum(nextPageGoal.target)} Pages</span>
+              <span class="whitespace-nowrap font-extrabold">Next: ${fmtNum(nextPageGoal.target)} Pages</span>
             </span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0 border ml-auto" style="background: rgba(16, 185, 129, 0.18); color: var(--emerald); border-color: rgba(16, 185, 129, 0.35)">
               ETA: ${nextPageGoal.eta}
@@ -1891,12 +1891,12 @@ function renderMilestones(completions, ytdDaysElapsed) {
   const pagesBadgesEl = $('ms-pages-badges');
   if (pagesBadgesEl) {
     pagesBadgesEl.innerHTML = passedPages.reverse().map(p => `
-      <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
-        <div class="flex items-center gap-2 min-w-0 font-bold truncate">
+      <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-semibold w-full transition-all hover:translate-x-0.5" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.22); color: var(--emerald)">
+        <div class="flex items-center gap-1.5 min-w-0 font-bold shrink-0">
           <i class="fa-solid fa-circle-check text-[11px] shrink-0"></i>
-          <span class="truncate">${fmtNum(p.target)} Pages</span>
+          <span class="whitespace-nowrap font-extrabold">${fmtNum(p.target)} Pages</span>
         </div>
-        <span class="text-[10px] font-medium opacity-80 whitespace-nowrap shrink-0 ml-auto">${p.date}</span>
+        <span class="text-[10px] font-medium opacity-85 whitespace-nowrap shrink-0 ml-auto">${p.date}</span>
       </div>
     `).join('');
   }
