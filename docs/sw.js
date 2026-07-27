@@ -1,10 +1,10 @@
-const CACHE_NAME = 'reading-tracker-v65';
+const CACHE_NAME = 'reading-tracker-v66';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=65',
-  BASE + 'app.js?v=65',
+  BASE + 'style.css?v=66',
+  BASE + 'app.js?v=66',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
   BASE + 'firebase-config.js',

@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=65">
+  <link rel="stylesheet" href="style.css?v=66">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -76,25 +76,25 @@
   <!-- ════════════════════════════════════════════════════════════
        OUTER CONTAINER — max-w-md iPhone-width centering
        ════════════════════════════════════════════════════════════ -->
-  <div class="relative z-10 flex flex-col h-screen h-[100dvh] max-w-[448px] mx-auto border-x border-white/5" style="background: rgba(9,10,15,0.15)">
+  <div class="relative z-10 flex flex-col h-screen h-[100dvh] max-w-[448px] mx-auto border-x" style="background: var(--bg-solid); border-color: var(--border-color)">
 
     <!-- ── SCREEN 1: Google Sign-In ── -->
     <div id="auth-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-8" style="background: var(--bg-solid); opacity: 0.98; backdrop-filter: blur(28px)">
-      <div class="w-full max-w-xs flex flex-col items-center gap-9 text-center animate-fade-in">
+      <div class="w-full max-w-xs flex flex-col items-center gap-8 text-center animate-fade-in">
         <!-- Logo -->
         <div class="relative group">
-          <div class="absolute -inset-3 rounded-[32px] opacity-50 blur-2xl transition-opacity duration-1000 group-hover:opacity-75"
-               style="background: radial-gradient(circle, rgba(214,168,92,0.6) 0%, rgba(56,189,248,0.3) 100%)"></div>
-          <img src="icon-192.png" class="relative w-28 h-28 rounded-[26px] shadow-2xl border border-white/10" alt="Reading Tracker Logo">
+          <div class="absolute -inset-3 rounded-[32px] opacity-40 blur-2xl transition-opacity duration-1000 group-hover:opacity-75"
+               style="background: radial-gradient(circle, rgba(var(--gold-rgb), 0.5) 0%, rgba(var(--accent-rgb), 0.3) 100%)"></div>
+          <img src="icon-192.png" class="relative w-28 h-28 rounded-[26px] shadow-2xl border" style="border-color: var(--border-strong)" alt="Reading Tracker Logo">
         </div>
         <!-- Title -->
         <div class="flex flex-col gap-2">
-          <h1 class="text-3xl font-black tracking-tight" style="background: linear-gradient(135deg, #F5D76E, #D6A85C, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text">Reading Tracker</h1>
+          <h1 class="text-3xl font-serif font-bold tracking-tight" style="color: var(--gold)">Reading Tracker</h1>
           <p style="color: var(--text-secondary); font-size: 14px; font-weight: 500">Your private reading journey, synced &amp; safe</p>
         </div>
         <!-- Google Sign-In -->
         <button id="btn-google-signin"
-          class="flex items-center gap-3 w-full justify-center px-6 py-4 rounded-2xl font-semibold text-sm border transition-all active:scale-[0.98]"
+          class="flex items-center gap-3 w-full justify-center px-6 py-4 rounded-2xl font-semibold text-sm border transition-all active:scale-[0.98] shadow-lg"
           style="background: var(--bg-card); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)">
           <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -2535,6 +2535,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=65"></script>
+  <script type="module" src="app.js?v=66"></script>
 </body>
 </html>

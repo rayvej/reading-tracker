@@ -145,31 +145,14 @@ function updateMetaThemeColor(isLight) {
 }
 
 function initTheme() {
-  const saved = localStorage.getItem('rt_theme') || 'light';
-  const isDark = saved === 'dark'; // saved is 'dark' -> class 'light-mode' active
-  if (isDark) {
-    document.body.classList.add('light-mode');
-  } else {
-    document.body.classList.remove('light-mode');
-  }
-  const icon = $('theme-icon');
-  if (icon) {
-    icon.classList.toggle('fa-moon', !isDark);
-    icon.classList.toggle('fa-sun', isDark);
-  }
-  updateMetaThemeColor(!isDark);
+  const saved = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
+  setEditorialTheme(saved);
 }
 
 function toggleTheme() {
-  const isDark = document.body.classList.toggle('light-mode'); // true means light-mode class added -> Dark Theme
-  localStorage.setItem('rt_theme', isDark ? 'dark' : 'light');
-  const icon = $('theme-icon');
-  if (icon) {
-    icon.classList.toggle('fa-moon', !isDark);
-    icon.classList.toggle('fa-sun', isDark);
-  }
-  updateMetaThemeColor(!isDark);
-  
+  const current = document.documentElement.getAttribute('data-theme') || 'espresso';
+  const nextTheme = (current === 'espresso' || current === 'obsidian') ? 'parched-paper' : 'espresso';
+  setEditorialTheme(nextTheme);
   if (currentView === 'dashboard') {
     renderDashboard();
   }
@@ -7787,15 +7770,34 @@ document.addEventListener('DOMContentLoaded', () => {
 window.setEditorialTheme = function(themeName) {
   document.documentElement.setAttribute('data-theme', themeName);
   localStorage.setItem('rt_editorial_theme', themeName);
-  if (typeof showToast === 'function') {
-    const labels = { espresso: '☕ Warm Espresso', obsidian: '🌌 Obsidian Dark', 'parched-paper': '📜 Parched Paper' };
-    showToast(`Editorial Theme set to ${labels[themeName] || themeName}`, 'info');
+  const isLight = (themeName === 'parched-paper' || themeName === 'light');
+  localStorage.setItem('rt_theme', isLight ? 'light' : 'dark');
+
+  if (isLight) {
+    document.body.classList.add('light-mode');
+  } else {
+    document.body.classList.remove('light-mode');
   }
+
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.classList.toggle('fa-sun', isLight);
+    icon.classList.toggle('fa-moon', !isLight);
+  }
+
+  const metaTheme = document.getElementById('theme-color-meta');
+  if (metaTheme) {
+    metaTheme.content = isLight ? '#F8F5EE' : (themeName === 'obsidian' ? '#070709' : '#181412');
+  }
+
+  document.querySelectorAll('.theme-select-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === themeName);
+  });
 };
 
 (function restoreEditorialTheme() {
-  const savedTheme = localStorage.getItem('rt_editorial_theme') || 'espresso';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  const savedTheme = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
+  window.setEditorialTheme(savedTheme);
 })();
 
 window.render3DSpineBookshelf = function() {

@@ -63,11 +63,11 @@
   --shadow-card:     0 12px 32px -10px rgba(0, 0, 0, 0.8);
 }
 
-[data-theme="parched-paper"] {
+[data-theme="parched-paper"], [data-theme="light"], body.light-mode {
   --bg:              linear-gradient(180deg, #F8F5EE 0%, #EFEADF 100%);
   --bg-solid:        #F8F5EE;
   --bg-elevated:     #EFEADF;
-  --bg-card:         rgba(255, 255, 255, 0.85);
+  --bg-card:         rgba(255, 255, 255, 0.92);
   --bg-input:        rgba(60, 45, 30, 0.05);
   --bg-input-focus:  rgba(184, 122, 40, 0.12);
   --text-primary:    #2A2118;
@@ -716,84 +716,57 @@ body.light-mode .badge-muted { background: rgba(0,0,0,0.05); }
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Sunset Ambiance (Light Mode) overrides for hardcoded dark-mode tailwind classes in HTML */
-body:not(.light-mode) .text-slate-100,
-body:not(.light-mode) .text-slate-200,
-body:not(.light-mode) .text-slate-300,
-body:not(.light-mode) .text-white,
-body:not(.light-mode) h1,
-body:not(.light-mode) h2,
-body:not(.light-mode) h3,
-body:not(.light-mode) h4,
-body:not(.light-mode) .excel-table td,
-body:not(.light-mode) .excel-table th,
-body:not(.light-mode) .excel-table tr,
-body:not(.light-mode) span[id^="ring-"],
-body:not(.light-mode) span[id^="stat-"],
-body:not(.light-mode) span[id^="detail-"],
-body:not(.light-mode) div[id^="stat-"],
-body:not(.light-mode) div[id^="detail-"] {
+/* ═══════════════════════════════════════════════════════════════
+   UNIFIED DYNAMIC THEME OVERRIDES FOR TAILWIND CLASSES
+   ══════════════════════════════════════════════════════════════ */
+.text-slate-100,
+.text-slate-200,
+.text-slate-300,
+.text-neutral-500,
+.text-zinc-400 {
   color: var(--text-primary) !important;
 }
 
-body:not(.light-mode) .text-slate-400,
-body:not(.light-mode) .text-slate-500,
-body:not(.light-mode) .label-text,
-body:not(.light-mode) .section-label,
-body:not(.light-mode) .input-hint,
-body:not(.light-mode) p[id^="detail-"] {
+.text-slate-400,
+.text-slate-500,
+.text-neutral-400,
+.text-zinc-500,
+.text-gray-400,
+.label-text,
+.section-label,
+.input-hint {
   color: var(--text-secondary) !important;
 }
 
-body:not(.light-mode) .text-neutral-400,
-body:not(.light-mode) .text-zinc-500,
-body:not(.light-mode) .text-gray-400 {
-  color: var(--text-secondary) !important;
+/* Explicit Light Mode & Parched Paper Card & Modal Contrast Repairs */
+[data-theme="parched-paper"] .glass-panel,
+[data-theme="light"] .glass-panel,
+body.light-mode .glass-panel,
+[data-theme="parched-paper"] .glass-modal,
+[data-theme="light"] .glass-modal,
+body.light-mode .glass-modal,
+[data-theme="parched-paper"] .ios-modal-card,
+[data-theme="light"] .ios-modal-card,
+body.light-mode .ios-modal-card {
+  background: #FFFFFF !important;
+  color: #2A2118 !important;
+  border-color: rgba(60, 45, 30, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(60, 45, 30, 0.08) !important;
 }
 
-body:not(.light-mode) .text-neutral-500,
-body:not(.light-mode) .text-zinc-400 {
-  color: var(--text-primary) !important;
+[data-theme="parched-paper"] .seg-control,
+[data-theme="light"] .seg-control,
+body.light-mode .seg-control {
+  background: rgba(60, 45, 30, 0.06) !important;
+  border-color: rgba(60, 45, 30, 0.15) !important;
 }
 
-/* Sunset Twilight (Dark Mode) overrides for hardcoded tailwind classes */
-body.light-mode .text-slate-100,
-body.light-mode .text-slate-200,
-body.light-mode .text-slate-300,
-body.light-mode .text-white,
-body.light-mode h1,
-body.light-mode h2,
-body.light-mode h3,
-body.light-mode h4,
-body.light-mode .excel-table td,
-body.light-mode .excel-table th,
-body.light-mode .excel-table tr,
-body.light-mode span[id^="ring-"],
-body.light-mode span[id^="stat-"],
-body.light-mode span[id^="detail-"],
-body.light-mode div[id^="stat-"],
-body.light-mode div[id^="detail-"] {
-  color: var(--text-primary) !important;
-}
-
-body.light-mode .text-slate-400,
-body.light-mode .text-slate-500,
-body.light-mode .label-text,
-body.light-mode .section-label,
-body.light-mode .input-hint,
-body.light-mode p[id^="detail-"] {
-  color: var(--text-secondary) !important;
-}
-
-body.light-mode .text-neutral-400,
-body.light-mode .text-zinc-500,
-body.light-mode .text-gray-400 {
-  color: var(--text-secondary) !important;
-}
-
-body.light-mode .text-neutral-500,
-body.light-mode .text-zinc-400 {
-  color: var(--text-primary) !important;
+[data-theme="parched-paper"] .seg-btn.active,
+[data-theme="light"] .seg-btn.active,
+body.light-mode .seg-btn.active {
+  background: #FFFFFF !important;
+  color: #B87A28 !important;
+  box-shadow: 0 2px 8px rgba(60, 45, 30, 0.12) !important;
 }
 
 /* Library Card Structural Layout Repairs */
