@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=62">
+  <link rel="stylesheet" href="style.css?v=63">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1161,6 +1161,15 @@
               </div>
             </div>
 
+            <!-- 3D Spine Bookshelf Component -->
+            <div class="glass-panel p-4 rounded-3xl flex flex-col gap-2 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center justify-between">
+                <span><i class="fa-solid fa-cubes text-amber-400"></i> 3D Spine Bookshelf</span>
+                <span class="text-[10px] font-mono text-slate-400">PHYSICAL SPINES</span>
+              </div>
+              <div id="bookshelf-3d-shelf" class="bookshelf-3d-container"></div>
+            </div>
+
             <!-- Header Controls & Toggles -->
             <div id="bookshelf-controls-bar" class="flex items-center justify-between gap-2">
               <div class="flex gap-1.5">
@@ -1357,6 +1366,20 @@
               <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <i class="fa-solid fa-file-excel text-emerald-400"></i> Data Export &amp; Backup
               </div>
+
+              <!-- Priority CSV Export Button -->
+              <button onclick="exportAllDataToCSV()" class="flex items-center justify-between p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.99] transition-all text-left group cursor-pointer">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg font-bold shadow-md">
+                    <i class="fa-solid fa-file-csv"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm font-extrabold text-amber-300">Priority CSV Export (.csv)</div>
+                    <div class="text-[11px] text-amber-400/80">Export clean tabular files for Books, Reading Logs &amp; Wishlist</div>
+                  </div>
+                </div>
+                <i class="fa-solid fa-download text-sm text-amber-400 group-hover:translate-y-0.5 transition-transform"></i>
+              </button>
 
               <!-- Excel Export Button -->
               <button id="acct-btn-export-excel" class="flex items-center justify-between p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.99] transition-all text-left group cursor-pointer">
@@ -2511,6 +2534,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=62"></script>
+  <script type="module" src="app.js?v=63"></script>
 </body>
 </html>

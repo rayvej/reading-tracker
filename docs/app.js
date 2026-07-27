@@ -7765,4 +7765,28 @@ window.setEditorialTheme = function(themeName) {
   document.documentElement.setAttribute('data-theme', savedTheme);
 })();
 
+window.render3DSpineBookshelf = function() {
+  const shelfContainer = document.getElementById('bookshelf-3d-shelf');
+  if (!shelfContainer) return;
+  const books = (window.booksCache || []).slice(0, 15);
+  if (!books.length) {
+    shelfContainer.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center w-full font-mono">No books loaded in shelf</div>';
+    return;
+  }
+
+  const colors = ['#8E442B', '#1B3B2B', '#2B2E39', '#4A3525', '#7A2E2E', '#2E5A63', '#6A4A28', '#2A4A5E', '#3D2A45'];
+  shelfContainer.innerHTML = books.map((b, i) => {
+    const height = Math.min(210, Math.max(135, 135 + ((b.total_pages || 250) % 75)));
+    const bg = colors[i % colors.length];
+    const safeTitle = (b.title || 'Untitled').replace(/"/g, '&quot;');
+    return `<div class="book-spine-item" style="height: ${height}px; background: ${bg}; color: #F5EBE6;" title="${safeTitle}">
+      <span class="truncate font-serif">${safeTitle}</span>
+    </div>`;
+  }).join('');
+};
+
+setTimeout(() => {
+  if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf();
+}, 1500);
+
 
