@@ -6556,7 +6556,6 @@ if ('serviceWorker' in navigator) {
 function getGeminiApiKey() {
   const key = localStorage.getItem('rt_gemini_api_key');
   if (key && key.trim()) {
-    // Exclude Firebase Web Auth key if incorrectly stored
     if (typeof firebaseConfig !== 'undefined' && key.trim() === firebaseConfig.apiKey) {
       localStorage.removeItem('rt_gemini_api_key');
       return '';
@@ -6564,62 +6563,6 @@ function getGeminiApiKey() {
     return key.trim();
   }
   return '';
-}
-
-let pendingGeminiKeyCallback = null;
-
-function openGeminiKeyModal(onSuccess = null) {
-  pendingGeminiKeyCallback = onSuccess;
-  const modal = $('gemini-key-modal');
-  const input = $('gemini-key-modal-input');
-  if (!modal) return;
-
-  if (input) input.value = getGeminiApiKey();
-  modal.classList.add('open');
-}
-
-function closeGeminiKeyModal() {
-  const modal = $('gemini-key-modal');
-  if (modal) modal.classList.remove('open');
-  pendingGeminiKeyCallback = null;
-}
-
-function initGeminiKeyModalListeners() {
-  const closeBtn = $('gemini-key-modal-close');
-  const cancelBtn = $('gemini-key-modal-cancel');
-  const saveBtn = $('gemini-key-modal-save');
-  const backdrop = $('gemini-key-modal-backdrop');
-
-  if (closeBtn) closeBtn.onclick = closeGeminiKeyModal;
-  if (cancelBtn) cancelBtn.onclick = closeGeminiKeyModal;
-  if (backdrop) backdrop.onclick = closeGeminiKeyModal;
-
-  if (saveBtn) {
-    saveBtn.onclick = () => {
-      const input = $('gemini-key-modal-input');
-      const val = input ? input.value.trim() : '';
-      if (!val) {
-        showToast('Please paste your Gemini API Key', 'warning');
-        return;
-      }
-      localStorage.setItem('rt_gemini_api_key', val);
-      showToast('Gemini API Key saved!', 'success');
-      closeGeminiKeyModal();
-      Haptics.success();
-
-      if ($('acct-gemini-api-key')) $('acct-gemini-api-key').value = val;
-      if ($('gemini-key-status')) {
-        $('gemini-key-status').textContent = 'Key Active ✓';
-        $('gemini-key-status').className = 'font-bold text-emerald-400';
-      }
-
-      if (typeof pendingGeminiKeyCallback === 'function') {
-        const cb = pendingGeminiKeyCallback;
-        pendingGeminiKeyCallback = null;
-        cb();
-      }
-    };
-  }
 }
 
 const SCANNER_CONFIG = {
@@ -6727,60 +6670,64 @@ async function handlePageScan(event) {
   if (!file) return;
 
   const notesField = document.getElementById('log-notes');
-  if (!notesField) return;
-
   const activeBook = document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book';
 
-  if (!navigator.onLine) {
+  const base64Data = await fileToBase64(file);
+  const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
+  const apiKey = getGeminiApiKey();
+
+  // If online & Gemini API key is configured, perform AI OCR transcription
+  if (navigator.onLine && apiKey && notesField) {
+    const spinner = document.getElementById('ocr-loading-spinner');
+    if (spinner) spinner.classList.remove('hidden');
+    notesField.disabled = true;
+    const originalPlaceholder = notesField.placeholder;
+    notesField.placeholder = "Scanning page layout with AI... Please wait.";
+    notesField.style.opacity = "0.7";
     Haptics.nudge();
+
     try {
-      const base64Data = await fileToBase64(file);
-      await saveScanOffline(base64Data, file.type || "image/jpeg", activeBook);
-      notesField.placeholder = "Offline: Page captured! Syncing automatically when back online.";
-      showToastNotification("Captured offline! Quote was saved and queued for background transcription.");
-    } catch (err) {
-      console.error("Failed to queue scan offline: ", err);
+      const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
+      openVerificationModal(result.text, result.pageNumber);
+    } catch (error) {
+      console.warn("AI OCR fallback to photo note: ", error.message);
+      saveStandaloneNote({
+        id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title: activeBook || 'Photo Quote',
+        author: '',
+        date: todayISO(),
+        notes: 'Photo Quote',
+        photoUrl: dataUrl,
+        isFavorite: false,
+        isQuote: true
+      });
+      showToast("Photo quote saved to Notes tab!", "success");
+      renderKnowledgeView();
     } finally {
+      notesField.disabled = false;
+      notesField.placeholder = originalPlaceholder;
+      notesField.style.opacity = "1";
+      if (spinner) spinner.classList.add('hidden');
       event.target.value = '';
     }
     return;
   }
 
-  // Ensure Gemini API Key is available
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    openGeminiKeyModal(() => {
-      handlePageScan(event);
-    });
-    return;
-  }
-
-  // Show loading spinner
-  const spinner = document.getElementById('ocr-loading-spinner');
-  if (spinner) spinner.classList.remove('hidden');
-  
-  notesField.disabled = true;
-  const originalPlaceholder = notesField.placeholder;
-  notesField.placeholder = "Scanning page layout, transcribing passages, and detecting corner page numbers... Please wait.";
-  notesField.style.opacity = "0.7";
-  Haptics.nudge();
-
-  try {
-    const base64Data = await fileToBase64(file);
-    const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
-    openVerificationModal(result.text, result.pageNumber);
-  } catch (error) {
-    console.error("Transcribing service failed: ", error.message);
-    notesField.placeholder = "Failed to transcribe. Tap camera icon to retry.";
-    showToast("Transcription failed: " + error.message, "error");
-    Haptics.nudge();
-  } finally {
-    notesField.disabled = false;
-    notesField.placeholder = originalPlaceholder;
-    notesField.style.opacity = "1";
-    if (spinner) spinner.classList.add('hidden');
-    event.target.value = '';
-  }
+  // Zero-prompt behavior: Save photo note immediately
+  saveStandaloneNote({
+    id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    title: activeBook || 'Photo Quote',
+    author: '',
+    date: todayISO(),
+    notes: 'Photo Quote',
+    photoUrl: dataUrl,
+    isFavorite: false,
+    isQuote: true
+  });
+  showToast("Photo note saved to Notes tab!", "success");
+  Haptics.success();
+  renderKnowledgeView();
+  event.target.value = '';
 }
 
 async function requestTranscriptionFromGemini(base64Data, mimeType) {
@@ -7441,9 +7388,16 @@ function initQuickNoteModalListeners() {
   if (ocrBtn) {
     ocrBtn.onclick = async () => {
       if (!qnUploadedPhotoData || !qnUploadedPhotoData.file) {
-        showToast('Please upload a photo first', 'warning');
+        showToast('Please choose or take a photo first', 'warning');
         return;
       }
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        showToast('Photo attached! (To enable optional AI text transcription, add a key in Account Settings)', 'info');
+        return;
+      }
+
       ocrBtn.disabled = true;
       ocrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Transcribing...`;
       try {
@@ -7458,7 +7412,7 @@ function initQuickNoteModalListeners() {
         }
       } catch (err) {
         console.error('Quick Note OCR error:', err);
-        showToast('Transcription failed: ' + err.message, 'error');
+        showToast('AI transcription unavailable: ' + err.message, 'warning');
       } finally {
         ocrBtn.disabled = false;
         ocrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Transcribe with Gemini AI`;
