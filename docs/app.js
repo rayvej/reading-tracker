@@ -144,6 +144,35 @@ function updateMetaThemeColor(isLight) {
   }
 }
 
+function setEditorialTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('rt_editorial_theme', themeName);
+  const isLight = (themeName === 'parched-paper' || themeName === 'light');
+  localStorage.setItem('rt_theme', isLight ? 'light' : 'dark');
+
+  if (isLight) {
+    document.body.classList.add('light-mode');
+  } else {
+    document.body.classList.remove('light-mode');
+  }
+
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.classList.toggle('fa-sun', isLight);
+    icon.classList.toggle('fa-moon', !isLight);
+  }
+
+  const metaTheme = document.getElementById('theme-color-meta');
+  if (metaTheme) {
+    metaTheme.content = isLight ? '#F8F5EE' : (themeName === 'obsidian' ? '#070709' : '#181412');
+  }
+
+  document.querySelectorAll('.theme-select-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === themeName);
+  });
+}
+window.setEditorialTheme = setEditorialTheme;
+
 function initTheme() {
   const saved = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
   setEditorialTheme(saved);
@@ -153,7 +182,7 @@ function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'espresso';
   const nextTheme = (current === 'espresso' || current === 'obsidian') ? 'parched-paper' : 'espresso';
   setEditorialTheme(nextTheme);
-  if (currentView === 'dashboard') {
+  if (typeof currentView !== 'undefined' && currentView === 'dashboard' && typeof renderDashboard === 'function') {
     renderDashboard();
   }
 }
@@ -7767,37 +7796,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (hmBackdrop) hmBackdrop.onclick = closeHeatmapDayModal;
 });
 
-window.setEditorialTheme = function(themeName) {
-  document.documentElement.setAttribute('data-theme', themeName);
-  localStorage.setItem('rt_editorial_theme', themeName);
-  const isLight = (themeName === 'parched-paper' || themeName === 'light');
-  localStorage.setItem('rt_theme', isLight ? 'light' : 'dark');
-
-  if (isLight) {
-    document.body.classList.add('light-mode');
-  } else {
-    document.body.classList.remove('light-mode');
-  }
-
-  const icon = document.getElementById('theme-icon');
-  if (icon) {
-    icon.classList.toggle('fa-sun', isLight);
-    icon.classList.toggle('fa-moon', !isLight);
-  }
-
-  const metaTheme = document.getElementById('theme-color-meta');
-  if (metaTheme) {
-    metaTheme.content = isLight ? '#F8F5EE' : (themeName === 'obsidian' ? '#070709' : '#181412');
-  }
-
-  document.querySelectorAll('.theme-select-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === themeName);
-  });
-};
-
 (function restoreEditorialTheme() {
   const savedTheme = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
-  window.setEditorialTheme(savedTheme);
+  if (typeof setEditorialTheme === 'function') setEditorialTheme(savedTheme);
 })();
 
 window.render3DSpineBookshelf = function() {
