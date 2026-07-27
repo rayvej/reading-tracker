@@ -6919,121 +6919,330 @@ window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledS
   window.addEventListener('online', processOfflineSyncQueue);
   setTimeout(renderPendingShelfNotifiers, 1200);
   setTimeout(initSabbaticalModule, 1000);
+  setTimeout(initQuickNoteModalListeners, 1000);
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   KNOWLEDGE & NOTES TAB ENGINE
+   KNOWLEDGE & NOTES TAB ENGINE (Overhauled)
    ══════════════════════════════════════════════════════════════ */
 let knowledgeCurrentTag = 'all';
+let knowledgeSelectedBook = 'all';
+let qnModalFavorite = false;
+let qnUploadedPhotoData = null;
+
+function getFavoriteNoteIds() {
+  try {
+    return JSON.parse(localStorage.getItem('rt_favorite_notes') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function toggleFavoriteNote(noteId) {
+  let favs = getFavoriteNoteIds();
+  if (favs.includes(noteId)) {
+    favs = favs.filter(id => id !== noteId);
+    showToast('Removed from Favorites', 'info');
+  } else {
+    favs.push(noteId);
+    showToast('★ Added to Favorites!', 'success');
+  }
+  localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+  renderKnowledgeView();
+}
+
+function getStandaloneNotes() {
+  try {
+    return JSON.parse(localStorage.getItem('rt_standalone_notes') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveStandaloneNote(noteObj) {
+  const notes = getStandaloneNotes();
+  notes.unshift(noteObj);
+  localStorage.setItem('rt_standalone_notes', JSON.stringify(notes));
+}
 
 function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   knowledgeCurrentTag = selectedTag;
   const feed = $('knowledge-quote-feed');
   if (!feed) return;
-  feed.innerHTML = '';
 
-  // Extract all non-empty notes from session logs and book records
+  const favIds = getFavoriteNoteIds();
+  const standaloneNotes = getStandaloneNotes();
   const notesList = [];
 
-  logsCache.forEach(log => {
+  // 1. Extract non-empty notes from session logs
+  logsCache.forEach((log, index) => {
     if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
+      const noteId = log.id ? `log_${log.id}` : `log_${log.date}_${index}_${(log.book_title || '').slice(0, 10)}`;
+      const isManualFav = favIds.includes(noteId);
+      const isAutoFav = log.notes.includes('★') || log.notes.toLowerCase().includes('favorite');
+      const startP = log.start_page || log.startPage || null;
+      const endP = log.end_page || log.endPage || null;
+      let pageLabel = null;
+      if (startP != null && endP != null && endP > startP) {
+        pageLabel = `pp. ${startP}–${endP}`;
+      } else if (endP != null && endP > 0) {
+        pageLabel = `p. ${endP}`;
+      }
+
       notesList.push({
-        id: log.id || 'log_' + Math.random(),
+        id: noteId,
         type: 'log',
         title: log.book_title || 'Reading Session',
         author: log.author || '',
         date: log.date,
         cycle: log.read_cycle || 1,
-        pages: (log.end_page || 0) - (log.start_page || 0),
         notes: log.notes,
+        pageLabel: pageLabel,
         isQuote: log.notes.includes('">') || log.notes.includes('"') || log.notes.length > 30,
-        isFavorite: log.notes.includes('★') || log.notes.toLowerCase().includes('favorite') || log.notes.length > 100
+        isFavorite: isManualFav || isAutoFav
       });
     }
   });
 
-  // Also extract notes attached directly to book items
+  // 2. Extract notes attached directly to book items
   booksCache.forEach(b => {
     if (b.notes && b.notes.trim()) {
+      const noteId = `book_${b.id || b.title}`;
+      const isManualFav = favIds.includes(noteId);
       notesList.push({
-        id: 'book_' + (b.id || Math.random()),
+        id: noteId,
         type: 'book',
         title: b.title,
         author: b.author || '',
         date: b.date_added || todayISO(),
         cycle: b.read_count || 1,
-        pages: b.total_pages || 0,
         notes: b.notes,
+        pageLabel: null,
         isQuote: true,
-        isFavorite: true
+        isFavorite: isManualFav || true
       });
     }
   });
 
-  // Daily Spaced Repetition Resurfacing
-  if (notesList.length > 0) {
-    const todayNum = new Date().getDate() + new Date().getMonth() * 31;
-    const resurfacedNote = notesList[todayNum % notesList.length];
-    if (resurfacedNote) {
-      if ($('daily-quote-text')) $('daily-quote-text').textContent = `"${resurfacedNote.notes.replace(/^>\s*/, '')}"`;
-      if ($('daily-quote-author')) $('daily-quote-author').textContent = resurfacedNote.author ? `— ${resurfacedNote.author}` : '— Reading Note';
-      if ($('daily-quote-book')) $('daily-quote-book').textContent = resurfacedNote.title;
+  // 3. Extract Standalone / Quick Notes
+  standaloneNotes.forEach(sn => {
+    const isManualFav = favIds.includes(sn.id);
+    notesList.push({
+      id: sn.id,
+      type: 'standalone',
+      title: sn.title || 'Quick Note',
+      author: sn.author || '',
+      date: sn.date || todayISO(),
+      notes: sn.notes || '',
+      photoUrl: sn.photoUrl || null,
+      pageLabel: sn.pageLabel || null,
+      isQuote: sn.isQuote !== false,
+      isFavorite: isManualFav || sn.isFavorite || false
+    });
+  });
+
+  // Sort notes by date descending
+  notesList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  // Update Header Stats Summary
+  const totalCount = notesList.length;
+  const favsCount = notesList.filter(n => n.isFavorite).length;
+  const uniqueBooksCount = new Set(notesList.map(n => n.title)).size;
+
+  if ($('kn-stat-total')) $('kn-stat-total').textContent = totalCount;
+  if ($('kn-stat-favs')) $('kn-stat-favs').textContent = favsCount;
+  if ($('kn-stat-books')) $('kn-stat-books').textContent = uniqueBooksCount;
+
+  // 4. Currently Reading Spotlight & Daily Resurfacing
+  const inProgressBookTitles = new Set(
+    booksCache.filter(b => b.status === 'In Progress' || b.status === 'Reading').map(b => b.title)
+  );
+
+  const currentlyReadingNotes = notesList.filter(n => inProgressBookTitles.has(n.title));
+  let resurfacedNote = null;
+  const todayNum = new Date().getDate() + new Date().getMonth() * 31;
+
+  if (currentlyReadingNotes.length > 0) {
+    resurfacedNote = currentlyReadingNotes[todayNum % currentlyReadingNotes.length];
+    if ($('daily-card-label')) {
+      $('daily-card-label').innerHTML = `<i class="fa-solid fa-book-open-reader text-xs"></i> Currently Reading Spotlight`;
     }
+  } else if (notesList.length > 0) {
+    resurfacedNote = notesList[todayNum % notesList.length];
+    if ($('daily-card-label')) {
+      $('daily-card-label').innerHTML = `<i class="fa-solid fa-sparkles text-xs"></i> Daily Highlight Resurfacing`;
+    }
+  }
+
+  if (resurfacedNote) {
+    if ($('daily-quote-text')) $('daily-quote-text').textContent = `"${resurfacedNote.notes.replace(/^>\s*/, '')}"`;
+    if ($('daily-quote-author')) $('daily-quote-author').textContent = resurfacedNote.author ? `— ${resurfacedNote.author}` : '— Reading Note';
+    if ($('daily-quote-book')) $('daily-quote-book').textContent = resurfacedNote.title;
   } else {
     if ($('daily-quote-text')) $('daily-quote-text').textContent = '"The reading of all good books is like a conversation with the finest minds of past centuries."';
     if ($('daily-quote-author')) $('daily-quote-author').textContent = '— René Descartes';
     if ($('daily-quote-book')) $('daily-quote-book').textContent = 'Reading Tracker';
   }
 
-  // Filter notes by tag
-  let filtered = notesList;
-  if (selectedTag === 'quotes') {
-    filtered = notesList.filter(n => n.isQuote);
-  } else if (selectedTag === 'reflections') {
-    filtered = notesList.filter(n => !n.isQuote || n.notes.length > 50);
-  } else if (selectedTag === 'favorites') {
-    filtered = notesList.filter(n => n.isFavorite);
+  // 5. Populate Book Filter Select Dropdown
+  const bookSelect = $('knowledge-book-select');
+  if (bookSelect) {
+    const currentVal = bookSelect.value || 'all';
+    const bookTitles = Array.from(new Set(notesList.map(n => n.title))).sort();
+    let optionsHTML = `<option value="all">📚 All Books & Notes</option><option value="standalone">📝 Standalone Notes</option>`;
+    bookTitles.forEach(t => {
+      if (t !== 'Quick Note' && t !== 'Standalone Note') {
+        optionsHTML += `<option value="${t.replace(/"/g, '&quot;')}">📖 ${t}</option>`;
+      }
+    });
+    bookSelect.innerHTML = optionsHTML;
+    bookSelect.value = currentVal;
+
+    bookSelect.onchange = () => {
+      knowledgeSelectedBook = bookSelect.value;
+      renderKnowledgeView();
+    };
   }
 
-  // Update active state on tag buttons
+  // 6. Search Bar Event Listener
+  const searchInput = $('knowledge-search-input');
+  const searchClear = $('knowledge-search-clear');
+  let searchQuery = searchInput ? searchInput.value.trim() : '';
+
+  if (searchInput) {
+    searchInput.oninput = () => {
+      if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
+      renderKnowledgeView();
+    };
+  }
+  if (searchClear) {
+    searchClear.onclick = () => {
+      if (searchInput) searchInput.value = '';
+      searchClear.classList.add('hidden');
+      renderKnowledgeView();
+    };
+  }
+
+  // 7. Apply Filters (Tag, Book, Search)
+  let filtered = notesList;
+
+  // Book Filter
+  if (knowledgeSelectedBook === 'standalone') {
+    filtered = filtered.filter(n => n.type === 'standalone' || n.title === 'Quick Note' || n.title === 'Standalone Note');
+  } else if (knowledgeSelectedBook !== 'all') {
+    filtered = filtered.filter(n => n.title === knowledgeSelectedBook);
+  }
+
+  // Tag Filter
+  if (selectedTag === 'quotes') {
+    filtered = filtered.filter(n => n.isQuote);
+  } else if (selectedTag === 'reflections') {
+    filtered = filtered.filter(n => !n.isQuote || n.notes.length > 50);
+  } else if (selectedTag === 'favorites') {
+    filtered = filtered.filter(n => n.isFavorite);
+  }
+
+  // Diacritic-Insensitive Search Filter
+  if (searchQuery) {
+    const normQ = normalizeText(searchQuery);
+    filtered = filtered.filter(n => {
+      const matchNotes = normalizeText(n.notes).includes(normQ);
+      const matchTitle = normalizeText(n.title).includes(normQ);
+      const matchAuthor = normalizeText(n.author).includes(normQ);
+      return matchNotes || matchTitle || matchAuthor;
+    });
+  }
+
+  // Update Active State on Tag Buttons
   document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
     b.classList.toggle('active', b.dataset.tag === selectedTag);
   });
 
+  feed.innerHTML = '';
+
   if (filtered.length === 0) {
     feed.innerHTML = `
       <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
-        <i class="fa-solid fa-quote-left text-3xl text-gold/40"></i>
+        <i class="fa-solid fa-quote-left text-3xl text-amber-400/40"></i>
         <p class="text-sm font-bold text-slate-200">No notes found for this filter</p>
-        <p class="text-xs text-slate-400">Log a session with notes or scan a page to populate your quote vault.</p>
+        <p class="text-xs text-slate-400">Log a session with notes, click Quick Note, or clear your search query.</p>
       </div>
     `;
     return;
   }
 
-  // Render Quote Cards
-  filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(n => {
-    const card = el('div', 'quote-card animate-fade-in');
+  // 8. Render Quote Cards
+  filtered.forEach(n => {
+    const card = el('div', 'quote-card animate-fade-in flex flex-col gap-2 relative');
+    
+    let photoHTML = '';
+    if (n.photoUrl) {
+      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-white/10"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" /></div>`;
+    }
+
+    let pageHTML = '';
+    if (n.pageLabel) {
+      pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-amber-400 mr-1"></i>${n.pageLabel}</span>`;
+    }
+
     card.innerHTML = `
+      ${photoHTML}
       <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
         "${n.notes.replace(/^>\s*/, '')}"
       </blockquote>
-      <div class="flex items-center justify-between text-xs mt-3 pt-2 border-t border-white/5">
-        <div class="flex flex-col min-w-0">
+      <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-white/5">
+        <div class="flex flex-col min-w-0 pr-2">
           <span class="font-bold truncate" style="color: var(--gold)">${n.title}</span>
-          <span class="text-[10px] text-slate-400">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-[10px] text-slate-400">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
+            ${pageHTML}
+          </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <span class="quote-tag"><i class="fa-solid fa-tag"></i> ${n.isQuote ? 'Quote' : 'Reflection'}</span>
+          <button class="quote-card-action-btn ${n.isFavorite ? 'active-fav' : ''}" data-action="fav" data-id="${n.id}" title="${n.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}">
+            <i class="${n.isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+          </button>
+          <button class="quote-card-action-btn" data-action="copy" title="Copy Quote with Citation">
+            <i class="fa-regular fa-copy"></i>
+          </button>
         </div>
       </div>
     `;
+
+    // Action button listeners
+    const favBtn = card.querySelector('[data-action="fav"]');
+    if (favBtn) {
+      favBtn.onclick = (e) => {
+        e.stopPropagation();
+        Haptics.click();
+        toggleFavoriteNote(n.id);
+      };
+    }
+
+    const copyBtn = card.querySelector('[data-action="copy"]');
+    if (copyBtn) {
+      copyBtn.onclick = (e) => {
+        e.stopPropagation();
+        Haptics.click();
+        const citation = `"${n.notes.replace(/^>\s*/, '')}"\n— ${n.author ? n.author + ', ' : ''}${n.title}${n.pageLabel ? ' (' + n.pageLabel + ')' : ''}`;
+        navigator.clipboard.writeText(citation).then(() => {
+          showToast('Quote copied to clipboard!', 'success');
+        }).catch(() => {
+          showToast('Failed to copy text', 'error');
+        });
+      };
+    }
+
     feed.appendChild(card);
   });
 
   // Wire Export Vault ZIP button
   const zipBtn = $('btn-export-markdown-zip');
   if (zipBtn) zipBtn.onclick = exportObsidianMarkdownVault;
+
+  // Wire Quick Note Open Button
+  const quickNoteBtn = $('btn-quick-note-open');
+  if (quickNoteBtn) quickNoteBtn.onclick = openQuickNoteModal;
 
   // Wire Tag Bar Click Handlers
   document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
@@ -7042,6 +7251,180 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       renderKnowledgeView(b.dataset.tag);
     };
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   QUICK NOTE & PHOTO QUOTE MODAL CONTROLLER
+   ══════════════════════════════════════════════════════════════ */
+function openQuickNoteModal() {
+  Haptics.click();
+  const modal = $('quick-note-modal');
+  if (!modal) return;
+
+  const titleInput = $('qn-title-input');
+  const textInput = $('qn-text-input');
+  const bookSelect = $('qn-book-select');
+  const previewBox = $('qn-photo-preview-box');
+  const imgElem = $('qn-photo-img');
+
+  if (titleInput) titleInput.value = '';
+  if (textInput) textInput.value = '';
+  qnUploadedPhotoData = null;
+  qnModalFavorite = false;
+
+  updateQuickNoteFavUI();
+
+  if (previewBox) previewBox.classList.add('hidden');
+  if (imgElem) imgElem.src = '';
+
+  if (bookSelect) {
+    let html = `<option value="">📝 Standalone / Unlinked Note</option>`;
+    booksCache.forEach(b => {
+      html += `<option value="${b.title.replace(/"/g, '&quot;')}">📖 ${b.title}</option>`;
+    });
+    bookSelect.innerHTML = html;
+  }
+
+  modal.classList.add('open');
+}
+
+function closeQuickNoteModal() {
+  const modal = $('quick-note-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function updateQuickNoteFavUI() {
+  const favIcon = $('qn-fav-icon');
+  const favLabel = $('qn-fav-label');
+  if (favIcon) {
+    favIcon.className = qnModalFavorite ? 'fa-solid fa-star text-amber-400' : 'fa-regular fa-star';
+  }
+  if (favLabel) {
+    favLabel.textContent = qnModalFavorite ? 'Favorited' : 'Mark Favorite';
+    favLabel.className = qnModalFavorite ? 'text-amber-400 font-bold' : 'text-slate-400';
+  }
+}
+
+function initQuickNoteModalListeners() {
+  const closeBtn = $('quick-note-close');
+  const cancelBtn = $('qn-cancel-btn');
+  const backdrop = $('quick-note-backdrop');
+  const favToggle = $('qn-favorite-toggle');
+  const photoTrigger = $('qn-photo-trigger');
+  const photoFile = $('qn-photo-file');
+  const photoRemove = $('qn-photo-remove');
+  const ocrBtn = $('qn-btn-ocr');
+  const saveBtn = $('qn-save-btn');
+
+  if (closeBtn) closeBtn.onclick = closeQuickNoteModal;
+  if (cancelBtn) cancelBtn.onclick = closeQuickNoteModal;
+  if (backdrop) backdrop.onclick = closeQuickNoteModal;
+
+  if (favToggle) {
+    favToggle.onclick = () => {
+      qnModalFavorite = !qnModalFavorite;
+      updateQuickNoteFavUI();
+      Haptics.click();
+    };
+  }
+
+  if (photoTrigger && photoFile) {
+    photoTrigger.onclick = () => photoFile.click();
+    photoFile.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        qnUploadedPhotoData = {
+          dataUrl: evt.target.result,
+          file: file
+        };
+        const previewBox = $('qn-photo-preview-box');
+        const imgElem = $('qn-photo-img');
+        if (imgElem) imgElem.src = evt.target.result;
+        if (previewBox) previewBox.classList.remove('hidden');
+        Haptics.success();
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  if (photoRemove) {
+    photoRemove.onclick = () => {
+      qnUploadedPhotoData = null;
+      const previewBox = $('qn-photo-preview-box');
+      const photoFile = $('qn-photo-file');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  if (ocrBtn) {
+    ocrBtn.onclick = async () => {
+      if (!qnUploadedPhotoData || !qnUploadedPhotoData.file) {
+        showToast('Please upload a photo first', 'warning');
+        return;
+      }
+      ocrBtn.disabled = true;
+      ocrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Transcribing...`;
+      try {
+        const base64Data = qnUploadedPhotoData.dataUrl.split(',')[1];
+        const mimeType = qnUploadedPhotoData.file.type || 'image/jpeg';
+        const result = await requestTranscriptionFromGemini(base64Data, mimeType);
+        const textInput = $('qn-text-input');
+        if (textInput && result.text) {
+          textInput.value = (textInput.value ? textInput.value + '\n\n' : '') + result.text;
+          showToast('AI Page transcription complete!', 'success');
+          Haptics.success();
+        }
+      } catch (err) {
+        console.error('Quick Note OCR error:', err);
+        showToast('Transcription failed: ' + err.message, 'error');
+      } finally {
+        ocrBtn.disabled = false;
+        ocrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Transcribe with Gemini AI`;
+      }
+    };
+  }
+
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const titleInput = $('qn-title-input') ? $('qn-title-input').value.trim() : '';
+      const textInput = $('qn-text-input') ? $('qn-text-input').value.trim() : '';
+      const bookSelect = $('qn-book-select') ? $('qn-book-select').value : '';
+
+      if (!textInput && !qnUploadedPhotoData) {
+        showToast('Please type a note or upload a photo', 'warning');
+        return;
+      }
+
+      let bookTitle = bookSelect || titleInput || 'Quick Note';
+      let authorName = '';
+
+      if (bookSelect) {
+        const matchedBook = booksCache.find(b => b.title === bookSelect);
+        if (matchedBook) authorName = matchedBook.author || '';
+      }
+
+      const newNote = {
+        id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title: bookTitle,
+        author: authorName,
+        date: todayISO(),
+        notes: textInput || 'Photo Quote',
+        photoUrl: qnUploadedPhotoData ? qnUploadedPhotoData.dataUrl : null,
+        isFavorite: qnModalFavorite,
+        isQuote: true
+      };
+
+      saveStandaloneNote(newNote);
+      closeQuickNoteModal();
+      showToast('Quick Note saved to vault!', 'success');
+      Haptics.success();
+      renderKnowledgeView();
+    };
+  }
 }
 
 /**

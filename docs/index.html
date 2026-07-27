@@ -309,23 +309,47 @@
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Notes &amp; Quotes</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your reflections, highlights &amp; knowledge vault</p>
               </div>
-              <button id="btn-export-markdown-zip"
-                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-                style="background: rgba(var(--gold-rgb),0.12); border-color: rgba(var(--gold-rgb),0.3); color: var(--gold)"
-                title="Export Obsidian Markdown Vault ZIP">
-                <i class="fa-solid fa-file-zipper text-xs"></i> Export Vault
-              </button>
+              <div class="flex items-center gap-2">
+                <button id="btn-quick-note-open"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
+                  style="background: var(--gold)"
+                  title="Add Quick Note or Photo Quote">
+                  <i class="fa-solid fa-plus text-xs"></i> Quick Note
+                </button>
+                <button id="btn-export-markdown-zip"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style="background: rgba(var(--gold-rgb),0.12); border-color: rgba(var(--gold-rgb),0.3); color: var(--gold)"
+                  title="Export Obsidian Markdown Vault ZIP">
+                  <i class="fa-solid fa-file-zipper text-xs"></i> Export
+                </button>
+              </div>
             </div>
 
-            <!-- Daily Highlights Spaced Repetition Card -->
-            <div id="knowledge-daily-card" class="daily-resurfacing-card flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <span class="section-label text-xs font-black tracking-wider uppercase flex items-center gap-1.5" style="color: var(--gold)">
-                  <i class="fa-solid fa-sparkles text-xs"></i> Daily Highlight Resurfacing
+            <!-- Notes Stats Summary Bar -->
+            <div id="knowledge-stats-row" class="grid grid-cols-3 gap-2.5">
+              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-white/5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Notes</span>
+                <span id="kn-stat-total" class="text-lg font-black text-slate-100 tabular-nums">0</span>
+              </div>
+              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-white/5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Favorites</span>
+                <span id="kn-stat-favs" class="text-lg font-black text-amber-400 tabular-nums">0</span>
+              </div>
+              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-white/5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Annotated</span>
+                <span id="kn-stat-books" class="text-lg font-black text-slate-100 tabular-nums">0</span>
+              </div>
+            </div>
+
+            <!-- Daily Highlights / Currently Reading Spaced Repetition Card -->
+            <div id="knowledge-daily-card" class="daily-resurfacing-card flex flex-col gap-3 relative overflow-hidden">
+              <div class="flex items-center justify-between z-10">
+                <span id="daily-card-label" class="section-label text-xs font-black tracking-wider uppercase flex items-center gap-1.5" style="color: var(--gold)">
+                  <i class="fa-solid fa-book-open-reader text-xs"></i> Currently Reading Spotlight
                 </span>
                 <span class="text-[10px] font-bold text-slate-400">Spaced Repetition</span>
               </div>
-              <div id="daily-resurfacing-content" class="flex flex-col gap-2">
+              <div id="daily-resurfacing-content" class="flex flex-col gap-2 z-10">
                 <blockquote id="daily-quote-text" class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">"Knowledge is of two kinds: Physical knowledge and spiritual knowledge..."</blockquote>
                 <div class="flex items-center justify-between text-xs mt-1">
                   <span id="daily-quote-author" class="font-bold text-amber-400">— ‘Abdu’l-Bahá</span>
@@ -334,12 +358,30 @@
               </div>
             </div>
 
+            <!-- Diacritic-Insensitive Search & Book Filter Bar -->
+            <div class="flex flex-col sm:flex-row gap-2.5">
+              <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+                <input type="text" id="knowledge-search-input"
+                  class="w-full pl-9 pr-8 py-2.5 text-xs font-medium rounded-2xl glass-input border border-white/10 text-slate-100 focus:outline-none focus:border-amber-400/50 transition-all placeholder:text-slate-500"
+                  placeholder="Search notes & quotes (e.g. bahai, shoghi...)" />
+                <button id="knowledge-search-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <select id="knowledge-book-select"
+                class="py-2.5 px-3 text-xs font-semibold rounded-2xl glass-input border border-white/10 text-slate-200 focus:outline-none focus:border-amber-400/50 transition-all cursor-pointer bg-slate-900/80">
+                <option value="all">📚 All Books & Notes</option>
+                <option value="standalone">📝 Standalone Notes</option>
+              </select>
+            </div>
+
             <!-- Tag Filter Pills -->
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="knowledge-tag-bar">
-              <button class="quote-tag active" data-tag="all"><i class="fa-solid fa-hashtag"></i> All Notes</button>
+              <button class="quote-tag active" data-tag="all"><i class="fa-solid fa-list-ul"></i> All Notes</button>
               <button class="quote-tag" data-tag="quotes"><i class="fa-solid fa-quote-left"></i> Highlights</button>
               <button class="quote-tag" data-tag="reflections"><i class="fa-solid fa-pen-nib"></i> Reflections</button>
-              <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star"></i> Favorites</button>
+              <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star text-amber-400"></i> Favorites</button>
             </div>
 
             <!-- Quote Feed Container -->
@@ -2235,6 +2277,95 @@
       <!-- Book Cover Grid List -->
       <div id="cover-manager-grid" class="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-[300px] max-h-[55vh] no-scrollbar">
         <!-- Dynamic Book Cards with candidate cover selection -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       QUICK NOTE & PHOTO QUOTE MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="quick-note-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="quick-note-backdrop"></div>
+    <div class="glass-panel w-full max-w-lg mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto no-scrollbar">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-amber-400"></i> Quick Note / Quote
+          </h3>
+          <p class="text-[11px] font-medium text-slate-400 mt-0.5">
+            Capture a reflection, quote, or photo page note
+          </p>
+        </div>
+        <button id="quick-note-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <div class="flex flex-col gap-3.5">
+        <!-- Title / Source -->
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-slate-300">Title / Source Name</span></label>
+          <input type="text" id="qn-title-input" class="input input-bordered glass-input w-full text-xs font-semibold" placeholder="e.g. Article, Reflection, or Book Title..." />
+        </div>
+
+        <!-- Optional Book Selection -->
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-slate-300">Link to Book (Optional)</span></label>
+          <select id="qn-book-select" class="select select-bordered glass-input w-full text-xs font-semibold bg-slate-900/90 text-slate-200">
+            <option value="">📝 Standalone / Unlinked Note</option>
+          </select>
+        </div>
+
+        <!-- Note Textarea -->
+        <div class="form-control">
+          <div class="flex items-center justify-between py-1">
+            <span class="label-text text-xs font-bold text-slate-300">Note / Quote Text</span>
+            <button type="button" id="qn-favorite-toggle" class="text-xs font-bold flex items-center gap-1 text-slate-400 hover:text-amber-400 transition-all cursor-pointer">
+              <i class="fa-regular fa-star text-sm" id="qn-fav-icon"></i> <span id="qn-fav-label">Mark Favorite</span>
+            </button>
+          </div>
+          <textarea id="qn-text-input" class="textarea textarea-bordered glass-input w-full h-28 resize-none text-xs font-medium text-slate-200" placeholder="Type or paste passage, reflection, or quote here..."></textarea>
+        </div>
+
+        <!-- Photo Attachment & AI OCR Bar -->
+        <div class="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-camera text-sky-400"></i> Photo Attachment / Page Scan
+            </span>
+            <div class="flex items-center gap-2">
+              <button type="button" id="qn-photo-trigger" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-upload text-[10px]"></i> Choose / Take Photo
+              </button>
+              <input type="file" id="qn-photo-file" accept="image/*" class="hidden" />
+            </div>
+          </div>
+
+          <!-- Photo Preview Container -->
+          <div id="qn-photo-preview-box" class="hidden relative mt-2 rounded-xl overflow-hidden border border-white/10 bg-black/40 p-2 flex flex-col items-center">
+            <img id="qn-photo-img" class="max-h-40 rounded-lg object-contain" src="" alt="Scan Preview" />
+            <div class="flex items-center gap-2 mt-2">
+              <button type="button" id="qn-btn-ocr" class="px-3 py-1 rounded-lg text-[11px] font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-md active:scale-95 transition-all flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Transcribe with Gemini AI
+              </button>
+              <button type="button" id="qn-photo-remove" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition-all cursor-pointer">
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2 pt-2 border-t border-white/10">
+        <button type="button" id="qn-cancel-btn" class="flex-1 py-3 rounded-2xl font-bold text-xs bg-white/5 hover:bg-white/10 text-slate-300 transition-all">
+          Cancel
+        </button>
+        <button type="button" id="qn-save-btn" class="flex-1 py-3 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-lg active:scale-95 transition-all">
+          <i class="fa-solid fa-check mr-1"></i> Save Note
+        </button>
       </div>
     </div>
   </div>
