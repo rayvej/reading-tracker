@@ -1393,6 +1393,26 @@
               </div>
             </div>
 
+            <!-- AI Page Scanner (Gemini OCR) Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-amber-400"></i> AI Page Scanner (Gemini OCR)
+              </div>
+              <p class="text-[11px] text-slate-400">
+                To transcribe scanned book pages into quotes automatically, enter your free <strong class="text-amber-400">Gemini API Key</strong> from Google AI Studio.
+              </p>
+              <div class="flex items-center gap-2">
+                <input type="password" id="acct-gemini-api-key" placeholder="Paste AI Studio API Key (AIzaSy...)" class="input input-bordered glass-input flex-1 text-xs h-9 font-mono">
+                <button id="btn-save-gemini-key" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all cursor-pointer shrink-0">
+                  Save Key
+                </button>
+              </div>
+              <div class="text-[10px] text-slate-500 flex justify-between items-center">
+                <span>Free key available at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-sky-400 underline font-semibold">aistudio.google.com</a></span>
+                <span id="gemini-key-status" class="font-bold text-slate-400">Not Set</span>
+              </div>
+            </div>
+
             <!-- Storage & App Info Section -->
             <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-white/10 text-xs">
               <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-1">

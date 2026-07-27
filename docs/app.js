@@ -608,6 +608,19 @@ async function renderAccountView() {
   if ($('pref-default-format')) $('pref-default-format').value = prefFormat;
   if ($('pref-daily-pages')) $('pref-daily-pages').value = prefPages;
   if ($('pref-daily-minutes')) $('pref-daily-minutes').value = prefMins;
+
+  // Load saved Gemini API Key
+  const savedGeminiKey = localStorage.getItem('rt_gemini_api_key') || '';
+  if ($('acct-gemini-api-key')) $('acct-gemini-api-key').value = savedGeminiKey;
+  if ($('gemini-key-status')) {
+    if (savedGeminiKey) {
+      $('gemini-key-status').textContent = 'Key Active ✓';
+      $('gemini-key-status').className = 'font-bold text-emerald-400';
+    } else {
+      $('gemini-key-status').textContent = 'Not Set';
+      $('gemini-key-status').className = 'font-bold text-amber-400';
+    }
+  }
 }
 
 function setupAccountView() {
@@ -644,6 +657,23 @@ function setupAccountView() {
         applyAccentColor(accent);
         showToast(`Accent color updated to ${accent.toUpperCase()}!`, 'success');
       });
+    });
+  }
+
+  // Gemini API Key Save Button
+  const btnSaveGeminiKey = $('btn-save-gemini-key');
+  const inputGeminiKey = $('acct-gemini-api-key');
+  if (btnSaveGeminiKey && inputGeminiKey) {
+    btnSaveGeminiKey.addEventListener('click', () => {
+      const keyVal = inputGeminiKey.value.trim();
+      if (keyVal) {
+        localStorage.setItem('rt_gemini_api_key', keyVal);
+        showToast('Gemini API Key saved successfully!', 'success');
+      } else {
+        localStorage.removeItem('rt_gemini_api_key');
+        showToast('Gemini API Key removed.', 'info');
+      }
+      renderAccountView();
     });
   }
 
@@ -6465,7 +6495,11 @@ const SCANNER_CONFIG = {
   dbName: "OfflineScanDB",
   storeName: "scans",
   dbVersion: 1,
-  apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key="
+  modelName: "gemini-1.5-flash",
+  getApiUrl: function() {
+    const key = localStorage.getItem('rt_gemini_api_key') || '';
+    return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+  }
 };
 
 let dbInstance = null;
@@ -6581,6 +6615,21 @@ async function handlePageScan(event) {
     return;
   }
 
+  // Check for Gemini API key
+  let apiKey = localStorage.getItem('rt_gemini_api_key');
+  if (!apiKey || !apiKey.trim()) {
+    const inputKey = prompt("AI Page Scanner requires a free Gemini API Key from Google AI Studio (aistudio.google.com/app/apikey).\n\nPlease paste your API Key below:");
+    if (inputKey && inputKey.trim()) {
+      apiKey = inputKey.trim();
+      localStorage.setItem('rt_gemini_api_key', apiKey);
+      showToast("Gemini API Key saved!", "success");
+    } else {
+      showToast("Page transcription cancelled: Gemini API key required. Add it in Account & Settings.", "warning");
+      event.target.value = '';
+      return;
+    }
+  }
+
   // Show loading spinner
   const spinner = document.getElementById('ocr-loading-spinner');
   if (spinner) spinner.classList.remove('hidden');
@@ -6598,7 +6647,7 @@ async function handlePageScan(event) {
   } catch (error) {
     console.error("Transcribing service failed: ", error.message);
     notesField.placeholder = "Failed to transcribe. Tap camera icon to retry.";
-    showToast("Failed to transcribe page photograph. Please try again.", "error");
+    showToast("Transcription failed: " + error.message, "error");
     Haptics.nudge();
   } finally {
     notesField.disabled = false;
@@ -6610,6 +6659,11 @@ async function handlePageScan(event) {
 }
 
 async function requestTranscriptionFromGemini(base64Data, mimeType) {
+  const apiKey = localStorage.getItem('rt_gemini_api_key') || '';
+  if (!apiKey) {
+    throw new Error("Missing Gemini API Key. Please enter your key in Account & Settings.");
+  }
+
   const promptText = "Perform meticulous optical character recognition (OCR) on this page photograph. Transcribe all readable paragraphs verbatim inside chronological correct line breaks. Then, check the page corners to extract the printed page integer, if visible. Return strictly as a formatted JSON object.";
   const payload = {
     contents: [
@@ -6645,14 +6699,16 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
     }
   };
 
-  const response = await fetch(SCANNER_CONFIG.apiUrl, {
+  const response = await fetch(SCANNER_CONFIG.getApiUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
-    throw new Error(`Cloud parser rejected request with status: ${response.status}`);
+    const errJson = await response.json().catch(() => ({}));
+    const msg = errJson.error?.message || `Status ${response.status}`;
+    throw new Error(`Google Gemini AI Error: ${msg}`);
   }
 
   const resultData = await response.json();
