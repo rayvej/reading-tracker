@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=64">
+  <link rel="stylesheet" href="style.css?v=65">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -2196,18 +2196,19 @@
   <!-- ════════════════════════════════════════════════════════════
        HEATMAP DAY INSPECTOR MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="modal-heatmap-day" class="modal-overlay hidden z-[900]" role="dialog" aria-modal="true" aria-labelledby="heatmap-day-modal-title">
-    <div class="modal-box max-w-md w-full glass-modal rounded-3xl p-5 border border-white/10 flex flex-col gap-4 animate-scale-up">
-      <div class="flex justify-between items-center border-b border-white/5 pb-3">
+  <div id="modal-heatmap-day" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="heatmap-day-backdrop"></div>
+    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up" style="background: var(--bg-elevated); color: var(--text-primary);">
+      <div class="flex justify-between items-center border-b border-white/10 pb-3">
         <div>
           <h3 id="heatmap-day-modal-title" class="text-base font-black tracking-tight text-slate-100">Session Logs</h3>
           <p id="heatmap-day-modal-subtitle" class="text-[10px] font-medium text-slate-400 mt-0.5">Reading activity overview</p>
         </div>
-        <button onclick="document.getElementById('modal-heatmap-day').classList.add('hidden')" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all" aria-label="Close">
+        <button id="heatmap-day-close-btn" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all cursor-pointer" aria-label="Close">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div id="heatmap-day-modal-content" class="flex flex-col gap-3.5 max-h-[60vh] overflow-y-auto no-scrollbar"></div>
+      <div id="heatmap-day-modal-content" class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto no-scrollbar"></div>
     </div>
   </div>
 
@@ -2534,6 +2535,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=64"></script>
+  <script type="module" src="app.js?v=65"></script>
 </body>
 </html>

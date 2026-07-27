@@ -2486,34 +2486,48 @@ function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
   
   const totalPages = dayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
   const totalMins = dayLogs.reduce((s, l) => s + (l.minutes_spent || 0), 0);
-  if ($('heatmap-day-modal-subtitle')) $('heatmap-day-modal-subtitle').textContent = `${dayLogs.length} sessions · ${totalPages} pages · ${totalMins} mins`;
+  if ($('heatmap-day-modal-subtitle')) $('heatmap-day-modal-subtitle').textContent = `${dayLogs.length} session${dayLogs.length === 1 ? '' : 's'} · ${totalPages} pages · ${totalMins} mins`;
 
   const contentEl = $('heatmap-day-modal-content');
-  if (!contentEl) return;
-  contentEl.innerHTML = '';
-
-  if (dayLogs.length === 0) {
-    contentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">No reading logs recorded for this day.</p>';
-  } else {
-    dayLogs.forEach(l => {
-      const pagesRead = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
-      const card = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5');
-      card.innerHTML = `
-        <div class="flex justify-between items-start">
-          <span class="text-xs font-bold text-slate-100 truncate flex-1 pr-2">${l.book_title}</span>
-          <span class="text-xs font-black text-emerald-400 tabular-nums">+${pagesRead} pg</span>
+  if (contentEl) {
+    contentEl.innerHTML = '';
+    if (dayLogs.length === 0) {
+      contentEl.innerHTML = `
+        <div class="text-center py-6 flex flex-col items-center gap-2">
+          <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 text-sm"><i class="fa-solid fa-moon"></i></div>
+          <p class="text-xs text-slate-400 font-medium">No reading sessions recorded for this date.</p>
         </div>
-        <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
-          <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
-          <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified time'}</span>
-        </div>
-        ${l.notes ? `<div class="text-[10px] text-slate-300 italic bg-white/5 p-2 rounded-xl mt-1 border border-white/5">${l.notes}</div>` : ''}
       `;
-      contentEl.appendChild(card);
-    });
+    } else {
+      dayLogs.forEach(l => {
+        const pagesRead = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+        const card = el('div', 'p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col gap-1.5');
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-bold text-slate-100 truncate flex-1 pr-2">${l.book_title}</span>
+            <span class="text-xs font-black text-emerald-400 tabular-nums">+${pagesRead} pg</span>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+            <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
+            <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified duration'}</span>
+          </div>
+          ${l.notes ? `<div class="text-[10px] text-slate-300 italic bg-white/5 p-2 rounded-xl mt-1 border border-white/5">${l.notes}</div>` : ''}
+        `;
+        contentEl.appendChild(card);
+      });
+    }
   }
 
-  modal.classList.remove('hidden');
+  modal.classList.add('open');
+  if (navigator.vibrate) navigator.vibrate([15]);
+  if (typeof showToast === 'function') {
+    showToast(`📅 ${dateFormatted}: ${totalPages} pages read (${dayLogs.length} session${dayLogs.length === 1 ? '' : 's'})`, 'info');
+  }
+}
+
+function closeHeatmapDayModal() {
+  const modal = $('modal-heatmap-day');
+  if (modal) modal.classList.remove('open');
 }
 
 async function renderDashboard() {
@@ -7763,6 +7777,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
   }
+
+  const hmClose = document.getElementById('heatmap-day-close-btn');
+  const hmBackdrop = document.getElementById('heatmap-day-backdrop');
+  if (hmClose) hmClose.onclick = closeHeatmapDayModal;
+  if (hmBackdrop) hmBackdrop.onclick = closeHeatmapDayModal;
 });
 
 window.setEditorialTheme = function(themeName) {
