@@ -6730,6 +6730,34 @@ async function handlePageScan(event) {
   event.target.value = '';
 }
 
+function openGeminiKeyModal() {
+  if (typeof showView === 'function') {
+    showView('account');
+    const input = document.getElementById('acct-gemini-api-key');
+    if (input) {
+      input.focus();
+      input.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}
+
+function initGeminiKeyModalListeners() {
+  const btnSave = document.getElementById('btn-save-gemini-key');
+  const inputKey = document.getElementById('acct-gemini-api-key');
+  if (btnSave && inputKey) {
+    btnSave.onclick = () => {
+      const val = inputKey.value.trim();
+      if (val) {
+        localStorage.setItem('rt_gemini_api_key', val);
+        if (typeof showToast === 'function') showToast('Gemini API Key saved!', 'success');
+      } else {
+        localStorage.removeItem('rt_gemini_api_key');
+        if (typeof showToast === 'function') showToast('Gemini API Key removed.', 'info');
+      }
+    };
+  }
+}
+
 async function requestTranscriptionFromGemini(base64Data, mimeType) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
@@ -6938,13 +6966,13 @@ window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledS
 
 // Run scanner setup
 (function initScannerOnRuntime() {
-  bindScannerEvents();
-  initIndexedDB();
-  window.addEventListener('online', processOfflineSyncQueue);
-  setTimeout(renderPendingShelfNotifiers, 1200);
-  setTimeout(initSabbaticalModule, 1000);
-  setTimeout(initQuickNoteModalListeners, 1000);
-  setTimeout(initGeminiKeyModalListeners, 1000);
+  if (typeof bindScannerEvents === 'function') bindScannerEvents();
+  if (typeof initIndexedDB === 'function') initIndexedDB();
+  if (typeof processOfflineSyncQueue === 'function') window.addEventListener('online', processOfflineSyncQueue);
+  if (typeof renderPendingShelfNotifiers === 'function') setTimeout(renderPendingShelfNotifiers, 1200);
+  if (typeof initSabbaticalModule === 'function') setTimeout(initSabbaticalModule, 1000);
+  if (typeof initQuickNoteModalListeners === 'function') setTimeout(initQuickNoteModalListeners, 1000);
+  if (typeof initGeminiKeyModalListeners === 'function') setTimeout(initGeminiKeyModalListeners, 1000);
 })();
 
 /* ═══════════════════════════════════════════════════════════════
@@ -7602,3 +7630,138 @@ window.openSabbaticalModal = function() {
     if (navigator.vibrate) navigator.vibrate([10]);
   }
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   BESPOKE EDITORIAL APP EXTENSIONS (CSV Export, Timer, Analytics)
+   ══════════════════════════════════════════════════════════════ */
+
+/**
+ * Priority Export: Downloads full database (Books, Reading Logs) as structured CSV files.
+ */
+window.exportAllDataToCSV = function() {
+  const bCache = window.booksCache || [];
+  const lCache = window.logsCache || [];
+
+  // 1. Export Books CSV
+  let booksCSV = "Book ID,Title,Author,Category,Status,Total Pages,Current Page,Read Count,Rating,Date Added,Notes\n";
+  bCache.forEach(b => {
+    const title = `"${(b.title || '').replace(/"/g, '""')}"`;
+    const author = `"${(b.author || '').replace(/"/g, '""')}"`;
+    const notes = `"${(b.notes || '').replace(/"/g, '""')}"`;
+    booksCSV += `${b.id || ''},${title},${author},${b.collection || b.category || ''},${b.status || ''},${b.total_pages || 0},${b.current_page || 0},${b.read_count || 0},${b.rating || 0},${b.date_added || ''},${notes}\n`;
+  });
+  triggerCSVDownload(booksCSV, `reading_tracker_books_${todayISO()}.csv`);
+
+  // 2. Export Reading Logs CSV
+  let logsCSV = "Log ID,Book ID,Book Title,Date,Start Page,End Page,Pages Read,Minutes Spent,Notes\n";
+  lCache.forEach(l => {
+    const title = `"${(l.book_title || '').replace(/"/g, '""')}"`;
+    const notes = `"${(l.notes || '').replace(/"/g, '""')}"`;
+    const pagesRead = (l.end_page || 0) - (l.start_page || 0);
+    logsCSV += `${l.id || ''},${l.book_id || ''},${title},${l.date || ''},${l.start_page || 0},${l.end_page || 0},${pagesRead},${l.minutes_spent || 0},${notes}\n`;
+  });
+  
+  setTimeout(() => {
+    triggerCSVDownload(logsCSV, `reading_tracker_logs_${todayISO()}.csv`);
+  }, 400);
+
+  if (typeof showToast === 'function') showToast('📊 Priority CSV Files Exported Successfully!', 'success');
+};
+
+function triggerCSVDownload(content, filename) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* Full-Screen Reading Timer Overlay State & Logic */
+let fullTimerState = {
+  seconds: 0,
+  intervalId: null,
+  book: null,
+  startPage: 0,
+  currentEndPage: 0
+};
+
+window.openFullTimerSession = function(book) {
+  const overlay = document.getElementById('timer-fullscreen-overlay');
+  if (!overlay) return;
+
+  fullTimerState.book = book;
+  fullTimerState.startPage = book ? (book.current_page || 0) : 0;
+  fullTimerState.currentEndPage = fullTimerState.startPage;
+  fullTimerState.seconds = 0;
+
+  const titleEl = document.getElementById('timer-book-title');
+  const startEl = document.getElementById('timer-start-page');
+  const pagesReadEl = document.getElementById('timer-pages-read');
+  const clockEl = document.getElementById('timer-clock-display');
+
+  if (titleEl) titleEl.textContent = book ? book.title : 'Active Reading Session';
+  if (startEl) startEl.textContent = fullTimerState.startPage;
+  if (pagesReadEl) pagesReadEl.textContent = '+0';
+  if (clockEl) clockEl.textContent = '00:00';
+
+  overlay.classList.add('active');
+  startTimerClock();
+};
+
+function startTimerClock() {
+  if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
+  fullTimerState.intervalId = setInterval(() => {
+    fullTimerState.seconds++;
+    const mins = Math.floor(fullTimerState.seconds / 60);
+    const secs = fullTimerState.seconds % 60;
+    const clockEl = document.getElementById('timer-clock-display');
+    const paceEl = document.getElementById('timer-speed-pace');
+
+    if (clockEl) clockEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    
+    const elapsedHours = fullTimerState.seconds / 3600;
+    const pagesRead = fullTimerState.currentEndPage - fullTimerState.startPage;
+    if (paceEl) {
+      paceEl.textContent = elapsedHours > 0.01 ? `${Math.round(pagesRead / elapsedHours)} p/hr` : '0 p/hr';
+    }
+  }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const minBtn = document.getElementById('timer-btn-minimize');
+  const pauseBtn = document.getElementById('timer-btn-pause');
+  const completeBtn = document.getElementById('timer-btn-complete');
+  const overlay = document.getElementById('timer-fullscreen-overlay');
+
+  if (minBtn) minBtn.onclick = () => overlay && overlay.classList.remove('active');
+  if (pauseBtn) {
+    pauseBtn.onclick = () => {
+      if (fullTimerState.intervalId) {
+        clearInterval(fullTimerState.intervalId);
+        fullTimerState.intervalId = null;
+        pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
+      } else {
+        startTimerClock();
+        pauseBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Pause';
+      }
+    };
+  }
+
+  if (completeBtn) {
+    completeBtn.onclick = () => {
+      if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
+      const minutesSpent = Math.max(1, Math.round(fullTimerState.seconds / 60));
+      overlay && overlay.classList.remove('active');
+      if (fullTimerState.book && typeof openQuickLogModal === 'function') {
+        openQuickLogModal(fullTimerState.book, minutesSpent);
+      } else if (typeof showToast === 'function') {
+        showToast(`Focus session logged: ${minutesSpent} min`, 'success');
+      }
+    };
+  }
+});
+

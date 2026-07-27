@@ -18,6 +18,11 @@
   <!-- Font Awesome 6 Free (SF-Symbol equivalents) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
 
+  <!-- Editorial Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <!-- DaisyUI + Tailwind (for utility classes & form components) -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -43,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -2423,6 +2428,56 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       FULL-SCREEN DISTRACTION-FREE READING TIMER OVERLAY
+       ════════════════════════════════════════════════════════════ -->
+  <div id="timer-fullscreen-overlay">
+    <div class="w-full flex justify-between items-center max-w-sm">
+      <button id="timer-btn-minimize" class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm active:scale-95 transition-all">
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="text-center">
+        <div id="timer-book-title" class="font-serif text-lg font-medium text-amber-200">Active Reading Session</div>
+        <div class="font-mono text-[10px] uppercase tracking-widest text-amber-400/80">Distraction-Free Focus Session</div>
+      </div>
+      <div class="w-10"></div>
+    </div>
+
+    <div class="flex flex-col items-center justify-center my-auto">
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 240 240">
+          <circle cx="120" cy="120" r="108" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="none" />
+          <circle id="timer-svg-ring" cx="120" cy="120" r="108" stroke="#D4A359" stroke-width="6" fill="none" stroke-dasharray="678" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-500" />
+        </svg>
+        <div id="timer-clock-display" class="timer-clock-display">00:00</div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6 text-center mt-6">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Start Page</div>
+          <div id="timer-start-page" class="font-mono text-base text-slate-200 font-semibold">0</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Pages Read</div>
+          <div id="timer-pages-read" class="font-mono text-base text-amber-400 font-bold">+0</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Current Pace</div>
+          <div id="timer-speed-pace" class="font-mono text-base text-slate-200 font-semibold">0 p/hr</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full max-w-sm flex items-center gap-3">
+      <button id="timer-btn-pause" class="flex-1 py-4 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white transition-all active:scale-95">
+        <i class="fa-solid fa-pause mr-1"></i> Pause
+      </button>
+      <button id="timer-btn-complete" class="flex-1 py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-xl transition-all active:scale-95">
+        <i class="fa-solid fa-check mr-1"></i> Finish &amp; Log
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
@@ -2438,6 +2493,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=60"></script>
+  <script type="module" src="app.js?v=61"></script>
 </body>
 </html>
