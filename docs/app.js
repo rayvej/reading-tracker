@@ -6554,18 +6554,72 @@ if ('serviceWorker' in navigator) {
 // SECTION 10: OCR PAGE SCANNER INTEGRATION
 // =========================================================================
 function getGeminiApiKey() {
-  let key = localStorage.getItem('rt_gemini_api_key');
-  if (key && key.trim()) return key.trim();
-  
-  const defaultKey = (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey) 
-    ? firebaseConfig.apiKey 
-    : 'AIzaSyB98auriNklD-DP6AUpRns7hETAuCQmuTo';
-    
-  if (defaultKey) {
-    localStorage.setItem('rt_gemini_api_key', defaultKey);
-    return defaultKey;
+  const key = localStorage.getItem('rt_gemini_api_key');
+  if (key && key.trim()) {
+    // Exclude Firebase Web Auth key if incorrectly stored
+    if (typeof firebaseConfig !== 'undefined' && key.trim() === firebaseConfig.apiKey) {
+      localStorage.removeItem('rt_gemini_api_key');
+      return '';
+    }
+    return key.trim();
   }
   return '';
+}
+
+let pendingGeminiKeyCallback = null;
+
+function openGeminiKeyModal(onSuccess = null) {
+  pendingGeminiKeyCallback = onSuccess;
+  const modal = $('gemini-key-modal');
+  const input = $('gemini-key-modal-input');
+  if (!modal) return;
+
+  if (input) input.value = getGeminiApiKey();
+  modal.classList.add('open');
+}
+
+function closeGeminiKeyModal() {
+  const modal = $('gemini-key-modal');
+  if (modal) modal.classList.remove('open');
+  pendingGeminiKeyCallback = null;
+}
+
+function initGeminiKeyModalListeners() {
+  const closeBtn = $('gemini-key-modal-close');
+  const cancelBtn = $('gemini-key-modal-cancel');
+  const saveBtn = $('gemini-key-modal-save');
+  const backdrop = $('gemini-key-modal-backdrop');
+
+  if (closeBtn) closeBtn.onclick = closeGeminiKeyModal;
+  if (cancelBtn) cancelBtn.onclick = closeGeminiKeyModal;
+  if (backdrop) backdrop.onclick = closeGeminiKeyModal;
+
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const input = $('gemini-key-modal-input');
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        showToast('Please paste your Gemini API Key', 'warning');
+        return;
+      }
+      localStorage.setItem('rt_gemini_api_key', val);
+      showToast('Gemini API Key saved!', 'success');
+      closeGeminiKeyModal();
+      Haptics.success();
+
+      if ($('acct-gemini-api-key')) $('acct-gemini-api-key').value = val;
+      if ($('gemini-key-status')) {
+        $('gemini-key-status').textContent = 'Key Active ✓';
+        $('gemini-key-status').className = 'font-bold text-emerald-400';
+      }
+
+      if (typeof pendingGeminiKeyCallback === 'function') {
+        const cb = pendingGeminiKeyCallback;
+        pendingGeminiKeyCallback = null;
+        cb();
+      }
+    };
+  }
 }
 
 const SCANNER_CONFIG = {
@@ -6692,11 +6746,12 @@ async function handlePageScan(event) {
     return;
   }
 
-  // Ensure Gemini API Key is available without prompting
+  // Ensure Gemini API Key is available
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    showToast("Gemini API key is required for AI page transcription.", "warning");
-    event.target.value = '';
+    openGeminiKeyModal(() => {
+      handlePageScan(event);
+    });
     return;
   }
 
@@ -6731,7 +6786,8 @@ async function handlePageScan(event) {
 async function requestTranscriptionFromGemini(base64Data, mimeType) {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    throw new Error("Missing Gemini API Key. Please enter your key in Account & Settings.");
+    openGeminiKeyModal();
+    throw new Error("Missing Gemini API Key. Please enter your key in Google AI Studio modal.");
   }
 
   const promptText = "Perform meticulous optical character recognition (OCR) on this page photograph. Transcribe all readable paragraphs verbatim inside chronological correct line breaks. Then, check the page corners to extract the printed page integer, if visible. Return strictly as a formatted JSON object.";
@@ -6778,6 +6834,11 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
   if (!response.ok) {
     const errJson = await response.json().catch(() => ({}));
     const msg = errJson.error?.message || `Status ${response.status}`;
+    if (response.status === 403 || msg.includes('disabled') || msg.includes('API key not valid')) {
+      localStorage.removeItem('rt_gemini_api_key');
+      openGeminiKeyModal();
+      throw new Error("Invalid or disabled Gemini API Key. Please enter a free key from Google AI Studio.");
+    }
     throw new Error(`Google Gemini AI Error: ${msg}`);
   }
 
@@ -6936,6 +6997,7 @@ window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledS
   setTimeout(renderPendingShelfNotifiers, 1200);
   setTimeout(initSabbaticalModule, 1000);
   setTimeout(initQuickNoteModalListeners, 1000);
+  setTimeout(initGeminiKeyModalListeners, 1000);
 })();
 
 /* ═══════════════════════════════════════════════════════════════

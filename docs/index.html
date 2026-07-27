@@ -2373,6 +2373,56 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       GEMINI API KEY MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="gemini-key-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="gemini-key-modal-backdrop"></div>
+    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-key text-amber-400"></i> Gemini API Key Required
+          </h3>
+          <p class="text-[11px] font-medium text-slate-400 mt-0.5">
+            Free AI transcription for scanned book pages
+          </p>
+        </div>
+        <button id="gemini-key-modal-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <div class="flex flex-col gap-3">
+        <p class="text-xs text-slate-300 leading-relaxed">
+          To transcribe page photos into quotes using AI, enter a free <strong class="text-amber-400">Gemini API Key</strong> from Google AI Studio. It will be saved securely on your device and will never prompt again.
+        </p>
+        
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-slate-300">Gemini API Key</span></label>
+          <input type="text" id="gemini-key-modal-input" class="input input-bordered glass-input w-full text-xs font-mono text-slate-100" placeholder="Paste key starting with AIzaSy..." />
+        </div>
+
+        <div class="text-[11px] text-slate-400 flex items-center gap-1">
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-sky-400"></i>
+          <span>Get free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-sky-400 font-bold underline hover:text-sky-300">aistudio.google.com/app/apikey</a></span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2 pt-2 border-t border-white/10">
+        <button type="button" id="gemini-key-modal-cancel" class="flex-1 py-3 rounded-2xl font-bold text-xs bg-white/5 hover:bg-white/10 text-slate-300 transition-all">
+          Cancel
+        </button>
+        <button type="button" id="gemini-key-modal-save" class="flex-1 py-3 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-lg active:scale-95 transition-all">
+          <i class="fa-solid fa-check mr-1"></i> Save &amp; Continue
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        SABBATICAL & STREAK FREEZE MODAL (Custom Reasons)
        ════════════════════════════════════════════════════════════ -->
   <div id="modal-sabbatical" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
