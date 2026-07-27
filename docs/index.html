@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=72">
+  <link rel="stylesheet" href="style.css?v=73">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -452,6 +452,58 @@
               </div>
             </div>
 
+            <!-- Bento Grid Stats & Streaks -->
+            <div class="bento-grid">
+              <!-- Books Completed -->
+              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
+                <span class="section-label text-[9px]" style="color: var(--accent)"><i class="fa-solid fa-book-open"></i> Books Read</span>
+                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--text-primary)" id="stat-reads">—</span>
+                <span class="text-[10px] font-medium truncate" style="color: var(--text-secondary)" id="detail-reads">—</span>
+              </div>
+              <!-- Titles -->
+              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--accent2-rgb),0.15)">
+                <span class="section-label text-[9px]" style="color: var(--accent2)"><i class="fa-solid fa-books"></i> Titles</span>
+                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--text-primary)" id="stat-titles">—</span>
+                <span class="text-[10px] font-medium truncate" style="color: var(--text-secondary)" id="detail-titles">—</span>
+              </div>
+              <!-- Pages -->
+              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--emerald-rgb),0.15)">
+                <span class="section-label text-[9px]" style="color: var(--emerald)"><i class="fa-solid fa-file-lines"></i> Pages</span>
+                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--emerald)" id="stat-pages">—</span>
+                <span class="text-[10px] font-medium truncate" style="color: rgba(var(--emerald-rgb),0.7)" id="detail-pages">—</span>
+              </div>
+              <!-- Overall % -->
+              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--gold-rgb),0.15)">
+                <span class="section-label text-[9px]" style="color: var(--gold)"><i class="fa-solid fa-chart-pie"></i> Progress</span>
+                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--gold)" id="stat-pct">—</span>
+                <span class="text-[10px] font-medium truncate" style="color: rgba(var(--gold-rgb),0.7)" id="detail-pct">—</span>
+              </div>
+
+              <!-- Streaks & Activity (Bento Grid Col Spanning 2) -->
+              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 col-span-2">
+                <span class="section-label"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent3)"></i> Streaks Summary</span>
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Current</span>
+                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-cur">—</span>
+                  </div>
+                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Longest</span>
+                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-max">—</span>
+                  </div>
+                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Read Days</span>
+                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-days-total">—</span>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-[9px] text-slate-400 border-t border-white/5 pt-2 font-semibold">
+                  <div>Pages/Active Day: <b class="text-slate-200" id="stat-pages-active-avg">—</b></div>
+                  <div>% Days (Month): <b class="text-slate-200" id="stat-days-month-pct">—</b></div>
+                  <div>% Days (YTD): <b class="text-slate-200" id="stat-days-ytd-pct">—</b></div>
+                </div>
+              </div>
+            </div>
+
             <!-- Reading Intensity Grid (GitHub-style) -->
             <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl relative">
               <div class="flex justify-between items-center gap-2">
@@ -541,57 +593,7 @@
               <span class="text-[9px] font-bold opacity-60">Chapter 2</span>
             </div>
 
-            <!-- Bento Grid Stats & Streaks -->
-            <div class="bento-grid">
-              <!-- Books Completed -->
-              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
-                <span class="section-label text-[9px]" style="color: var(--accent)"><i class="fa-solid fa-book-open"></i> Books Read</span>
-                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--text-primary)" id="stat-reads">—</span>
-                <span class="text-[10px] font-medium truncate" style="color: var(--text-secondary)" id="detail-reads">—</span>
-              </div>
-              <!-- Titles -->
-              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--accent2-rgb),0.15)">
-                <span class="section-label text-[9px]" style="color: var(--accent2)"><i class="fa-solid fa-books"></i> Titles</span>
-                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--text-primary)" id="stat-titles">—</span>
-                <span class="text-[10px] font-medium truncate" style="color: var(--text-secondary)" id="detail-titles">—</span>
-              </div>
-              <!-- Pages -->
-              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--emerald-rgb),0.15)">
-                <span class="section-label text-[9px]" style="color: var(--emerald)"><i class="fa-solid fa-file-lines"></i> Pages</span>
-                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--emerald)" id="stat-pages">—</span>
-                <span class="text-[10px] font-medium truncate" style="color: rgba(var(--emerald-rgb),0.7)" id="detail-pages">—</span>
-              </div>
-              <!-- Overall % -->
-              <div class="glass-panel p-4 flex flex-col gap-1 rounded-2xl" style="border-color: rgba(var(--gold-rgb),0.15)">
-                <span class="section-label text-[9px]" style="color: var(--gold)"><i class="fa-solid fa-chart-pie"></i> Progress</span>
-                <span class="text-3xl font-black mt-1 tabular-nums" style="color: var(--gold)" id="stat-pct">—</span>
-                <span class="text-[10px] font-medium truncate" style="color: rgba(var(--gold-rgb),0.7)" id="detail-pct">—</span>
-              </div>
 
-              <!-- Streaks & Activity (Bento Grid Col Spanning 2) -->
-              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 col-span-2">
-                <span class="section-label"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent3)"></i> Streaks Summary</span>
-                <div class="grid grid-cols-3 gap-2">
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Current</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-cur">—</span>
-                  </div>
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Longest</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-max">—</span>
-                  </div>
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Read Days</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-days-total">—</span>
-                  </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-center text-[9px] text-slate-400 border-t border-white/5 pt-2 font-semibold">
-                  <div>Pages/Active Day: <b class="text-slate-200" id="stat-pages-active-avg">—</b></div>
-                  <div>% Days (Month): <b class="text-slate-200" id="stat-days-month-pct">—</b></div>
-                  <div>% Days (YTD): <b class="text-slate-200" id="stat-days-ytd-pct">—</b></div>
-                </div>
-              </div>
-            </div>
 
             <!-- Insights Bento Hub -->
             <div class="glass-panel p-4 rounded-3xl flex flex-col gap-4 relative overflow-hidden">
@@ -2549,6 +2551,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=72"></script>
+  <script type="module" src="app.js?v=73"></script>
 </body>
 </html>
