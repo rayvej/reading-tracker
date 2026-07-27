@@ -632,23 +632,17 @@ async function renderAccountView() {
   if (userNameEl) userNameEl.textContent = savedName || (user && user.displayName) || 'Reader Profile';
   if (userEmailEl) userEmailEl.textContent = (user && user.email) ? user.email : 'local@readingtracker.app';
 
-  // Load books & logs cache to compute quick stats
-  await loadBooksCache();
+  // Load books & logs cache to compute quick stats matching Dashboard
+  const mergedBooks = await getMergedBooks();
   await loadLogsCache();
 
-  let booksRead = 0;
-  let pagesRead = 0;
-  (booksCache || []).forEach(b => {
-    const rc = b.read_count || (b.status === 'Finished' ? 1 : 0);
-    booksRead += rc;
-    pagesRead += (rc * (Number(b.pages) || 0));
-  });
+  const stats = getReconciledStats(mergedBooks, logsCache, 'all', 'all');
+  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  const streaks = calculateStreaks(activeLogs);
 
-  const streak = calculateStreak(logsCache || []);
-
-  if ($('acct-stat-books')) $('acct-stat-books').textContent = booksRead;
-  if ($('acct-stat-pages')) $('acct-stat-pages').textContent = pagesRead.toLocaleString();
-  if ($('acct-stat-streak')) $('acct-stat-streak').textContent = `${streak.current || 0}d`;
+  if ($('acct-stat-books')) $('acct-stat-books').textContent = stats.totalReads;
+  if ($('acct-stat-pages')) $('acct-stat-pages').textContent = fmtNum(stats.pagesRead);
+  if ($('acct-stat-streak')) $('acct-stat-streak').textContent = `${streaks.current}d`;
 
   // Sync theme toggle UI
   syncAccountThemeSwitch();

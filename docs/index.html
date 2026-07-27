@@ -1193,7 +1193,7 @@
           <div class="p-4 sm:p-6 max-w-xl mx-auto flex flex-col gap-5">
             
             <!-- Account Header Card -->
-            <div class="glass-panel p-5 rounded-3xl border border-white/10 flex flex-col gap-4 relative overflow-hidden" style="background: linear-gradient(135deg, rgba(214, 168, 92, 0.12), rgba(56, 189, 248, 0.08))">
+            <div class="glass-panel p-5 rounded-3xl border border-white/10 flex flex-col gap-4 relative overflow-hidden" style="background: var(--bg-elevated); box-shadow: var(--shadow-card)">
               <div class="flex items-center gap-4">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl font-black text-slate-950 shadow-lg border border-amber-300/40 shrink-0" id="account-avatar">
                   <i class="fa-solid fa-user"></i>
@@ -1201,14 +1201,14 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
                     <h2 class="text-lg font-black tracking-tight truncate" style="color: var(--text-primary)" id="account-user-name">Reader Profile</h2>
-                    <button id="btn-edit-profile-name" class="text-xs text-amber-400 hover:text-amber-300 p-1 active:scale-95 transition-all" title="Edit Profile Name">
+                    <button id="btn-edit-profile-name" class="text-xs p-1 active:scale-95 transition-all" style="color: var(--gold)" title="Edit Profile Name">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                   </div>
-                  <p class="text-xs text-slate-400 truncate mt-0.5" id="account-user-email">user@readingtracker.app</p>
+                  <p class="text-xs font-semibold truncate mt-0.5" style="color: var(--text-secondary)" id="account-user-email">user@readingtracker.app</p>
                   <div class="flex items-center gap-2 mt-2">
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30" id="account-badge">Master Reader</span>
-                    <span class="text-[10px] text-slate-400 font-semibold" id="account-member-since">Active Member</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 border border-amber-500/30" style="color: var(--gold)" id="account-badge">Master Reader</span>
+                    <span class="text-[10px] font-semibold" style="color: var(--text-tertiary)" id="account-member-since">Active Member</span>
                   </div>
                 </div>
               </div>
@@ -1216,16 +1216,16 @@
               <!-- Metrics Quick Stats bar -->
               <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/10 text-center">
                 <div class="flex flex-col">
-                  <span class="text-xs text-slate-400 font-medium">Books Read</span>
-                  <span class="text-base font-black text-amber-400 tabular-nums" id="acct-stat-books">0</span>
+                  <span class="text-xs font-bold" style="color: var(--text-secondary)">Books Read</span>
+                  <span class="text-lg font-black tabular-nums" style="color: var(--gold)" id="acct-stat-books">0</span>
                 </div>
                 <div class="flex flex-col border-x border-white/10">
-                  <span class="text-xs text-slate-400 font-medium">Pages Read</span>
-                  <span class="text-base font-black text-sky-400 tabular-nums" id="acct-stat-pages">0</span>
+                  <span class="text-xs font-bold" style="color: var(--text-secondary)">Pages Read</span>
+                  <span class="text-lg font-black tabular-nums text-sky-400" id="acct-stat-pages">0</span>
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-xs text-slate-400 font-medium">Current Streak</span>
-                  <span class="text-base font-black text-emerald-400 tabular-nums" id="acct-stat-streak">0d</span>
+                  <span class="text-xs font-bold" style="color: var(--text-secondary)">Current Streak</span>
+                  <span class="text-lg font-black tabular-nums text-emerald-400" id="acct-stat-streak">0d</span>
                 </div>
               </div>
             </div>
