@@ -2334,11 +2334,15 @@ function renderLiveSessionBanner(books, logs) {
   const authorEl = $('dash-live-author');
   const barEl = $('dash-live-bar');
   const etaBadgeEl = $('dash-live-eta-badge');
+  const coverContainerEl = $('dash-live-cover-container');
 
   if (inProgress.length === 0) {
     if (titleEl) titleEl.textContent = 'No book currently in progress';
     if (authorEl) authorEl.textContent = 'Select a book from your bookshelf to begin';
     if (barEl) barEl.style.width = '0%';
+    if (coverContainerEl) {
+      coverContainerEl.innerHTML = `<div class="w-10 h-14 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center shadow-md overflow-hidden"><i class="fa-solid fa-book text-slate-500 text-lg"></i></div>`;
+    }
     if (etaBadgeEl) {
       etaBadgeEl.textContent = 'Standby';
       etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-800 text-slate-400 border border-white/5';
@@ -2382,6 +2386,10 @@ function renderLiveSessionBanner(books, logs) {
 
   const pct = Math.min(100, Math.round((read / total) * 100));
   const remaining = Math.max(0, total - read);
+
+  if (coverContainerEl) {
+    coverContainerEl.innerHTML = getCoverHTML(activeBook, 'w-11 h-16 shrink-0 shadow-md');
+  }
 
   if (titleEl) titleEl.textContent = activeBook.title;
   if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${remaining} pg left (${pct}%)`;
