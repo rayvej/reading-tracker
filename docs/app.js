@@ -45,6 +45,20 @@ try {
 }
 const gp     = new GoogleAuthProvider();
 
+// ── Security & Sanitization Helper ──────────────────────────────────────────
+export function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>"']/g, function(m) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    }[m];
+  });
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let uid        = null;
 let booksCache = [];          // all book docs { id, ...data }
@@ -294,6 +308,8 @@ async function initApp() {
   setupBookshelf();
   setupLogDetailSheet();
   setupHaptics();
+  setupSettingsModal();
+  setupAccountView();
   showView('dashboard'); // Start on Dashboard
   
   // 2. Load database content asynchronously in the background
@@ -327,19 +343,16 @@ async function loadDatabaseData() {
     // Run background self-healing for any data status inconsistencies
     healBookStatuses();
 
-    // Check if database needs seeding
-    const booksSnap = await getDocs(query(collection(db, `users/${uid}/books`), limit(1)));
-    if (booksSnap.empty) {
-      await runSeedImport();
-      await loadBooksCache();
-      await loadLogsCache();
-      populateBookDropdown();
-      if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
-      
-      if (currentView === 'dashboard') renderDashboard();
-      if (currentView === 'goals')     renderGoals();
-      if (currentView === 'wishlist')  renderWishlist();
-      if (currentView === 'library')   renderLibrary();
+    // Ensure default goals config exists for user
+    const goalsRef = doc(db, `users/${uid}/goals/config`);
+    const goalsSnap = await getDoc(goalsRef);
+    if (!goalsSnap.exists()) {
+      await setDoc(goalsRef, {
+        annual_books_target: 12,
+        annual_pages_target: 3000,
+        monthly_books_target: 1,
+        monthly_pages_target: 300
+      }, { merge: true });
     }
   } catch (e) {
     console.error("Failed to load library database:", e);
@@ -409,6 +422,595 @@ async function runSeedImport() {
   $('seed-status').textContent = 'All done! Welcome to your Reading Tracker.';
   await new Promise(r => setTimeout(r, 800));
   showScreen('app');
+}
+
+// ── Settings & Data Management ────────────────────────────────────────────────
+function setupSettingsModal() {
+  const btnOpen = $('btn-settings-open');
+  const btnClose = $('settings-modal-close');
+  const backdrop = $('settings-modal-backdrop');
+  const modal = $('settings-modal');
+
+  if (btnOpen) {
+    btnOpen.addEventListener('click', () => {
+      showView('account');
+    });
+  }
+
+  const closeModal = () => modal.classList.remove('open');
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (backdrop) backdrop.addEventListener('click', closeModal);
+
+  // Load sample data
+  const btnSample = $('btn-load-sample-data');
+  if (btnSample) {
+    btnSample.addEventListener('click', async () => {
+      closeModal();
+      if (!confirm('Load sample reading data into your account? This will import demo books, reading logs, and goals.')) return;
+      try {
+        await runSeedImport();
+        booksCache = [];
+        logsCache = [];
+        wishlistCache = [];
+        await loadBooksCache();
+        await loadLogsCache();
+        populateBookDropdown();
+        if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
+
+        if (currentView === 'dashboard') renderDashboard();
+        if (currentView === 'goals')     renderGoals();
+        if (currentView === 'wishlist')  renderWishlist();
+        if (currentView === 'library')   renderLibrary();
+        showToast('Sample reading data loaded successfully!', 'success');
+      } catch (e) {
+        console.error('Sample data import failed:', e);
+        showToast('Failed to load sample data: ' + e.message, 'error');
+      }
+    });
+  }
+
+  // Clear account data
+  const btnClear = $('btn-clear-account-data');
+  if (btnClear) {
+    btnClear.addEventListener('click', async () => {
+      closeModal();
+      if (!confirm('Are you sure you want to delete all books, reading logs, and wishlist items from your account? This action cannot be undone.')) return;
+      try {
+        showToast('Clearing account data...', 'info');
+        
+        // Delete books
+        const booksSnap = await getDocs(collection(db, `users/${uid}/books`));
+        for (let i = 0; i < booksSnap.docs.length; i += 400) {
+          const batch = writeBatch(db);
+          booksSnap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+
+        // Delete logs
+        const logsSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
+        for (let i = 0; i < logsSnap.docs.length; i += 400) {
+          const batch = writeBatch(db);
+          logsSnap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+
+        // Delete wishlist
+        const wishSnap = await getDocs(collection(db, `users/${uid}/wishlist`));
+        for (let i = 0; i < wishSnap.docs.length; i += 400) {
+          const batch = writeBatch(db);
+          wishSnap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+
+        booksCache = [];
+        logsCache = [];
+        wishlistCache = [];
+        populateBookDropdown();
+        if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
+
+        if (currentView === 'dashboard') renderDashboard();
+        if (currentView === 'goals')     renderGoals();
+        if (currentView === 'wishlist')  renderWishlist();
+        if (currentView === 'library')   renderLibrary();
+
+        showToast('Account data reset successfully.', 'success');
+      } catch (e) {
+        console.error('Failed to clear data:', e);
+        showToast('Failed to clear data: ' + e.message, 'error');
+      }
+    });
+  }
+
+  // Change PIN
+  const btnPin = $('btn-change-pin');
+  if (btnPin) {
+    btnPin.addEventListener('click', async () => {
+      closeModal();
+      const newPin = prompt('Enter a new 4-digit PIN (numbers only):');
+      if (!newPin) return;
+      if (!/^\d{4}$/.test(newPin)) {
+        showToast('PIN must be exactly 4 digits', 'error');
+        return;
+      }
+      try {
+        const newHash = await hashPin(newPin);
+        await setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash }, { merge: true });
+        showToast('Security PIN updated successfully!', 'success');
+      } catch (e) {
+        showToast('Failed to update PIN: ' + e.message, 'error');
+      }
+    });
+  }
+}
+
+// ── Account View & Management ────────────────────────────────────────────────
+function syncAccountThemeSwitch() {
+  const switchEl = $('acct-theme-toggle-switch');
+  const textEl = $('acct-theme-status-text');
+  const iconEl = $('acct-theme-icon');
+  const isDark = document.body.classList.contains('light-mode');
+  
+  if (switchEl) switchEl.checked = isDark;
+  if (textEl) textEl.textContent = isDark ? 'Dark Mode Active' : 'Light Mode Active';
+  if (iconEl) {
+    iconEl.className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+  }
+}
+
+function applyAccentColor(accent) {
+  const accentColors = {
+    gold: { main: '#D6A85C', rgb: '214, 168, 92' },
+    emerald: { main: '#34D399', rgb: '52, 211, 153' },
+    sky: { main: '#38BDF8', rgb: '56, 189, 248' },
+    rose: { main: '#F472B6', rgb: '244, 114, 182' }
+  };
+  const theme = accentColors[accent] || accentColors.gold;
+  document.documentElement.style.setProperty('--gold', theme.main);
+  document.documentElement.style.setProperty('--gold-rgb', theme.rgb);
+  localStorage.setItem('rt_accent', accent);
+}
+
+async function renderAccountView() {
+  const user = auth.currentUser;
+  const userNameEl = $('account-user-name');
+  const userEmailEl = $('account-user-email');
+  
+  const savedName = localStorage.getItem('rt_user_name');
+  if (userNameEl) userNameEl.textContent = savedName || (user && user.displayName) || 'Reader Profile';
+  if (userEmailEl) userEmailEl.textContent = (user && user.email) ? user.email : 'local@readingtracker.app';
+
+  // Load books & logs cache to compute quick stats
+  await loadBooksCache();
+  await loadLogsCache();
+
+  let booksRead = 0;
+  let pagesRead = 0;
+  (booksCache || []).forEach(b => {
+    const rc = b.read_count || (b.status === 'Finished' ? 1 : 0);
+    booksRead += rc;
+    pagesRead += (rc * (Number(b.pages) || 0));
+  });
+
+  const streak = calculateStreak(logsCache || []);
+
+  if ($('acct-stat-books')) $('acct-stat-books').textContent = booksRead;
+  if ($('acct-stat-pages')) $('acct-stat-pages').textContent = pagesRead.toLocaleString();
+  if ($('acct-stat-streak')) $('acct-stat-streak').textContent = `${streak.current || 0}d`;
+
+  // Sync theme toggle UI
+  syncAccountThemeSwitch();
+
+  // Load saved preferences
+  const prefFormat = localStorage.getItem('rt_pref_format') || 'Physical';
+  const prefPages = localStorage.getItem('rt_pref_pages') || '25';
+  const prefMins = localStorage.getItem('rt_pref_mins') || '30';
+
+  if ($('pref-default-format')) $('pref-default-format').value = prefFormat;
+  if ($('pref-daily-pages')) $('pref-daily-pages').value = prefPages;
+  if ($('pref-daily-minutes')) $('pref-daily-minutes').value = prefMins;
+}
+
+function setupAccountView() {
+  // Edit Display Name
+  const btnEditName = $('btn-edit-profile-name');
+  if (btnEditName) {
+    btnEditName.addEventListener('click', () => {
+      const currentName = $('account-user-name') ? $('account-user-name').textContent : 'Reader Profile';
+      const newName = prompt('Enter your display name:', currentName);
+      if (newName && newName.trim()) {
+        const trimmed = newName.trim();
+        localStorage.setItem('rt_user_name', trimmed);
+        if ($('account-user-name')) $('account-user-name').textContent = trimmed;
+        showToast('Display name updated!', 'success');
+      }
+    });
+  }
+
+  // Dark/Light Theme Toggle Switch
+  const themeSwitch = $('acct-theme-toggle-switch');
+  if (themeSwitch) {
+    themeSwitch.addEventListener('change', () => {
+      toggleTheme();
+      syncAccountThemeSwitch();
+    });
+  }
+
+  // Accent Color Picker
+  const accentPicker = $('accent-color-picker');
+  if (accentPicker) {
+    accentPicker.querySelectorAll('button[data-accent]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const accent = btn.dataset.accent;
+        applyAccentColor(accent);
+        showToast(`Accent color updated to ${accent.toUpperCase()}!`, 'success');
+      });
+    });
+  }
+
+  // Security PIN Buttons
+  const btnChangePin = $('acct-btn-change-pin');
+  if (btnChangePin) {
+    btnChangePin.addEventListener('click', async () => {
+      const newPin = prompt('Enter a new 4-digit PIN (numbers only):');
+      if (!newPin) return;
+      if (!/^\d{4}$/.test(newPin)) {
+        showToast('PIN must be exactly 4 digits', 'error');
+        return;
+      }
+      try {
+        const newHash = await hashPin(newPin);
+        if (db && uid) {
+          await setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash }, { merge: true });
+        }
+        localStorage.setItem('rt_pin_hash', newHash);
+        showToast('Security PIN updated successfully!', 'success');
+        if ($('acct-pin-status-text')) $('acct-pin-status-text').textContent = 'PIN Protection Active (4 Digits)';
+      } catch (e) {
+        showToast('Failed to update PIN: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const btnTogglePin = $('acct-btn-toggle-pin');
+  if (btnTogglePin) {
+    btnTogglePin.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to remove PIN security? Anyone opening the app will have direct access.')) return;
+      try {
+        if (db && uid) {
+          await setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: null }, { merge: true });
+        }
+        localStorage.removeItem('rt_pin_hash');
+        showToast('Security PIN removed', 'info');
+        if ($('acct-pin-status-text')) $('acct-pin-status-text').textContent = 'PIN Protection Disabled';
+      } catch (e) {
+        showToast('Failed to remove PIN: ' + e.message, 'error');
+      }
+    });
+  }
+
+  // Excel Export Button
+  const btnExportExcel = $('acct-btn-export-excel');
+  if (btnExportExcel) {
+    btnExportExcel.addEventListener('click', exportToExcelWorkbook);
+  }
+
+  // JSON Export & Import
+  const btnExportJson = $('acct-btn-export-json');
+  if (btnExportJson) {
+    btnExportJson.addEventListener('click', exportToJSON);
+  }
+
+  const btnImportJson = $('acct-btn-import-json');
+  const jsonFileInput = $('acct-json-file-input');
+  if (btnImportJson && jsonFileInput) {
+    btnImportJson.addEventListener('click', () => jsonFileInput.click());
+    jsonFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) importFromJSON(file);
+      jsonFileInput.value = '';
+    });
+  }
+
+  // Sample Data & Reset Account Data
+  const btnSample = $('acct-btn-load-sample');
+  if (btnSample) {
+    btnSample.addEventListener('click', async () => {
+      if (!confirm('Load sample reading data into your account? This will import demo books, logs, and goals.')) return;
+      try {
+        await runSeedImport();
+        booksCache = [];
+        logsCache = [];
+        await loadBooksCache();
+        await loadLogsCache();
+        renderDashboard();
+        renderAccountView();
+        showToast('Sample reading data loaded successfully!', 'success');
+      } catch (e) {
+        showToast('Failed to load sample data: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const btnReset = $('acct-btn-reset-data');
+  if (btnReset) {
+    btnReset.addEventListener('click', async () => {
+      if (!confirm('DANGER: Reset all account data? This will clear all books, reading logs, and wishlist items.')) return;
+      try {
+        showToast('Resetting account data…', 'info');
+        if (db && uid) {
+          const bSnap = await getDocs(collection(db, `users/${uid}/books`));
+          for (const d of bSnap.docs) await deleteDoc(doc(db, `users/${uid}/books/${d.id}`));
+          const lSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
+          for (const d of lSnap.docs) await deleteDoc(doc(db, `users/${uid}/reading_logs/${d.id}`));
+        }
+        booksCache = [];
+        logsCache = [];
+        renderDashboard();
+        renderAccountView();
+        showToast('Account data reset complete.', 'success');
+      } catch (e) {
+        showToast('Failed to reset account data: ' + e.message, 'error');
+      }
+    });
+  }
+
+  // Reading Preferences Change Listeners
+  const prefFormat = $('pref-default-format');
+  if (prefFormat) {
+    prefFormat.addEventListener('change', () => {
+      localStorage.setItem('rt_pref_format', prefFormat.value);
+      showToast(`Default format set to ${prefFormat.value}`, 'success');
+    });
+  }
+
+  const prefPages = $('pref-daily-pages');
+  if (prefPages) {
+    prefPages.addEventListener('change', () => {
+      localStorage.setItem('rt_pref_pages', prefPages.value);
+      showToast(`Daily page target updated to ${prefPages.value} pages`, 'success');
+    });
+  }
+
+  const prefMins = $('pref-daily-minutes');
+  if (prefMins) {
+    prefMins.addEventListener('change', () => {
+      localStorage.setItem('rt_pref_mins', prefMins.value);
+      showToast(`Daily time target updated to ${prefMins.value} mins`, 'success');
+    });
+  }
+
+  // System & Cache Buttons
+  const btnClearCache = $('acct-btn-clear-cache');
+  if (btnClearCache) {
+    btnClearCache.addEventListener('click', () => {
+      localStorage.clear();
+      showToast('Cache cleared successfully! Reloading...', 'success');
+      setTimeout(() => location.reload(), 1000);
+    });
+  }
+
+  const btnSignout = $('acct-btn-signout');
+  if (btnSignout) {
+    btnSignout.addEventListener('click', () => {
+      if (confirm('Sign out of your account?')) {
+        signOut(auth);
+      }
+    });
+  }
+}
+
+async function exportToExcelWorkbook() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Excel exporter library is loading, please try again in a moment.', 'error');
+    return;
+  }
+
+  showToast('Generating Excel workbook...', 'info');
+
+  try {
+    await loadBooksCache();
+    await loadLogsCache();
+
+    const books = booksCache || [];
+    const logs = logsCache || [];
+
+    let totalFinishedCycles = 0;
+    let totalPagesRead = 0;
+    let finishedTitlesCount = 0;
+    let activeTitlesCount = 0;
+    let unreadTitlesCount = 0;
+    let bahaiCount = 0;
+    let nonBahaiCount = 0;
+
+    books.forEach(b => {
+      const readCount = b.read_count || (b.status === 'Finished' ? 1 : 0);
+      totalFinishedCycles += readCount;
+      const pages = Number(b.pages) || 0;
+      totalPagesRead += (readCount * pages);
+
+      if (b.status === 'Finished') finishedTitlesCount++;
+      else if (b.status === 'In Progress') activeTitlesCount++;
+      else if (b.status === 'Not Started' || b.status === 'Want to Buy') unreadTitlesCount++;
+
+      if ((b.category || '').toLowerCase().includes('bahá\'í') || (b.category || '').toLowerCase().includes('bahai')) {
+        bahaiCount++;
+      } else {
+        nonBahaiCount++;
+      }
+    });
+
+    const streak = calculateStreak(logs);
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Overview & Summary Stats
+    const overviewRows = [
+      ["Reading Tracker Account Summary", ""],
+      ["Export Date", new Date().toLocaleString()],
+      ["", ""],
+      ["Metric Name", "Value"],
+      ["Total Books Read (Completed Cycles)", totalFinishedCycles],
+      ["Total Pages Read (Lifetime)", totalPagesRead],
+      ["Finished Titles", finishedTitlesCount],
+      ["Active Titles (In Progress)", activeTitlesCount],
+      ["Unread Titles", unreadTitlesCount],
+      ["Total Library Titles", books.length],
+      ["Bahá'í Titles", bahaiCount],
+      ["Non-Bahá'í Titles", nonBahaiCount],
+      ["Current Reading Streak (Days)", streak.current || 0],
+      ["Longest Reading Streak (Days)", streak.max || 0],
+      ["Total Logging Days", streak.totalDays || 0],
+      ["Total Reading Log Entries", logs.length]
+    ];
+    const wsOverview = XLSX.utils.aoa_to_sheet(overviewRows);
+    wsOverview['!cols'] = [{ wch: 35 }, { wch: 25 }];
+    XLSX.utils.book_append_sheet(wb, wsOverview, "Overview & Summary");
+
+    // Sheet 2: Book Library Catalog
+    const catalogRows = books.map(b => ({
+      "ID": b.id || "",
+      "Title": b.title || "",
+      "Author": b.author || "",
+      "Category": b.category || "General",
+      "Status": b.status || "",
+      "Total Pages": Number(b.pages) || 0,
+      "Completed Reads": b.read_count || (b.status === 'Finished' ? 1 : 0),
+      "Current Cycle": b.cycle || 1,
+      "Rating": b.rating ? `${b.rating}/5` : "Unrated",
+      "Format": b.format || "Physical",
+      "Date Started": b.date_started || "",
+      "Date Finished": b.date_finished || "",
+      "Cover Approved": b.cover_approved ? "Yes" : "No",
+      "Notes": b.notes || ""
+    }));
+    const wsCatalog = XLSX.utils.json_to_sheet(catalogRows);
+    wsCatalog['!cols'] = [
+      { wch: 15 }, { wch: 35 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 12 },
+      { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+      { wch: 15 }, { wch: 30 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCatalog, "Book Library");
+
+    // Sheet 3: Reading Logs History
+    const logRows = logs.map(l => {
+      const minutes = Number(l.minutes_read) || 0;
+      const pages = Number(l.pages_read) || 0;
+      const pacePPH = (minutes > 0 && pages > 0) ? Math.round((pages / (minutes / 60))) : "N/A";
+
+      return {
+        "Log ID": l.id || "",
+        "Date": l.date || "",
+        "Book Title": l.book_title || "",
+        "Cycle": l.cycle || 1,
+        "Start Page": l.start_page ?? 0,
+        "End Page": l.end_page ?? 0,
+        "Pages Read": pages,
+        "Minutes Read": minutes,
+        "Pace (Pages/Hr)": pacePPH,
+        "Notes": l.notes || ""
+      };
+    });
+    const wsLogs = XLSX.utils.json_to_sheet(logRows);
+    wsLogs['!cols'] = [
+      { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+      { wch: 16 }, { wch: 30 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsLogs, "Reading Logs");
+
+    // Sheet 4: Annual Breakdown
+    const yearStats = {};
+    logs.forEach(l => {
+      const yr = (l.date || '').substring(0, 4);
+      if (!yr) return;
+      if (!yearStats[yr]) yearStats[yr] = { year: yr, logsCount: 0, pagesRead: 0, minutesRead: 0 };
+      yearStats[yr].logsCount++;
+      yearStats[yr].pagesRead += Number(l.pages_read) || 0;
+      yearStats[yr].minutesRead += Number(l.minutes_read) || 0;
+    });
+    const annualRows = Object.values(yearStats).sort((a,b) => b.year - a.year).map(y => ({
+      "Year": y.year,
+      "Log Entries": y.logsCount,
+      "Pages Read": y.pagesRead,
+      "Hours Read": Math.round((y.minutesRead / 60) * 10) / 10,
+      "Avg Pages/Day (Active)": Math.round((y.pagesRead / (y.logsCount || 1)) * 10) / 10
+    }));
+    const wsAnnual = XLSX.utils.json_to_sheet(annualRows);
+    wsAnnual['!cols'] = [
+      { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 22 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsAnnual, "Annual Breakdown");
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Reading_Tracker_Export_${dateStr}.xlsx`);
+    showToast('Excel workbook exported successfully!', 'success');
+  } catch (err) {
+    console.error('Export Excel error:', err);
+    showToast('Failed to export Excel workbook: ' + err.message, 'error');
+  }
+}
+
+async function exportToJSON() {
+  await loadBooksCache();
+  await loadLogsCache();
+
+  const data = {
+    app: "Reading Tracker",
+    version: "2.5.0",
+    exportDate: new Date().toISOString(),
+    books: booksCache,
+    logs: logsCache
+  };
+
+  const jsonStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Reading_Tracker_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON backup exported successfully!', 'success');
+}
+
+function importFromJSON(file) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.books || !Array.isArray(data.books)) {
+        throw new Error('Invalid backup file format: missing books array');
+      }
+
+      showToast(`Importing ${data.books.length} books and ${(data.logs || []).length} logs...`, 'info');
+
+      if (db && uid) {
+        for (const b of data.books) {
+          const ref = doc(db, `users/${uid}/books/${b.id || Date.now()}`);
+          await setDoc(ref, b, { merge: true });
+        }
+        if (data.logs && Array.isArray(data.logs)) {
+          for (const l of data.logs) {
+            const ref = doc(db, `users/${uid}/reading_logs/${l.id || Date.now()}`);
+            await setDoc(ref, l, { merge: true });
+          }
+        }
+      }
+
+      booksCache = [];
+      logsCache = [];
+      await loadBooksCache();
+      await loadLogsCache();
+
+      renderDashboard();
+      renderAccountView();
+      showToast('Import completed successfully!', 'success');
+    } catch (err) {
+      console.error('Import JSON error:', err);
+      showToast('Failed to import backup: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ── Books Cache ───────────────────────────────────────────────────────────────
@@ -521,10 +1123,22 @@ async function getMergedBooks() {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function setupNav() {
-  // Wire iOS tab bar
+  // Wire iOS tab bar with WebHaptics
   document.querySelectorAll('#tab-bar .tab-item').forEach(btn => {
-    btn.addEventListener('click', () => showView(btn.dataset.view));
+    btn.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate([8]);
+      showView(btn.dataset.view);
+    });
   });
+
+  // Wire Center Floating Action Button (FAB) for Log Session
+  const fabLog = $('btn-fab-log');
+  if (fabLog) {
+    fabLog.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate([10]);
+      showView('log');
+    });
+  }
 
   // Wire dark/light mode toggle
   const themeBtn = $('btn-theme-toggle');
@@ -552,11 +1166,13 @@ function showView(name) {
 
   // Refresh content on tab open
   if (name === 'dashboard') renderDashboard();
+  if (name === 'knowledge') renderKnowledgeView();
   if (name === 'goals')     renderGoals();
   if (name === 'wishlist')  renderBookshelf();
   if (name === 'log')       renderLogView();
+  if (name === 'account')   renderAccountView();
 
-  // Show/hide wishlist FAB (now always hidden — add book is in header)
+  // Hide wishlist fab if present
   const fab = $('wishlist-fab');
   if (fab) fab.classList.add('hidden');
 }
@@ -6152,4 +6768,272 @@ window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledS
   initIndexedDB();
   window.addEventListener('online', processOfflineSyncQueue);
   setTimeout(renderPendingShelfNotifiers, 1200);
+  setTimeout(initSabbaticalModule, 1000);
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+   KNOWLEDGE & NOTES TAB ENGINE
+   ══════════════════════════════════════════════════════════════ */
+let knowledgeCurrentTag = 'all';
+
+function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
+  knowledgeCurrentTag = selectedTag;
+  const feed = $('knowledge-quote-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+
+  // Extract all non-empty notes from session logs and book records
+  const notesList = [];
+
+  logsCache.forEach(log => {
+    if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
+      notesList.push({
+        id: log.id || 'log_' + Math.random(),
+        type: 'log',
+        title: log.book_title || 'Reading Session',
+        author: log.author || '',
+        date: log.date,
+        cycle: log.read_cycle || 1,
+        pages: (log.end_page || 0) - (log.start_page || 0),
+        notes: log.notes,
+        isQuote: log.notes.includes('">') || log.notes.includes('"') || log.notes.length > 30,
+        isFavorite: log.notes.includes('★') || log.notes.toLowerCase().includes('favorite') || log.notes.length > 100
+      });
+    }
+  });
+
+  // Also extract notes attached directly to book items
+  booksCache.forEach(b => {
+    if (b.notes && b.notes.trim()) {
+      notesList.push({
+        id: 'book_' + (b.id || Math.random()),
+        type: 'book',
+        title: b.title,
+        author: b.author || '',
+        date: b.date_added || todayISO(),
+        cycle: b.read_count || 1,
+        pages: b.total_pages || 0,
+        notes: b.notes,
+        isQuote: true,
+        isFavorite: true
+      });
+    }
+  });
+
+  // Daily Spaced Repetition Resurfacing
+  if (notesList.length > 0) {
+    const todayNum = new Date().getDate() + new Date().getMonth() * 31;
+    const resurfacedNote = notesList[todayNum % notesList.length];
+    if (resurfacedNote) {
+      if ($('daily-quote-text')) $('daily-quote-text').textContent = `"${resurfacedNote.notes.replace(/^>\s*/, '')}"`;
+      if ($('daily-quote-author')) $('daily-quote-author').textContent = resurfacedNote.author ? `— ${resurfacedNote.author}` : '— Reading Note';
+      if ($('daily-quote-book')) $('daily-quote-book').textContent = resurfacedNote.title;
+    }
+  } else {
+    if ($('daily-quote-text')) $('daily-quote-text').textContent = '"The reading of all good books is like a conversation with the finest minds of past centuries."';
+    if ($('daily-quote-author')) $('daily-quote-author').textContent = '— René Descartes';
+    if ($('daily-quote-book')) $('daily-quote-book').textContent = 'Reading Tracker';
+  }
+
+  // Filter notes by tag
+  let filtered = notesList;
+  if (selectedTag === 'quotes') {
+    filtered = notesList.filter(n => n.isQuote);
+  } else if (selectedTag === 'reflections') {
+    filtered = notesList.filter(n => !n.isQuote || n.notes.length > 50);
+  } else if (selectedTag === 'favorites') {
+    filtered = notesList.filter(n => n.isFavorite);
+  }
+
+  // Update active state on tag buttons
+  document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
+    b.classList.toggle('active', b.dataset.tag === selectedTag);
+  });
+
+  if (filtered.length === 0) {
+    feed.innerHTML = `
+      <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
+        <i class="fa-solid fa-quote-left text-3xl text-gold/40"></i>
+        <p class="text-sm font-bold text-slate-200">No notes found for this filter</p>
+        <p class="text-xs text-slate-400">Log a session with notes or scan a page to populate your quote vault.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Render Quote Cards
+  filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(n => {
+    const card = el('div', 'quote-card animate-fade-in');
+    card.innerHTML = `
+      <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
+        "${n.notes.replace(/^>\s*/, '')}"
+      </blockquote>
+      <div class="flex items-center justify-between text-xs mt-3 pt-2 border-t border-white/5">
+        <div class="flex flex-col min-w-0">
+          <span class="font-bold truncate" style="color: var(--gold)">${n.title}</span>
+          <span class="text-[10px] text-slate-400">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="quote-tag"><i class="fa-solid fa-tag"></i> ${n.isQuote ? 'Quote' : 'Reflection'}</span>
+        </div>
+      </div>
+    `;
+    feed.appendChild(card);
+  });
+
+  // Wire Export Vault ZIP button
+  const zipBtn = $('btn-export-markdown-zip');
+  if (zipBtn) zipBtn.onclick = exportObsidianMarkdownVault;
+
+  // Wire Tag Bar Click Handlers
+  document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
+    b.onclick = () => {
+      if (navigator.vibrate) navigator.vibrate([8]);
+      renderKnowledgeView(b.dataset.tag);
+    };
+  });
+}
+
+/**
+ * Export Obsidian-Compatible Markdown Vault ZIP Archive
+ */
+async function exportObsidianMarkdownVault() {
+  if (typeof JSZip === 'undefined') {
+    showToast('JSZip library loading... please try again in a moment');
+    return;
+  }
+
+  const zip = new JSZip();
+  const booksFolder = zip.folder('Books');
+  const sessionsFolder = zip.folder('Sessions');
+
+  // Export finished & active books as Markdown files with YAML frontmatter
+  booksCache.forEach(b => {
+    const safeTitle = (b.title || 'Untitled').replace(/[\\/:*?"<>|]/g, '_');
+    const content = `---
+title: "${b.title || ''}"
+author: "${b.author || ''}"
+category: "${b.collection || b.category || 'General'}"
+status: "${b.status || 'Not Started'}"
+total_pages: ${b.total_pages || 0}
+read_count: ${b.read_count || 0}
+rating: ${b.rating || 0}
+date_added: "${b.date_added || ''}"
+tags: [reading-tracker, ${b.collection === 'Bahai' ? 'bahai' : 'non-bahai'}]
+---
+
+# ${b.title || 'Untitled'}
+**Author:** ${b.author || 'Unknown'}  
+**Status:** ${b.status || 'Not Started'} | **Pages:** ${b.total_pages || 0}
+
+## Notes & Reflections
+${b.notes || 'No notes logged for this book.'}
+`;
+    booksFolder.file(`${safeTitle}.md`, content);
+  });
+
+  // Export sessions with quotes as Markdown files
+  const activeLogs = logsCache.filter(l => l.notes && l.notes.trim() && !l.notes.startsWith('Historical cycle'));
+  activeLogs.forEach(l => {
+    const safeTitle = (l.book_title || 'Session').replace(/[\\/:*?"<>|]/g, '_');
+    const dateStr = l.date || todayISO();
+    const content = `---
+book_title: "${l.book_title || ''}"
+date: "${dateStr}"
+read_cycle: ${l.read_cycle || 1}
+pages_read: ${(l.end_page || 0) - (l.start_page || 0)}
+minutes_spent: ${l.minutes_spent || 0}
+tags: [reading-log, highlight]
+---
+
+# Reading Session: ${l.book_title || 'Session'}
+**Date:** ${dateStr}  
+**Pages Read:** ${l.start_page || 0} → ${l.end_page || 0} (${(l.end_page || 0) - (l.start_page || 0)} pages)  
+**Time Spent:** ${l.minutes_spent || 0} minutes
+
+## Session Note & Highlights
+> ${l.notes}
+`;
+    sessionsFolder.file(`${dateStr}_${safeTitle}.md`, content);
+  });
+
+  // Generate ZIP blob and trigger browser download
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reading_tracker_obsidian_vault_${todayISO()}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast('📦 Obsidian Markdown Vault ZIP Exported Successfully!');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SABBATICAL & STREAK FREEZE MODULE (Custom Reasons)
+   ══════════════════════════════════════════════════════════════ */
+let sabbaticalSelectedReason = 'Vacation';
+
+function initSabbaticalModule() {
+  const modal = $('modal-sabbatical');
+  const closeBtn = $('sabbatical-modal-close');
+  const backdrop = $('sabbatical-modal-backdrop');
+  const confirmBtn = $('btn-sabbatical-confirm');
+
+  if (!modal) return;
+
+  // Reason buttons
+  document.querySelectorAll('#sabbatical-reasons-grid .reason-btn').forEach(btn => {
+    btn.onclick = () => {
+      if (navigator.vibrate) navigator.vibrate([8]);
+      document.querySelectorAll('#sabbatical-reasons-grid .reason-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      sabbaticalSelectedReason = btn.dataset.reason;
+
+      const customContainer = $('sabbatical-custom-container');
+      if (customContainer) {
+        customContainer.classList.toggle('hidden', sabbaticalSelectedReason !== 'Custom');
+      }
+    };
+  });
+
+  const closeModal = () => modal.classList.remove('open');
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (backdrop) backdrop.onclick = closeModal;
+
+  if (confirmBtn) {
+    confirmBtn.onclick = async () => {
+      let finalReason = sabbaticalSelectedReason;
+      if (sabbaticalSelectedReason === 'Custom') {
+        const customInput = $('sabbatical-custom-reason');
+        finalReason = (customInput && customInput.value.trim()) ? customInput.value.trim() : 'Custom Sabbatical';
+      }
+
+      const daysInput = $('sabbatical-days');
+      const daysCount = parseInt(daysInput ? daysInput.value : '7', 10) || 7;
+
+      const sabbaticalRecord = {
+        id: 'sab_' + Date.now(),
+        reason: finalReason,
+        days: daysCount,
+        startDate: todayISO(),
+        endDate: new Date(Date.now() + daysCount * 86400000).toISOString().slice(0, 10),
+        created_at: new Date().toISOString()
+      };
+
+      if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+      showToast(`🛡️ Streak Freeze Activated for ${daysCount} Days (${finalReason})`);
+      closeModal();
+    };
+  }
+}
+
+window.openSabbaticalModal = function() {
+  const modal = $('modal-sabbatical');
+  if (modal) {
+    modal.classList.add('open');
+    if (navigator.vibrate) navigator.vibrate([10]);
+  }
+};

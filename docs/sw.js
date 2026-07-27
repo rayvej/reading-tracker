@@ -1,15 +1,22 @@
-const CACHE_NAME = 'reading-tracker-v58';
+const CACHE_NAME = 'reading-tracker-v60';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=58',
-  BASE + 'app.js?v=58',
+  BASE + 'style.css?v=60',
+  BASE + 'app.js?v=60',
+  BASE + 'js/install-prompt.js',
+  BASE + 'js/offline-db.js',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',
   BASE + 'icon-512.png',
-  BASE + 'seed-data.json'
+  BASE + 'seed-data.json',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+  'https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css',
+  'https://cdn.tailwindcss.com'
 ];
 
 // ── Install: cache all static assets (bypass HTTP cache) ─────────────────────

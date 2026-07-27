@@ -256,7 +256,8 @@ body.light-mode #tab-bar {
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
-  width: 25%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   border: none;
   background: transparent;
@@ -1015,4 +1016,136 @@ body.light-mode .text-zinc-400 {
   text-overflow: ellipsis;
 }
 
+/* ── PWA & Mobile Polish Utilities ── */
+body {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
 
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.skeleton-box {
+  background: var(--border-strong);
+  border-radius: var(--radius);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS CHROME PWA & FAB ACTION BAR SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+/* Center Floating Action Button (FAB) */
+.fab-log-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  color: #120A13;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(var(--gold-rgb), 0.4);
+  border: 2.5px solid var(--bg-solid);
+  margin-top: -24px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  z-index: 40;
+}
+
+.fab-log-btn:active {
+  transform: scale(0.9) translateY(4px);
+  box-shadow: 0 4px 12px rgba(var(--gold-rgb), 0.2);
+}
+
+/* Knowledge & Notes View Styling */
+.quote-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.quote-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.quote-card blockquote {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 14px;
+  border-left: 3px solid var(--gold);
+  padding-left: 12px;
+  margin-bottom: 10px;
+}
+
+.quote-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(var(--gold-rgb), 0.1);
+  color: var(--gold);
+  border: 0.5px solid rgba(var(--gold-rgb), 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.daily-resurfacing-card {
+  background: linear-gradient(135deg, rgba(var(--gold-rgb), 0.12), rgba(var(--accent-rgb), 0.08));
+  border: 1px solid rgba(var(--gold-rgb), 0.25);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sabbatical-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(var(--accent3-rgb), 0.12);
+  color: var(--accent3);
+  border: 0.5px solid rgba(var(--accent3-rgb), 0.25);
+}
+
+.reason-btn {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.reason-btn.selected,
+.reason-btn:hover {
+  background: rgba(var(--gold-rgb), 0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}

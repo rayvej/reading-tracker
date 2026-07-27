@@ -21,6 +21,10 @@
   <!-- DaisyUI + Tailwind (for utility classes & form components) -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for Excel (.xlsx) workbook export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- JSZip for Markdown Vault Archive ZIP export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -39,7 +43,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=56">
+  <link rel="stylesheet" href="style.css?v=60">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -113,6 +117,7 @@
           <span class="w-4 h-4 rounded-full border-2 border-white/20 transition-all duration-200"></span>
         </div>
         <p class="text-sm font-semibold text-rose-400 h-5 opacity-0 transition-opacity duration-200" id="pin-error">Incorrect PIN — try again</p>
+        <p class="text-xs font-medium text-slate-400 -mt-2">Default Security PIN: <span class="font-mono font-bold text-amber-400">1234</span></p>
         <!-- Number pad -->
         <div class="grid grid-cols-3 gap-4 w-64 justify-items-center" id="pin-pad">
           <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="1">1</button>
@@ -162,6 +167,13 @@
           <!-- Dark/Light mode toggle -->
           <button id="btn-theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
             <i class="fa-solid fa-moon" id="theme-icon"></i>
+          </button>
+          <!-- Settings -->
+          <button id="btn-settings-open"
+            class="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+            style="background: var(--bg-input); border: 0.5px solid var(--border-strong); color: var(--text-secondary)"
+            aria-label="Settings & Data Management" title="Settings">
+            <i class="fa-solid fa-gear text-sm"></i>
           </button>
           <!-- Sign out -->
           <button id="btn-signout"
@@ -281,6 +293,57 @@
               <span class="section-label"><i class="fa-solid fa-clock-rotate-left text-[10px]"></i> Recent Sessions</span>
               <div class="flex flex-col gap-2" id="log-recent-list"></div>
             </div>
+
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════
+             VIEW: KNOWLEDGE & NOTES (Dedicated Tab)
+             ══════════════════════════════════════════════════════ -->
+        <section id="view-knowledge" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+          <div class="p-5 flex flex-col gap-5 animate-fade-in">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center pt-1">
+              <div>
+                <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Notes &amp; Quotes</h2>
+                <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your reflections, highlights &amp; knowledge vault</p>
+              </div>
+              <button id="btn-export-markdown-zip"
+                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                style="background: rgba(var(--gold-rgb),0.12); border-color: rgba(var(--gold-rgb),0.3); color: var(--gold)"
+                title="Export Obsidian Markdown Vault ZIP">
+                <i class="fa-solid fa-file-zipper text-xs"></i> Export Vault
+              </button>
+            </div>
+
+            <!-- Daily Highlights Spaced Repetition Card -->
+            <div id="knowledge-daily-card" class="daily-resurfacing-card flex flex-col gap-3">
+              <div class="flex items-center justify-between">
+                <span class="section-label text-xs font-black tracking-wider uppercase flex items-center gap-1.5" style="color: var(--gold)">
+                  <i class="fa-solid fa-sparkles text-xs"></i> Daily Highlight Resurfacing
+                </span>
+                <span class="text-[10px] font-bold text-slate-400">Spaced Repetition</span>
+              </div>
+              <div id="daily-resurfacing-content" class="flex flex-col gap-2">
+                <blockquote id="daily-quote-text" class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">"Knowledge is of two kinds: Physical knowledge and spiritual knowledge..."</blockquote>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span id="daily-quote-author" class="font-bold text-amber-400">— ‘Abdu’l-Bahá</span>
+                  <span id="daily-quote-book" class="text-slate-400 italic">Some Answered Questions</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tag Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="knowledge-tag-bar">
+              <button class="quote-tag active" data-tag="all"><i class="fa-solid fa-hashtag"></i> All Notes</button>
+              <button class="quote-tag" data-tag="quotes"><i class="fa-solid fa-quote-left"></i> Highlights</button>
+              <button class="quote-tag" data-tag="reflections"><i class="fa-solid fa-pen-nib"></i> Reflections</button>
+              <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star"></i> Favorites</button>
+            </div>
+
+            <!-- Quote Feed Container -->
+            <div class="flex flex-col gap-3" id="knowledge-quote-feed"></div>
 
           </div>
         </section>
@@ -1123,19 +1186,258 @@
           </div>
         </section>
 
+        <!-- ════════════════════════════════════════════════════════
+             VIEW: ACCOUNT & SETTINGS
+             ════════════════════════════════════════════════════════ -->
+        <section id="view-account" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
+          <div class="p-4 sm:p-6 max-w-xl mx-auto flex flex-col gap-5">
+            
+            <!-- Account Header Card -->
+            <div class="glass-panel p-5 rounded-3xl border border-white/10 flex flex-col gap-4 relative overflow-hidden" style="background: linear-gradient(135deg, rgba(214, 168, 92, 0.12), rgba(56, 189, 248, 0.08))">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl font-black text-slate-950 shadow-lg border border-amber-300/40 shrink-0" id="account-avatar">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-black tracking-tight truncate" style="color: var(--text-primary)" id="account-user-name">Reader Profile</h2>
+                    <button id="btn-edit-profile-name" class="text-xs text-amber-400 hover:text-amber-300 p-1 active:scale-95 transition-all" title="Edit Profile Name">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  </div>
+                  <p class="text-xs text-slate-400 truncate mt-0.5" id="account-user-email">user@readingtracker.app</p>
+                  <div class="flex items-center gap-2 mt-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30" id="account-badge">Master Reader</span>
+                    <span class="text-[10px] text-slate-400 font-semibold" id="account-member-since">Active Member</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Metrics Quick Stats bar -->
+              <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/10 text-center">
+                <div class="flex flex-col">
+                  <span class="text-xs text-slate-400 font-medium">Books Read</span>
+                  <span class="text-base font-black text-amber-400 tabular-nums" id="acct-stat-books">0</span>
+                </div>
+                <div class="flex flex-col border-x border-white/10">
+                  <span class="text-xs text-slate-400 font-medium">Pages Read</span>
+                  <span class="text-base font-black text-sky-400 tabular-nums" id="acct-stat-pages">0</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-xs text-slate-400 font-medium">Current Streak</span>
+                  <span class="text-base font-black text-emerald-400 tabular-nums" id="acct-stat-streak">0d</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appearance & Theme Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-palette text-amber-400"></i> Appearance &amp; Personalization
+              </div>
+
+              <!-- Dark/Light Theme Toggle -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-moon" id="acct-theme-icon"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">App Theme</div>
+                    <div class="text-[10.5px] text-slate-400" id="acct-theme-status-text">Dark Mode Active</div>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="acct-theme-toggle-switch" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              <!-- Accent Theme Colors -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">Accent Theme</div>
+                    <div class="text-[10.5px] text-slate-400">Personalize highlight colors</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2" id="accent-color-picker">
+                  <button data-accent="gold" class="w-6 h-6 rounded-full bg-amber-400 border-2 border-white/80 shadow-md active:scale-90 transition-transform" title="Gold Amber"></button>
+                  <button data-accent="emerald" class="w-6 h-6 rounded-full bg-emerald-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Emerald Green"></button>
+                  <button data-accent="sky" class="w-6 h-6 rounded-full bg-sky-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Sky Blue"></button>
+                  <button data-accent="rose" class="w-6 h-6 rounded-full bg-rose-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Rose Pink"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security & Protection Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-sky-400"></i> Security &amp; App Lock
+              </div>
+
+              <!-- Security PIN Status & Change -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-lock"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">4-Digit Security PIN</div>
+                    <div class="text-[10.5px] text-slate-400" id="acct-pin-status-text">PIN Protection Enabled</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="acct-btn-change-pin" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 active:scale-95 transition-all">
+                    Change
+                  </button>
+                  <button id="acct-btn-toggle-pin" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 active:scale-95 transition-all">
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data & Excel Export Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-400"></i> Data Export &amp; Backup
+              </div>
+
+              <!-- Excel Export Button -->
+              <button id="acct-btn-export-excel" class="flex items-center justify-between p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.99] transition-all text-left group cursor-pointer">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg font-bold shadow-md">
+                    <i class="fa-solid fa-file-excel"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm font-extrabold text-emerald-300">Download Excel Workbook (.xlsx)</div>
+                    <div class="text-[11px] text-emerald-400/80">Export multi-tab workbook with Stats, Catalog &amp; Logs</div>
+                  </div>
+                </div>
+                <i class="fa-solid fa-download text-sm text-emerald-400 group-hover:translate-y-0.5 transition-transform"></i>
+              </button>
+
+              <!-- Backup & Restore Row -->
+              <div class="grid grid-cols-2 gap-3">
+                <button id="acct-btn-export-json" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-xs font-bold text-slate-200 cursor-pointer">
+                  <i class="fa-solid fa-file-code text-amber-400"></i> Export JSON
+                </button>
+                <button id="acct-btn-import-json" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-xs font-bold text-slate-200 cursor-pointer">
+                  <i class="fa-solid fa-file-import text-sky-400"></i> Import JSON
+                </button>
+                <input type="file" id="acct-json-file-input" accept=".json" class="hidden">
+              </div>
+
+              <!-- Sample Data & Reset -->
+              <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
+                <button id="acct-btn-load-sample" class="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-left cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                      <i class="fa-solid fa-cloud-arrow-down"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-bold" style="color: var(--text-primary)">Load Sample Reading Data</div>
+                      <div class="text-[10px] text-slate-400">Import demo books &amp; logs</div>
+                    </div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                </button>
+
+                <button id="acct-btn-reset-data" class="flex items-center justify-between p-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 active:scale-[0.99] transition-all text-left cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-bold text-rose-300">Reset Account Data</div>
+                      <div class="text-[10px] text-rose-400/80">Clear all books, logs, and wishlist</div>
+                    </div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right text-xs text-rose-400"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Reading Preferences Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-amber-400"></i> Reading Preferences
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <!-- Preferred Format -->
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-slate-300">Preferred Format</span>
+                  <select id="pref-default-format" class="select select-bordered glass-input text-xs h-8 min-h-8 py-0 px-2 font-semibold">
+                    <option value="Physical">Physical Book</option>
+                    <option value="E-Book">E-Book</option>
+                    <option value="Audiobook">Audiobook</option>
+                  </select>
+                </div>
+
+                <!-- Daily Target Pages -->
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-slate-300">Daily Target Pages</span>
+                  <input type="number" id="pref-daily-pages" min="1" max="1000" value="25" class="input input-bordered glass-input w-20 text-xs h-8 min-h-8 py-0 px-2 text-center font-bold">
+                </div>
+
+                <!-- Daily Target Minutes -->
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-slate-300">Daily Target Minutes</span>
+                  <input type="number" id="pref-daily-minutes" min="1" max="1440" value="30" class="input input-bordered glass-input w-20 text-xs h-8 min-h-8 py-0 px-2 text-center font-bold">
+                </div>
+              </div>
+            </div>
+
+            <!-- Storage & App Info Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-white/10 text-xs">
+              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-1">
+                <i class="fa-solid fa-circle-info text-sky-400"></i> System &amp; App Status
+              </div>
+
+              <div class="flex justify-between items-center text-slate-300">
+                <span>Offline Storage (IndexedDB)</span>
+                <span class="font-bold text-emerald-400" id="acct-storage-status">Active</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-300">
+                <span>App Version</span>
+                <span class="font-mono text-slate-400">v2.5.0 PWA</span>
+              </div>
+
+              <div class="flex gap-2 mt-2 pt-3 border-t border-white/5">
+                <button id="acct-btn-clear-cache" class="flex-1 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-[11px] font-bold text-slate-300 cursor-pointer">
+                  <i class="fa-solid fa-broom text-amber-400 mr-1"></i> Clear Cache
+                </button>
+                <button id="acct-btn-signout" class="flex-1 py-2 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 active:scale-95 transition-all text-[11px] font-bold text-rose-300 cursor-pointer">
+                  <i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
       </main><!-- /main -->
 
       <!-- ════════════════════════════════════════════════════════
-           iOS NATIVE BOTTOM TAB BAR
+           iOS NATIVE BOTTOM TAB BAR WITH CENTER FAB LOG BUTTON
            ════════════════════════════════════════════════════════ -->
       <nav id="tab-bar" role="navigation" aria-label="Main navigation">
         <button class="tab-item active" data-view="dashboard" aria-label="Dashboard">
           <i class="fa-solid fa-chart-pie"></i>
           <span>Dashboard</span>
         </button>
-        <button class="tab-item" data-view="log" aria-label="Log session">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Log</span>
+        <button class="tab-item" data-view="knowledge" aria-label="Notes &amp; Quotes">
+          <i class="fa-solid fa-quote-left"></i>
+          <span>Notes</span>
+        </button>
+        <!-- Center Floating Action Button (FAB) for Log Session -->
+        <button id="btn-fab-log" class="fab-log-btn" aria-label="Log Reading Session" title="Log Session">
+          <i class="fa-solid fa-plus text-lg"></i>
         </button>
         <button class="tab-item" data-view="goals" aria-label="Goals">
           <i class="fa-solid fa-bullseye"></i>
@@ -1798,6 +2100,78 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       SETTINGS & DATA MANAGEMENT MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="settings-modal-backdrop"></div>
+    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-6 border border-white/10 flex flex-col gap-5 relative z-10 animate-scale-up" style="background: var(--bg-elevated); color: var(--text-primary)">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div>
+          <h3 class="text-lg font-extrabold tracking-tight flex items-center gap-2">
+            <i class="fa-solid fa-gear text-amber-400"></i> Settings &amp; Data
+          </h3>
+          <p class="text-xs font-medium text-slate-400 mt-0.5" id="settings-user-email">
+            Manage your account and reading data
+          </p>
+        </div>
+        <button id="settings-modal-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Data Options -->
+      <div class="flex flex-col gap-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Data Management</h4>
+        
+        <button id="btn-load-sample-data" class="flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold">Load Sample Reading Data</div>
+              <div class="text-[11px] text-slate-400">Import demo books &amp; reading logs</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+
+        <button id="btn-clear-account-data" class="flex items-center justify-between p-3.5 rounded-2xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 active:scale-[0.99] transition-all text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+              <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-rose-300">Reset Account Data</div>
+              <div class="text-[11px] text-rose-400/80">Clear all books, logs, and wishlist items</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-xs text-rose-400 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+      </div>
+
+      <!-- Security / PIN section -->
+      <div class="flex flex-col gap-3 pt-2 border-t border-white/10">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Security</h4>
+        
+        <button id="btn-change-pin" class="flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+              <i class="fa-solid fa-key"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold">Change Security PIN</div>
+              <div class="text-[11px] text-slate-400">Update your 4-digit security PIN</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        COVER MANAGER / APPROVAL GALLERY MODAL
        ════════════════════════════════════════════════════════════ -->
   <div id="cover-manager-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
@@ -1844,6 +2218,56 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       SABBATICAL & STREAK FREEZE MODAL (Custom Reasons)
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-sabbatical" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="sabbatical-modal-backdrop"></div>
+    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-umbrella-beach text-amber-400"></i> Streak Freeze / Sabbatical
+          </h3>
+          <p class="text-[11px] font-medium text-slate-400 mt-0.5">
+            Pause daily streak decay during life events without losing progress
+          </p>
+        </div>
+        <button id="sabbatical-modal-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Select Freeze Reason</label>
+        <div class="grid grid-cols-2 gap-2" id="sabbatical-reasons-grid">
+          <button type="button" class="reason-btn selected" data-reason="Vacation"><i class="fa-solid fa-umbrella-beach text-amber-400"></i> Vacation</button>
+          <button type="button" class="reason-btn" data-reason="Sick"><i class="fa-solid fa-thermometer text-rose-400"></i> Sick / Rest</button>
+          <button type="button" class="reason-btn" data-reason="Work Sprint"><i class="fa-solid fa-briefcase text-sky-400"></i> Work Sprint</button>
+          <button type="button" class="reason-btn" data-reason="Exams"><i class="fa-solid fa-graduation-cap text-purple-400"></i> Exams</button>
+          <button type="button" class="reason-btn" data-reason="Parenting"><i class="fa-solid fa-baby text-emerald-400"></i> Family / Parenting</button>
+          <button type="button" class="reason-btn" data-reason="Custom"><i class="fa-solid fa-pen text-amber-300"></i> Custom Reason</button>
+        </div>
+
+        <div class="form-control hidden" id="sabbatical-custom-container">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-slate-300">Custom Reason Details</span></label>
+          <input type="text" class="input input-bordered glass-input w-full text-xs font-bold" id="sabbatical-custom-reason" placeholder="e.g. House Move, Travel, Conference...">
+        </div>
+
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-slate-300">Freeze Duration (Days)</span></label>
+          <input type="number" class="input input-bordered glass-input w-full text-xs font-bold" id="sabbatical-days" min="1" max="180" value="7">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btn-sabbatical-confirm" class="w-full py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-lg active:scale-95 transition-all">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Activate Streak Freeze
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
@@ -1851,6 +2275,14 @@
          style="background: var(--bg-elevated); border-color: var(--border-strong); color: var(--text-primary); backdrop-filter: blur(20px)"></div>
   </div>
 
-  <script type="module" src="app.js?v=57"></script>
+  <script type="module">
+    import { initPWAInstallPrompt } from './js/install-prompt.js';
+    import { initOfflineDB } from './js/offline-db.js';
+    window.addEventListener('DOMContentLoaded', () => {
+      initPWAInstallPrompt();
+      initOfflineDB().catch(err => console.warn('Offline DB init:', err));
+    });
+  </script>
+  <script type="module" src="app.js?v=60"></script>
 </body>
 </html>
