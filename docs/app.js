@@ -657,7 +657,7 @@ async function renderAccountView() {
   if ($('pref-daily-minutes')) $('pref-daily-minutes').value = prefMins;
 
   // Load saved Gemini API Key
-  const savedGeminiKey = localStorage.getItem('rt_gemini_api_key') || '';
+  const savedGeminiKey = getGeminiApiKey();
   if ($('acct-gemini-api-key')) $('acct-gemini-api-key').value = savedGeminiKey;
   if ($('gemini-key-status')) {
     if (savedGeminiKey) {
@@ -6553,13 +6553,28 @@ if ('serviceWorker' in navigator) {
 // =========================================================================
 // SECTION 10: OCR PAGE SCANNER INTEGRATION
 // =========================================================================
+function getGeminiApiKey() {
+  let key = localStorage.getItem('rt_gemini_api_key');
+  if (key && key.trim()) return key.trim();
+  
+  const defaultKey = (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey) 
+    ? firebaseConfig.apiKey 
+    : 'AIzaSyB98auriNklD-DP6AUpRns7hETAuCQmuTo';
+    
+  if (defaultKey) {
+    localStorage.setItem('rt_gemini_api_key', defaultKey);
+    return defaultKey;
+  }
+  return '';
+}
+
 const SCANNER_CONFIG = {
   dbName: "OfflineScanDB",
   storeName: "scans",
   dbVersion: 1,
   modelName: "gemini-1.5-flash",
   getApiUrl: function() {
-    const key = localStorage.getItem('rt_gemini_api_key') || '';
+    const key = getGeminiApiKey();
     return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
   }
 };
@@ -6677,19 +6692,12 @@ async function handlePageScan(event) {
     return;
   }
 
-  // Check for Gemini API key
-  let apiKey = localStorage.getItem('rt_gemini_api_key');
-  if (!apiKey || !apiKey.trim()) {
-    const inputKey = prompt("AI Page Scanner requires a free Gemini API Key from Google AI Studio (aistudio.google.com/app/apikey).\n\nPlease paste your API Key below:");
-    if (inputKey && inputKey.trim()) {
-      apiKey = inputKey.trim();
-      localStorage.setItem('rt_gemini_api_key', apiKey);
-      showToast("Gemini API Key saved!", "success");
-    } else {
-      showToast("Page transcription cancelled: Gemini API key required. Add it in Account & Settings.", "warning");
-      event.target.value = '';
-      return;
-    }
+  // Ensure Gemini API Key is available without prompting
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    showToast("Gemini API key is required for AI page transcription.", "warning");
+    event.target.value = '';
+    return;
   }
 
   // Show loading spinner
@@ -6721,7 +6729,7 @@ async function handlePageScan(event) {
 }
 
 async function requestTranscriptionFromGemini(base64Data, mimeType) {
-  const apiKey = localStorage.getItem('rt_gemini_api_key') || '';
+  const apiKey = getGeminiApiKey();
   if (!apiKey) {
     throw new Error("Missing Gemini API Key. Please enter your key in Account & Settings.");
   }
