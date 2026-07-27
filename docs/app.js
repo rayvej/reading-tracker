@@ -469,12 +469,65 @@ function setupSettingsModal() {
     });
   }
 
+async function verifyDoublePinForReset() {
+  let storedHash = localStorage.getItem('rt_pin_hash');
+  if (db && uid) {
+    try {
+      const snap = await getDoc(doc(db, `users/${uid}/settings/app`));
+      if (snap.exists() && snap.data()?.pin_hash) {
+        storedHash = snap.data().pin_hash;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch PIN hash from Firestore:', err);
+    }
+  }
+
+  if (!storedHash) {
+    storedHash = await hashPin('1234');
+  }
+
+  // Step 1: Prompt 1st PIN entry
+  const pin1 = prompt("🔒 Security Check (Step 1 of 2):\n\nEnter your 4-digit Security PIN to initiate account data reset:");
+  if (pin1 === null) {
+    showToast("Account data reset cancelled.", "info");
+    return false;
+  }
+
+  const hash1 = await hashPin(pin1.trim());
+  if (hash1 !== storedHash) {
+    showToast("Incorrect PIN (Step 1 failed) — Account reset cancelled.", "error");
+    return false;
+  }
+
+  // Step 2: Prompt 2nd PIN entry (Confirm)
+  const pin2 = prompt("⚠️ Double PIN Confirmation (Step 2 of 2):\n\nRe-enter your 4-digit Security PIN to PERMANENTLY CONFIRM deleting all books, reading logs, and wishlist items:");
+  if (pin2 === null) {
+    showToast("Account data reset cancelled.", "info");
+    return false;
+  }
+
+  const hash2 = await hashPin(pin2.trim());
+  if (hash2 !== storedHash) {
+    showToast("Incorrect PIN (Step 2 failed) — Account reset cancelled.", "error");
+    return false;
+  }
+
+  if (pin1.trim() !== pin2.trim()) {
+    showToast("PIN entries did not match — Account reset cancelled.", "error");
+    return false;
+  }
+
+  return true;
+}
+
   // Clear account data
   const btnClear = $('btn-clear-account-data');
   if (btnClear) {
     btnClear.addEventListener('click', async () => {
       closeModal();
-      if (!confirm('Are you sure you want to delete all books, reading logs, and wishlist items from your account? This action cannot be undone.')) return;
+      const pinConfirmed = await verifyDoublePinForReset();
+      if (!pinConfirmed) return;
+
       try {
         showToast('Clearing account data...', 'info');
         
@@ -764,7 +817,9 @@ function setupAccountView() {
   const btnReset = $('acct-btn-reset-data');
   if (btnReset) {
     btnReset.addEventListener('click', async () => {
-      if (!confirm('DANGER: Reset all account data? This will clear all books, reading logs, and wishlist items.')) return;
+      const pinConfirmed = await verifyDoublePinForReset();
+      if (!pinConfirmed) return;
+
       try {
         showToast('Resetting account data…', 'info');
         if (db && uid) {
@@ -772,9 +827,12 @@ function setupAccountView() {
           for (const d of bSnap.docs) await deleteDoc(doc(db, `users/${uid}/books/${d.id}`));
           const lSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
           for (const d of lSnap.docs) await deleteDoc(doc(db, `users/${uid}/reading_logs/${d.id}`));
+          const wSnap = await getDocs(collection(db, `users/${uid}/wishlist`));
+          for (const d of wSnap.docs) await deleteDoc(doc(db, `users/${uid}/wishlist/${d.id}`));
         }
         booksCache = [];
         logsCache = [];
+        wishlistCache = [];
         renderDashboard();
         renderAccountView();
         showToast('Account data reset complete.', 'success');
