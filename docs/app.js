@@ -1020,6 +1020,36 @@ async function loadBooksCache() {
     if (db && uid) {
       const snap = await getDocs(collection(db, `users/${uid}/books`));
       booksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Auto-heal missing cover_url from seed-data.json if needed
+      const unapprovedCount = booksCache.filter(b => !b.cover_url).length;
+      if (unapprovedCount > 0) {
+        try {
+          const resp = await fetch('./seed-data.json');
+          if (resp.ok) {
+            const seed = await resp.json();
+            const seedCoverMap = {};
+            (seed.books || []).forEach(sb => {
+              if (sb.title && sb.cover_url) {
+                seedCoverMap[sb.title.trim().toLowerCase()] = sb.cover_url;
+              }
+            });
+            booksCache.forEach(b => {
+              if (!b.cover_url && b.title) {
+                const matchedCover = seedCoverMap[b.title.trim().toLowerCase()];
+                if (matchedCover) {
+                  b.cover_url = matchedCover;
+                  // Persist back to Firestore asynchronously
+                  updateDoc(doc(db, `users/${uid}/books/${b.id}`), { cover_url: matchedCover }).catch(err => console.warn('Cover auto-heal persist:', err));
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Seed cover heal error:', err);
+        }
+      }
+
       booksCache.sort((a, b) => a.title.localeCompare(b.title));
     }
   } catch (e) {
@@ -2890,12 +2920,15 @@ async function renderDashboard() {
         
         const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
-          <div class="flex justify-between items-start gap-3">
-            <div class="min-w-0">
-              <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+          <div class="flex items-start gap-3 min-w-0">
+            ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
+            <div class="min-w-0 flex-1">
+              <div class="flex justify-between items-start gap-2">
+                <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase shrink-0">${pct}%</span>
+              </div>
               <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase">${pct}%</span>
           </div>
           <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
             <span>Pages Left: <b>${left}</b></span>
@@ -2923,12 +2956,15 @@ async function renderDashboard() {
       upNext.forEach(b => {
         const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
-          <div class="flex justify-between items-start gap-3">
-            <div class="min-w-0">
-              <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+          <div class="flex items-start gap-3 min-w-0">
+            ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
+            <div class="min-w-0 flex-1">
+              <div class="flex justify-between items-start gap-2">
+                <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase shrink-0">${b.priority} Prio</span>
+              </div>
               <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase">${b.priority} Prio</span>
           </div>
         `;
         card.addEventListener('click', () => openBookDetailModal(b));
@@ -2950,14 +2986,18 @@ async function renderDashboard() {
       recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books recently finished</p>';
     } else {
       recentCompletions.forEach(c => {
-        const book = mergedBooks.find(b => b.title === c.title);
+        const book = mergedBooks.find(b => b.title === c.title) || { title: c.title, author: '' };
         const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
-          <div class="flex justify-between items-start gap-3">
+          <div class="flex items-start gap-3 min-w-0">
+            ${getCoverHTML(book, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="text-xs font-bold text-slate-100 truncate">${c.title}</div>
-              <div class="text-[9px] text-slate-400 truncate mt-0.5">${book ? book.author || '' : ''}</div>
+              <div class="text-[9px] text-slate-400 truncate mt-0.5">${book.author || ''}</div>
+              <div class="text-[9px] text-emerald-400 font-semibold mt-1">Finished ${fmtDate(c.date)}</div>
             </div>
+          </div>
+        `;
             <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase">Finished</span>
           </div>
           <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
@@ -4429,12 +4469,13 @@ function getSpineFallbackHTML(title, author) {
 }
 
 function getCoverHTML(b, extraClasses = 'w-12 h-18') {
+  if (!b) return '';
   const safeTitle = (b.title || 'Book').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const safeAuthor = (b.author || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   if (b.cover_url) {
     return `
       <div class="book-cover-wrapper ${extraClasses}">
-        <img src="${b.cover_url}" alt="${safeTitle}" class="book-cover-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML=\`<div class='book-spine-fallback'><div class='book-spine-fallback-title'>${safeTitle}</div><div class='book-spine-fallback-author'>${safeAuthor}</div></div>\`"/>
+        <img src="${b.cover_url}" alt="${safeTitle}" class="book-cover-img w-full h-full object-cover rounded-lg shadow-sm" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.innerHTML=\`<div class='book-spine-fallback'><div class='book-spine-fallback-title'>${safeTitle}</div><div class='book-spine-fallback-author'>${safeAuthor}</div></div>\`"/>
       </div>
     `;
   }
