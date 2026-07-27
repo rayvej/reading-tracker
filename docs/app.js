@@ -7751,6 +7751,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  if (completeBtn) {
+    completeBtn.onclick = () => {
+      if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
+      const minutesSpent = Math.max(1, Math.round(fullTimerState.seconds / 60));
+      overlay && overlay.classList.remove('active');
+      if (fullTimerState.book && typeof openQuickLogModal === 'function') {
+        openQuickLogModal(fullTimerState.book, minutesSpent);
+      } else if (typeof showToast === 'function') {
+        showToast(`Focus session logged: ${minutesSpent} min`, 'success');
+      }
+    };
+  }
+});
+
 window.setEditorialTheme = function(themeName) {
   document.documentElement.setAttribute('data-theme', themeName);
   localStorage.setItem('rt_editorial_theme', themeName);
