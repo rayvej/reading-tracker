@@ -3528,6 +3528,10 @@ function renderRecentLogs() {
 }
 
 function openAddBookModal() {
+  if ($('ab-cover-url')) $('ab-cover-url').value = '';
+  if ($('ab-cover-preview')) $('ab-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
+  const searchBtn = $('ab-btn-search-cover');
+  if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('ab-title', 'ab-author', 'ab-cover-url', 'ab-cover-preview');
   $('add-book-modal').classList.add('open');
 }
 
@@ -3601,6 +3605,18 @@ function setupBookshelf() {
       renderBookshelf();
     });
   }
+
+  // Cover Manager Modal trigger
+  const coverBtn = $('btn-cover-manager');
+  if (coverBtn) coverBtn.addEventListener('click', openCoverManagerModal);
+  const coverClose = $('cover-manager-close');
+  if (coverClose) coverClose.addEventListener('click', closeCoverManagerModal);
+  const coverBackdrop = $('cover-manager-backdrop');
+  if (coverBackdrop) coverBackdrop.addEventListener('click', closeCoverManagerModal);
+  const autoSearchBtn = $('btn-auto-search-covers');
+  if (autoSearchBtn) autoSearchBtn.addEventListener('click', autoSearchAllCovers);
+  const approveAllBtn = $('btn-approve-all-top');
+  if (approveAllBtn) approveAllBtn.addEventListener('click', autoSearchAllCovers);
 
   // Multi-Select mode toggle
   const selectBtn = $('btn-select-mode');
@@ -3784,6 +3800,293 @@ function renderActiveFilterChips() {
   });
 }
 
+// ── Book Cover System & Cover Manager ───────────────────────────────────────
+function getSpineFallbackHTML(title, author) {
+  const safeTitle = (title || 'Book').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const safeAuthor = (author || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `
+    <div class="book-spine-fallback">
+      <div class="book-spine-fallback-title">${safeTitle}</div>
+      <div class="book-spine-fallback-author">${safeAuthor}</div>
+    </div>
+  `;
+}
+
+function getCoverHTML(b, extraClasses = 'w-12 h-18') {
+  const safeTitle = (b.title || 'Book').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const safeAuthor = (b.author || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  if (b.cover_url) {
+    return `
+      <div class="book-cover-wrapper ${extraClasses}">
+        <img src="${b.cover_url}" alt="${safeTitle}" class="book-cover-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML=\`<div class='book-spine-fallback'><div class='book-spine-fallback-title'>${safeTitle}</div><div class='book-spine-fallback-author'>${safeAuthor}</div></div>\`"/>
+      </div>
+    `;
+  }
+  return `
+    <div class="book-cover-wrapper ${extraClasses}">
+      ${getSpineFallbackHTML(b.title, b.author)}
+    </div>
+  `;
+}
+
+async function searchCoverCandidates(title, author, collection) {
+  const cleanTitle = (title || '').replace(/\/[A-Z0-9]+$/, '').replace(/[‘’]/g, "'").trim();
+  const cleanAuthor = (author || '').replace(/[‘’]/g, "'").trim();
+  const query = `${cleanTitle} ${cleanAuthor}`.trim();
+  
+  const candidates = [];
+  
+  // 1. iTunes API
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?media=ebook&term=${encodeURIComponent(query)}&limit=3`);
+    if (res.ok) {
+      const data = await res.json();
+      (data.results || []).forEach(item => {
+        if (item.artworkUrl100) {
+          const img = item.artworkUrl100.replace('100x100bb', '600x600bb');
+          if (!candidates.some(c => c.url === img)) {
+            candidates.push({ url: img, source: 'iTunes', title: item.trackName, author: item.artistName });
+          }
+        }
+      });
+    }
+  } catch (e) {}
+
+  // 2. Open Library API
+  if (candidates.length < 2 && cleanTitle) {
+    try {
+      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(cleanTitle)}&limit=3`);
+      if (res.ok) {
+        const data = await res.json();
+        (data.docs || []).forEach(doc => {
+          if (doc.cover_i) {
+            const img = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+            if (!candidates.some(c => c.url === img)) {
+              candidates.push({
+                url: img,
+                source: 'Open Library',
+                title: doc.title,
+                author: (doc.author_name || [])[0] || ''
+              });
+            }
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  const bahaibookstoreUrl = `https://www.bahaibookstore.com/catalogsearch/result/?q=${encodeURIComponent(cleanTitle)}`;
+  
+  return { candidates, bahaibookstoreUrl };
+}
+
+async function saveBookCover(id, coverUrl, isWishlist = false) {
+  try {
+    if (isWishlist) {
+      await updateDoc(doc(db, `users/${uid}/wishlist/${id}`), { cover_url: coverUrl });
+      const item = wishlistCache.find(b => b.id === id);
+      if (item) item.cover_url = coverUrl;
+    } else {
+      await updateDoc(doc(db, `users/${uid}/books/${id}`), { cover_url: coverUrl });
+      const item = booksCache.find(b => b.id === id);
+      if (item) item.cover_url = coverUrl;
+    }
+    showToast('Book cover saved!', 'success');
+    renderBookshelf();
+  } catch (err) {
+    console.error('Error saving cover:', err);
+    showToast('Failed to save cover.', 'error');
+  }
+}
+
+async function openCoverManagerModal() {
+  const modal = $('cover-manager-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  await renderCoverManagerGrid();
+}
+
+function closeCoverManagerModal() {
+  const modal = $('cover-manager-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function renderCoverManagerGrid() {
+  const container = $('cover-manager-grid');
+  if (!container) return;
+  
+  const allBooks = await getMergedBooks();
+  const approvedCount = allBooks.filter(b => b.cover_url).length;
+  
+  const progressText = $('cover-progress-text');
+  if (progressText) progressText.textContent = `${approvedCount} / ${allBooks.length} Covers Approved`;
+  
+  const progressBar = $('cover-progress-bar');
+  if (progressBar) progressBar.style.width = `${Math.round((approvedCount / (allBooks.length || 1)) * 100)}%`;
+  
+  container.innerHTML = '';
+  
+  allBooks.forEach(b => {
+    const card = el('div', 'glass-panel p-3.5 rounded-2xl border border-white/5 flex flex-col gap-3');
+    const isWl = b._isWishlist || false;
+    const storeSearchUrl = `https://www.bahaibookstore.com/catalogsearch/result/?q=${encodeURIComponent((b.title||'').replace(/\/[A-Z0-9]+$/,''))}`;
+
+    card.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-14 h-21 shrink-0" id="cover-preview-${b.id}">
+          ${getCoverHTML(b, 'w-14 h-21 shadow-md')}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'}</div>
+          
+          <div class="flex flex-wrap items-center gap-2 mt-2">
+            ${b.cover_url ? `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-check text-[8px]"></i> Approved</span>` : `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Needs Cover</span>`}
+            
+            <a href="${storeSearchUrl}" target="_blank" rel="noopener" class="text-[9px] font-bold text-amber-400 hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i> Find on Baha'i Bookstore
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Choices / Custom URL Bar -->
+      <div class="flex flex-col gap-2 pt-2 border-t border-white/5" id="cover-candidates-${b.id}">
+        <div class="flex items-center gap-2">
+          <input type="text" class="input input-xs glass-input flex-1 text-[11px] px-2.5 h-8 py-0 rounded-xl" id="cover-url-input-${b.id}" placeholder="Paste Cover Image URL..." value="${b.cover_url || ''}">
+          <button class="px-3 py-1 rounded-xl text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all h-8" onclick="saveCoverFromInput('${b.id}', ${isWl})">
+            Save
+          </button>
+        </div>
+        <div class="flex gap-2 items-center flex-wrap" id="cover-candidate-thumbs-${b.id}">
+          <button class="text-[10px] font-bold text-slate-400 hover:text-amber-300 flex items-center gap-1" onclick="fetchAndDisplayCandidates('${b.id}', '${(b.title||'').replace(/'/g, "\\'")}', '${(b.author||'').replace(/'/g, "\\'")}', '${b.collection||''}', ${isWl})">
+            <i class="fa-solid fa-magnifying-glass text-[9px]"></i> Search Candidates
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+window.saveCoverFromInput = async function(id, isWishlist) {
+  const input = $(`cover-url-input-${id}`);
+  if (!input) return;
+  const url = input.value.trim();
+  await saveBookCover(id, url, isWishlist);
+  await renderCoverManagerGrid();
+};
+
+window.fetchAndDisplayCandidates = async function(id, title, author, collection, isWishlist) {
+  const container = $(`cover-candidate-thumbs-${id}`);
+  if (container) container.innerHTML = `<span class="text-[10px] text-amber-400 animate-pulse"><i class="fa-solid fa-spinner fa-spin"></i> Fetching covers...</span>`;
+
+  const { candidates } = await searchCoverCandidates(title, author, collection);
+  if (!container) return;
+  
+  if (candidates.length === 0) {
+    container.innerHTML = `<span class="text-[10px] text-slate-400">No candidates found automatically. Click "Find on Baha'i Bookstore" above and paste the image link!</span>`;
+    return;
+  }
+
+  container.innerHTML = candidates.map(c => `
+    <div class="relative group cursor-pointer border border-white/10 hover:border-gold rounded-lg overflow-hidden w-12 h-18 bg-black/40" onclick="applyCandidateCover('${id}', '${c.url}', ${isWishlist})">
+      <img src="${c.url}" class="w-full h-full object-cover" loading="lazy">
+      <span class="absolute bottom-0 inset-x-0 bg-black/70 text-[7px] text-center font-bold text-white py-0.5 truncate">${c.source}</span>
+    </div>
+  `).join('');
+};
+
+window.applyCandidateCover = async function(id, url, isWishlist) {
+  const input = $(`cover-url-input-${id}`);
+  if (input) input.value = url;
+  await saveBookCover(id, url, isWishlist);
+  await renderCoverManagerGrid();
+};
+
+async function autoSearchAllCovers() {
+  showToast('Searching covers for unapproved books...', 'info');
+  const allBooks = await getMergedBooks();
+  const unapproved = allBooks.filter(b => !b.cover_url);
+  
+  let matchCount = 0;
+  for (let b of unapproved) {
+    const isWl = b._isWishlist || false;
+    const { candidates } = await searchCoverCandidates(b.title, b.author, b.collection);
+    if (candidates.length > 0) {
+      await saveBookCover(b.id, candidates[0].url, isWl);
+      matchCount++;
+    }
+  }
+  showToast(`Auto-matched and approved ${matchCount} cover(s)!`, 'success');
+  await renderCoverManagerGrid();
+}
+
+window.handleCoverFileUpload = function(fileInput, targetInputId, previewId) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxW = 400;
+      const maxH = 600;
+      let w = img.width;
+      let h = img.height;
+      
+      if (w > maxW) {
+        h = Math.round((h * maxW) / w);
+        w = maxW;
+      }
+      if (h > maxH) {
+        w = Math.round((w * maxH) / h);
+        h = maxH;
+      }
+      
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      
+      const targetInput = $(targetInputId);
+      if (targetInput) targetInput.value = compressedDataUrl;
+      
+      const preview = $(previewId);
+      if (preview) preview.innerHTML = `<img src="${compressedDataUrl}" class="w-full h-full object-cover rounded-lg">`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.autoFindSingleCover = async function(titleId, authorId, targetInputId, previewId) {
+  const title = $(titleId)?.value?.trim() || '';
+  const author = $(authorId)?.value?.trim() || '';
+  if (!title) {
+    showToast('Please type a book title first.', 'error');
+    return;
+  }
+  
+  const preview = $(previewId);
+  if (preview) preview.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-400 text-xs"></i>`;
+  
+  const { candidates } = await searchCoverCandidates(title, author);
+  if (candidates && candidates.length > 0) {
+    const coverUrl = candidates[0].url;
+    const targetInput = $(targetInputId);
+    if (targetInput) targetInput.value = coverUrl;
+    if (preview) preview.innerHTML = `<img src="${coverUrl}" class="w-full h-full object-cover rounded-lg">`;
+    showToast('Found candidate cover artwork!', 'success');
+  } else {
+    if (preview) preview.innerHTML = `<i class="fa-solid fa-image text-xs"></i>`;
+    showToast('No cover found automatically. Try uploading a photo!', 'info');
+  }
+};
+
 function renderBookshelfContent(container, filtered) {
   container.innerHTML = '';
 
@@ -3856,20 +4159,23 @@ function renderBookCard(b) {
 
   if (bookshelfViewMode === 'grid') {
     // 2-Column Compact Grid Card
-    const card = el('div', `bookshelf-card-item glass-panel p-3.5 rounded-2xl border border-white/5 flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+    const card = el('div', `bookshelf-card-item glass-panel p-3 rounded-2xl border border-white/5 flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
     card.dataset.id = b.id;
 
     card.innerHTML = `
       ${bookshelfSelectMode ? `
         <input type="checkbox" class="checkbox checkbox-xs checkbox-warning absolute top-3 right-3 z-10" ${isChecked ? 'checked' : ''}>
       ` : ''}
-      <div class="min-w-0 pr-4">
-        <div class="text-xs font-bold text-slate-100 leading-tight line-clamp-2">${b.title}</div>
-        <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'}</div>
-      </div>
-      <div class="flex flex-wrap gap-1">
-        <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
-        <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${b.priority}</span>
+      <div class="flex items-start gap-2.5 min-w-0">
+        ${getCoverHTML(b, 'w-12 h-18 shrink-0')}
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-slate-100 leading-tight line-clamp-2">${b.title}</div>
+          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'}</div>
+          <div class="flex flex-wrap gap-1 mt-1.5">
+            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
+            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${b.priority}</span>
+          </div>
+        </div>
       </div>
       ${isAct ? `
         <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1 overflow-hidden mt-0.5">
@@ -3892,7 +4198,7 @@ function renderBookCard(b) {
     return card;
   }
 
-  const card = el('div', `bookshelf-card-item glass-panel p-5 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+  const card = el('div', `bookshelf-card-item glass-panel p-4 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
 
   const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
@@ -3922,18 +4228,18 @@ function renderBookCard(b) {
       ${bookshelfSelectMode ? `
         <input type="checkbox" class="checkbox checkbox-sm checkbox-warning mt-0.5 shrink-0" ${isChecked ? 'checked' : ''}>
       ` : ''}
+      ${getCoverHTML(b, 'w-14 h-21 shrink-0')}
       <div class="min-w-0 flex-1">
         <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">&#8203;${b.title}</div>
         <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+        <div class="flex flex-wrap gap-1.5 mt-2">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
+        </div>
       </div>
       <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
-    </div>
-
-    <div class="flex flex-wrap gap-1.5 mt-0.5">
-      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
-      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
-      <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
     </div>
 
     ${isAct ? `
@@ -4154,6 +4460,7 @@ async function saveNewBook() {
   const cost = parseFloat($('ab-cost').value) || 0;
   const buyLink = $('ab-where-to-buy').value.trim() || '';
   const notes = $('ab-notes').value.trim() || '';
+  const coverUrl = $('ab-cover-url')?.value?.trim() || null;
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   
@@ -4176,6 +4483,7 @@ async function saveNewBook() {
       est_cost: cost,
       where_to_buy: buyLink,
       notes: notes,
+      cover_url: coverUrl,
       date_added: todayISO()
     };
     
@@ -4194,6 +4502,7 @@ async function saveNewBook() {
         est_cost: cost,
         where_to_buy: buyLink,
         notes: notes,
+        cover_url: coverUrl,
         date_added: todayISO()
       });
       wishlistCache = []; // Reset wishlist cache to force reload
@@ -4253,6 +4562,12 @@ function openEditBookModal(b) {
   $('eb-cost').value = b.est_cost || 0;
   $('eb-where-to-buy').value = b.where_to_buy || '';
   $('eb-notes').value = b.notes || '';
+  if ($('eb-cover-url')) $('eb-cover-url').value = b.cover_url || '';
+  if ($('eb-cover-preview')) {
+    $('eb-cover-preview').innerHTML = b.cover_url ? `<img src="${b.cover_url}" class="w-full h-full object-cover rounded-lg">` : `<i class="fa-solid fa-image"></i>`;
+  }
+  const searchBtn = $('eb-btn-search-cover');
+  if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('eb-title', 'eb-author', 'eb-cover-url', 'eb-cover-preview');
   $('edit-book-modal').classList.add('open');
 }
 
@@ -4270,6 +4585,7 @@ async function saveEditBook() {
   const cost = parseFloat($('eb-cost').value) || 0;
   const buyLink = $('eb-where-to-buy').value.trim() || '';
   const notes = $('eb-notes').value.trim() || '';
+  const coverUrl = $('eb-cover-url')?.value?.trim() || null;
 
   if (!title) { showToast('Please enter a book title.', 'error'); return; }
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
@@ -4289,7 +4605,8 @@ async function saveEditBook() {
       priority: prio,
       est_cost: cost,
       where_to_buy: buyLink,
-      notes: notes
+      notes: notes,
+      cover_url: coverUrl
     };
 
     if (activeBookObjectForEdit && activeBookObjectForEdit._isWishlist) {
@@ -5197,6 +5514,15 @@ function normalizeText(str) {
 function openBookDetailModal(b) {
   $('bd-title').textContent = b.title;
   $('bd-author').textContent = b.author ? `by ${b.author}` : 'Unknown Author';
+  
+  const bdCover = $('bd-cover-container');
+  if (bdCover) {
+    bdCover.innerHTML = getCoverHTML(b, 'w-16 h-24 shadow-lg cursor-pointer');
+    bdCover.onclick = (e) => {
+      e.stopPropagation();
+      openCoverManagerModal();
+    };
+  }
   
   const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
   const isAct = b.status === 'In Progress';
