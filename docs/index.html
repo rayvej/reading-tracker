@@ -1310,6 +1310,29 @@
                 <i class="fa-solid fa-palette text-amber-400"></i> Appearance &amp; Personalization
               </div>
 
+              <!-- Color Mode Selector (Dark vs Light for ANY theme) -->
+              <div class="flex flex-col gap-2 p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+                      <i class="fa-solid fa-sun" id="acct-mode-icon"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-extrabold" style="color: var(--text-primary)">Color Mode</div>
+                      <div class="text-[10.5px] text-slate-400" id="acct-mode-status-text">Light or Dark appearance</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <button data-mode="dark" class="mode-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-slate-200 bg-slate-900 border-slate-700 flex items-center justify-center gap-1.5 active:scale-95">
+                    🌙 Dark Mode
+                  </button>
+                  <button data-mode="light" class="mode-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-amber-950 bg-amber-100 border-amber-300 flex items-center justify-center gap-1.5 active:scale-95">
+                    ☀️ Light Mode
+                  </button>
+                </div>
+              </div>
+
               <!-- Theme Style Selector -->
               <div class="flex flex-col gap-2 p-3 rounded-2xl border border-white/5 bg-white/5">
                 <div class="flex items-center justify-between">
