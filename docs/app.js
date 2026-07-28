@@ -162,11 +162,6 @@ function setEditorialMode(mode) {
   localStorage.setItem('rt_theme', mode);
 
   const isLight = mode === 'light';
-  if (isLight) {
-    document.body.classList.add('light-mode');
-  } else {
-    document.body.classList.remove('light-mode');
-  }
 
   const icon = document.getElementById('theme-icon');
   if (icon) {

@@ -248,30 +248,37 @@
   letter-spacing: -0.02em;
 }
 
-[data-theme="parched-paper"], [data-theme="light"], body.light-mode {
-  --bg:              linear-gradient(180deg, #F8F5EE 0%, #EFEADF 100%);
-  --bg-solid:        #F8F5EE;
-  --bg-elevated:     #EFEADF;
-  --bg-card:         rgba(255, 255, 255, 0.92);
-  --bg-input:        rgba(60, 45, 30, 0.05);
-  --bg-input-focus:  rgba(184, 122, 40, 0.12);
-  --text-primary:    #2A2118;
-  --text-secondary:  #635343;
-  --text-tertiary:   #948372;
-  --accent:          #B84A2A;
-  --accent-rgb:      184, 74, 42;
-  --accent2:         #B87A28;
-  --accent2-rgb:     184, 122, 40;
-  --accent3:         #4E7852;
-  --accent3-rgb:     78, 120, 82;
-  --gold:            #B87A28;
-  --gold-rgb:        184, 122, 40;
-  --gold-light:      #F5E6CC;
-  --border:          rgba(60, 45, 30, 0.1);
-  --border-strong:   rgba(60, 45, 30, 0.22);
-  --border-color:    rgba(60, 45, 30, 0.08);
-  --shadow-card:     0 10px 25px -8px rgba(60, 45, 30, 0.12);
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS SELECTOR BUTTON STATES (Adapts to All Themes & Modes)
+   ══════════════════════════════════════════════════════════════ */
+.mode-select-btn,
+.theme-select-btn,
+.font-select-btn {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
 }
+
+.mode-select-btn:hover,
+.theme-select-btn:hover,
+.font-select-btn:hover {
+  border-color: var(--gold) !important;
+  transform: translateY(-1px);
+}
+
+.mode-select-btn.active,
+.theme-select-btn.active,
+.font-select-btn.active {
+  background: rgba(var(--gold-rgb), 0.18) !important;
+  border-color: var(--gold) !important;
+  color: var(--gold) !important;
+  box-shadow: 0 4px 14px -2px rgba(var(--gold-rgb), 0.3) !important;
+  font-weight: 800 !important;
+}
+
+
 
 /* Fluid Mesh Backdrop Orbs */
 body::before {
@@ -939,35 +946,10 @@ body.light-mode .badge-muted { background: rgba(0,0,0,0.05); }
   color: var(--text-secondary) !important;
 }
 
-/* Explicit Light Mode & Parched Paper Card & Modal Contrast Repairs */
-[data-theme="parched-paper"] .glass-panel,
-[data-theme="light"] .glass-panel,
-body.light-mode .glass-panel,
-[data-theme="parched-paper"] .glass-modal,
-[data-theme="light"] .glass-modal,
-body.light-mode .glass-modal,
-[data-theme="parched-paper"] .ios-modal-card,
-[data-theme="light"] .ios-modal-card,
-body.light-mode .ios-modal-card {
-  background: #FFFFFF !important;
-  color: #2A2118 !important;
-  border-color: rgba(60, 45, 30, 0.18) !important;
-  box-shadow: 0 8px 24px rgba(60, 45, 30, 0.08) !important;
-}
-
-[data-theme="parched-paper"] .seg-control,
-[data-theme="light"] .seg-control,
-body.light-mode .seg-control {
-  background: rgba(60, 45, 30, 0.06) !important;
-  border-color: rgba(60, 45, 30, 0.15) !important;
-}
-
-[data-theme="parched-paper"] .seg-btn.active,
-[data-theme="light"] .seg-btn.active,
-body.light-mode .seg-btn.active {
-  background: #FFFFFF !important;
-  color: #B87A28 !important;
-  box-shadow: 0 2px 8px rgba(60, 45, 30, 0.12) !important;
+/* Ensure body and html background adapt to current theme */
+body {
+  background: var(--bg) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Library Card Structural Layout Repairs */
