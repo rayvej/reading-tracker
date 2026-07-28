@@ -7867,15 +7867,18 @@ window.render3DSpineBookshelf = async function(items) {
     'linear-gradient(90deg, #382d1a 0%, #544427 40%, #382d1a 100%)'  // Antique Amber
   ];
   shelfContainer.innerHTML = books.map((b, i) => {
-    const pages = parseInt(b.total_pages || b.pages || 250);
-    const height = Math.min(210, Math.max(135, 135 + (pages % 75)));
+    const pages = Math.max(20, parseInt(b.total_pages || b.pages || 250, 10));
+    // Spine width scales proportionally with total pages (min 20px, max 52px)
+    const width = Math.min(52, Math.max(20, Math.round(18 + (pages / 28))));
+    const height = Math.min(210, Math.max(138, 138 + (pages % 70)));
     const grad = gradients[i % gradients.length];
     const safeTitle = (b.title || 'Untitled').replace(/"/g, '&quot;');
     const safeAuthor = (b.author || '').replace(/"/g, '&quot;');
-    return `<div class="book-spine-item relative overflow-hidden shadow-lg border-x border-white/10" style="height: ${height}px; background: ${grad}; color: #F5EBE6;" title="${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''}">
+    const fontSize = width < 24 ? '0.68rem' : '0.78rem';
+    return `<div class="book-spine-item relative overflow-hidden shadow-lg border-x border-white/10" style="width: ${width}px; height: ${height}px; background: ${grad}; color: #F5EBE6; font-size: ${fontSize};" title="${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''} (${pages} pages)">
       <div class="absolute top-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
       <div class="absolute bottom-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
-      <span class="truncate font-serif text-xs font-semibold leading-none">${safeTitle}</span>
+      <span class="truncate font-serif font-semibold leading-none">${safeTitle}</span>
     </div>`;
   }).join('');
 };

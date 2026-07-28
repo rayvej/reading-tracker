@@ -1313,17 +1313,18 @@ body.light-mode .fab-log-btn {
 }
 
 .book-spine-item {
+  flex-shrink: 0;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  padding: 14px 6px;
+  padding: 14px 4px;
   border-radius: 3px 6px 6px 3px;
   font-family: 'Newsreader', serif;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, width 0.2s ease;
   box-shadow: -2px 0 6px rgba(0,0,0,0.5), inset 2px 0 3px rgba(255,255,255,0.15);
   display: flex;
   justify-content: space-between;
