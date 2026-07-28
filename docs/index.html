@@ -1485,55 +1485,6 @@
               </div>
             </div>
 
-            <!-- Editorial Theme Selector Section -->
-            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-white/10">
-              <div class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                <i class="fa-solid fa-palette"></i> Editorial Theme System
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="setEditorialTheme('espresso')" class="theme-select-btn p-2.5 rounded-xl border border-amber-500/40 bg-[#181412] text-amber-200 text-xs font-semibold flex flex-col items-center gap-1 active:scale-95 transition-all cursor-pointer" data-theme="espresso">
-                  <span>☕ Warm Espresso</span>
-                </button>
-                <button type="button" onclick="setEditorialTheme('obsidian')" class="theme-select-btn p-2.5 rounded-xl border border-white/10 bg-[#070709] text-sky-300 text-xs font-semibold flex flex-col items-center gap-1 active:scale-95 transition-all cursor-pointer" data-theme="obsidian">
-                  <span>🌌 Obsidian</span>
-                </button>
-                <button type="button" onclick="setEditorialTheme('parched-paper')" class="theme-select-btn p-2.5 rounded-xl border border-white/10 bg-[#F8F5EE] text-amber-950 text-xs font-semibold flex flex-col items-center gap-1 active:scale-95 transition-all cursor-pointer" data-theme="parched-paper">
-                  <span>📜 Paper</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Reading Preferences Section -->
-            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
-              <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <i class="fa-solid fa-sliders text-amber-400"></i> Reading Preferences
-              </div>
-
-              <div class="flex flex-col gap-3">
-                <!-- Preferred Format -->
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-slate-300">Preferred Format</span>
-                  <select id="pref-default-format" class="select select-bordered glass-input text-xs h-8 min-h-8 py-0 px-2 font-semibold">
-                    <option value="Physical">Physical Book</option>
-                    <option value="E-Book">E-Book</option>
-                    <option value="Audiobook">Audiobook</option>
-                  </select>
-                </div>
-
-                <!-- Daily Target Pages -->
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-slate-300">Daily Target Pages</span>
-                  <input type="number" id="pref-daily-pages" min="1" max="1000" value="25" class="input input-bordered glass-input w-20 text-xs h-8 min-h-8 py-0 px-2 text-center font-bold">
-                </div>
-
-                <!-- Daily Target Minutes -->
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-slate-300">Daily Target Minutes</span>
-                  <input type="number" id="pref-daily-minutes" min="1" max="1440" value="30" class="input input-bordered glass-input w-20 text-xs h-8 min-h-8 py-0 px-2 text-center font-bold">
-                </div>
-              </div>
-            </div>
-
             <!-- AI Page Scanner (Gemini OCR) Section -->
             <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-white/10">
               <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
