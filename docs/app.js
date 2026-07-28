@@ -377,6 +377,7 @@ async function loadDatabaseData() {
     if (currentView === 'dashboard') renderDashboard();
     if (currentView === 'goals')     renderGoals();
     if (currentView === 'wishlist')  renderBookshelf();
+    if (currentView === 'knowledge') renderKnowledgeView();
 
     // Run background self-healing for any data status inconsistencies
     healBookStatuses();
@@ -7081,11 +7082,60 @@ function toggleFavoriteNote(noteId) {
   renderKnowledgeView();
 }
 
+const DEFAULT_SEED_NOTES = [
+  {
+    id: 'sn_seed_1',
+    title: 'The Dawn-Breakers',
+    author: 'Nabíl-i-A‘zam',
+    date: '2026-07-25',
+    notes: '"Verily I say, this is the Day in which mankind can behold the Face, and hear the Voice, of the Promised One."',
+    pageLabel: 'p. 142',
+    isQuote: true,
+    isFavorite: true
+  },
+  {
+    id: 'sn_seed_2',
+    title: 'Some Answered Questions',
+    author: '‘Abdu’l-Bahá',
+    date: '2026-07-22',
+    notes: 'Reflection on the harmony of science and religion: True knowledge is the wing that allows human intellect to soar alongside spiritual insight.',
+    pageLabel: 'pp. 115–118',
+    isQuote: false,
+    isFavorite: true
+  },
+  {
+    id: 'sn_seed_3',
+    title: 'The Seven Valleys',
+    author: 'Bahá’u’lláh',
+    date: '2026-07-20',
+    notes: '"On this journey the traveler stepeth into every land and dwelleth in every clime. In every face he seeketh the beauty of the Friend..."',
+    pageLabel: 'p. 7',
+    isQuote: true,
+    isFavorite: true
+  },
+  {
+    id: 'sn_seed_4',
+    title: 'God Passes By',
+    author: 'Shoghi Effendi',
+    date: '2026-07-18',
+    notes: 'Key historical milestone: The declaration in the Garden of Ridván and the global expansion of the faith.',
+    pageLabel: 'p. 151',
+    isQuote: false,
+    isFavorite: false
+  }
+];
+
 function getStandaloneNotes() {
   try {
-    return JSON.parse(localStorage.getItem('rt_standalone_notes') || '[]');
+    const raw = localStorage.getItem('rt_standalone_notes');
+    if (!raw) {
+      localStorage.setItem('rt_standalone_notes', JSON.stringify(DEFAULT_SEED_NOTES));
+      return DEFAULT_SEED_NOTES;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SEED_NOTES;
   } catch (e) {
-    return [];
+    return DEFAULT_SEED_NOTES;
   }
 }
 
@@ -7100,12 +7150,29 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   const feed = $('knowledge-quote-feed');
   if (!feed) return;
 
+  // Auto-fetch caches if empty so notes render even on direct navigation
+  if ((!logsCache || logsCache.length === 0) && typeof loadLogsCache === 'function' && db && uid) {
+    loadLogsCache().then(() => renderKnowledgeView(selectedTag));
+  }
+  if ((!booksCache || booksCache.length === 0) && typeof loadBooksCache === 'function' && db && uid) {
+    loadBooksCache().then(() => renderKnowledgeView(selectedTag));
+  }
+
   const favIds = getFavoriteNoteIds();
   const standaloneNotes = getStandaloneNotes();
   const notesList = [];
 
+  const logsArr = (typeof logsCache !== 'undefined' && Array.isArray(logsCache)) ? logsCache : [];
+  const booksArr = (typeof booksCache !== 'undefined' && Array.isArray(booksCache)) ? booksCache : [];
+
+  // Create book title to author map for session log author enrichment
+  const bookAuthorMap = {};
+  booksArr.forEach(b => {
+    if (b.title && b.author) bookAuthorMap[b.title.trim().toLowerCase()] = b.author;
+  });
+
   // 1. Extract non-empty notes from session logs
-  logsCache.forEach((log, index) => {
+  logsArr.forEach((log, index) => {
     if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
       const noteId = log.id ? `log_${log.id}` : `log_${log.date}_${index}_${(log.book_title || '').slice(0, 10)}`;
       const isManualFav = favIds.includes(noteId);
@@ -7119,23 +7186,26 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         pageLabel = `p. ${endP}`;
       }
 
+      const matchedAuthor = log.author || (log.book_title ? bookAuthorMap[log.book_title.trim().toLowerCase()] : '') || '';
+      const hasQuoteMarks = /["“"»«>]/.test(log.notes);
+
       notesList.push({
         id: noteId,
         type: 'log',
         title: log.book_title || 'Reading Session',
-        author: log.author || '',
+        author: matchedAuthor,
         date: log.date,
         cycle: log.read_cycle || 1,
         notes: log.notes,
         pageLabel: pageLabel,
-        isQuote: log.notes.includes('">') || log.notes.includes('"') || log.notes.length > 30,
+        isQuote: hasQuoteMarks,
         isFavorite: isManualFav || isAutoFav
       });
     }
   });
 
   // 2. Extract notes attached directly to book items
-  booksCache.forEach(b => {
+  booksArr.forEach(b => {
     if (b.notes && b.notes.trim()) {
       const noteId = `book_${b.id || b.title}`;
       const isManualFav = favIds.includes(noteId);
@@ -7148,7 +7218,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         cycle: b.read_count || 1,
         notes: b.notes,
         pageLabel: null,
-        isQuote: true,
+        isQuote: /["“"»«>]/.test(b.notes),
         isFavorite: isManualFav || true
       });
     }
@@ -7185,7 +7255,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
 
   // 4. Currently Reading Spotlight & Daily Resurfacing
   const inProgressBookTitles = new Set(
-    booksCache.filter(b => b.status === 'In Progress' || b.status === 'Reading').map(b => b.title)
+    booksArr.filter(b => b.status === 'In Progress' || b.status === 'Reading').map(b => b.title)
   );
 
   const currentlyReadingNotes = notesList.filter(n => inProgressBookTitles.has(n.title));
@@ -7217,7 +7287,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   // 5. Populate Book Filter Select Dropdown
   const bookSelect = $('knowledge-book-select');
   if (bookSelect) {
-    const currentVal = bookSelect.value || 'all';
     const bookTitles = Array.from(new Set(notesList.map(n => n.title))).sort();
     let optionsHTML = `<option value="all">📚 All Books & Notes</option><option value="standalone">📝 Standalone Notes</option>`;
     bookTitles.forEach(t => {
@@ -7226,7 +7295,13 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       }
     });
     bookSelect.innerHTML = optionsHTML;
-    bookSelect.value = currentVal;
+
+    // Validate that knowledgeSelectedBook exists in available options
+    const validValues = ['all', 'standalone', ...bookTitles];
+    if (!validValues.includes(knowledgeSelectedBook)) {
+      knowledgeSelectedBook = 'all';
+    }
+    bookSelect.value = knowledgeSelectedBook;
 
     bookSelect.onchange = () => {
       knowledgeSelectedBook = bookSelect.value;
@@ -7267,7 +7342,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   if (selectedTag === 'quotes') {
     filtered = filtered.filter(n => n.isQuote);
   } else if (selectedTag === 'reflections') {
-    filtered = filtered.filter(n => !n.isQuote || n.notes.length > 50);
+    filtered = filtered.filter(n => !n.isQuote);
   } else if (selectedTag === 'favorites') {
     filtered = filtered.filter(n => n.isFavorite);
   }
@@ -7291,13 +7366,30 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   feed.innerHTML = '';
 
   if (filtered.length === 0) {
+    const isFiltered = knowledgeSelectedBook !== 'all' || selectedTag !== 'all' || searchQuery !== '';
     feed.innerHTML = `
       <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
         <i class="fa-solid fa-quote-left text-3xl text-amber-400/40"></i>
-        <p class="text-sm font-bold text-slate-200">No notes found for this filter</p>
-        <p class="text-xs text-slate-400">Log a session with notes, click Quick Note, or clear your search query.</p>
+        <p class="text-sm font-bold text-slate-200">${isFiltered ? 'No notes match your active filter or search' : 'No notes recorded yet'}</p>
+        <p class="text-xs text-slate-400 mb-2">${isFiltered ? 'Try clearing your search query, changing the book filter, or switching tags.' : 'Log a session with notes or click Quick Note to capture your thoughts.'}</p>
+        ${isFiltered ? `
+          <button id="kn-btn-clear-filters" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-900 shadow-md cursor-pointer transition-all active:scale-95" style="background: var(--gold)">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Clear All Filters
+          </button>
+        ` : ''}
       </div>
     `;
+
+    const resetBtn = $('kn-btn-clear-filters');
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        knowledgeSelectedBook = 'all';
+        if (bookSelect) bookSelect.value = 'all';
+        if (searchInput) searchInput.value = '';
+        if (searchClear) searchClear.classList.add('hidden');
+        renderKnowledgeView('all');
+      };
+    }
     return;
   }
 
