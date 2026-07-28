@@ -7851,7 +7851,7 @@ window.render3DSpineBookshelf = async function(items) {
       : (Array.isArray(window.booksCache) ? window.booksCache : []);
   }
 
-  const books = (list || []).slice(0, 24);
+  const books = list || [];
   if (!books.length) {
     shelfContainer.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center w-full font-mono">No books loaded in shelf</div>';
     return;
