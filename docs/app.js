@@ -7082,60 +7082,14 @@ function toggleFavoriteNote(noteId) {
   renderKnowledgeView();
 }
 
-const DEFAULT_SEED_NOTES = [
-  {
-    id: 'sn_seed_1',
-    title: 'The Dawn-Breakers',
-    author: 'Nabíl-i-A‘zam',
-    date: '2026-07-25',
-    notes: '"Verily I say, this is the Day in which mankind can behold the Face, and hear the Voice, of the Promised One."',
-    pageLabel: 'p. 142',
-    isQuote: true,
-    isFavorite: true
-  },
-  {
-    id: 'sn_seed_2',
-    title: 'Some Answered Questions',
-    author: '‘Abdu’l-Bahá',
-    date: '2026-07-22',
-    notes: 'Reflection on the harmony of science and religion: True knowledge is the wing that allows human intellect to soar alongside spiritual insight.',
-    pageLabel: 'pp. 115–118',
-    isQuote: false,
-    isFavorite: true
-  },
-  {
-    id: 'sn_seed_3',
-    title: 'The Seven Valleys',
-    author: 'Bahá’u’lláh',
-    date: '2026-07-20',
-    notes: '"On this journey the traveler stepeth into every land and dwelleth in every clime. In every face he seeketh the beauty of the Friend..."',
-    pageLabel: 'p. 7',
-    isQuote: true,
-    isFavorite: true
-  },
-  {
-    id: 'sn_seed_4',
-    title: 'God Passes By',
-    author: 'Shoghi Effendi',
-    date: '2026-07-18',
-    notes: 'Key historical milestone: The declaration in the Garden of Ridván and the global expansion of the faith.',
-    pageLabel: 'p. 151',
-    isQuote: false,
-    isFavorite: false
-  }
-];
-
 function getStandaloneNotes() {
   try {
     const raw = localStorage.getItem('rt_standalone_notes');
-    if (!raw) {
-      localStorage.setItem('rt_standalone_notes', JSON.stringify(DEFAULT_SEED_NOTES));
-      return DEFAULT_SEED_NOTES;
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SEED_NOTES;
+    return Array.isArray(parsed) ? parsed.filter(sn => !sn.id || !sn.id.startsWith('sn_seed_')) : [];
   } catch (e) {
-    return DEFAULT_SEED_NOTES;
+    return [];
   }
 }
 
@@ -7176,7 +7130,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
       const noteId = log.id ? `log_${log.id}` : `log_${log.date}_${index}_${(log.book_title || '').slice(0, 10)}`;
       const isManualFav = favIds.includes(noteId);
-      const isAutoFav = log.notes.includes('★') || log.notes.toLowerCase().includes('favorite');
       const startP = log.start_page || log.startPage || null;
       const endP = log.end_page || log.endPage || null;
       let pageLabel = null;
@@ -7199,7 +7152,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         notes: log.notes,
         pageLabel: pageLabel,
         isQuote: hasQuoteMarks,
-        isFavorite: isManualFav || isAutoFav
+        isFavorite: isManualFav
       });
     }
   });
@@ -7219,7 +7172,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         notes: b.notes,
         pageLabel: null,
         isQuote: /["“"»«>]/.test(b.notes),
-        isFavorite: isManualFav || true
+        isFavorite: isManualFav
       });
     }
   });
@@ -7237,7 +7190,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       photoUrl: sn.photoUrl || null,
       pageLabel: sn.pageLabel || null,
       isQuote: sn.isQuote !== false,
-      isFavorite: isManualFav || sn.isFavorite || false
+      isFavorite: isManualFav || sn.isFavorite === true
     });
   });
 
