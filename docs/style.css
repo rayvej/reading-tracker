@@ -63,6 +63,53 @@
   --shadow-card:     0 12px 32px -10px rgba(0, 0, 0, 0.8);
 }
 
+[data-theme="glass-studio"] {
+  --bg:              linear-gradient(180deg, #0B0C10 0%, #060709 100%);
+  --bg-solid:        #0B0C10;
+  --bg-elevated:     #12141C;
+  --bg-card:         rgba(255, 255, 255, 0.038);
+  --bg-input:        rgba(255, 255, 255, 0.06);
+  --bg-input-focus:  rgba(56, 189, 248, 0.2);
+  --text-primary:    #F8FAFC;
+  --text-secondary:  #94A3B8;
+  --text-tertiary:   #64748B;
+  --accent:          #38BDF8;
+  --accent-rgb:      56, 189, 248;
+  --accent2:         #818CF8;
+  --accent2-rgb:     129, 140, 248;
+  --accent3:         #34D399;
+  --accent3-rgb:     52, 211, 153;
+  --gold:            #38BDF8;
+  --gold-rgb:        56, 189, 248;
+  --gold-light:      #BAE6FD;
+  --border:          rgba(255, 255, 255, 0.08);
+  --border-strong:   rgba(255, 255, 255, 0.22);
+  --border-color:    rgba(255, 255, 255, 0.06);
+  --shadow-card:     0 16px 40px -12px rgba(0, 0, 0, 0.85);
+  --blur:            blur(24px) saturate(200%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY MODE SWITCHER (Serif Literary vs Sans Modern)
+   ══════════════════════════════════════════════════════════════ */
+:root[data-font="serif"] h1,
+:root[data-font="serif"] h2,
+:root[data-font="serif"] h3,
+:root[data-font="serif"] .font-serif,
+:root[data-font="serif"] .heading-editorial {
+  font-family: 'Newsreader', 'Lora', Georgia, serif !important;
+}
+
+:root[data-font="sans"] h1,
+:root[data-font="sans"] h2,
+:root[data-font="sans"] h3,
+:root[data-font="sans"] .font-serif,
+:root[data-font="sans"] .heading-editorial {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 [data-theme="parched-paper"], [data-theme="light"], body.light-mode {
   --bg:              linear-gradient(180deg, #F8F5EE 0%, #EFEADF 100%);
   --bg-solid:        #F8F5EE;

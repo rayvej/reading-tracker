@@ -1304,27 +1304,62 @@
               </div>
             </div>
 
-            <!-- Appearance & Theme Section -->
+            <!-- Appearance & Personalization Section -->
             <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
               <div class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <i class="fa-solid fa-palette text-amber-400"></i> Appearance &amp; Personalization
               </div>
 
-              <!-- Dark/Light Theme Toggle -->
-              <div class="flex items-center justify-between p-3 rounded-2xl border border-white/5 bg-white/5">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-moon" id="acct-theme-icon"></i>
-                  </div>
-                  <div>
-                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">App Theme</div>
-                    <div class="text-[10.5px] text-slate-400" id="acct-theme-status-text">Dark Mode Active</div>
+              <!-- Theme Style Selector -->
+              <div class="flex flex-col gap-2 p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+                      <i class="fa-solid fa-paintbrush"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-extrabold" style="color: var(--text-primary)">Visual Theme</div>
+                      <div class="text-[10.5px] text-slate-400" id="acct-theme-status-text">Select visual aesthetic</div>
+                    </div>
                   </div>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" id="acct-theme-toggle-switch" class="sr-only peer">
-                  <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                </label>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <button data-theme="espresso" class="theme-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-amber-200 bg-amber-950/40 border-amber-500/30 flex items-center justify-center gap-1.5 active:scale-95">
+                    ☕ Warm Espresso
+                  </button>
+                  <button data-theme="glass-studio" class="theme-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-sky-200 bg-sky-950/40 border-sky-500/30 flex items-center justify-center gap-1.5 active:scale-95">
+                    ✨ Glass Studio
+                  </button>
+                  <button data-theme="obsidian" class="theme-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-slate-200 bg-slate-900 border-slate-700 flex items-center justify-center gap-1.5 active:scale-95">
+                    🌌 Obsidian Dark
+                  </button>
+                  <button data-theme="parched-paper" class="theme-select-btn px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-amber-900 bg-amber-100 border-amber-300 flex items-center justify-center gap-1.5 active:scale-95">
+                    📜 Parched Paper
+                  </button>
+                </div>
+              </div>
+
+              <!-- Typography Style Selector -->
+              <div class="flex flex-col gap-2 p-3 rounded-2xl border border-white/5 bg-white/5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm">
+                      <i class="fa-solid fa-font"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-extrabold" style="color: var(--text-primary)">Typography Identity</div>
+                      <div class="text-[10.5px] text-slate-400">Heading font style</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <button data-font="serif" class="font-select-btn px-3 py-2 rounded-xl text-xs font-bold border transition-all font-serif bg-white/5 border-white/10 active:scale-95">
+                    ✒️ Literary Serif
+                  </button>
+                  <button data-font="sans" class="font-select-btn px-3 py-2 rounded-xl text-xs font-bold border transition-all font-sans bg-white/5 border-white/10 active:scale-95">
+                    ⚡ Modern Sans
+                  </button>
+                </div>
               </div>
 
               <!-- Accent Theme Colors -->

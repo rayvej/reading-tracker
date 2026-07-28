@@ -173,14 +173,30 @@ function setEditorialTheme(themeName) {
 }
 window.setEditorialTheme = setEditorialTheme;
 
+function setEditorialFont(fontName) {
+  fontName = fontName || 'serif';
+  document.documentElement.setAttribute('data-font', fontName);
+  localStorage.setItem('rt_editorial_font', fontName);
+  document.querySelectorAll('.font-select-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.font === fontName);
+  });
+}
+window.setEditorialFont = setEditorialFont;
+
+function initFont() {
+  const savedFont = localStorage.getItem('rt_editorial_font') || 'serif';
+  setEditorialFont(savedFont);
+}
+
 function initTheme() {
   const saved = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
   setEditorialTheme(saved);
+  initFont();
 }
 
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'espresso';
-  const nextTheme = (current === 'espresso' || current === 'obsidian') ? 'parched-paper' : 'espresso';
+  const nextTheme = (current === 'espresso' || current === 'obsidian' || current === 'glass-studio') ? 'parched-paper' : 'espresso';
   setEditorialTheme(nextTheme);
   if (typeof currentView !== 'undefined' && currentView === 'dashboard' && typeof renderDashboard === 'function') {
     renderDashboard();
@@ -698,14 +714,23 @@ function setupAccountView() {
     });
   }
 
-  // Dark/Light Theme Toggle Switch
-  const themeSwitch = $('acct-theme-toggle-switch');
-  if (themeSwitch) {
-    themeSwitch.addEventListener('change', () => {
-      toggleTheme();
-      syncAccountThemeSwitch();
+  // Theme Style Buttons
+  document.querySelectorAll('.theme-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.theme;
+      setEditorialTheme(theme);
+      showToast(`Visual Theme set to ${theme.replace('-', ' ').toUpperCase()}`, 'info');
     });
-  }
+  });
+
+  // Typography Identity Buttons
+  document.querySelectorAll('.font-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const font = btn.dataset.font;
+      setEditorialFont(font);
+      showToast(`Typography identity set to ${font === 'serif' ? 'LITERARY SERIF' : 'MODERN SANS'}`, 'info');
+    });
+  });
 
   // Accent Color Picker
   const accentPicker = $('accent-color-picker');
@@ -7832,15 +7857,25 @@ window.render3DSpineBookshelf = async function(items) {
     return;
   }
 
-  const colors = ['#8E442B', '#1B3B2B', '#2B2E39', '#4A3525', '#7A2E2E', '#2E5A63', '#6A4A28', '#2A4A5E', '#3D2A45'];
+  const gradients = [
+    'linear-gradient(90deg, #4d1b14 0%, #7a2b20 40%, #4d1b14 100%)', // Ruby Crimson Leather
+    'linear-gradient(90deg, #123322 0%, #1e5237 40%, #123322 100%)', // Emerald Oxford
+    'linear-gradient(90deg, #182233 0%, #263854 40%, #182233 100%)', // Deep Navy Cloth
+    'linear-gradient(90deg, #3d2618 0%, #593924 40%, #3d2618 100%)', // Roasted Espresso
+    'linear-gradient(90deg, #281a38 0%, #412b5c 40%, #281a38 100%)', // Imperial Violet
+    'linear-gradient(90deg, #2b3318 0%, #435226 40%, #2b3318 100%)', // Forest Moss
+    'linear-gradient(90deg, #382d1a 0%, #544427 40%, #382d1a 100%)'  // Antique Amber
+  ];
   shelfContainer.innerHTML = books.map((b, i) => {
     const pages = parseInt(b.total_pages || b.pages || 250);
     const height = Math.min(210, Math.max(135, 135 + (pages % 75)));
-    const bg = colors[i % colors.length];
+    const grad = gradients[i % gradients.length];
     const safeTitle = (b.title || 'Untitled').replace(/"/g, '&quot;');
     const safeAuthor = (b.author || '').replace(/"/g, '&quot;');
-    return `<div class="book-spine-item" style="height: ${height}px; background: ${bg}; color: #F5EBE6;" title="${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''}">
-      <span class="truncate font-serif text-xs leading-none">${safeTitle}</span>
+    return `<div class="book-spine-item relative overflow-hidden shadow-lg border-x border-white/10" style="height: ${height}px; background: ${grad}; color: #F5EBE6;" title="${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''}">
+      <div class="absolute top-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
+      <div class="absolute bottom-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
+      <span class="truncate font-serif text-xs font-semibold leading-none">${safeTitle}</span>
     </div>`;
   }).join('');
 };
