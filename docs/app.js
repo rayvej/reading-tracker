@@ -9606,7 +9606,7 @@ function initHeatmapMetricListeners() {
   });
 }
 
-function openHeatmapDayModal(dateStr) {
+function openHeatmapDayDetailDrawer(dateStr) {
   const modal = document.getElementById('heatmap-day-modal');
   if (!modal) return;
 
