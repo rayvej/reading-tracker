@@ -7181,13 +7181,38 @@ function renderActivityHeatmap(logs) {
   container.innerHTML = '';
   
   const activityMap = {};
-  logs.forEach(log => {
+  const activeLogs = (logs || []).filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+
+  activeLogs.forEach(log => {
     const dStr = log.date;
-    const start = parseInt(log.start_page || 0, 10);
-    const end = parseInt(log.end_page || 0, 10);
-    const pages = parseInt(log.pages_read_today, 10) || parseInt(log.pagesRead, 10) || Math.max(0, end - start) || 0;
-    activityMap[dStr] = (activityMap[dStr] || 0) + pages;
+    if (!dStr) return;
+
+    if (currentHeatmapMetric === 'duration') {
+      const mins = parseInt(log.duration_minutes || log.durationMinutes || log.minutes_spent || 0, 10);
+      activityMap[dStr] = (activityMap[dStr] || 0) + mins;
+    } else if (currentHeatmapMetric === 'sessions') {
+      activityMap[dStr] = (activityMap[dStr] || 0) + 1;
+    } else if (currentHeatmapMetric === 'notes') {
+      if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
+        activityMap[dStr] = (activityMap[dStr] || 0) + 1;
+      }
+    } else {
+      // Default: 'pages'
+      const start = parseInt(log.start_page || 0, 10);
+      const end = parseInt(log.end_page || 0, 10);
+      const pages = parseInt(log.pages_read_today, 10) || parseInt(log.pagesRead, 10) || Math.max(0, end - start) || 0;
+      activityMap[dStr] = (activityMap[dStr] || 0) + pages;
+    }
   });
+
+  if (currentHeatmapMetric === 'notes' && typeof getStandaloneNotes === 'function') {
+    const standaloneNotes = getStandaloneNotes();
+    standaloneNotes.forEach(n => {
+      if (n.date) {
+        activityMap[n.date] = (activityMap[n.date] || 0) + 1;
+      }
+    });
+  }
 
   const today = new Date();
   let daysCount = 363;
@@ -7212,33 +7237,44 @@ function renderActivityHeatmap(logs) {
     const day = String(activeDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
     
-    const pagesRead = activityMap[dateStr] || 0;
+    const metricVal = activityMap[dateStr] || 0;
     
     const block = document.createElement('div');
     block.className = 'heatmap-day';
     
-    if (pagesRead > 0) {
+    if (metricVal > 0) {
       activeCellsCount++;
-      if (pagesRead <= 10) block.classList.add('heatmap-tier-1');
-      else if (pagesRead <= 20) block.classList.add('heatmap-tier-2');
-      else if (pagesRead <= 40) block.classList.add('heatmap-tier-3');
-      else block.classList.add('heatmap-tier-4');
+      if (currentHeatmapMetric === 'duration') {
+        if (metricVal <= 15) block.classList.add('heatmap-tier-1');
+        else if (metricVal <= 30) block.classList.add('heatmap-tier-2');
+        else if (metricVal <= 60) block.classList.add('heatmap-tier-3');
+        else block.classList.add('heatmap-tier-4');
+      } else if (currentHeatmapMetric === 'sessions' || currentHeatmapMetric === 'notes') {
+        if (metricVal === 1) block.classList.add('heatmap-tier-1');
+        else if (metricVal === 2) block.classList.add('heatmap-tier-2');
+        else if (metricVal === 3) block.classList.add('heatmap-tier-3');
+        else block.classList.add('heatmap-tier-4');
+      } else { // pages
+        if (metricVal <= 10) block.classList.add('heatmap-tier-1');
+        else if (metricVal <= 20) block.classList.add('heatmap-tier-2');
+        else if (metricVal <= 40) block.classList.add('heatmap-tier-3');
+        else block.classList.add('heatmap-tier-4');
+      }
     }
     
     const dateFormatted = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    block.setAttribute('title', `${dateFormatted}: ${pagesRead} pages read`);
+    let metricLabel = 'pages read';
+    if (currentHeatmapMetric === 'duration') metricLabel = 'mins read';
+    else if (currentHeatmapMetric === 'sessions') metricLabel = 'sessions logged';
+    else if (currentHeatmapMetric === 'notes') metricLabel = 'notes captured';
+
+    block.setAttribute('title', `${dateFormatted}: ${metricVal} ${metricLabel}`);
     
     block.addEventListener('click', (e) => {
       e.stopPropagation();
       triggerHaptic();
       
-      const dayLogs = logs.filter(l => l.date === dateStr);
-      const booksDone = dayLogs.filter(l => {
-        const book = booksCache.find(b => b.title === l.book_title);
-        return book && parseInt(l.end_page || 0, 10) >= parseInt(book.total_pages || 0, 10);
-      });
-
-      openHeatmapDayModal(dateStr, dayLogs, booksDone);
+      openHeatmapDayDetailDrawer(dateStr);
     });
     
     container.appendChild(block);
