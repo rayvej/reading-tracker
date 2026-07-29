@@ -4590,6 +4590,286 @@ async function renderGoals() {
       etasContainer.appendChild(card);
     });
   }
+
+  // Render Genre Galaxy Cluster & Milestone Badges Vault
+  renderGenreGalaxy();
+  renderAchievementsVault();
+}
+
+/** Interactive Subject & Genre Galaxy Cluster */
+function renderGenreGalaxy() {
+  const container = document.getElementById('goals-genre-galaxy');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const catMap = {};
+  (booksCache || []).forEach(b => {
+    const cat = b.category || b.collection || 'General';
+    const pages = (b.read_count || 1) * (b.total_pages || 0);
+    catMap[cat] = (catMap[cat] || 0) + pages;
+  });
+
+  const categories = Object.keys(catMap);
+  if (categories.length === 0) {
+    container.innerHTML = '<span class="text-xs text-slate-500 font-mono py-2">No categories recorded yet</span>';
+    return;
+  }
+
+  const maxPages = Math.max(...Object.values(catMap), 1);
+  const colors = [
+    { bg: 'rgba(212, 163, 89, 0.15)', border: 'rgba(212, 163, 89, 0.4)', text: '#F5EBE6' },
+    { bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)', text: '#a7f3d0' },
+    { bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)', text: '#bae6fd' },
+    { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.4)', text: '#e9d5ff' },
+    { bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.4)', text: '#fecdd3' }
+  ];
+
+  categories.forEach((cat, idx) => {
+    const pages = catMap[cat];
+    const ratio = pages / maxPages;
+    const sizePx = Math.round(58 + ratio * 34);
+    const color = colors[idx % colors.length];
+
+    const orb = document.createElement('div');
+    orb.className = 'galaxy-node rounded-full flex flex-col items-center justify-center text-center p-2 cursor-pointer shadow-lg active:scale-90';
+    orb.style.cssText = `width: ${sizePx}px; height: ${sizePx}px; background: ${color.bg}; border: 1.5px solid ${color.border}; color: ${color.text};`;
+
+    orb.innerHTML = `
+      <span class="text-[9px] font-black leading-none truncate max-w-[90%]">${cat}</span>
+      <span class="text-[8px] font-mono text-slate-300 mt-1">${fmtNum(pages)}p</span>
+    `;
+
+    orb.onclick = () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      bookshelfSearchTerm = cat;
+      const searchEl = document.getElementById('wishlist-search');
+      if (searchEl) searchEl.value = cat;
+      showView('wishlist');
+    };
+
+    container.appendChild(orb);
+  });
+}
+
+/** Reading Achievements & Milestone Badges Vault */
+function renderAchievementsVault() {
+  const container = document.getElementById('goals-milestones-vault');
+  const countEl = document.getElementById('achievements-unlocked-count');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const lifetime = getReconciledStats(booksCache, logsCache, 'all', 'all');
+  const totalPages = lifetime.pagesRead || 0;
+  const totalBooks = lifetime.totalReads || 0;
+
+  let streakDays = 0;
+  if (typeof activeStreakCount !== 'undefined') streakDays = activeStreakCount;
+
+  const categories = new Set((booksCache || []).map(b => b.category || 'General'));
+  const notesCount = (logsCache || []).filter(l => l.notes && l.notes.trim().length > 0).length;
+
+  const trophies = [
+    {
+      id: 'centurion',
+      icon: 'fa-trophy',
+      title: 'Centurion',
+      desc: 'Finish 100+ books',
+      current: totalBooks,
+      target: 100,
+      unlocked: totalBooks >= 100
+    },
+    {
+      id: 'bibliophile',
+      icon: 'fa-book-bookmark',
+      title: 'Bibliophile',
+      desc: '10,000+ lifetime pages',
+      current: totalPages,
+      target: 10000,
+      unlocked: totalPages >= 10000
+    },
+    {
+      id: 'streak',
+      icon: 'fa-fire',
+      title: '30-Day Shield',
+      desc: 'Maintain a 30-day streak',
+      current: streakDays,
+      target: 30,
+      unlocked: streakDays >= 30
+    },
+    {
+      id: 'polymath',
+      icon: 'fa-brain',
+      title: 'Polymath',
+      desc: 'Read 5+ categories',
+      current: categories.size,
+      target: 5,
+      unlocked: categories.size >= 5
+    },
+    {
+      id: 'archivist',
+      icon: 'fa-feather-pointed',
+      title: 'Archivist',
+      desc: 'Log 50+ session notes',
+      current: notesCount,
+      target: 50,
+      unlocked: notesCount >= 50
+    },
+    {
+      id: 'scholar',
+      icon: 'fa-graduation-cap',
+      title: 'Scholar',
+      desc: 'Finish 10+ core books',
+      current: totalBooks,
+      target: 10,
+      unlocked: totalBooks >= 10
+    }
+  ];
+
+  let unlockedCount = 0;
+
+  trophies.forEach(t => {
+    if (t.unlocked) unlockedCount++;
+    const pct = Math.min(100, Math.round((t.current / t.target) * 100));
+
+    const card = document.createElement('div');
+    card.className = `p-3 rounded-2xl flex flex-col gap-2 border transition-all ${
+      t.unlocked 
+        ? 'bg-amber-500/10 border-amber-500/30 text-amber-200 shadow-lg' 
+        : 'bg-white/[0.03] border-white/5 text-slate-400 opacity-70'
+    }`;
+
+    card.innerHTML = `
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl ${t.unlocked ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-500'} flex items-center justify-center text-sm shrink-0">
+          <i class="fa-solid ${t.icon}"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold ${t.unlocked ? 'text-amber-200' : 'text-slate-300'} truncate">${t.title}</div>
+          <div class="text-[9px] text-slate-400 truncate">${t.desc}</div>
+        </div>
+      </div>
+      <div class="w-full bg-black/30 rounded-full h-1.5 overflow-hidden mt-1">
+        <div class="h-full rounded-full transition-all duration-500 ${t.unlocked ? 'bg-amber-400' : 'bg-slate-600'}" style="width: ${pct}%;"></div>
+      </div>
+      <div class="flex justify-between items-center text-[9px] font-mono text-slate-400">
+        <span>${t.unlocked ? 'UNLOCKED ✓' : 'LOCKED'}</span>
+        <span>${fmtNum(t.current)} / ${fmtNum(t.target)}</span>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  if (countEl) countEl.textContent = `${unlockedCount} / ${trophies.length} Unlocked`;
+}
+
+/** Editorial Quote Card Generator Modal & Download */
+window.openQuoteCardModal = function(quoteText, author, bookTitle) {
+  const modal = document.getElementById('quote-card-modal');
+  if (!modal) return;
+
+  const txtEl = document.getElementById('qc-text');
+  const autEl = document.getElementById('qc-author');
+  const bkEl = document.getElementById('qc-book');
+
+  if (txtEl) txtEl.textContent = `"${(quoteText || 'Selected Quote').replace(/^>\s*/, '')}"`;
+  if (autEl) autEl.textContent = author ? `— ${author}` : '— Reading Excerpt';
+  if (bkEl) bkEl.textContent = bookTitle || 'Reading Tracker Vault';
+
+  modal.classList.add('open');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('quote-card-close');
+  const dlBtn = document.getElementById('qc-btn-download');
+
+  if (closeBtn) closeBtn.onclick = () => document.getElementById('quote-card-modal').classList.remove('open');
+  if (dlBtn) {
+    dlBtn.onclick = () => downloadQuoteCardPNG();
+  }
+});
+
+function downloadQuoteCardPNG() {
+  const card = document.getElementById('quote-card-preview');
+  if (!card) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+
+  // Background Gradient
+  const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+  grad.addColorStop(0, '#1f1915');
+  grad.addColorStop(1, '#120e0c');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Border
+  ctx.strokeStyle = 'rgba(212, 163, 89, 0.3)';
+  ctx.lineWidth = 12;
+  ctx.strokeRect(40, 40, 1000, 1000);
+
+  // Quotation Mark Watermark
+  ctx.font = '280px serif';
+  ctx.fillStyle = 'rgba(212, 163, 89, 0.08)';
+  ctx.fillText('“', 800, 300);
+
+  // Header Title
+  ctx.font = 'bold 32px sans-serif';
+  ctx.fillStyle = '#D4A359';
+  ctx.fillText('EDITORIAL QUOTE EXCERPT', 100, 140);
+
+  // Quote Text Wrapping
+  const text = document.getElementById('qc-text').textContent || '';
+  ctx.font = 'italic 44px serif';
+  ctx.fillStyle = '#F5EBE6';
+  
+  const words = text.split(' ');
+  let line = '';
+  let y = 380;
+  const lineHeight = 64;
+  const maxWidth = 880;
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, 100, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, 100, y);
+
+  // Footer Attribution
+  const author = document.getElementById('qc-author').textContent || '';
+  const book = document.getElementById('qc-book').textContent || '';
+
+  ctx.font = 'bold 36px sans-serif';
+  ctx.fillStyle = '#E2E8F0';
+  ctx.fillText(author, 100, 920);
+
+  ctx.font = '28px monospace';
+  ctx.fillStyle = '#D4A359';
+  ctx.fillText(book, 100, 970);
+
+  ctx.font = 'bold 24px monospace';
+  ctx.fillStyle = '#64748B';
+  ctx.fillText('Reading Tracker', 820, 970);
+
+  // Trigger Download
+  const dataUrl = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `quote_card_${todayISO()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  if (typeof showToast === 'function') showToast('✓ Quote Card PNG downloaded!', 'success');
 }
 
 function openGoalsModal() {
@@ -7192,6 +7472,21 @@ function openBookDetailModal(b) {
   
   const editBtn = $('bd-action-edit');
   if (editBtn) {
+    let focusBtn = $('bd-action-focus');
+    if (!focusBtn && editBtn.parentNode) {
+      focusBtn = document.createElement('button');
+      focusBtn.id = 'bd-action-focus';
+      focusBtn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all active:scale-[0.98]';
+      focusBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Focus Session';
+      editBtn.parentNode.insertBefore(focusBtn, editBtn);
+    }
+    if (focusBtn) {
+      focusBtn.onclick = () => {
+        $('book-detail-modal').classList.remove('open');
+        openFullTimerSession(b);
+      };
+    }
+
     const newBtn = editBtn.cloneNode(true);
     editBtn.parentNode.replaceChild(newBtn, editBtn);
     newBtn.addEventListener('click', () => {
@@ -8025,6 +8320,9 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
+          <button class="quote-card-action-btn hover:text-amber-400" data-action="share" title="Share Quote Card PNG">
+            <i class="fa-solid fa-camera-retro"></i>
+          </button>
           <button class="quote-card-action-btn ${n.isFavorite ? 'active-fav' : ''}" data-action="fav" data-id="${n.id}" title="${n.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}">
             <i class="${n.isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
           </button>
@@ -8036,6 +8334,15 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     `;
 
     // Action button listeners
+    const shareBtn = card.querySelector('[data-action="share"]');
+    if (shareBtn) {
+      shareBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof triggerHaptic === 'function') triggerHaptic();
+        openQuoteCardModal(n.notes, n.author, n.title);
+      };
+    }
+
     const favBtn = card.querySelector('[data-action="fav"]');
     if (favBtn) {
       favBtn.onclick = (e) => {

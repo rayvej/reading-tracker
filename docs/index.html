@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=85">
+  <link rel="stylesheet" href="style.css?v=86">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1269,6 +1269,28 @@
             <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 goals-sec-all">
               <span class="section-label"><i class="fa-solid fa-book-open-reader text-[10px]" style="color: var(--accent)"></i> Reading ETAs</span>
               <div class="flex flex-col gap-3" id="goals-reading-etas"></div>
+            </div>
+
+            <!-- Interactive Genre & Subject Galaxy Cluster -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-3 border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-transparent">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                  <i class="fa-solid fa-atom text-amber-400"></i> Subject &amp; Genre Galaxy
+                </span>
+                <span class="text-[9px] font-mono text-slate-400">TAP ORB TO FILTER</span>
+              </div>
+              <div id="goals-genre-galaxy" class="flex flex-wrap items-center justify-center gap-3 py-3 min-h-[120px]"></div>
+            </div>
+
+            <!-- Reading Achievements & Milestone Badges Vault -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-white/10">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                  <i class="fa-solid fa-trophy text-amber-400"></i> Reading Trophies &amp; Achievements
+                </span>
+                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20" id="achievements-unlocked-count">0 / 6 Unlocked</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="goals-milestones-vault"></div>
             </div>
 
           </div>
@@ -2816,6 +2838,52 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       EDITORIAL QUOTE CARD GENERATOR MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="quote-card-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.75); backdrop-filter: blur(8px)" 
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mx-4 w-full max-w-md p-6 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[95vh] overflow-y-auto no-scrollbar"
+         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-slate-200 flex items-center gap-2"><i class="fa-solid fa-camera-retro text-amber-400"></i> Shareable Quote Card</span>
+        <button id="quote-card-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Quote Card Preview -->
+      <div id="quote-card-preview" class="relative w-full aspect-square rounded-2xl p-6 flex flex-col justify-between overflow-hidden shadow-2xl border border-white/10" style="background: linear-gradient(145deg, #1f1915 0%, #120e0c 100%);">
+        <div class="absolute -right-6 -top-6 text-9xl font-serif text-amber-500/10 pointer-events-none select-none">“</div>
+        <div class="flex items-center gap-3 z-10">
+          <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold shrink-0">
+            <i class="fa-solid fa-quote-left"></i>
+          </div>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400/80">Editorial Quote Excerpt</span>
+        </div>
+
+        <div class="my-auto py-4 z-10">
+          <p id="qc-text" class="font-serif text-base sm:text-lg font-medium leading-relaxed text-amber-100 italic">"So powerful is the light of unity that it can illuminate the whole earth."</p>
+        </div>
+
+        <div class="pt-4 border-t border-white/10 flex items-center justify-between gap-3 z-10">
+          <div class="min-w-0 flex-1">
+            <div id="qc-author" class="text-xs font-bold text-slate-200 truncate">— Bahá’u’lláh</div>
+            <div id="qc-book" class="text-[10px] text-amber-400/70 truncate font-mono">Gleanings from the Writings of Bahá’u’lláh</div>
+          </div>
+          <span class="text-[8px] font-mono uppercase tracking-wider text-slate-500 shrink-0">Reading Tracker</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="qc-btn-download" class="w-full py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-download"></i> Save Quote Card PNG
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
@@ -2831,6 +2899,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=85"></script>
+  <script type="module" src="app.js?v=86"></script>
 </body>
 </html>
