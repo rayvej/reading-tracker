@@ -4927,6 +4927,8 @@ function renderHeatmap() {
   });
 }
 
+let recentLogsLimit = 25;
+
 function renderRecentLogs() {
   const container = $('log-recent-list');
   if (!container) return;
@@ -4937,8 +4939,10 @@ function renderRecentLogs() {
     container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No recent logs recorded</p>';
     return;
   }
+
+  const logsToDisplay = activeLogs.slice(0, recentLogsLimit);
   
-  activeLogs.slice(0, 10).forEach(l => {
+  logsToDisplay.forEach(l => {
     const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-white/5 hover:bg-slate-900/30 transition-all cursor-pointer group relative overflow-hidden');
     const pages = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
     
@@ -4975,6 +4979,18 @@ function renderRecentLogs() {
     card.addEventListener('click', () => openLogDetailModal(l));
     container.appendChild(card);
   });
+
+  if (activeLogs.length > recentLogsLimit) {
+    const remaining = activeLogs.length - recentLogsLimit;
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 transition-all active:scale-95 cursor-pointer mt-2';
+    loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Logs (${remaining} remaining)`;
+    loadMoreBtn.onclick = () => {
+      recentLogsLimit += 35;
+      renderRecentLogs();
+    };
+    container.appendChild(loadMoreBtn);
+  }
 }
 
 function openAddBookModal() {
@@ -8140,23 +8156,24 @@ function initQuickNoteModalListeners() {
 
   if (photoTrigger && photoFile) {
     photoTrigger.onclick = () => photoFile.click();
-    photoFile.onchange = (e) => {
+    photoFile.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
         qnUploadedPhotoData = {
-          dataUrl: evt.target.result,
+          dataUrl: compressedDataUrl,
           file: file
         };
         const previewBox = $('qn-photo-preview-box');
         const imgElem = $('qn-photo-img');
-        if (imgElem) imgElem.src = evt.target.result;
+        if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.warn('Image compression fallback:', err);
+      }
     };
   }
 
@@ -8437,6 +8454,46 @@ function triggerCSVDownload(content, filename) {
   URL.revokeObjectURL(url);
 }
 
+/** Client-Side Canvas Image Compression (Prevents Firestore 1MB document errors) */
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      reject(new Error('Invalid image file'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = (err) => reject(err);
+      img.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
 /* Full-Screen Reading Timer Overlay State & Logic */
 let fullTimerState = {
   seconds: 0,
@@ -8558,22 +8615,23 @@ function setupTimerEvents() {
     endInput.addEventListener('input', updatePaceAndPages);
   }
 
-  // Photo attachment logic
+  // Compressed photo attachment logic
   if (addPhotoBtn && photoFile) {
     addPhotoBtn.onclick = () => photoFile.click();
-    photoFile.onchange = (e) => {
+    photoFile.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        fullTimerState.photoData = evt.target.result;
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+        fullTimerState.photoData = compressedDataUrl;
         const previewBox = document.getElementById('timer-photo-preview-box');
         const imgElem = document.getElementById('timer-photo-img');
-        if (imgElem) imgElem.src = evt.target.result;
+        if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         if (typeof triggerHaptic === 'function') triggerHaptic();
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.warn('Image compression error:', err);
+      }
     };
   }
 
