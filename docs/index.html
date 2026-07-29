@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=86">
+  <link rel="stylesheet" href="style.css?v=87">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1088,11 +1088,17 @@
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Goals</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Targets, pace &amp; projections</p>
               </div>
-              <button id="btn-edit-goals"
-                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
-                style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
-                <i class="fa-solid fa-sliders"></i> Edit
-              </button>
+              <div class="flex items-center gap-2">
+                <button id="btn-open-wrapped"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-black border transition-all active:scale-95 bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-300 border-amber-500/30 hover:border-amber-400 cursor-pointer">
+                  <i class="fa-solid fa-sparkles text-amber-400"></i> Year Wrapped
+                </button>
+                <button id="btn-edit-goals"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
+                  style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
+                  <i class="fa-solid fa-sliders"></i> Edit
+                </button>
+              </div>
             </div>
 
             <!-- iOS Segmented Timeframe Switcher -->
@@ -2647,8 +2653,11 @@
               <i class="fa-solid fa-camera text-sky-400"></i> Photo Attachment / Page Scan
             </span>
             <div class="flex items-center gap-2">
+              <button type="button" id="qn-btn-dictate" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Voice Dictation">
+                <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+              </button>
               <button type="button" id="qn-photo-trigger" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-upload text-[10px]"></i> Choose / Take Photo
+                <i class="fa-solid fa-upload text-[10px]"></i> Take Photo
               </button>
               <input type="file" id="qn-photo-file" accept="image/*" class="hidden" />
             </div>
@@ -2780,9 +2789,14 @@
         <div class="flex flex-col gap-1.5 mt-1">
           <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
             <span>Notes &amp; Reflections</span>
-            <button id="timer-btn-add-photo" type="button" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 active:scale-95 transition-all cursor-pointer">
-              <i class="fa-solid fa-camera"></i> Add Photo / Quote
-            </button>
+            <div class="flex items-center gap-2">
+              <button id="timer-btn-dictate" type="button" class="text-[10px] font-bold text-rose-300 hover:text-rose-200 flex items-center gap-1 active:scale-95 transition-all cursor-pointer px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/20" title="Voice Dictation">
+                <i class="fa-solid fa-microphone"></i> Dictate
+              </button>
+              <button id="timer-btn-add-photo" type="button" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 active:scale-95 transition-all cursor-pointer">
+                <i class="fa-solid fa-camera"></i> Add Photo
+              </button>
+            </div>
           </div>
           <textarea id="timer-input-notes" rows="2" class="w-full px-3 py-2 text-xs font-medium rounded-xl glass-input border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400/50" placeholder="Capture quick notes, reflections, or memorable quotes..."></textarea>
           
@@ -2834,6 +2848,51 @@
       <button id="timer-mini-btn-expand" class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs active:scale-95 transition-all">
         <i class="fa-solid fa-chevron-up"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       DYNAMIC "YEAR IN READING" WRAPPED STORY CAROUSEL MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="year-wrapped-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(16px)" 
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mx-4 w-full max-w-sm p-6 rounded-[30px] flex flex-col justify-between shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 h-[80vh] max-h-[640px] relative overflow-hidden border border-amber-500/30"
+         style="background: linear-gradient(160deg, #1f140e 0%, #120b08 50%, #0d0806 100%);">
+      
+      <!-- Top Navigation & Dynamic Year Selector -->
+      <div class="flex items-center justify-between z-20">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-sparkles text-amber-400"></i> Wrapped
+          </span>
+          <select id="wrapped-year-select" class="bg-black/50 border border-amber-500/30 rounded-xl px-2.5 py-1 text-xs font-bold text-amber-200 focus:outline-none focus:border-amber-400 cursor-pointer">
+            <!-- Dynamically populated from earliest log up to current year -->
+          </select>
+        </div>
+        <button id="wrapped-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20 cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Story Slide Progress Indicators -->
+      <div class="flex gap-1.5 z-20 my-2" id="wrapped-story-indicators"></div>
+
+      <!-- Slides Content Viewport -->
+      <div id="wrapped-slides-viewport" class="relative flex-1 w-full flex items-center justify-center z-10 overflow-hidden">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Bottom Carousel Controls -->
+      <div class="flex items-center justify-between z-20 pt-2 border-t border-white/10">
+        <button id="wrapped-btn-prev" class="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-bold transition-all active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+        </button>
+        <span id="wrapped-slide-counter" class="text-[10px] font-mono text-slate-400">Slide 1 of 5</span>
+        <button id="wrapped-btn-next" class="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-lg">
+          Next <i class="fa-solid fa-chevron-right ml-1"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2899,6 +2958,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=86"></script>
+  <script type="module" src="app.js?v=87"></script>
 </body>
 </html>

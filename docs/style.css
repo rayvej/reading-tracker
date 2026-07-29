@@ -2016,3 +2016,35 @@ body.light-mode .fab-log-btn {
   transform: scale(1.08) translateY(-4px);
   filter: drop-shadow(0 0 15px rgba(212, 163, 89, 0.5));
 }
+
+/* Voice Dictation Recording Mic Pulse */
+@keyframes micPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+}
+.mic-recording {
+  animation: micPulse 1.5s infinite;
+  background: rgba(244, 63, 94, 0.25) !important;
+  color: #f43f5e !important;
+  border-color: rgba(244, 63, 94, 0.5) !important;
+}
+
+/* Spotify-Wrapped Style Story Carousel */
+.wrapped-slide {
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wrapped-slide.active-slide {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+.wrapped-slide.prev-slide {
+  opacity: 0;
+  transform: translateX(-30px) scale(0.95);
+  pointer-events: none;
+}
+.wrapped-slide.next-slide {
+  opacity: 0;
+  transform: translateX(30px) scale(0.95);
+  pointer-events: none;
+}

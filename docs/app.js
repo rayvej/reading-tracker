@@ -9175,4 +9175,343 @@ setTimeout(() => {
   if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf();
 }, 1000);
 
+/* ═══════════════════════════════════════════════════════════════
+   HANDS-FREE VOICE DICTATION LOGIC (Web Speech API)
+   ══════════════════════════════════════════════════════════════ */
+function setupVoiceDictation(targetInputId, micBtnId) {
+  const micBtn = document.getElementById(micBtnId);
+  const targetInput = document.getElementById(targetInputId);
+  if (!micBtn || !targetInput) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    micBtn.onclick = () => {
+      if (typeof showToast === 'function') showToast('Voice Recognition is not supported by your browser.', 'warning');
+    };
+    return;
+  }
+
+  let recognition = null;
+  let isRecording = false;
+
+  micBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isRecording && recognition) {
+      recognition.stop();
+      return;
+    }
+
+    try {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micBtn.classList.add('mic-recording');
+        micBtn.innerHTML = `<i class="fa-solid fa-microphone-slash text-[10px]"></i> Stop`;
+        if (typeof showToast === 'function') showToast('🎙️ Dictating... speak your thoughts out loud!', 'info');
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            transcript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (transcript.trim().length > 0) {
+          const currentVal = targetInput.value.trim();
+          targetInput.value = currentVal ? `${currentVal}\n${transcript.trim()}` : transcript.trim();
+        }
+      };
+
+      recognition.onerror = (err) => {
+        console.warn('Speech recognition error:', err.error);
+        if (typeof showToast === 'function') showToast('Dictation info: ' + err.error, 'warning');
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('mic-recording');
+        micBtn.innerHTML = `<i class="fa-solid fa-microphone text-[10px]"></i> Dictate`;
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error('Dictation setup error:', err);
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DYNAMIC "YEAR IN READING" WRAPPED STORY CAROUSEL
+   ══════════════════════════════════════════════════════════════ */
+let currentWrappedSlideIndex = 0;
+
+window.openYearWrappedModal = function(selectedYear) {
+  const modal = document.getElementById('year-wrapped-modal');
+  const yearSelect = document.getElementById('wrapped-year-select');
+  if (!modal) return;
+
+  const currentYear = new Date().getFullYear();
+
+  // Dynamically populate available years from earliest log year up to currentYear (never future years!)
+  if (yearSelect) {
+    let earliestYear = currentYear;
+    (window.logsCache || []).forEach(l => {
+      if (l.date && /^\d{4}/.test(l.date)) {
+        const y = parseInt(l.date.slice(0, 4), 10);
+        if (y < earliestYear) earliestYear = y;
+      }
+    });
+
+    let selectHTML = '';
+    for (let y = currentYear; y >= earliestYear; y--) {
+      selectHTML += `<option value="${y}" ${y === (selectedYear || currentYear) ? 'selected' : ''}>Year ${y}</option>`;
+    }
+    yearSelect.innerHTML = selectHTML;
+    yearSelect.onchange = (e) => {
+      const chosen = parseInt(e.target.value, 10);
+      renderYearWrappedSlides(chosen);
+    };
+  }
+
+  renderYearWrappedSlides(selectedYear || currentYear);
+  modal.classList.add('open');
+};
+
+function renderYearWrappedSlides(targetYear) {
+  currentWrappedSlideIndex = 0;
+
+  const viewport = document.getElementById('wrapped-slides-viewport');
+  const indicators = document.getElementById('wrapped-story-indicators');
+  if (!viewport) return;
+
+  const yearLogs = (window.logsCache || []).filter(l => l.date && l.date.startsWith(String(targetYear)));
+  
+  let totalPagesYear = 0;
+  let totalMinutesYear = 0;
+  const monthMap = {};
+  const dayMap = {};
+  const authorMap = {};
+  const categoryMap = {};
+  let longestBookTitle = '—';
+  let maxBookPages = 0;
+
+  yearLogs.forEach(l => {
+    const p = Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10));
+    const m = parseInt(l.minutes_spent || 0, 10);
+    totalPagesYear += p;
+    totalMinutesYear += m;
+
+    if (l.date) {
+      const monthKey = l.date.slice(0, 7);
+      monthMap[monthKey] = (monthMap[monthKey] || 0) + p;
+      dayMap[l.date] = (dayMap[l.date] || 0) + p;
+    }
+
+    if (l.book_title) {
+      const b = (window.booksCache || []).find(bk => bk.title === l.book_title);
+      if (b) {
+        if (b.author) authorMap[b.author] = (authorMap[b.author] || 0) + p;
+        const cat = b.category || b.collection || 'General';
+        categoryMap[cat] = (categoryMap[cat] || 0) + p;
+        if ((b.total_pages || 0) > maxBookPages) {
+          maxBookPages = b.total_pages;
+          longestBookTitle = b.title;
+        }
+      }
+    }
+  });
+
+  const booksFinishedYear = (window.booksCache || []).filter(b => {
+    const logs = yearLogs.filter(l => l.book_title === b.title);
+    return logs.length > 0 && ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
+  }).length;
+
+  let topMonthName = '—';
+  let topMonthPages = 0;
+  Object.keys(monthMap).forEach(m => {
+    if (monthMap[m] > topMonthPages) {
+      topMonthPages = monthMap[m];
+      const d = new Date(m + '-01T00:00:00');
+      topMonthName = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+  });
+
+  let topAuthorName = '—';
+  let topAuthorPages = 0;
+  Object.keys(authorMap).forEach(a => {
+    if (authorMap[a] > topAuthorPages) {
+      topAuthorPages = authorMap[a];
+      topAuthorName = a;
+    }
+  });
+
+  let topCatName = '—';
+  let topCatPages = 0;
+  Object.keys(categoryMap).forEach(c => {
+    if (categoryMap[c] > topCatPages) {
+      topCatPages = categoryMap[c];
+      topCatName = c;
+    }
+  });
+
+  const yearNotes = yearLogs.filter(l => l.notes && l.notes.trim().length > 10);
+  let topQuote = yearNotes.length > 0 ? yearNotes[0].notes : 'Every book opened is a new horizon discovered.';
+  let topQuoteBook = yearNotes.length > 0 ? yearNotes[0].book_title : 'Reading Tracker';
+
+  const slidesData = [
+    {
+      title: `Year ${targetYear} in Reading`,
+      badge: 'ANNUAL SUMMARY',
+      icon: 'fa-book-open-reader text-amber-400',
+      bigVal: `${fmtNum(totalPagesYear)}`,
+      bigLabel: 'Total Pages Read',
+      subStats: [
+        { label: 'Books Finished', val: `${booksFinishedYear} books` },
+        { label: 'Reading Time', val: `${Math.round(totalMinutesYear / 60)} hours` }
+      ]
+    },
+    {
+      title: 'Peak Productivity',
+      badge: 'READING VELOCITY',
+      icon: 'fa-fire text-rose-400',
+      bigVal: topMonthName,
+      bigLabel: `Top Month (${fmtNum(topMonthPages)} pages)`,
+      subStats: [
+        { label: 'Logged Sessions', val: `${yearLogs.length} sessions` },
+        { label: 'Avg Daily Pace', val: `${Math.round(totalPagesYear / 365)} p/day` }
+      ]
+    },
+    {
+      title: 'Favorite Authors & Genres',
+      badge: 'TOP PREFERENCES',
+      icon: 'fa-crown text-amber-300',
+      bigVal: topAuthorName,
+      bigLabel: `Most Read Author`,
+      subStats: [
+        { label: 'Top Genre', val: topCatName },
+        { label: 'Genre Volume', val: `${fmtNum(topCatPages)} pages` }
+      ]
+    },
+    {
+      title: 'Reading Record Highlights',
+      badge: 'BOOK RECORDS',
+      icon: 'fa-trophy text-emerald-400',
+      bigVal: longestBookTitle,
+      bigLabel: `Longest Book (${fmtNum(maxBookPages)} pages)`,
+      subStats: [
+        { label: 'Total Titles Read', val: `${booksFinishedYear} completed` },
+        { label: 'Active Days', val: `${Object.keys(dayMap).length} days` }
+      ]
+    },
+    {
+      title: 'Quote of the Year',
+      badge: 'MEMORABLE EXCERPT',
+      icon: 'fa-quote-left text-amber-400',
+      bigVal: `"${topQuote.replace(/^>\s*/, '')}"`,
+      bigLabel: `— Excerpt from ${topQuoteBook}`,
+      subStats: [
+        { label: 'Captured Year', val: `${targetYear}` },
+        { label: 'Source', val: 'Reading Tracker Vault' }
+      ]
+    }
+  ];
+
+  if (indicators) {
+    indicators.innerHTML = slidesData.map((_, i) => 
+      `<div class="h-1 flex-1 rounded-full transition-all duration-300 ${i === 0 ? 'bg-amber-400' : 'bg-white/20'}" id="wrapped-ind-${i}"></div>`
+    ).join('');
+  }
+
+  viewport.innerHTML = slidesData.map((s, i) => `
+    <div class="wrapped-slide absolute inset-0 p-6 flex flex-col justify-between text-center ${i === 0 ? 'active-slide' : 'next-slide'}" data-slide-index="${i}">
+      <div class="flex flex-col items-center gap-1.5 mt-2">
+        <span class="text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">${s.badge}</span>
+        <h3 class="text-xl font-black tracking-tight text-slate-100 mt-1">${s.title}</h3>
+      </div>
+
+      <div class="my-auto flex flex-col items-center justify-center gap-2">
+        <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-xl">
+          <i class="fa-solid ${s.icon}"></i>
+        </div>
+        <div class="text-2xl sm:text-3xl font-black text-amber-300 leading-tight ${i === 4 ? 'italic font-serif text-base text-amber-100 max-h-36 overflow-y-auto px-2' : ''}">${s.bigVal}</div>
+        <div class="text-xs font-bold text-slate-400">${s.bigLabel}</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-left">
+        ${s.subStats.map(st => `
+          <div>
+            <div class="text-[9px] font-extrabold uppercase text-slate-400">${st.label}</div>
+            <div class="text-xs font-bold text-slate-200 mt-0.5">${st.val}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  updateWrappedSlideControls(slidesData.length);
+}
+
+function updateWrappedSlideControls(totalSlides) {
+  const counter = document.getElementById('wrapped-slide-counter');
+  if (counter) counter.textContent = `Slide ${currentWrappedSlideIndex + 1} of ${totalSlides}`;
+
+  for (let i = 0; i < totalSlides; i++) {
+    const ind = document.getElementById(`wrapped-ind-${i}`);
+    if (ind) ind.className = `h-1 flex-1 rounded-full transition-all duration-300 ${i === currentWrappedSlideIndex ? 'bg-amber-400' : 'bg-white/20'}`;
+
+    const slide = document.querySelector(`.wrapped-slide[data-slide-index="${i}"]`);
+    if (slide) {
+      if (i === currentWrappedSlideIndex) slide.className = 'wrapped-slide active-slide absolute inset-0 p-6 flex flex-col justify-between text-center';
+      else if (i < currentWrappedSlideIndex) slide.className = 'wrapped-slide prev-slide absolute inset-0 p-6 flex flex-col justify-between text-center';
+      else slide.className = 'wrapped-slide next-slide absolute inset-0 p-6 flex flex-col justify-between text-center';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupVoiceDictation('timer-input-notes', 'timer-btn-dictate');
+  setupVoiceDictation('qn-text-input', 'qn-btn-dictate');
+
+  const openBtn = document.getElementById('btn-open-wrapped');
+  const closeBtn = document.getElementById('wrapped-modal-close');
+  const prevBtn = document.getElementById('wrapped-btn-prev');
+  const nextBtn = document.getElementById('wrapped-btn-next');
+
+  if (openBtn) {
+    openBtn.onclick = () => openYearWrappedModal(new Date().getFullYear());
+  }
+  if (closeBtn) {
+    closeBtn.onclick = () => document.getElementById('year-wrapped-modal').classList.remove('open');
+  }
+
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      if (currentWrappedSlideIndex > 0) {
+        currentWrappedSlideIndex--;
+        updateWrappedSlideControls(5);
+        if (typeof triggerHaptic === 'function') triggerHaptic();
+      }
+    };
+  }
+
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      if (currentWrappedSlideIndex < 4) {
+        currentWrappedSlideIndex++;
+        updateWrappedSlideControls(5);
+        if (typeof triggerHaptic === 'function') triggerHaptic();
+      } else {
+        document.getElementById('year-wrapped-modal').classList.remove('open');
+      }
+    };
+  }
+});
+
 
