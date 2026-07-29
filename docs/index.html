@@ -977,10 +977,25 @@
               <div id="dash-milestones" class="flex flex-col gap-3"></div>
             </div>
 
-            <!-- Book Length Records -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-arrows-left-right-to-line text-[10px]" style="color: var(--accent)"></i> Book Length Records</span>
-              <div class="flex flex-col gap-2.5 text-xs">
+            <!-- Combined Reading Records Card -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5" id="dash-records-card">
+              <div class="flex items-center justify-between">
+                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-trophy text-[10px]" style="color: var(--gold)"></i> Reading Records</span>
+              </div>
+              <div id="dash-records-tab-bar" class="seg-control w-full flex">
+                <button data-tab="length" class="seg-btn active flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-arrows-left-right-to-line text-[10px]" style="color: var(--accent)"></i> Book Length
+                </button>
+                <button data-tab="speed" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-bolt text-[10px]" style="color: var(--accent2)"></i> Reading Speed
+                </button>
+                <button data-tab="authors" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-feather-pointed text-[10px]" style="color: var(--accent3)"></i> Authors &amp; Genres
+                </button>
+              </div>
+
+              <!-- Book Length Records Panel -->
+              <div id="dash-records-length" class="dash-records-panel flex flex-col gap-2.5 text-xs">
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-book">—</span></div>
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Shortest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-shortest-book">—</span></div>
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Title</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-title">—</span></div>
@@ -989,22 +1004,16 @@
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books &gt; 500 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-large">—</span></div>
                 <div class="flex justify-between"><span style="color: var(--text-secondary)">Books &lt; 100 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-small">—</span></div>
               </div>
-            </div>
 
-            <!-- Reading Speed Records -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-bolt text-[10px]" style="color: var(--accent2)"></i> Reading Speed Records</span>
-              <div class="flex flex-col gap-2.5 text-xs">
+              <!-- Reading Speed Records Panel -->
+              <div id="dash-records-speed" class="dash-records-panel hidden flex flex-col gap-2.5 text-xs">
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 7 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-fast">—</span></div>
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 30 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-medium">—</span></div>
                 <div class="flex justify-between"><span style="color: var(--text-secondary)">Fastest Completion Speed</span><span class="font-bold" style="color: var(--text-primary)" id="rec-speed-record">—</span></div>
               </div>
-            </div>
 
-            <!-- Author & Genre -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-feather-pointed text-[10px]" style="color: var(--accent3)"></i> Author &amp; Genre Records</span>
-              <div class="flex flex-col gap-2.5 text-xs">
+              <!-- Author & Genre Records Panel -->
+              <div id="dash-records-authors" class="dash-records-panel hidden flex flex-col gap-2.5 text-xs">
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Most Read Author</span><span class="font-bold truncate max-w-[200px] text-right" style="color: var(--text-primary)" id="rec-top-author">—</span></div>
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Reads by Top Author</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-top-author-reads">—</span></div>
                 <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Authors Read &gt; 1 Book</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-authors-multi">—</span></div>
@@ -1012,10 +1021,28 @@
               </div>
             </div>
 
-            <!-- Monthly Breakdown Table -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-calendar-minus text-[10px]" style="color: var(--accent)"></i> Monthly Breakdown</span>
-              <div class="overflow-x-auto no-scrollbar">
+            <!-- Combined Detailed Breakdowns Card -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5" id="dash-breakdowns-card">
+              <div class="flex items-center justify-between">
+                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent)"></i> Detailed Breakdowns</span>
+              </div>
+              <div id="dash-breakdown-tab-bar" class="seg-control w-full flex">
+                <button data-tab="monthly" class="seg-btn active flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-calendar-minus text-[10px]" style="color: var(--accent)"></i> Monthly
+                </button>
+                <button data-tab="dayofweek" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-calendar-day text-[10px]" style="color: var(--accent2)"></i> Day of Week
+                </button>
+                <button data-tab="seasonal" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-cloud-sun text-[10px]" style="color: var(--accent3)"></i> Seasonal
+                </button>
+                <button data-tab="yearly" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-code-compare text-[10px]" style="color: var(--gold)"></i> Yearly
+                </button>
+              </div>
+
+              <!-- Monthly Breakdown Table Container -->
+              <div id="dash-breakdown-monthly" class="dash-breakdown-panel overflow-x-auto no-scrollbar">
                 <table class="excel-table">
                   <thead><tr>
                     <th class="w-2/5">Month</th>
@@ -1025,12 +1052,9 @@
                   <tbody id="tbl-monthly-body"></tbody>
                 </table>
               </div>
-            </div>
 
-            <!-- Day of Week Table -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-calendar-day text-[10px]" style="color: var(--accent2)"></i> Reading by Day of Week</span>
-              <div class="overflow-x-auto no-scrollbar">
+              <!-- Day of Week Table Container -->
+              <div id="dash-breakdown-dayofweek" class="dash-breakdown-panel hidden overflow-x-auto no-scrollbar">
                 <table class="excel-table">
                   <thead><tr>
                     <th class="w-1/3">Day of Week</th>
@@ -1041,12 +1065,9 @@
                   <tbody id="tbl-dayofweek-body"></tbody>
                 </table>
               </div>
-            </div>
 
-            <!-- Seasonal Summary Table -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-cloud-sun text-[10px]" style="color: var(--accent3)"></i> Seasonal Summary</span>
-              <div class="overflow-x-auto no-scrollbar">
+              <!-- Seasonal Summary Table Container -->
+              <div id="dash-breakdown-seasonal" class="dash-breakdown-panel hidden overflow-x-auto no-scrollbar">
                 <table class="excel-table">
                   <thead><tr>
                     <th class="w-2/5">Season</th>
@@ -1056,12 +1077,9 @@
                   <tbody id="tbl-seasonal-body"></tbody>
                 </table>
               </div>
-            </div>
 
-            <!-- Year comparison table -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <span class="section-label"><i class="fa-solid fa-code-compare text-[10px]" style="color: var(--gold)"></i> Year-by-Year Comparison</span>
-              <div class="overflow-x-auto no-scrollbar">
+              <!-- Year-by-Year Comparison Table Container -->
+              <div id="dash-breakdown-yearly" class="dash-breakdown-panel hidden overflow-x-auto no-scrollbar">
                 <table class="excel-table">
                   <thead><tr>
                     <th class="w-2/5">Year</th>

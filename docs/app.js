@@ -2030,6 +2030,46 @@ function setupDashboard() {
       });
     });
   }
+
+  // Dashboard Detailed Breakdown Tab Switcher (Monthly, Day of Week, Seasonal, Yearly)
+  const breakdownTabBar = document.getElementById('dash-breakdown-tab-bar');
+  if (breakdownTabBar) {
+    breakdownTabBar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        breakdownTabBar.querySelectorAll('button').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === targetTab);
+        });
+        document.querySelectorAll('.dash-breakdown-panel').forEach(panel => {
+          const isActive = panel.id === `dash-breakdown-${targetTab}`;
+          panel.classList.toggle('hidden', !isActive);
+          if (isActive) {
+            panel.classList.add('animate-fade-in');
+          }
+        });
+      });
+    });
+  }
+
+  // Dashboard Reading Records Tab Switcher (Book Length, Reading Speed, Authors & Genres)
+  const recordsTabBar = document.getElementById('dash-records-tab-bar');
+  if (recordsTabBar) {
+    recordsTabBar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        recordsTabBar.querySelectorAll('button').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === targetTab);
+        });
+        document.querySelectorAll('.dash-records-panel').forEach(panel => {
+          const isActive = panel.id === `dash-records-${targetTab}`;
+          panel.classList.toggle('hidden', !isActive);
+          if (isActive) {
+            panel.classList.add('animate-fade-in');
+          }
+        });
+      });
+    });
+  }
 }
 
 function getMedian(arr) {
