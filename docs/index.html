@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=83">
+  <link rel="stylesheet" href="style.css?v=84">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1663,6 +1663,66 @@
                   <i class="fa-solid fa-chevron-right text-xs text-rose-400"></i>
                 </button>
               </div>
+
+              <!-- Developer 10-Year Testing & Diagnostic Panel -->
+              <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-amber-500/20 bg-amber-500/[0.03]">
+                <div class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center justify-between">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-flask text-amber-400"></i> Developer Testing &amp; Diagnostic Suite</span>
+                  <span class="text-[9px] font-mono px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300">10-YEAR AUDIT</span>
+                </div>
+
+                <!-- Persona Seeding Buttons Grid -->
+                <div class="flex flex-col gap-2">
+                  <button id="dev-seed-10yr" class="flex items-center justify-between p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.99] transition-all text-left cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-bolt"></i>
+                      </div>
+                      <div>
+                        <div class="text-xs font-bold text-amber-200">10-Year Master Archivist (2016–2026)</div>
+                        <div class="text-[10px] text-amber-400/80">Seed ~250 books, ~3,500 daily logs &amp; 11 annual goals</div>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-amber-400"></i>
+                  </button>
+
+                  <button id="dev-seed-power" class="flex items-center justify-between p-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 active:scale-[0.99] transition-all text-left cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-gauge-high"></i>
+                      </div>
+                      <div>
+                        <div class="text-xs font-bold text-sky-200">High-Velocity Power Reader</div>
+                        <div class="text-[10px] text-sky-400/80">Seed dense 2-year power reading load (~1,200 logs)</div>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-sky-400"></i>
+                  </button>
+
+                  <button id="dev-seed-chaos" class="flex items-center justify-between p-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 active:scale-[0.99] transition-all text-left cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-bug"></i>
+                      </div>
+                      <div>
+                        <div class="text-xs font-bold text-purple-200">Chaos &amp; Edge Case Stress Profile</div>
+                        <div class="text-[10px] text-purple-400/80">Seed 2,500+ page tomes, diacritics, long notes &amp; photos</div>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-purple-400"></i>
+                  </button>
+                </div>
+
+                <!-- Diagnostic & Backup Controls -->
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                  <button id="dev-run-audit" class="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold text-xs active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-microchip"></i> Run Diagnostic Audit
+                  </button>
+                  <button id="dev-restore-backup" class="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs active:scale-95 transition-all cursor-pointer">
+                    <i class="fa-solid fa-rotate-left"></i> Restore My Data
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- AI Page Scanner (Gemini OCR) Section -->
@@ -2771,6 +2831,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=83"></script>
+  <script type="module" src="app.js?v=84"></script>
 </body>
 </html>

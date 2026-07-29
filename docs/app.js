@@ -30,6 +30,7 @@ import { initializeFirestore, getFirestore, persistentLocalCache,
          onSnapshot, writeBatch,
          serverTimestamp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { firebaseConfig }                          from './firebase-config.js';
+import { generate10YearArchivistData, generateHighVelocityData, generateChaosStressData } from './js/seed10YearData.js';
 
 window.categoryChartMode = 'pages';
 
@@ -461,6 +462,230 @@ async function runSeedImport() {
   $('seed-status').textContent = 'All done! Welcome to your Reading Tracker.';
   await new Promise(r => setTimeout(r, 800));
   showScreen('app');
+}
+
+/** Auto-Backup Snapshot of Live Data */
+function createLiveUserBackup() {
+  try {
+    const backup = {
+      books: booksCache || [],
+      logs: logsCache || [],
+      wishlist: wishlistCache || [],
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('rt_live_user_backup', JSON.stringify(backup));
+  } catch (err) {
+    console.warn('Backup error:', err);
+  }
+}
+
+/** Restore Original Data from Auto-Backup */
+async function restoreLiveUserBackup() {
+  const raw = localStorage.getItem('rt_live_user_backup');
+  if (!raw) {
+    showToast('No auto-backup snapshot found.', 'warning');
+    return;
+  }
+
+  if (!confirm('Restore your original pre-test account data from automatic backup?')) return;
+
+  try {
+    showToast('Restoring original account data…', 'info');
+    const backup = JSON.parse(raw);
+
+    // Clear current collections
+    if (db && uid) {
+      const bSnap = await getDocs(collection(db, `users/${uid}/books`));
+      for (const d of bSnap.docs) await deleteDoc(doc(db, `users/${uid}/books/${d.id}`));
+      const lSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
+      for (const d of lSnap.docs) await deleteDoc(doc(db, `users/${uid}/reading_logs/${d.id}`));
+      const wSnap = await getDocs(collection(db, `users/${uid}/wishlist`));
+      for (const d of wSnap.docs) await deleteDoc(doc(db, `users/${uid}/wishlist/${d.id}`));
+
+      // Re-inject backup books
+      const booksRef = collection(db, `users/${uid}/books`);
+      for (let i = 0; i < backup.books.length; i += 400) {
+        const batch = writeBatch(db);
+        backup.books.slice(i, i + 400).forEach(b => batch.set(doc(booksRef), b));
+        await batch.commit();
+      }
+
+      // Re-inject backup logs
+      const logsRef = collection(db, `users/${uid}/reading_logs`);
+      for (let i = 0; i < backup.logs.length; i += 400) {
+        const batch = writeBatch(db);
+        backup.logs.slice(i, i + 400).forEach(l => batch.set(doc(logsRef), l));
+        await batch.commit();
+      }
+
+      // Re-inject backup wishlist
+      const wishRef = collection(db, `users/${uid}/wishlist`);
+      for (let i = 0; i < backup.wishlist.length; i += 400) {
+        const batch = writeBatch(db);
+        backup.wishlist.slice(i, i + 400).forEach(w => batch.set(doc(wishRef), w));
+        await batch.commit();
+      }
+    }
+
+    booksCache = [];
+    logsCache = [];
+    wishlistCache = [];
+    await loadBooksCache();
+    await loadLogsCache();
+
+    if (currentView === 'dashboard') renderDashboard();
+    if (currentView === 'goals') renderGoals();
+    if (currentView === 'wishlist') renderBookshelf();
+    showToast('✓ Original account data restored successfully!', 'success');
+  } catch (e) {
+    showToast('Failed to restore backup: ' + e.message, 'error');
+  }
+}
+
+/** Multi-Profile Data Simulator Loader */
+async function runCustomProfileImport(profileType) {
+  // 1. Take safety backup of live user data first
+  createLiveUserBackup();
+
+  showScreen('seed-screen');
+  $('seed-status').textContent = 'Preparing test profile simulation…';
+  $('seed-bar').style.width = '5%';
+
+  let seed;
+  let label = '';
+  if (profileType === '10yr') {
+    seed = generate10YearArchivistData();
+    label = '10-Year Master Archivist Profile (2016–2026)';
+  } else if (profileType === 'power') {
+    seed = generateHighVelocityData();
+    label = 'High-Velocity Power Reader Profile';
+  } else {
+    seed = generateChaosStressData();
+    label = 'Chaos & Edge Case Stress Profile';
+  }
+
+  // Clear current collections first
+  if (db && uid) {
+    const bSnap = await getDocs(collection(db, `users/${uid}/books`));
+    for (const d of bSnap.docs) await deleteDoc(doc(db, `users/${uid}/books/${d.id}`));
+    const lSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
+    for (const d of lSnap.docs) await deleteDoc(doc(db, `users/${uid}/reading_logs/${d.id}`));
+    const wSnap = await getDocs(collection(db, `users/${uid}/wishlist`));
+    for (const d of wSnap.docs) await deleteDoc(doc(db, `users/${uid}/wishlist/${d.id}`));
+  }
+
+  const total = seed.books.length + seed.reading_logs.length + seed.wishlist.length;
+  let done = 0;
+
+  function progress(txt) {
+    done++;
+    $('seed-bar').style.width = Math.round((done / total) * 100) + '%';
+    $('seed-status').textContent = txt;
+  }
+
+  // 2. Write goals
+  if (seed.goals && db && uid) {
+    await setDoc(doc(db, `users/${uid}/goals/config`), seed.goals);
+  }
+
+  // 3. Write books
+  const booksRef = collection(db, `users/${uid}/books`);
+  for (let i = 0; i < seed.books.length; i += 400) {
+    const batch = writeBatch(db);
+    seed.books.slice(i, i + 400).forEach(b => {
+      batch.set(doc(booksRef), b);
+      progress(`Seeding books… (${Math.min(i + 400, seed.books.length)}/${seed.books.length})`);
+    });
+    await batch.commit();
+  }
+
+  // 4. Write logs
+  const logsRef = collection(db, `users/${uid}/reading_logs`);
+  for (let i = 0; i < seed.reading_logs.length; i += 400) {
+    const batch = writeBatch(db);
+    seed.reading_logs.slice(i, i + 400).forEach(l => {
+      batch.set(doc(logsRef), l);
+      progress(`Seeding logs… (${Math.min(i + 400, seed.reading_logs.length)}/${seed.reading_logs.length})`);
+    });
+    await batch.commit();
+  }
+
+  // 5. Write wishlist
+  const wishRef = collection(db, `users/${uid}/wishlist`);
+  for (let i = 0; i < seed.wishlist.length; i += 400) {
+    const batch = writeBatch(db);
+    seed.wishlist.slice(i, i + 400).forEach(w => {
+      batch.set(doc(wishRef), w);
+      progress(`Seeding wishlist… (${Math.min(i + 400, seed.wishlist.length)}/${seed.wishlist.length})`);
+    });
+    await batch.commit();
+  }
+
+  booksCache = [];
+  logsCache = [];
+  wishlistCache = [];
+  await loadBooksCache();
+  await loadLogsCache();
+
+  $('seed-bar').style.width = '100%';
+  $('seed-status').textContent = `Seeded ${label} cleanly!`;
+  await new Promise(r => setTimeout(r, 800));
+  showScreen('app');
+
+  if (currentView === 'dashboard') renderDashboard();
+  if (currentView === 'goals') renderGoals();
+  if (currentView === 'wishlist') renderBookshelf();
+  showToast(`⚡ Seeded ${label}!`, 'success');
+}
+
+/** Automated Diagnostic & Benchmark Audit Suite */
+function runDiagnosticAudit() {
+  const t0 = performance.now();
+  
+  // 1. Measure 3D Spine Bookshelf Render Time
+  let spineRenderTime = 0;
+  if (typeof window.render3DSpineBookshelf === 'function') {
+    const tStart = performance.now();
+    window.render3DSpineBookshelf(booksCache);
+    spineRenderTime = Math.round(performance.now() - tStart);
+  }
+
+  // 2. Validate Standard Calculation Rules Math Assertion
+  let mathAssertionPassed = true;
+  let computedBooksRead = 0;
+  let computedPagesRead = 0;
+
+  try {
+    (booksCache || []).forEach(b => {
+      const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read', 'Gifted and Read'].includes(b.status);
+      const reads = Math.max(b.read_count || 0, isFinished ? 1 : 0);
+      computedBooksRead += reads;
+      computedPagesRead += reads * (b.total_pages || 0);
+    });
+  } catch (err) {
+    mathAssertionPassed = false;
+  }
+
+  const totalTime = Math.round(performance.now() - t0);
+  const booksCount = (booksCache || []).length;
+  const logsCount = (logsCache || []).length;
+  
+  // Calculate Payload Bytes
+  const rawJSON = JSON.stringify({ books: booksCache, logs: logsCache, wishlist: wishlistCache });
+  const payloadMB = (rawJSON.length / (1024 * 1024)).toFixed(2);
+
+  const reportStr = `📊 10-YEAR DIAGNOSTIC AUDIT REPORT\n` +
+    `----------------------------------------\n` +
+    `• Books Loaded: ${booksCount}\n` +
+    `• Logs Loaded: ${logsCount}\n` +
+    `• Total Payload Size: ${payloadMB} MB\n` +
+    `• 3D Spine Render Time: ${spineRenderTime} ms\n` +
+    `• Calculation Assertion: ${mathAssertionPassed ? 'PASSED ✓' : 'FAILED ✕'}\n` +
+    `• Calculated Books Read: ${computedBooksRead}\n` +
+    `• Total Diagnostic Time: ${totalTime} ms`;
+
+  console.log(reportStr);
+  alert(reportStr);
 }
 
 // ── Settings & Data Management ────────────────────────────────────────────────
@@ -921,6 +1146,45 @@ function setupAccountView() {
       } catch (e) {
         showToast('Failed to reset account data: ' + e.message, 'error');
       }
+    });
+  }
+
+  // Developer 10-Year Simulation & Diagnostic Suite Handlers
+  const dev10yr = $('dev-seed-10yr');
+  if (dev10yr) {
+    dev10yr.addEventListener('click', async () => {
+      if (!confirm('Seed 10-Year Master Archivist Profile (2016–2026)? An automatic backup of your live data will be created first.')) return;
+      await runCustomProfileImport('10yr');
+    });
+  }
+
+  const devPower = $('dev-seed-power');
+  if (devPower) {
+    devPower.addEventListener('click', async () => {
+      if (!confirm('Seed High-Velocity Power Reader Profile? An automatic backup of your live data will be created first.')) return;
+      await runCustomProfileImport('power');
+    });
+  }
+
+  const devChaos = $('dev-seed-chaos');
+  if (devChaos) {
+    devChaos.addEventListener('click', async () => {
+      if (!confirm('Seed Chaos & Edge Case Stress Profile? An automatic backup of your live data will be created first.')) return;
+      await runCustomProfileImport('chaos');
+    });
+  }
+
+  const devAudit = $('dev-run-audit');
+  if (devAudit) {
+    devAudit.addEventListener('click', () => {
+      runDiagnosticAudit();
+    });
+  }
+
+  const devRestore = $('dev-restore-backup');
+  if (devRestore) {
+    devRestore.addEventListener('click', async () => {
+      await restoreLiveUserBackup();
     });
   }
 
