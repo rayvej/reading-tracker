@@ -552,8 +552,22 @@ html, body, button, input, select, textarea {
 }
 
 
-/* Label text color */
-.label-text { color: var(--text-secondary) !important; }
+/* ═══════════════════════════════════════════════════════════════
+   iOS SAFE AREA INSETS — Header, Notch & Status Bar Protection
+   ══════════════════════════════════════════════════════════════ */
+#app > header {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+  padding-bottom: 12px !important;
+}
+
+#auth-screen, #pin-screen, #seed-screen {
+  padding-top: max(32px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+}
+
+.ios-modal-overlay {
+  padding-top: max(16px, env(safe-area-inset-top, 16px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
 
 /* ═══════════════════════════════════════════════════════════════
    iOS TAB BAR — 2026 Floating Translucent Tab Bar Capsule
