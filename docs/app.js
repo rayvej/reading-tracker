@@ -1234,10 +1234,26 @@ function setupAccountView() {
   }
 }
 
+function ensureScript(url) {
+  if (document.querySelector(`script[src="${url}"]`)) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
 async function exportToExcelWorkbook() {
   if (typeof XLSX === 'undefined') {
-    showToast('Excel exporter library is loading, please try again in a moment.', 'error');
-    return;
+    showToast('Loading Excel exporter...', 'info');
+    try {
+      await ensureScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    } catch (err) {
+      showToast('Failed to load Excel exporter library.', 'error');
+      return;
+    }
   }
 
   showToast('Generating Excel workbook...', 'info');
@@ -8648,8 +8664,13 @@ function initQuickNoteModalListeners() {
  */
 async function exportObsidianMarkdownVault() {
   if (typeof JSZip === 'undefined') {
-    showToast('JSZip library loading... please try again in a moment');
-    return;
+    showToast('Loading ZIP archive exporter...', 'info');
+    try {
+      await ensureScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    } catch (err) {
+      showToast('Failed to load ZIP exporter library.', 'error');
+      return;
+    }
   }
 
   const zip = new JSZip();

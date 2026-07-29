@@ -12,8 +12,6 @@ const STATIC_ASSETS = [
   BASE + 'icon-192.png',
   BASE + 'icon-512.png',
   BASE + 'seed-data.json',
-  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css',
   'https://cdn.tailwindcss.com'

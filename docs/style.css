@@ -11,6 +11,27 @@
 
 /* 1. WARM ESPRESSO THEME (Dark & Light) */
 :root, [data-theme="espresso"], [data-theme="espresso"][data-mode="dark"] {
+  /* ── Spacing Scale ── */
+  --space-2xs:       4px;
+  --space-xs:        8px;
+  --space-sm:        12px;
+  --space-md:        16px;
+  --space-lg:        20px;
+  --space-xl:        24px;
+
+  /* ── Corner Radii Scale (iOS HIG Standards) ── */
+  --radius-xs:       6px;
+  --radius-sm:       10px;
+  --radius-md:       14px;
+  --radius-lg:       18px;
+  --radius-xl:       24px;
+  --radius-pill:     9999px;
+
+  /* ── Motion & Touch ── */
+  --ease-ios-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --active-scale:    scale(0.96);
+  --min-touch-target: 44px;
+
   --bg:              linear-gradient(180deg, #181412 0%, #100C0A 50%, #0A0807 100%);
   --bg-solid:        #181412;
   --bg-elevated:     #221C18;
@@ -92,6 +113,10 @@
   --gold:            #38BDF8;
   --gold-rgb:        56, 189, 248;
   --gold-light:      #BAE6FD;
+  --emerald:         #34D399;
+  --emerald-rgb:     52, 211, 153;
+  --rose:            #F472B6;
+  --rose-rgb:        244, 114, 182;
   --border:          rgba(255, 255, 255, 0.08);
   --border-strong:   rgba(255, 255, 255, 0.22);
   --border-color:    rgba(255, 255, 255, 0.06);
@@ -118,6 +143,10 @@
   --gold:            #0284C7;
   --gold-rgb:        2, 132, 199;
   --gold-light:      #BAE6FD;
+  --emerald:         #059669;
+  --emerald-rgb:     5, 150, 105;
+  --rose:            #E11D48;
+  --rose-rgb:        225, 29, 72;
   --border:          rgba(15, 23, 42, 0.1);
   --border-strong:   rgba(15, 23, 42, 0.22);
   --border-color:    rgba(15, 23, 42, 0.08);
@@ -145,6 +174,10 @@
   --gold:            #38BDF8;
   --gold-rgb:        56, 189, 248;
   --gold-light:      #BAE6FD;
+  --emerald:         #34D399;
+  --emerald-rgb:     52, 211, 153;
+  --rose:            #F43F5E;
+  --rose-rgb:        244, 63, 94;
   --border:          rgba(255, 255, 255, 0.08);
   --border-strong:   rgba(255, 255, 255, 0.18);
   --border-color:    rgba(255, 255, 255, 0.06);
@@ -170,6 +203,10 @@
   --gold:            #4F46E5;
   --gold-rgb:        79, 70, 229;
   --gold-light:      #C7D2FE;
+  --emerald:         #059669;
+  --emerald-rgb:     5, 150, 105;
+  --rose:            #E11D48;
+  --rose-rgb:        225, 29, 72;
   --border:          rgba(30, 41, 59, 0.1);
   --border-strong:   rgba(30, 41, 59, 0.22);
   --border-color:    rgba(30, 41, 59, 0.08);
@@ -196,6 +233,10 @@
   --gold:            #B87A28;
   --gold-rgb:        184, 122, 40;
   --gold-light:      #F5E6CC;
+  --emerald:         #4E7852;
+  --emerald-rgb:     78, 120, 82;
+  --rose:            #B84A2A;
+  --rose-rgb:        184, 74, 42;
   --border:          rgba(60, 45, 30, 0.1);
   --border-strong:   rgba(60, 45, 30, 0.22);
   --border-color:    rgba(60, 45, 30, 0.08);
@@ -221,6 +262,10 @@
   --gold:            #F59E0B;
   --gold-rgb:        245, 158, 11;
   --gold-light:      #FDE68A;
+  --emerald:         #10B981;
+  --emerald-rgb:     16, 185, 129;
+  --rose:            #EF4444;
+  --rose-rgb:        239, 68, 68;
   --border:          rgba(255, 255, 255, 0.1);
   --border-strong:   rgba(255, 255, 255, 0.22);
   --border-color:    rgba(255, 255, 255, 0.08);
@@ -505,7 +550,7 @@ button:active,
   right: 16px;
   margin: 0 auto;
   width: calc(100% - 32px);
-  max-width: 440px;
+  max-width: 448px;
   height: 68px;
   border-radius: 34px;
   backdrop-filter: blur(30px);
@@ -1413,8 +1458,10 @@ body.light-mode .fab-log-btn {
 
 /* Enhanced Quote Card Action Controls */
 .quote-card-action-btn {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
@@ -1422,9 +1469,10 @@ body.light-mode .fab-log-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .quote-card-action-btn:hover {
   background: rgba(255, 255, 255, 0.15);

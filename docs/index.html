@@ -26,10 +26,6 @@
   <!-- DaisyUI + Tailwind (for utility classes & form components) -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS for Excel (.xlsx) workbook export -->
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- JSZip for Markdown Vault Archive ZIP export -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -2023,11 +2019,9 @@
   <!-- ════════════════════════════════════════════════════════════
        GOALS MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="goals-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0); backdrop-filter: blur(0px)" 
+  <div id="goals-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto no-scrollbar"
-         style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between">
         <span class="text-lg font-bold" style="color: var(--text-primary)">Edit Goals</span>
         <button id="goals-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center"
@@ -2117,10 +2111,9 @@
   <!-- ════════════════════════════════════════════════════════════
        WISHLIST MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="wishlist-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+  <div id="wishlist-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 overflow-y-auto max-h-[90vh]"
-         style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 overflow-y-auto max-h-[90vh]">
       <div class="flex items-center justify-between">
         <span class="text-lg font-bold" style="color: var(--text-primary)">Add to Wishlist</span>
         <button id="wishlist-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center"
@@ -2164,10 +2157,9 @@
   <!-- ════════════════════════════════════════════════════════════
        ADD BOOK MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="add-book-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+  <div id="add-book-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 overflow-y-auto max-h-[90vh]"
-         style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 overflow-y-auto max-h-[90vh]">
       <div class="flex items-center justify-between">
         <span class="text-lg font-bold" style="color: var(--text-primary)">Add Book</span>
         <button id="add-book-close" class="w-8 h-8 rounded-full flex items-center justify-center"
@@ -2258,10 +2250,9 @@
   <!-- ════════════════════════════════════════════════════════════
        EDIT BOOK MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="edit-book-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+  <div id="edit-book-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-5 w-full max-w-sm p-6 rounded-[20px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 overflow-y-auto max-h-[90vh]"
-         style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 overflow-y-auto max-h-[90vh]">
       <div class="flex items-center justify-between">
         <span class="text-lg font-bold" style="color: var(--text-primary)">Edit Book</span>
         <button id="edit-book-close" class="w-8 h-8 rounded-full flex items-center justify-center"
@@ -2353,11 +2344,9 @@
   <!-- ════════════════════════════════════════════════════════════
        BOOK DETAIL MODAL (iOS Native style)
        ════════════════════════════════════════════════════════════ -->
-  <div id="book-detail-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+  <div id="book-detail-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="sheet-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-    <div class="w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl [.open_&]:translate-y-0 translate-y-10 sm:translate-y-0 sm:scale-95 transition-all duration-300 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] relative z-[70]"
-         style="background: var(--bg-elevated); border: 0.5px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 overflow-y-auto max-h-[90vh] relative z-[70]">
       <div class="flex justify-between items-start gap-3">
         <div id="bd-cover-container" class="w-16 shrink-0 cursor-pointer transition-transform hover:scale-105" title="Click to edit or search cover">
           <!-- Dynamic Cover Image or Spine Fallback -->
@@ -2617,9 +2606,9 @@
   <!-- ════════════════════════════════════════════════════════════
        SETTINGS & DATA MANAGEMENT MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="settings-modal-backdrop"></div>
-    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-6 border border-white/10 flex flex-col gap-5 relative z-10 animate-scale-up" style="background: var(--bg-elevated); color: var(--text-primary)">
+  <div id="settings-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card flex flex-col gap-5 relative z-10">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div>
@@ -2689,9 +2678,9 @@
   <!-- ════════════════════════════════════════════════════════════
        COVER MANAGER / APPROVAL GALLERY MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="cover-manager-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="cover-manager-backdrop"></div>
-    <div class="glass-panel w-full max-w-2xl mx-4 max-h-[85vh] rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up">
+  <div id="cover-manager-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-2xl max-h-[85vh] flex flex-col gap-4 relative z-10">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div>
@@ -2735,9 +2724,9 @@
   <!-- ════════════════════════════════════════════════════════════
        QUICK NOTE & PHOTO QUOTE MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="quick-note-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="quick-note-backdrop"></div>
-    <div class="glass-panel w-full max-w-lg mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto no-scrollbar">
+  <div id="quick-note-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-lg flex flex-col gap-4 relative z-10 max-h-[90vh] overflow-y-auto no-scrollbar">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div>
@@ -2827,9 +2816,9 @@
   <!-- ════════════════════════════════════════════════════════════
        SABBATICAL & STREAK FREEZE MODAL (Custom Reasons)
        ════════════════════════════════════════════════════════════ -->
-  <div id="modal-sabbatical" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto">
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="sabbatical-modal-backdrop"></div>
-    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-5 border border-white/10 flex flex-col gap-4 relative z-10 animate-scale-up">
+  <div id="modal-sabbatical" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card flex flex-col gap-4 relative z-10">
       <div class="flex items-center justify-between pb-2 border-b border-white/10">
         <div>
           <h3 class="text-base font-black tracking-tight text-slate-100 flex items-center gap-2">
@@ -2988,11 +2977,9 @@
   <!-- ════════════════════════════════════════════════════════════
        DYNAMIC "YEAR IN READING" WRAPPED STORY CAROUSEL MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="year-wrapped-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(16px)" 
+  <div id="year-wrapped-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-4 w-full max-w-sm p-6 rounded-[30px] flex flex-col justify-between shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 h-[80vh] max-h-[640px] relative overflow-hidden border border-amber-500/30"
-         style="background: linear-gradient(160deg, #1f140e 0%, #120b08 50%, #0d0806 100%);">
+    <div class="ios-modal-card max-w-sm h-[80vh] max-h-[640px] flex flex-col justify-between relative overflow-hidden">
       
       <!-- Top Navigation & Dynamic Year Selector -->
       <div class="flex items-center justify-between z-20">
@@ -3033,11 +3020,9 @@
   <!-- ════════════════════════════════════════════════════════════
        EDITORIAL QUOTE CARD GENERATOR MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="quote-card-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.75); backdrop-filter: blur(8px)" 
+  <div id="quote-card-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-4 w-full max-w-md p-6 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[95vh] overflow-y-auto no-scrollbar"
-         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 max-h-[95vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between">
         <span class="text-sm font-bold text-slate-200 flex items-center gap-2"><i class="fa-solid fa-camera-retro text-amber-400"></i> Shareable Quote Card</span>
         <button id="quote-card-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
@@ -3079,11 +3064,9 @@
   <!-- ════════════════════════════════════════════════════════════
        HEATMAP DAY INSPECTION DRAWER MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="heatmap-day-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.75); backdrop-filter: blur(8px)" 
+  <div id="heatmap-day-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[85vh] overflow-y-auto no-scrollbar"
-         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4 max-h-[85vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between">
         <div>
           <h3 id="hd-modal-date" class="text-base font-bold text-slate-100">—</h3>
@@ -3111,11 +3094,9 @@
   <!-- ════════════════════════════════════════════════════════════
        ISBN CAMERA BARCODE SCANNER MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="isbn-scanner-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px)" 
+  <div id="isbn-scanner-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300"
-         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+    <div class="ios-modal-card flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <span class="text-sm font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-barcode text-amber-400"></i> ISBN Barcode Scanner</span>
         <button id="isbn-scanner-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
@@ -3144,10 +3125,9 @@
   <!-- ════════════════════════════════════════════════════════════
        POST-SESSION QUICK REFLECTION MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="post-session-reflection-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.8); backdrop-filter: blur(8px)">
-    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300"
-         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+  <div id="post-session-reflection-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <span class="text-sm font-bold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-pen-fancy"></i> Post-Session Reflection</span>
         <button id="reflection-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
@@ -3169,11 +3149,9 @@
   <!-- ════════════════════════════════════════════════════════════
        SPACED REPETITION FLASHCARDS MODAL
        ════════════════════════════════════════════════════════════ -->
-  <div id="spaced-repetition-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
-       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px)" 
+  <div id="spaced-repetition-modal" class="ios-modal-overlay"
        onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="mx-4 w-full max-w-md p-6 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 min-h-[420px] justify-between"
-         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+    <div class="ios-modal-card min-h-[420px] flex flex-col justify-between">
       
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
         <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2"><i class="fa-solid fa-brain"></i> Daily Quote Flashcard Review</span>
