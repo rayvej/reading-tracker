@@ -515,7 +515,8 @@ button:active,
 
 /* iOS Safari Prevent Focus Auto-Zoom for all form inputs */
 @media screen and (max-width: 768px) {
-  input, select, textarea, .glass-input {
+  input, select, textarea, .glass-input,
+  input:focus, select:focus, textarea:focus, .glass-input:focus {
     font-size: 16px !important;
   }
 }
