@@ -4880,8 +4880,6 @@ async function renderBookshelf() {
   if ($('st-total-pages')) $('st-total-pages').textContent = fmtNum(totalPages);
   if ($('st-total-val'))   $('st-total-val').textContent   = `$${totalVal.toFixed(0)}`;
 
-  if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf(allItems);
-
   const container = $('bookshelf-list');
   if (!container) return;
 
@@ -4938,6 +4936,11 @@ async function renderBookshelf() {
     }
     return a.title.localeCompare(b.title);
   });
+
+  // Update 3D Spine Bookshelf with filtered list
+  if (typeof window.render3DSpineBookshelf === 'function') {
+    window.render3DSpineBookshelf(filtered);
+  }
 
   // View Transitions API
   if (document.startViewTransition) {
@@ -8467,23 +8470,23 @@ window.render3DSpineBookshelf = async function(items) {
   const shelfContainer = document.getElementById('bookshelf-3d-shelf');
   if (!shelfContainer) return;
   
-  let list = items;
-  if (!list || !list.length) {
+  let list = Array.isArray(items) ? items : null;
+  if (list === null) {
     if (typeof getMergedBooks === 'function') {
       try {
         list = await getMergedBooks();
       } catch (err) {}
     }
   }
-  if (!list || !list.length) {
-    list = (typeof booksCache !== 'undefined' && Array.isArray(booksCache) && booksCache.length) 
+  if (list === null) {
+    list = (typeof booksCache !== 'undefined' && Array.isArray(booksCache)) 
       ? booksCache 
       : (Array.isArray(window.booksCache) ? window.booksCache : []);
   }
 
   const books = list || [];
   if (!books.length) {
-    shelfContainer.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center w-full font-mono">No books loaded in shelf</div>';
+    shelfContainer.innerHTML = '<div class="text-xs text-slate-400/60 py-6 text-center w-full font-mono">No matching books for active filter</div>';
     return;
   }
 
