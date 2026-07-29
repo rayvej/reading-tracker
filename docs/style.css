@@ -2066,20 +2066,6 @@ body.light-mode .fab-log-btn {
   transform: rotateY(180deg);
 }
 
-/* Floating Genre Galaxy Orbital Nodes */
-@keyframes galaxyFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(2deg); }
-}
-.galaxy-node {
-  animation: galaxyFloat 6s ease-in-out infinite;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.galaxy-node:hover {
-  transform: scale(1.08) translateY(-4px);
-  filter: drop-shadow(0 0 15px rgba(212, 163, 89, 0.5));
-}
-
 /* Voice Dictation Recording Mic Pulse */
 @keyframes micPulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }

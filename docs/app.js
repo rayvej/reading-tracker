@@ -4638,64 +4638,8 @@ async function renderGoals() {
     });
   }
 
-  // Render Genre Galaxy Cluster & Milestone Badges Vault
-  renderGenreGalaxy();
+  // Render Milestone Badges Vault
   renderAchievementsVault();
-}
-
-/** Interactive Subject & Genre Galaxy Cluster */
-function renderGenreGalaxy() {
-  const container = document.getElementById('goals-genre-galaxy');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const catMap = {};
-  (booksCache || []).forEach(b => {
-    const cat = b.category || b.collection || 'General';
-    const pages = (b.read_count || 1) * (b.total_pages || 0);
-    catMap[cat] = (catMap[cat] || 0) + pages;
-  });
-
-  const categories = Object.keys(catMap);
-  if (categories.length === 0) {
-    container.innerHTML = '<span class="text-xs text-slate-500 font-mono py-2">No categories recorded yet</span>';
-    return;
-  }
-
-  const maxPages = Math.max(...Object.values(catMap), 1);
-  const colors = [
-    { bg: 'rgba(212, 163, 89, 0.15)', border: 'rgba(212, 163, 89, 0.4)', text: '#F5EBE6' },
-    { bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)', text: '#a7f3d0' },
-    { bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)', text: '#bae6fd' },
-    { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.4)', text: '#e9d5ff' },
-    { bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.4)', text: '#fecdd3' }
-  ];
-
-  categories.forEach((cat, idx) => {
-    const pages = catMap[cat];
-    const ratio = pages / maxPages;
-    const sizePx = Math.round(58 + ratio * 34);
-    const color = colors[idx % colors.length];
-
-    const orb = document.createElement('div');
-    orb.className = 'galaxy-node rounded-full flex flex-col items-center justify-center text-center p-2 cursor-pointer shadow-lg active:scale-90';
-    orb.style.cssText = `width: ${sizePx}px; height: ${sizePx}px; background: ${color.bg}; border: 1.5px solid ${color.border}; color: ${color.text};`;
-
-    orb.innerHTML = `
-      <span class="text-[9px] font-black leading-none truncate max-w-[90%]">${cat}</span>
-      <span class="text-[8px] font-mono text-slate-300 mt-1">${fmtNum(pages)}p</span>
-    `;
-
-    orb.onclick = () => {
-      if (typeof triggerHaptic === 'function') triggerHaptic();
-      bookshelfSearchTerm = cat;
-      const searchEl = document.getElementById('wishlist-search');
-      if (searchEl) searchEl.value = cat;
-      showView('wishlist');
-    };
-
-    container.appendChild(orb);
-  });
 }
 
 /** Reading Achievements & Milestone Badges Vault */
@@ -9913,6 +9857,9 @@ function openPostSessionReflectionModal(logId, bookTitle) {
 
 // --- 4. Knowledge Vault & Mind Graph Enhancements ---
 
+let mindGraphAnimFrameId = null;
+let mindGraphState = null;
+
 function initKnowledgeModeToggle() {
   const toggleBtns = document.querySelectorAll('#knowledge-view-mode-toggle .seg-btn');
   const feedEl = document.getElementById('knowledge-quote-feed');
@@ -9933,6 +9880,10 @@ function initKnowledgeModeToggle() {
       } else {
         if (graphContainer) graphContainer.classList.add('hidden');
         if (feedEl) feedEl.classList.remove('hidden');
+        if (mindGraphAnimFrameId) {
+          cancelAnimationFrame(mindGraphAnimFrameId);
+          mindGraphAnimFrameId = null;
+        }
       }
     });
   });
@@ -9947,11 +9898,24 @@ function renderMindGraph() {
   const canvas = document.getElementById('knowledge-mind-graph-canvas');
   if (!canvas || !canvas.getContext) return;
 
+  const container = canvas.parentElement;
+  if (!container) return;
+
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || 400;
+  const height = rect.height || 450;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
   const ctx = canvas.getContext('2d');
-  canvas.width = canvas.parentElement.clientWidth || 400;
-  canvas.height = canvas.parentElement.clientHeight || 450;
-  const width = canvas.width;
-  const height = canvas.height;
+  ctx.scale(dpr, dpr);
+
+  if (mindGraphAnimFrameId) {
+    cancelAnimationFrame(mindGraphAnimFrameId);
+    mindGraphAnimFrameId = null;
+  }
 
   const notesArr = typeof getStandaloneNotes === 'function' ? getStandaloneNotes() : [];
   const booksArr = (typeof booksCache !== 'undefined' && Array.isArray(booksCache)) ? booksCache : [];
@@ -9959,75 +9923,388 @@ function renderMindGraph() {
   const nodes = [];
   const links = [];
 
-  booksArr.slice(0, 10).forEach((b, idx) => {
-    nodes.push({
+  // 1. Create Category Hub nodes
+  const catMap = {};
+  booksArr.slice(0, 14).forEach(b => {
+    const cat = b.category || b.collection || 'General';
+    if (!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(b);
+  });
+
+  const catNodeMap = {};
+  const categories = Object.keys(catMap);
+
+  categories.forEach((cat, idx) => {
+    const angle = (idx / Math.max(categories.length, 1)) * Math.PI * 2;
+    const catNode = {
+      id: `cat_${cat}`,
+      label: cat,
+      type: 'category',
+      x: width / 2 + Math.cos(angle) * (width * 0.28),
+      y: height / 2 + Math.sin(angle) * (height * 0.28),
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
+      radius: 22,
+      color: '#34D399',
+      icon: '🏷️',
+      detailTitle: `Subject: ${cat}`,
+      detailBody: `${catMap[cat].length} book(s) cataloged in this subject area.`
+    };
+    nodes.push(catNode);
+    catNodeMap[cat] = catNode;
+  });
+
+  // 2. Create Book nodes linked to Category hubs
+  const bookNodeMap = {};
+  booksArr.slice(0, 14).forEach((b) => {
+    const cat = b.category || b.collection || 'General';
+    const parentCatNode = catNodeMap[cat];
+    const initialX = parentCatNode ? parentCatNode.x + (Math.random() - 0.5) * 70 : Math.random() * (width - 100) + 50;
+    const initialY = parentCatNode ? parentCatNode.y + (Math.random() - 0.5) * 70 : Math.random() * (height - 100) + 50;
+
+    const bNode = {
       id: `book_${b.title}`,
       label: b.title,
       type: 'book',
-      x: Math.random() * (width - 100) + 50,
-      y: Math.random() * (height - 100) + 50,
+      x: initialX,
+      y: initialY,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
       radius: 18,
-      color: '#D4A359'
-    });
-  });
-
-  notesArr.slice(0, 15).forEach((n, idx) => {
-    const nodeObj = {
-      id: `note_${idx}`,
-      label: n.notes ? n.notes.slice(0, 30) + '...' : n.title,
-      body: n.notes || '',
-      type: 'note',
-      x: Math.random() * (width - 100) + 50,
-      y: Math.random() * (height - 100) + 50,
-      radius: 10,
-      color: '#38BDF8'
+      color: '#D4A359',
+      icon: '📚',
+      bookObj: b,
+      detailTitle: b.title,
+      detailBody: `Author: ${b.author || 'Unknown'} • Status: ${b.status || 'Library'}`
     };
-    nodes.push(nodeObj);
+    nodes.push(bNode);
+    bookNodeMap[b.title.toLowerCase()] = bNode;
 
-    const targetBook = nodes.find(nd => nd.type === 'book' && nd.label.toLowerCase().includes((n.title || '').toLowerCase()));
-    if (targetBook) {
-      links.push({ source: nodeObj, target: targetBook });
+    if (parentCatNode) {
+      links.push({ source: bNode, target: parentCatNode, restLen: 95, color: 'rgba(52, 211, 153, 0.35)' });
     }
   });
 
-  for (let iter = 0; iter < 50; iter++) {
-    links.forEach(l => {
-      const dx = l.target.x - l.source.x;
-      const dy = l.target.y - l.source.y;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const force = (dist - 80) * 0.05;
-      l.source.x += (dx / dist) * force;
-      l.source.y += (dy / dist) * force;
-      l.target.x -= (dx / dist) * force;
-      l.target.y -= (dy / dist) * force;
-    });
+  // 3. Create Note/Quote nodes linked to Books
+  notesArr.slice(0, 15).forEach((n, idx) => {
+    const parentBookTitle = (n.title || '').toLowerCase();
+    const matchedBookKey = Object.keys(bookNodeMap).find(t => parentBookTitle.includes(t) || t.includes(parentBookTitle));
+    const parentNode = matchedBookKey ? bookNodeMap[matchedBookKey] : (nodes.find(nd => nd.type === 'category') || null);
+
+    const initialX = parentNode ? parentNode.x + (Math.random() - 0.5) * 60 : Math.random() * (width - 100) + 50;
+    const initialY = parentNode ? parentNode.y + (Math.random() - 0.5) * 60 : Math.random() * (height - 100) + 50;
+
+    const nNode = {
+      id: `note_${idx}`,
+      label: n.notes ? (n.notes.slice(0, 22) + (n.notes.length > 22 ? '...' : '')) : (n.title || 'Quote'),
+      type: 'note',
+      x: initialX,
+      y: initialY,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
+      radius: 13,
+      color: '#38BDF8',
+      icon: '💬',
+      noteObj: n,
+      detailTitle: n.title || 'Saved Quote/Reflection',
+      detailBody: n.notes || 'No body text recorded.'
+    };
+    nodes.push(nNode);
+
+    if (parentNode) {
+      links.push({ source: nNode, target: parentNode, restLen: 75, color: 'rgba(56, 189, 248, 0.4)' });
+    }
+  });
+
+  mindGraphState = {
+    nodes,
+    links,
+    draggedNode: null,
+    hoveredNode: null,
+    selectedNode: null,
+    width,
+    height,
+    isDragging: false
+  };
+
+  setupMindGraphEvents(canvas);
+
+  function loop() {
+    updateMindGraphPhysics(mindGraphState);
+    drawMindGraphCanvas(ctx, mindGraphState);
+    mindGraphAnimFrameId = requestAnimationFrame(loop);
   }
+
+  loop();
+}
+
+function updateMindGraphPhysics(state) {
+  if (!state) return;
+  const { nodes, links, width, height, draggedNode } = state;
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // Repulsion & Hard collision separation
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const u = nodes[i];
+      const v = nodes[j];
+
+      let dx = v.x - u.x;
+      let dy = v.y - u.y;
+      let dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+
+      const minDist = u.radius + v.radius + 36;
+
+      const repForce = 1600 / (dist * dist + 10);
+      const fx = (dx / dist) * repForce;
+      const fy = (dy / dist) * repForce;
+
+      if (u !== draggedNode) { u.vx -= fx; u.vy -= fy; }
+      if (v !== draggedNode) { v.vx += fx; v.vy += fy; }
+
+      if (dist < minDist) {
+        const overlap = (minDist - dist) * 0.5;
+        const nx = (dx / dist) * overlap;
+        const ny = (dy / dist) * overlap;
+
+        if (u !== draggedNode) { u.x -= nx; u.y -= ny; }
+        if (v !== draggedNode) { v.x += nx; v.y += ny; }
+      }
+    }
+  }
+
+  // Spring attraction along links
+  links.forEach(l => {
+    const u = l.source;
+    const v = l.target;
+    let dx = v.x - u.x;
+    let dy = v.y - u.y;
+    let dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+    const restLen = l.restLen || 85;
+
+    const force = (dist - restLen) * 0.035;
+    const fx = (dx / dist) * force;
+    const fy = (dy / dist) * force;
+
+    if (u !== draggedNode) { u.vx += fx; u.vy += fy; }
+    if (v !== draggedNode) { v.vx -= fx; v.vy -= fy; }
+  });
+
+  // Center gravity & motion dampening
+  nodes.forEach(n => {
+    if (n === draggedNode) return;
+
+    n.vx += (centerX - n.x) * 0.0015;
+    n.vy += (centerY - n.y) * 0.0015;
+
+    n.vx *= 0.83;
+    n.vy *= 0.83;
+
+    n.x += n.vx;
+    n.y += n.vy;
+
+    const pad = n.radius + 20;
+    if (n.x < pad) { n.x = pad; n.vx *= -0.5; }
+    if (n.x > width - pad) { n.x = width - pad; n.vx *= -0.5; }
+    if (n.y < pad) { n.y = pad; n.vy *= -0.5; }
+    if (n.y > height - pad) { n.y = height - pad; n.vy *= -0.5; }
+  });
+}
+
+function drawMindGraphCanvas(ctx, state) {
+  if (!state) return;
+  const { nodes, links, width, height, hoveredNode, selectedNode } = state;
 
   ctx.clearRect(0, 0, width, height);
 
-  ctx.strokeStyle = 'rgba(212, 163, 89, 0.25)';
-  ctx.lineWidth = 1.5;
+  // Deep galaxy background
+  const bgGrad = ctx.createRadialGradient(width / 2, height / 2, 20, width / 2, height / 2, width * 0.75);
+  bgGrad.addColorStop(0, '#0B0F19');
+  bgGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw links
   links.forEach(l => {
+    const isHighlighted = (hoveredNode && (l.source === hoveredNode || l.target === hoveredNode)) ||
+                          (selectedNode && (l.source === selectedNode || l.target === selectedNode));
+
+    ctx.save();
     ctx.beginPath();
     ctx.moveTo(l.source.x, l.source.y);
     ctx.lineTo(l.target.x, l.target.y);
+    ctx.lineWidth = isHighlighted ? 2.5 : 1.2;
+    ctx.strokeStyle = isHighlighted ? 'rgba(253, 230, 138, 0.85)' : (l.color || 'rgba(255, 255, 255, 0.15)');
+    if (isHighlighted) {
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#FDE68A';
+    }
     ctx.stroke();
+    ctx.restore();
   });
 
+  // Draw nodes
   nodes.forEach(nd => {
+    const isHovered = nd === hoveredNode;
+    const isSelected = nd === selectedNode;
+    const r = isHovered || isSelected ? nd.radius + 4 : nd.radius;
+
+    ctx.save();
+
+    // Outer glow aura
     ctx.beginPath();
-    ctx.arc(nd.x, nd.y, nd.radius, 0, Math.PI * 2);
+    ctx.arc(nd.x, nd.y, r + (isHovered ? 7 : 3), 0, Math.PI * 2);
     ctx.fillStyle = nd.color;
-    ctx.shadowBlur = 10;
+    ctx.globalAlpha = isHovered ? 0.35 : 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+
+    // Inner node body
+    ctx.beginPath();
+    ctx.arc(nd.x, nd.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = nd.color;
+    ctx.shadowBlur = isHovered ? 14 : 6;
     ctx.shadowColor = nd.color;
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    ctx.fillStyle = '#F4EBE1';
-    ctx.font = '9px Inter, sans-serif';
+    // Ring border
+    ctx.lineWidth = isHovered || isSelected ? 2.5 : 1.5;
+    ctx.strokeStyle = isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)';
+    ctx.stroke();
+
+    // Node icon
+    ctx.font = `${Math.round(r * 0.85)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(nd.label.slice(0, 15), nd.x, nd.y + nd.radius + 12);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(nd.icon || '•', nd.x, nd.y);
+
+    // Pill badge label
+    const labelY = nd.y + r + 14;
+    const truncatedLabel = nd.label.length > 20 ? nd.label.slice(0, 18) + '...' : nd.label;
+    drawMindGraphPillLabel(ctx, truncatedLabel, nd.x, labelY, isHovered || isSelected, nd.color);
+
+    ctx.restore();
   });
+}
+
+function drawMindGraphPillLabel(ctx, text, x, y, isHovered, color) {
+  ctx.save();
+  ctx.font = isHovered ? 'bold 10px Inter, system-ui, sans-serif' : '9.5px Inter, system-ui, sans-serif';
+  const textWidth = ctx.measureText(text).width;
+  const rectW = textWidth + 12;
+  const rectH = 17;
+  const rectX = x - rectW / 2;
+  const rectY = y - rectH / 2;
+
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(rectX, rectY, rectW, rectH, 8);
+  } else {
+    ctx.rect(rectX, rectY, rectW, rectH);
+  }
+  ctx.fillStyle = isHovered ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.82)';
+  ctx.fill();
+  ctx.strokeStyle = isHovered ? (color || 'rgba(251, 191, 36, 0.8)') : 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = isHovered ? '#FDE68A' : '#E2E8F0';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function setupMindGraphEvents(canvas) {
+  if (canvas._mindGraphEventsAttached) return;
+  canvas._mindGraphEventsAttached = true;
+
+  function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }
+
+  function findHitNode(pos) {
+    if (!mindGraphState || !mindGraphState.nodes) return null;
+    return mindGraphState.nodes.find(n => {
+      const dx = n.x - pos.x;
+      const dy = n.y - pos.y;
+      return (dx * dx + dy * dy) <= (n.radius + 10) * (n.radius + 10);
+    });
+  }
+
+  const handlePointerDown = (e) => {
+    if (!mindGraphState) return;
+    const pos = getCanvasCoords(e);
+    const hit = findHitNode(pos);
+    if (hit) {
+      mindGraphState.draggedNode = hit;
+      mindGraphState.selectedNode = hit;
+      mindGraphState.isDragging = true;
+      hit.x = pos.x;
+      hit.y = pos.y;
+      hit.vx = 0;
+      hit.vy = 0;
+      showGraphNodePreview(hit);
+    }
+  };
+
+  const handlePointerMove = (e) => {
+    if (!mindGraphState) return;
+    const pos = getCanvasCoords(e);
+    if (mindGraphState.isDragging && mindGraphState.draggedNode) {
+      mindGraphState.draggedNode.x = pos.x;
+      mindGraphState.draggedNode.y = pos.y;
+      mindGraphState.draggedNode.vx = 0;
+      mindGraphState.draggedNode.vy = 0;
+    } else {
+      const hit = findHitNode(pos);
+      mindGraphState.hoveredNode = hit;
+      canvas.style.cursor = hit ? 'pointer' : 'grab';
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (!mindGraphState) return;
+    mindGraphState.isDragging = false;
+    mindGraphState.draggedNode = null;
+    canvas.style.cursor = mindGraphState.hoveredNode ? 'pointer' : 'grab';
+  };
+
+  canvas.addEventListener('mousedown', handlePointerDown);
+  canvas.addEventListener('mousemove', handlePointerMove);
+  window.addEventListener('mouseup', handlePointerUp);
+
+  canvas.addEventListener('touchstart', (e) => { handlePointerDown(e); }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => { handlePointerMove(e); }, { passive: true });
+  window.addEventListener('touchend', handlePointerUp);
+
+  const previewCloseBtn = document.getElementById('graph-preview-close');
+  if (previewCloseBtn) {
+    previewCloseBtn.onclick = () => {
+      const previewEl = document.getElementById('graph-node-preview');
+      if (previewEl) previewEl.classList.add('hidden');
+      if (mindGraphState) mindGraphState.selectedNode = null;
+    };
+  }
+}
+
+function showGraphNodePreview(node) {
+  const previewEl = document.getElementById('graph-node-preview');
+  const titleEl = document.getElementById('graph-preview-title');
+  const bodyEl = document.getElementById('graph-preview-body');
+  if (!previewEl || !titleEl || !bodyEl) return;
+
+  titleEl.textContent = `${node.icon || ''} ${node.detailTitle || node.label}`;
+  bodyEl.textContent = node.detailBody || 'No detail available.';
+  previewEl.classList.remove('hidden');
 }
 
 function openSpacedRepetitionModal() {
