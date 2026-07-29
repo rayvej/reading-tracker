@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=81">
+  <link rel="stylesheet" href="style.css?v=82">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -2654,47 +2654,103 @@
        ════════════════════════════════════════════════════════════ -->
   <div id="timer-fullscreen-overlay">
     <div class="w-full flex justify-between items-center max-w-sm">
-      <button id="timer-btn-minimize" class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm active:scale-95 transition-all">
+      <button id="timer-btn-minimize" class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm active:scale-95 transition-all cursor-pointer" title="Minimize Focus Session">
         <i class="fa-solid fa-chevron-down"></i>
       </button>
-      <div class="text-center">
-        <div id="timer-book-title" class="font-serif text-lg font-medium text-amber-200">Active Reading Session</div>
-        <div class="font-mono text-[10px] uppercase tracking-widest text-amber-400/80">Distraction-Free Focus Session</div>
+      <div class="text-center px-2 min-w-0 flex-1">
+        <div id="timer-book-title" class="font-serif text-base font-semibold text-amber-200 truncate">Active Reading Session</div>
+        <div class="font-mono text-[9px] uppercase tracking-widest text-amber-400/80">Distraction-Free Focus Session</div>
       </div>
-      <div class="w-10"></div>
+      <button id="timer-btn-cancel" class="w-10 h-10 rounded-full bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 flex items-center justify-center text-xs active:scale-95 transition-all cursor-pointer" title="Cancel Session">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
 
-    <div class="flex flex-col items-center justify-center my-auto">
-      <div class="relative w-64 h-64 flex items-center justify-center">
+    <div class="flex flex-col items-center justify-center my-auto w-full max-w-sm">
+      <!-- Ring & Clock Display -->
+      <div class="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center my-2">
         <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 240 240">
           <circle cx="120" cy="120" r="108" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="none" />
           <circle id="timer-svg-ring" cx="120" cy="120" r="108" stroke="#D4A359" stroke-width="6" fill="none" stroke-dasharray="678" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-500" />
         </svg>
-        <div id="timer-clock-display" class="timer-clock-display">00:00</div>
+        <div id="timer-clock-display" class="timer-clock-display text-4xl sm:text-5xl font-mono">00:00</div>
       </div>
 
-      <div class="grid grid-cols-3 gap-6 text-center mt-6">
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Start Page</div>
-          <div id="timer-start-page" class="font-mono text-base text-slate-200 font-semibold">0</div>
+      <!-- Page Calculation Inputs -->
+      <div class="w-full flex flex-col gap-2.5 my-2">
+        <div class="grid grid-cols-2 gap-2.5 text-left">
+          <div class="flex flex-col gap-0.5 p-2.5 rounded-2xl bg-white/[0.04] border border-white/10">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Start Page</span>
+            <span id="timer-start-page" class="font-mono text-sm font-bold text-slate-200">0</span>
+          </div>
+          <div class="flex flex-col gap-0.5 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 focus-within:border-amber-400">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-400">End Page / Curr Page</span>
+            <input type="number" id="timer-input-end-page" min="0" class="w-full bg-transparent font-mono text-sm font-bold text-amber-200 focus:outline-none placeholder:text-amber-400/40" placeholder="e.g. 150">
+          </div>
         </div>
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Pages Read</div>
-          <div id="timer-pages-read" class="font-mono text-base text-amber-400 font-bold">+0</div>
+
+        <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 text-[10px] font-semibold">
+          <span>Pages Read: <b id="timer-pages-read" class="text-amber-400 font-mono">+0</b></span>
+          <span>Current Pace: <b id="timer-speed-pace" class="text-slate-200 font-mono">0 p/hr</b></span>
         </div>
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Current Pace</div>
-          <div id="timer-speed-pace" class="font-mono text-base text-slate-200 font-semibold">0 p/hr</div>
+
+        <!-- Notes & Photo Attachment -->
+        <div class="flex flex-col gap-1.5 mt-1">
+          <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            <span>Notes &amp; Reflections</span>
+            <button id="timer-btn-add-photo" type="button" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 active:scale-95 transition-all cursor-pointer">
+              <i class="fa-solid fa-camera"></i> Add Photo / Quote
+            </button>
+          </div>
+          <textarea id="timer-input-notes" rows="2" class="w-full px-3 py-2 text-xs font-medium rounded-xl glass-input border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400/50" placeholder="Capture quick notes, reflections, or memorable quotes..."></textarea>
+          
+          <input type="file" id="timer-photo-file-input" accept="image/*" class="hidden">
+          
+          <!-- Photo Preview Container -->
+          <div id="timer-photo-preview-box" class="hidden relative rounded-xl border border-white/10 bg-slate-900/60 p-2 flex items-center gap-3">
+            <img id="timer-photo-img" src="" class="w-10 h-10 object-cover rounded-lg shadow-md shrink-0">
+            <div class="flex-1 min-w-0 text-left">
+              <div class="text-xs font-bold text-slate-200 truncate">Photo Attached</div>
+              <div class="text-[9px] text-slate-400">Saved to session note &amp; knowledge vault</div>
+            </div>
+            <button id="timer-photo-remove" type="button" class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs hover:bg-rose-500/30 shrink-0">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="w-full max-w-sm flex items-center gap-3">
-      <button id="timer-btn-pause" class="flex-1 py-4 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white transition-all active:scale-95">
+    <!-- Action Buttons -->
+    <div class="w-full max-w-sm flex items-center gap-3 mt-auto">
+      <button id="timer-btn-pause" class="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-white/10 hover:bg-white/15 text-white transition-all active:scale-95 cursor-pointer">
         <i class="fa-solid fa-pause mr-1"></i> Pause
       </button>
-      <button id="timer-btn-complete" class="flex-1 py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-xl transition-all active:scale-95">
+      <button id="timer-btn-complete" class="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-xl transition-all active:scale-95 cursor-pointer">
         <i class="fa-solid fa-check mr-1"></i> Finish &amp; Log
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       FLOATING MINI TIMER BAR (Minimized Focus Session)
+       ════════════════════════════════════════════════════════════ -->
+  <div id="timer-floating-bar" class="hidden fixed bottom-16 left-4 right-4 z-40 glass-panel p-3 rounded-2xl border border-white/10 flex items-center justify-between shadow-2xl animate-fade-in cursor-pointer" style="background: rgba(20, 16, 14, 0.92); backdrop-filter: blur(16px);">
+    <div class="flex items-center gap-3 min-w-0 flex-1" id="timer-mini-expand">
+      <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs shrink-0 animate-pulse">
+        <i class="fa-solid fa-book-open"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div id="timer-mini-title" class="text-xs font-bold text-slate-100 truncate">Active Focus Session</div>
+        <div id="timer-mini-subtitle" class="text-[10px] text-amber-400 font-mono">00:00 · Session in progress</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="timer-mini-btn-pause" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs active:scale-95 transition-all">
+        <i class="fa-solid fa-pause"></i>
+      </button>
+      <button id="timer-mini-btn-expand" class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs active:scale-95 transition-all">
+        <i class="fa-solid fa-chevron-up"></i>
       </button>
     </div>
   </div>
@@ -2715,6 +2771,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=81"></script>
+  <script type="module" src="app.js?v=82"></script>
 </body>
 </html>

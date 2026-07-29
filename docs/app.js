@@ -8176,27 +8176,59 @@ let fullTimerState = {
   intervalId: null,
   book: null,
   startPage: 0,
-  currentEndPage: 0
+  currentEndPage: 0,
+  photoData: null,
+  isMinimized: false
 };
 
 window.openFullTimerSession = function(book) {
   const overlay = document.getElementById('timer-fullscreen-overlay');
+  const floatBar = document.getElementById('timer-floating-bar');
   if (!overlay) return;
 
-  fullTimerState.book = book;
-  fullTimerState.startPage = book ? (book.current_page || 0) : 0;
-  fullTimerState.currentEndPage = fullTimerState.startPage;
-  fullTimerState.seconds = 0;
+  // 1. Calculate Start Page: Max end_page from logsCache for this book
+  let startPage = 0;
+  if (book) {
+    const bookLogs = (window.logsCache || []).filter(l => l.book_title === book.title);
+    if (bookLogs.length > 0) {
+      startPage = Math.max(...bookLogs.map(l => parseInt(l.end_page || 0, 10)));
+    } else {
+      startPage = parseInt(book.pages_read || book.current_page || 0, 10);
+    }
+  }
 
+  fullTimerState.book = book;
+  fullTimerState.startPage = startPage;
+  fullTimerState.currentEndPage = startPage;
+  fullTimerState.seconds = 0;
+  fullTimerState.photoData = null;
+  fullTimerState.isMinimized = false;
+
+  // 2. Populate UI Elements
   const titleEl = document.getElementById('timer-book-title');
   const startEl = document.getElementById('timer-start-page');
+  const endInput = document.getElementById('timer-input-end-page');
   const pagesReadEl = document.getElementById('timer-pages-read');
   const clockEl = document.getElementById('timer-clock-display');
+  const paceEl = document.getElementById('timer-speed-pace');
+  const notesInput = document.getElementById('timer-input-notes');
+  const photoPreview = document.getElementById('timer-photo-preview-box');
+  const photoFileInput = document.getElementById('timer-photo-file-input');
 
   if (titleEl) titleEl.textContent = book ? book.title : 'Active Reading Session';
-  if (startEl) startEl.textContent = fullTimerState.startPage;
+  if (startEl) startEl.textContent = startPage;
+  if (endInput) endInput.value = '';
   if (pagesReadEl) pagesReadEl.textContent = '+0';
   if (clockEl) clockEl.textContent = '00:00';
+  if (paceEl) paceEl.textContent = '0 p/hr';
+  if (notesInput) notesInput.value = '';
+  if (photoPreview) photoPreview.classList.add('hidden');
+  if (photoFileInput) photoFileInput.value = '';
+
+  // 3. Mini bar update
+  if (floatBar) floatBar.classList.add('hidden');
+  const miniTitle = document.getElementById('timer-mini-title');
+  if (miniTitle) miniTitle.textContent = book ? book.title : 'Active Focus Session';
 
   overlay.classList.add('active');
   startTimerClock();
@@ -8208,51 +8240,217 @@ function startTimerClock() {
     fullTimerState.seconds++;
     const mins = Math.floor(fullTimerState.seconds / 60);
     const secs = fullTimerState.seconds % 60;
-    const clockEl = document.getElementById('timer-clock-display');
-    const paceEl = document.getElementById('timer-speed-pace');
-
-    if (clockEl) clockEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     
-    const elapsedHours = fullTimerState.seconds / 3600;
-    const pagesRead = fullTimerState.currentEndPage - fullTimerState.startPage;
-    if (paceEl) {
-      paceEl.textContent = elapsedHours > 0.01 ? `${Math.round(pagesRead / elapsedHours)} p/hr` : '0 p/hr';
-    }
+    const clockEl = document.getElementById('timer-clock-display');
+    if (clockEl) clockEl.textContent = timeStr;
+
+    // Mini bar subtitle
+    const miniSub = document.getElementById('timer-mini-subtitle');
+    if (miniSub) miniSub.textContent = `${timeStr} · Active Session`;
+
+    updatePaceAndPages();
   }, 1000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function updatePaceAndPages() {
+  const endInput = document.getElementById('timer-input-end-page');
+  const pagesReadEl = document.getElementById('timer-pages-read');
+  const paceEl = document.getElementById('timer-speed-pace');
+
+  let endVal = fullTimerState.startPage;
+  if (endInput && endInput.value.trim() !== '') {
+    endVal = parseInt(endInput.value, 10);
+  }
+  fullTimerState.currentEndPage = isNaN(endVal) ? fullTimerState.startPage : endVal;
+
+  const pagesRead = Math.max(0, fullTimerState.currentEndPage - fullTimerState.startPage);
+  if (pagesReadEl) pagesReadEl.textContent = `+${pagesRead}`;
+
+  const elapsedHours = fullTimerState.seconds / 3600;
+  if (paceEl) {
+    paceEl.textContent = elapsedHours > 0.005 && pagesRead > 0 ? `${Math.round(pagesRead / elapsedHours)} p/hr` : '0 p/hr';
+  }
+}
+
+function setupTimerEvents() {
   const minBtn = document.getElementById('timer-btn-minimize');
+  const cancelBtn = document.getElementById('timer-btn-cancel');
   const pauseBtn = document.getElementById('timer-btn-pause');
   const completeBtn = document.getElementById('timer-btn-complete');
   const overlay = document.getElementById('timer-fullscreen-overlay');
+  const floatBar = document.getElementById('timer-floating-bar');
+  const endInput = document.getElementById('timer-input-end-page');
 
-  if (minBtn) minBtn.onclick = () => overlay && overlay.classList.remove('active');
+  const addPhotoBtn = document.getElementById('timer-btn-add-photo');
+  const photoFile = document.getElementById('timer-photo-file-input');
+  const photoRemove = document.getElementById('timer-photo-remove');
+
+  // Interactive end page calculation
+  if (endInput) {
+    endInput.addEventListener('input', updatePaceAndPages);
+  }
+
+  // Photo attachment logic
+  if (addPhotoBtn && photoFile) {
+    addPhotoBtn.onclick = () => photoFile.click();
+    photoFile.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        fullTimerState.photoData = evt.target.result;
+        const previewBox = document.getElementById('timer-photo-preview-box');
+        const imgElem = document.getElementById('timer-photo-img');
+        if (imgElem) imgElem.src = evt.target.result;
+        if (previewBox) previewBox.classList.remove('hidden');
+        if (typeof triggerHaptic === 'function') triggerHaptic();
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  if (photoRemove) {
+    photoRemove.onclick = () => {
+      fullTimerState.photoData = null;
+      const previewBox = document.getElementById('timer-photo-preview-box');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  // 1. Minimize (Down Arrow) -> Moves to bottom floating bar, timer CONTINUES running!
+  if (minBtn) {
+    minBtn.onclick = () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      if (overlay) overlay.classList.remove('active');
+      if (floatBar) floatBar.classList.remove('hidden');
+      fullTimerState.isMinimized = true;
+    };
+  }
+
+  // Mini Floating Bar Expand
+  const miniExpand = document.getElementById('timer-mini-expand');
+  const miniExpandBtn = document.getElementById('timer-mini-btn-expand');
+  const expandFunc = () => {
+    if (typeof triggerHaptic === 'function') triggerHaptic();
+    if (floatBar) floatBar.classList.add('hidden');
+    if (overlay) overlay.classList.add('active');
+    fullTimerState.isMinimized = false;
+  };
+  if (miniExpand) miniExpand.onclick = expandFunc;
+  if (miniExpandBtn) miniExpandBtn.onclick = (e) => { e.stopPropagation(); expandFunc(); };
+
+  // Mini Floating Bar Pause
+  const miniPauseBtn = document.getElementById('timer-mini-btn-pause');
+  if (miniPauseBtn) {
+    miniPauseBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      if (fullTimerState.intervalId) {
+        clearInterval(fullTimerState.intervalId);
+        fullTimerState.intervalId = null;
+        miniPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
+      } else {
+        startTimerClock();
+        miniPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Pause';
+      }
+    };
+  }
+
+  // 2. Cancel Focus Session
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      if (!confirm('Cancel this focus session? Timer progress and notes will be discarded.')) return;
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
+      fullTimerState.intervalId = null;
+      if (overlay) overlay.classList.remove('active');
+      if (floatBar) floatBar.classList.add('hidden');
+      if (typeof showToast === 'function') showToast('Focus session cancelled', 'info');
+    };
+  }
+
+  // 3. Pause / Resume Button
   if (pauseBtn) {
     pauseBtn.onclick = () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
       if (fullTimerState.intervalId) {
         clearInterval(fullTimerState.intervalId);
         fullTimerState.intervalId = null;
         pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
+        if (miniPauseBtn) miniPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
       } else {
         startTimerClock();
         pauseBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Pause';
+        if (miniPauseBtn) miniPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
       }
     };
   }
 
+  // 4. Finish & Log Button
   if (completeBtn) {
-    completeBtn.onclick = () => {
+    completeBtn.onclick = async () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
       if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
-      const minutesSpent = Math.max(1, Math.round(fullTimerState.seconds / 60));
-      overlay && overlay.classList.remove('active');
-      if (fullTimerState.book && typeof openQuickLogModal === 'function') {
-        openQuickLogModal(fullTimerState.book, minutesSpent);
-      } else if (typeof showToast === 'function') {
-        showToast(`Focus session logged: ${minutesSpent} min`, 'success');
+      fullTimerState.intervalId = null;
+
+      const book = fullTimerState.book;
+      const title = book ? book.title : 'General Session';
+      const start = fullTimerState.startPage;
+      const end = fullTimerState.currentEndPage > start ? fullTimerState.currentEndPage : start;
+      const mins = Math.max(1, Math.round(fullTimerState.seconds / 60));
+      const notesInput = document.getElementById('timer-input-notes');
+      const notesText = notesInput ? notesInput.value.trim() : '';
+      const photoData = fullTimerState.photoData;
+
+      if (overlay) overlay.classList.remove('active');
+      if (floatBar) floatBar.classList.add('hidden');
+
+      try {
+        const uid = typeof auth !== 'undefined' && auth.currentUser ? auth.currentUser.uid : null;
+        if (uid && typeof db !== 'undefined') {
+          const bookLogs = (window.logsCache || []).filter(l => l.book_title === title);
+          const maxCycle = bookLogs.length > 0 ? Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10))) : 1;
+          const cycle = book ? Math.max((book.read_count || 0) + 1, maxCycle) : 1;
+
+          await addDoc(collection(db, `users/${uid}/reading_logs`), {
+            date: todayISO(),
+            book_title: title,
+            read_cycle: cycle,
+            start_page: start,
+            end_page: end,
+            minutes_spent: mins,
+            notes: notesText,
+            photo_url: photoData || null,
+            created_at: serverTimestamp()
+          });
+
+          if (typeof recalculateBook === 'function') {
+            await recalculateBook(title, cycle);
+          }
+
+          window.logsCache = [];
+          if (typeof loadLogsCache === 'function') await loadLogsCache();
+          if (typeof renderDashboard === 'function') renderDashboard();
+
+          const pagesRead = Math.max(0, end - start);
+          if (typeof showToast === 'function') {
+            showToast(`✓ Logged ${pagesRead} page${pagesRead === 1 ? '' : 's'} in ${mins}m for "${title.slice(0, 25)}"`, 'success');
+          }
+        }
+      } catch (err) {
+        console.error('Error logging focus session:', err);
+        if (typeof showToast === 'function') showToast('Session ended', 'info');
       }
     };
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupTimerEvents();
 
   const hmClose = document.getElementById('heatmap-day-close-btn');
   const hmBackdrop = document.getElementById('heatmap-day-backdrop');
