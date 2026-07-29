@@ -2392,13 +2392,20 @@ function renderLiveSessionBanner(books, logs) {
   const barEl = $('dash-live-bar');
   const etaBadgeEl = $('dash-live-eta-badge');
   const coverContainerEl = $('dash-live-cover-container');
+  const glowEl = $('dash-live-glow');
+  const pagesLabel = $('dash-live-pages-label');
+  const velocityLabel = $('dash-live-velocity-label');
+  const actionsEl = $('dash-live-actions');
 
   if (inProgress.length === 0) {
     if (titleEl) titleEl.textContent = 'No book currently in progress';
     if (authorEl) authorEl.textContent = 'Select a book from your bookshelf to begin';
     if (barEl) barEl.style.width = '0%';
+    if (pagesLabel) pagesLabel.textContent = '';
+    if (velocityLabel) velocityLabel.textContent = '';
+    if (actionsEl) actionsEl.classList.add('hidden');
     if (coverContainerEl) {
-      coverContainerEl.innerHTML = `<div class="w-10 h-14 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center shadow-md overflow-hidden"><i class="fa-solid fa-book text-slate-500 text-lg"></i></div>`;
+      coverContainerEl.innerHTML = `<div class="w-16 h-24 rounded-xl bg-slate-800 border border-white/10 flex items-center justify-center shadow-lg overflow-hidden"><i class="fa-solid fa-book text-slate-500 text-xl"></i></div>`;
     }
     if (etaBadgeEl) {
       etaBadgeEl.textContent = 'Standby';
@@ -2444,22 +2451,319 @@ function renderLiveSessionBanner(books, logs) {
   const pct = Math.min(100, Math.round((read / total) * 100));
   const remaining = Math.max(0, total - read);
 
+  // Render enlarged cover
   if (coverContainerEl) {
-    coverContainerEl.innerHTML = getCoverHTML(activeBook, 'w-11 h-16 shrink-0 shadow-md');
+    coverContainerEl.innerHTML = getCoverHTML(activeBook, 'w-16 h-24 shrink-0 shadow-lg');
   }
 
   if (titleEl) titleEl.textContent = activeBook.title;
-  if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${remaining} pg left (${pct}%)`;
-  if (barEl) {
-    barEl.style.width = `${pct}%`;
-    barEl.style.background = 'linear-gradient(90deg, var(--gold), var(--gold-light))';
-  }
+  if (authorEl) authorEl.textContent = `${activeBook.author || 'Unknown Author'} · ${activeBook.collection || ''}`;
+  if (barEl) barEl.style.width = `${pct}%`;
 
-  const estDays = Math.max(1, Math.ceil(remaining / 15));
+  // Pages label
+  if (pagesLabel) pagesLabel.textContent = `${read} / ${total} pages (${pct}%)`;
+
+  // Calculate rolling 7-day velocity for ETA
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+  const sevenDayISO = sevenDaysAgo.toISOString().slice(0, 10);
+  
+  const recentLogs = (logs || []).filter(l => l.date >= sevenDayISO);
+  const recentDays = new Set(recentLogs.map(l => l.date));
+  const recentPages = recentLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const velocity = recentDays.size > 0 ? (recentPages / recentDays.size) : 15;
+  
+  if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} pgs/day`;
+
+  const estDays = velocity > 0 ? Math.max(1, Math.ceil(remaining / velocity)) : 99;
+  const estDate = new Date(today);
+  estDate.setDate(today.getDate() + estDays);
+  const estDateStr = estDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  
   if (etaBadgeEl) {
-    etaBadgeEl.textContent = `Finish in ~${estDays} days`;
+    etaBadgeEl.textContent = `~${estDays}d (${estDateStr})`;
     etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
   }
+
+  // Show action buttons
+  if (actionsEl) actionsEl.classList.remove('hidden');
+
+  // Cover-Adaptive Mesh Glow — Extract dominant color from cover image
+  if (glowEl && activeBook.cover_url) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = activeBook.cover_url;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 8;
+        canvas.height = 8;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 8, 8);
+        const data = ctx.getImageData(0, 0, 8, 8).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+        }
+        r = Math.round(r / count);
+        g = Math.round(g / count);
+        b = Math.round(b / count);
+        banner.style.setProperty('--cover-glow-color', `rgba(${r}, ${g}, ${b}, 0.25)`);
+        banner.style.setProperty('--cover-glow-color-mid', `rgba(${r}, ${g}, ${b}, 0.10)`);
+      } catch (e) {
+        // CORS or canvas error — use theme default glow
+      }
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 2: VELOCITY ANALYTICS — Dashboard Section
+// ═══════════════════════════════════════════════════════════════
+function renderVelocityAnalytics(activeLogs, books, selectedYear) {
+  const today = new Date();
+  const todayISO = today.toISOString().slice(0, 10);
+  
+  const thirtyAgo = new Date(today);
+  thirtyAgo.setDate(today.getDate() - 30);
+  const thirtyAgoISO = thirtyAgo.toISOString().slice(0, 10);
+  
+  const sixtyAgo = new Date(today);
+  sixtyAgo.setDate(today.getDate() - 60);
+  const sixtyAgoISO = sixtyAgo.toISOString().slice(0, 10);
+  
+  const last30Logs = activeLogs.filter(l => l.date >= thirtyAgoISO && l.date <= todayISO);
+  const prev30Logs = activeLogs.filter(l => l.date >= sixtyAgoISO && l.date < thirtyAgoISO);
+  
+  const last30Days = new Set(last30Logs.map(l => l.date));
+  const prev30Days = new Set(prev30Logs.map(l => l.date));
+  
+  const last30Pages = last30Logs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const prev30Pages = prev30Logs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  
+  const velocity = last30Days.size > 0 ? (last30Pages / last30Days.size) : 0;
+  const prevVelocity = prev30Days.size > 0 ? (prev30Pages / prev30Days.size) : 0;
+  const velocityChange = prevVelocity > 0 ? Math.round(((velocity - prevVelocity) / prevVelocity) * 100) : 0;
+  
+  const velCurrent = $('vel-current');
+  if (velCurrent) velCurrent.textContent = velocity.toFixed(1);
+  
+  const trendBadge = $('vel-current-trend');
+  const trendVal = $('vel-current-trend-val');
+  if (trendBadge && velocityChange !== 0) {
+    trendBadge.style.display = 'inline-flex';
+    trendBadge.className = `velocity-trend-badge ${velocityChange >= 0 ? 'up' : 'down'}`;
+    const icon = trendBadge.querySelector('i');
+    if (icon) icon.className = `fa-solid ${velocityChange >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} text-[8px]`;
+    if (trendVal) trendVal.textContent = `${velocityChange >= 0 ? '+' : ''}${velocityChange}%`;
+  }
+  
+  const vel30d = $('vel-30d-total');
+  if (vel30d) vel30d.textContent = fmtNum(last30Pages);
+  const vel30dBooks = $('vel-30d-books');
+  if (vel30dBooks) {
+    const finishedBooks = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status));
+    const avgPagesPerBook = finishedBooks.length > 0 ? finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0) / finishedBooks.length : 250;
+    const booksIn30d = avgPagesPerBook > 0 ? (last30Pages / avgPagesPerBook).toFixed(1) : '0';
+    vel30dBooks.textContent = `~${booksIn30d} books equivalent`;
+  }
+  
+  const velAnnual = $('vel-annual');
+  if (velAnnual) {
+    const finishedBooks = books.filter(b => ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status));
+    const avgPagesPerBook = finishedBooks.length > 0 ? finishedBooks.reduce((s, b) => s + (b.total_pages || 0), 0) / finishedBooks.length : 250;
+    const annualPages = velocity * 365 * (last30Days.size / 30);
+    const estAnnualBooks = avgPagesPerBook > 0 ? Math.round(annualPages / avgPagesPerBook) : 0;
+    velAnnual.textContent = `${estAnnualBooks} Books`;
+  }
+  const velAnnualDetail = $('vel-annual-detail');
+  if (velAnnualDetail) velAnnualDetail.textContent = 'Based on current pace';
+  
+  const velConsistency = $('vel-consistency');
+  const consistencyPct = Math.round((last30Days.size / 30) * 100);
+  if (velConsistency) velConsistency.textContent = `${consistencyPct}%`;
+  const velConsistencyDetail = $('vel-consistency-detail');
+  if (velConsistencyDetail) velConsistencyDetail.textContent = `${last30Days.size} of 30 days active`;
+  
+  renderVelocityCurve(activeLogs, selectedYear);
+}
+
+function renderVelocityCurve(activeLogs, selectedYear) {
+  const container = $('velocity-curve-chart');
+  if (!container) return;
+  
+  const today = new Date();
+  const curYear = selectedYear === 'all' ? today.getFullYear() : parseInt(selectedYear);
+  const curMonth = today.getMonth();
+  
+  const yearLogs = activeLogs.filter(l => l.date && l.date.startsWith(String(curYear)));
+  const monthCumPages = Array(12).fill(0);
+  let runSum = 0;
+  
+  for (let m = 0; m < 12; m++) {
+    const monthStr = String(m + 1).padStart(2, '0');
+    const endOfMonth = `${curYear}-${monthStr}-31`;
+    const logsUpTo = yearLogs.filter(l => l.date <= endOfMonth);
+    runSum = logsUpTo.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+    monthCumPages[m] = runSum;
+  }
+  
+  const currentTotal = monthCumPages[curMonth] || 0;
+  const annualTarget = curMonth > 0 ? Math.round((currentTotal / (curMonth + 1)) * 12 * 1.1) : Math.max(currentTotal * 12, 100);
+  
+  const width = container.clientWidth || 320;
+  const height = container.clientHeight || 176;
+  const padL = 30, padR = 15, padT = 15, padB = 25;
+  const graphW = width - padL - padR;
+  const graphH = height - padT - padB;
+  const maxVal = Math.max(annualTarget, ...monthCumPages, 100);
+  
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const targetPoints = [];
+  const actualPoints = [];
+  
+  for (let i = 0; i < 12; i++) {
+    const x = padL + (i / 11) * graphW;
+    const targetY = padT + graphH - (((i + 1) / 12 * annualTarget) / maxVal) * graphH;
+    targetPoints.push({ x, y: targetY });
+    if (i <= curMonth) {
+      const actY = padT + graphH - (monthCumPages[i] / maxVal) * graphH;
+      actualPoints.push({ x, y: actY });
+    }
+  }
+  
+  const targetPath = targetPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const actualPath = actualPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  
+  let areaPath = '';
+  if (actualPoints.length > 0) {
+    const lastP = actualPoints[actualPoints.length - 1];
+    areaPath = `${actualPath} L ${lastP.x.toFixed(1)} ${padT + graphH} L ${actualPoints[0].x.toFixed(1)} ${padT + graphH} Z`;
+  }
+  
+  const targetAtMonth = Math.round(((curMonth + 1) / 12) * annualTarget);
+  const diff = currentTotal - targetAtMonth;
+  const statusEl = $('vel-curve-status');
+  if (statusEl) {
+    if (diff >= 0) {
+      statusEl.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      statusEl.textContent = `+${fmtNum(diff)} pgs Ahead`;
+    } else {
+      statusEl.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      statusEl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
+    }
+  }
+  
+  const monthLabels = months.map((m, i) => {
+    const x = padL + (i / 11) * graphW;
+    return `<text x="${x.toFixed(1)}" y="${height - 5}" text-anchor="middle" fill="var(--text-tertiary)" font-size="8" font-weight="600" font-family="Inter">${m}</text>`;
+  }).join('');
+  
+  container.innerHTML = `
+    <svg class="w-full h-full" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <linearGradient id="velAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0"/>
+        </linearGradient>
+        <linearGradient id="velLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="var(--accent)" />
+          <stop offset="100%" stop-color="var(--gold)" />
+        </linearGradient>
+      </defs>
+      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="rgba(255,255,255,0.08)" />
+      <path d="${targetPath}" fill="none" stroke="rgba(var(--gold-rgb), 0.35)" stroke-width="1.5" stroke-dasharray="4,3" />
+      ${areaPath ? `<path d="${areaPath}" fill="url(#velAreaGrad)" />` : ''}
+      ${actualPath ? `<path d="${actualPath}" fill="none" stroke="url(#velLineGrad)" stroke-width="2.5" stroke-linecap="round" />` : ''}
+      ${actualPoints.map((p, i) => i === actualPoints.length - 1 ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent)" stroke="var(--bg-solid)" stroke-width="2" />` : '').join('')}
+      ${monthLabels}
+    </svg>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 4: STREAK RINGS — Dashboard Section
+// ═══════════════════════════════════════════════════════════════
+function renderStreakRings(streaks, activeLogs) {
+  const today = new Date();
+  const todayISO = today.toISOString().slice(0, 10);
+  
+  const todayLogs = activeLogs.filter(l => l.date === todayISO);
+  const todayPages = todayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const todayMinutes = todayLogs.reduce((s, l) => s + (l.duration_minutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
+  const hasSessionToday = todayLogs.length > 0;
+  
+  const dailyMinutesTarget = 40;
+  const dailyPagesTarget = 30;
+  
+  const minutesPct = Math.min(100, (todayMinutes / dailyMinutesTarget) * 100);
+  const minutesRing = $('streak-ring-minutes');
+  if (minutesRing) {
+    const circumference = 427;
+    minutesRing.style.strokeDashoffset = circumference - (circumference * minutesPct / 100);
+  }
+  
+  const pagesPct = Math.min(100, (todayPages / dailyPagesTarget) * 100);
+  const pagesRing = $('streak-ring-pages');
+  if (pagesRing) {
+    const circumference = 301;
+    pagesRing.style.strokeDashoffset = circumference - (circumference * pagesPct / 100);
+  }
+  
+  const consistencyPct = hasSessionToday ? 100 : 0;
+  const consistencyRing = $('streak-ring-consistency');
+  if (consistencyRing) {
+    const circumference = 176;
+    consistencyRing.style.strokeDashoffset = circumference - (circumference * consistencyPct / 100);
+  }
+  
+  const legendMinutes = $('streak-legend-minutes');
+  if (legendMinutes) legendMinutes.textContent = `${Math.round(todayMinutes)}/${dailyMinutesTarget}m`;
+  
+  const legendPages = $('streak-legend-pages');
+  if (legendPages) legendPages.textContent = `${todayPages}/${dailyPagesTarget}pg`;
+  
+  const legendConsistency = $('streak-legend-consistency');
+  if (legendConsistency) legendConsistency.textContent = hasSessionToday ? '✓ Active' : '—';
+  
+  const streakRepairKey = 'rt_streak_repair_tokens';
+  let tokens = parseInt(localStorage.getItem(streakRepairKey) || '0', 10);
+  
+  if (todayPages >= dailyPagesTarget * 2) {
+    const earnedToday = localStorage.getItem('rt_streak_repair_earned_' + todayISO);
+    if (!earnedToday) {
+      tokens++;
+      localStorage.setItem(streakRepairKey, tokens);
+      localStorage.setItem('rt_streak_repair_earned_' + todayISO, '1');
+    }
+  }
+  
+  const repairLabel = $('streak-repair-label');
+  if (repairLabel) repairLabel.textContent = `${tokens} Streak Shield${tokens !== 1 ? 's' : ''} Available`;
+  const repairCount = $('streak-repair-count');
+  if (repairCount) repairCount.textContent = tokens;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 5: SCROLL-TRIGGERED ANIMATIONS
+// ═══════════════════════════════════════════════════════════════
+function initScrollAnimations() {
+  const elements = document.querySelectorAll('.animate-on-scroll:not(.animate-visible)');
+  if (!elements.length) return;
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+  
+  elements.forEach(el => observer.observe(el));
 }
 
 function renderFormatOwnershipCard(books) {
@@ -3175,8 +3479,11 @@ async function renderDashboard() {
     }
   }
 
-  // ── Render Charts ──
+  // ── Render Charts & Advanced Analytics ──
   renderCharts(completions);
+  renderVelocityAnalytics(activeLogs, books, selectedYear);
+  renderStreakRings(streaks, activeLogs);
+  initScrollAnimations();
 }
 
 // ── Goals Helpers: Streaks, Charts & Badges ──────────────────────────────
@@ -7930,21 +8237,47 @@ window.render3DSpineBookshelf = async function(items) {
     'linear-gradient(90deg, #2b3318 0%, #435226 40%, #2b3318 100%)', // Forest Moss
     'linear-gradient(90deg, #382d1a 0%, #544427 40%, #382d1a 100%)'  // Antique Amber
   ];
-  shelfContainer.innerHTML = books.map((b, i) => {
+
+  shelfContainer.innerHTML = '';
+  books.forEach((b, i) => {
     const pages = Math.max(20, parseInt(b.total_pages || b.pages || 250, 10));
-    // Spine width scales proportionally with total pages (min 20px, max 52px)
-    const width = Math.min(52, Math.max(20, Math.round(18 + (pages / 28))));
+    const width = Math.min(52, Math.max(22, Math.round(18 + (pages / 28))));
     const height = Math.min(210, Math.max(138, 138 + (pages % 70)));
     const grad = gradients[i % gradients.length];
     const safeTitle = (b.title || 'Untitled').replace(/"/g, '&quot;');
     const safeAuthor = (b.author || '').replace(/"/g, '&quot;');
-    const fontSize = width < 24 ? '0.68rem' : '0.78rem';
-    return `<div class="book-spine-item relative overflow-hidden shadow-lg border-x border-white/10" style="width: ${width}px; height: ${height}px; background: ${grad}; color: #F5EBE6; font-size: ${fontSize};" title="${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''} (${pages} pages)">
+    const fontSize = width < 26 ? '0.68rem' : '0.78rem';
+    
+    // Calculate progress percentage
+    let pct = 0;
+    if (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)) {
+      pct = 100;
+    } else if (b.pages_read && b.total_pages) {
+      pct = Math.min(100, Math.round(((b.pages_read % b.total_pages) / b.total_pages) * 100));
+    }
+
+    const spine = document.createElement('div');
+    spine.className = 'book-spine-item relative overflow-hidden shadow-lg border-x border-white/10';
+    spine.style.cssText = `width: ${width}px; height: ${height}px; background: ${grad}; color: #F5EBE6; font-size: ${fontSize};`;
+    spine.title = `${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''} (${pages} pages — ${pct}% read)`;
+
+    spine.innerHTML = `
       <div class="absolute top-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
-      <div class="absolute bottom-1 left-0 right-0 h-0.5 bg-amber-400/70"></div>
+      <div class="absolute bottom-1.5 left-0 right-0 h-0.5 bg-amber-400/70"></div>
       <span class="truncate font-serif font-semibold leading-none">${safeTitle}</span>
-    </div>`;
-  }).join('');
+      <div class="book-spine-progress">
+        <div class="book-spine-progress-fill" style="width: ${pct}%;"></div>
+      </div>
+    `;
+
+    spine.addEventListener('click', () => {
+      if (typeof openBookDetailModal === 'function') {
+        openBookDetailModal(b);
+      }
+    });
+
+    shelfContainer.appendChild(spine);
+  });
 };
 
 setTimeout(() => {

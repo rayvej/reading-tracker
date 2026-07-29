@@ -430,23 +430,44 @@
             </div>
 
             <!-- Active Reading Live Banner (iOS Style) -->
-            <div id="dash-live-session" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden" style="border-color: rgba(var(--accent-rgb),0.25)">
-              <div class="flex justify-between items-center">
-                <span class="section-label text-[10px]" style="color: var(--accent)"><i class="fa-solid fa-circle-play text-[9px] animate-pulse"></i> Active Reading Live Banner</span>
-                <span id="dash-live-eta-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
-              </div>
-              <div class="flex items-center gap-3.5 mt-0.5">
-                <div id="dash-live-cover-container" class="shrink-0">
-                  <div class="w-10 h-14 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center shadow-md overflow-hidden">
-                    <i class="fa-solid fa-book text-slate-500 text-lg"></i>
+            <div id="dash-live-session" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden animate-on-scroll" style="border-color: rgba(var(--accent-rgb),0.25)">
+              <!-- Cover-Adaptive Mesh Glow Orb (Feature 1) -->
+              <div id="dash-live-glow" class="dash-live-glow"></div>
+              
+              <div class="dash-live-content">
+                <div class="flex justify-between items-center">
+                  <span class="section-label text-[10px]" style="color: var(--accent)"><i class="fa-solid fa-circle-play text-[9px] animate-pulse"></i> Active Reading Live Banner</span>
+                  <span id="dash-live-eta-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
+                </div>
+                <div class="flex items-start gap-4 mt-1.5">
+                  <!-- Enlarged Cover with Glow Ring -->
+                  <div id="dash-live-cover-container" class="shrink-0 relative">
+                    <div class="w-16 h-24 rounded-xl bg-slate-800 border border-white/10 flex items-center justify-center shadow-lg overflow-hidden">
+                      <i class="fa-solid fa-book text-slate-500 text-xl"></i>
+                    </div>
+                  </div>
+                  <!-- Book Info & Enhanced Progress -->
+                  <div class="min-w-0 flex-1 flex flex-col justify-center gap-1.5">
+                    <div id="dash-live-title" class="text-sm font-black truncate" style="color: var(--text-primary)">No book currently in progress</div>
+                    <div id="dash-live-author" class="text-[10px] truncate" style="color: var(--text-secondary)">Select a book to start reading</div>
+                    <!-- Enhanced Progress Bar with Shimmer -->
+                    <div class="dash-live-progress-enhanced mt-1">
+                      <div id="dash-live-bar" class="bar-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] mt-0.5">
+                      <span id="dash-live-pages-label" style="color: var(--text-tertiary)"></span>
+                      <span id="dash-live-velocity-label" style="color: var(--text-tertiary)"></span>
+                    </div>
                   </div>
                 </div>
-                <div class="min-w-0 flex-1 flex flex-col justify-center">
-                  <div id="dash-live-title" class="text-xs font-black text-slate-100 truncate">No book currently in progress</div>
-                  <div id="dash-live-author" class="text-[10px] text-slate-400 truncate mt-0.5">Select a book to start reading</div>
-                  <div class="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden border border-white/5 mt-2">
-                    <div id="dash-live-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, var(--gold), var(--gold-light))"></div>
-                  </div>
+                <!-- Quick Action Buttons (Feature 1) -->
+                <div id="dash-live-actions" class="dash-live-actions mt-2 hidden">
+                  <button id="dash-live-focus-btn" class="dash-live-action-btn primary">
+                    <i class="fa-solid fa-play text-[10px]"></i> Focus Session
+                  </button>
+                  <button id="dash-live-quick-log-btn" class="dash-live-action-btn">
+                    <i class="fa-solid fa-plus text-[10px]" style="color: var(--gold)"></i> Quick Log
+                  </button>
                 </div>
               </div>
             </div>
@@ -478,27 +499,87 @@
                 <span class="text-[10px] font-medium truncate" style="color: rgba(var(--gold-rgb),0.7)" id="detail-pct">—</span>
               </div>
 
-              <!-- Streaks & Activity (Bento Grid Col Spanning 2) -->
-              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 col-span-2">
-                <span class="section-label"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent3)"></i> Streaks Summary</span>
-                <div class="grid grid-cols-3 gap-2">
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Current</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-cur">—</span>
+              <!-- Streaks & Activity — Triple Ring Display (Feature 4) -->
+              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 col-span-2 animate-on-scroll">
+                <span class="section-label"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent3)"></i> Streaks & Activity Rings</span>
+                
+                <div class="flex items-center gap-4">
+                  <!-- SVG Triple Concentric Rings -->
+                  <div class="streak-ring-container" id="streak-rings-svg">
+                    <!-- Outer Ring: Minutes (accent) -->
+                    <svg width="160" height="160" viewBox="0 0 160 160">
+                      <circle cx="80" cy="80" r="68" class="streak-ring-bg" stroke="rgba(var(--accent-rgb), 0.15)" />
+                      <circle cx="80" cy="80" r="68" class="streak-ring-fill" id="streak-ring-minutes"
+                        stroke="var(--accent)" stroke-dasharray="427" stroke-dashoffset="427" />
+                    </svg>
+                    <!-- Middle Ring: Pages (gold) -->
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="48" class="streak-ring-bg" stroke="rgba(var(--gold-rgb), 0.15)" />
+                      <circle cx="60" cy="60" r="48" class="streak-ring-fill" id="streak-ring-pages"
+                        stroke="var(--gold)" stroke-dasharray="301" stroke-dashoffset="301" />
+                    </svg>
+                    <!-- Inner Ring: Consistency (emerald) -->
+                    <svg width="80" height="80" viewBox="0 0 80 80">
+                      <circle cx="40" cy="40" r="28" class="streak-ring-bg" stroke="rgba(var(--emerald-rgb), 0.15)" />
+                      <circle cx="40" cy="40" r="28" class="streak-ring-fill" id="streak-ring-consistency"
+                        stroke="var(--emerald)" stroke-dasharray="176" stroke-dashoffset="176" />
+                    </svg>
+                    <!-- Center Streak Count -->
+                    <div class="streak-center-label">
+                      <div class="streak-center-number" id="stat-streak-cur">—</div>
+                      <div class="streak-center-text">Day Streak</div>
+                    </div>
                   </div>
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Longest</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-streak-max">—</span>
-                  </div>
-                  <div class="flex flex-col items-center bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Read Days</span>
-                    <span class="text-sm font-black mt-1 text-slate-100 tabular-nums" id="stat-days-total">—</span>
+
+                  <!-- Ring Legend -->
+                  <div class="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] font-semibold">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent)"></span>
+                        <span style="color: var(--text-secondary)">Minutes</span>
+                      </div>
+                      <span id="streak-legend-minutes" style="color: var(--accent)" class="font-bold tabular-nums">—</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] font-semibold">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background: var(--gold)"></span>
+                        <span style="color: var(--text-secondary)">Pages</span>
+                      </div>
+                      <span id="streak-legend-pages" style="color: var(--gold)" class="font-bold tabular-nums">—</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] font-semibold">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background: var(--emerald)"></span>
+                        <span style="color: var(--text-secondary)">Consistency</span>
+                      </div>
+                      <span id="streak-legend-consistency" style="color: var(--emerald)" class="font-bold tabular-nums">—</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[9px] pt-1 border-t border-white/5 font-semibold" style="color: var(--text-tertiary)">
+                      <span>Longest: <b style="color: var(--text-primary)" id="stat-streak-max">—</b></span>
+                      <span>Read Days: <b style="color: var(--text-primary)" id="stat-days-total">—</b></span>
+                    </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-3 gap-2 text-center text-[9px] text-slate-400 border-t border-white/5 pt-2 font-semibold">
-                  <div>Pages/Active Day: <b class="text-slate-200" id="stat-pages-active-avg">—</b></div>
-                  <div>% Days (Month): <b class="text-slate-200" id="stat-days-month-pct">—</b></div>
-                  <div>% Days (YTD): <b class="text-slate-200" id="stat-days-ytd-pct">—</b></div>
+
+                <!-- Stats Sub-Row (preserved) -->
+                <div class="grid grid-cols-3 gap-2 text-center text-[9px] border-t border-white/5 pt-2 font-semibold" style="color: var(--text-tertiary)">
+                  <div>Pages/Active Day: <b style="color: var(--text-primary)" id="stat-pages-active-avg">—</b></div>
+                  <div>% Days (Month): <b style="color: var(--text-primary)" id="stat-days-month-pct">—</b></div>
+                  <div>% Days (YTD): <b style="color: var(--text-primary)" id="stat-days-ytd-pct">—</b></div>
+                </div>
+
+                <!-- Streak Repair Token Widget (Feature 4) -->
+                <div class="streak-repair-widget" id="streak-repair-widget">
+                  <div class="flex items-center gap-3">
+                    <div class="streak-repair-icon">
+                      <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                      <div class="text-[11px] font-bold" style="color: var(--gold)" id="streak-repair-label">0 Streak Shields Available</div>
+                      <div class="text-[9px]" style="color: var(--text-tertiary)">Read 2× your daily target in one session to earn a shield</div>
+                    </div>
+                  </div>
+                  <div class="streak-repair-earn-btn" id="streak-repair-count">0</div>
                 </div>
               </div>
             </div>
@@ -580,6 +661,57 @@
                     <div id="yoy-pages-prev" class="w-8 text-xs font-black text-right tabular-nums opacity-75" style="color: var(--text-secondary)">0</div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+
+            <!-- ══════════════════════════════════════════════════════
+                 VELOCITY ANALYTICS (Feature 2) — Additive Section
+                 ══════════════════════════════════════════════════════ -->
+            <div class="text-[10px] font-black tracking-widest uppercase mt-4 border-b pb-2 flex items-center justify-between" style="color: var(--text-tertiary); border-color: var(--border)">
+              <span><i class="fa-solid fa-gauge-high mr-1" style="color: var(--accent2)"></i> Reading Velocity & Momentum</span>
+              <span class="text-[9px] font-bold opacity-60">Analytics</span>
+            </div>
+
+            <!-- Velocity Stat Cards -->
+            <div class="velocity-stats-grid animate-on-scroll stagger-children" id="dash-velocity-stats">
+              <div class="velocity-stat-card" style="border-color: rgba(var(--accent-rgb), 0.15)">
+                <span class="velocity-stat-label">Current Velocity</span>
+                <div class="flex items-center gap-2">
+                  <span class="velocity-stat-value" style="color: var(--accent)" id="vel-current">—</span>
+                  <span class="velocity-trend-badge up" id="vel-current-trend" style="display:none">
+                    <i class="fa-solid fa-arrow-trend-up text-[8px]"></i> <span id="vel-current-trend-val"></span>
+                  </span>
+                </div>
+                <span class="velocity-stat-detail">Pages / active day</span>
+              </div>
+              <div class="velocity-stat-card" style="border-color: rgba(var(--gold-rgb), 0.15)">
+                <span class="velocity-stat-label">30-Day Total</span>
+                <span class="velocity-stat-value" style="color: var(--gold)" id="vel-30d-total">—</span>
+                <span class="velocity-stat-detail" id="vel-30d-books">—</span>
+              </div>
+              <div class="velocity-stat-card" style="border-color: rgba(var(--emerald-rgb), 0.15)">
+                <span class="velocity-stat-label">Est. Annual Output</span>
+                <span class="velocity-stat-value" style="color: var(--emerald)" id="vel-annual">—</span>
+                <span class="velocity-stat-detail" id="vel-annual-detail">Based on current pace</span>
+              </div>
+              <div class="velocity-stat-card" style="border-color: rgba(var(--accent2-rgb), 0.15)">
+                <span class="velocity-stat-label">Focus Consistency</span>
+                <span class="velocity-stat-value" style="color: var(--accent2)" id="vel-consistency">—</span>
+                <span class="velocity-stat-detail" id="vel-consistency-detail">Active days / 30 days</span>
+              </div>
+            </div>
+
+            <!-- Velocity Burnup SVG Curve -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 animate-on-scroll">
+              <div class="flex justify-between items-center">
+                <span class="section-label text-[10px]" style="color: var(--text-secondary)">
+                  <i class="fa-solid fa-chart-line text-[10px]" style="color: var(--accent)"></i> Velocity Burnup — Actual vs Target Pace
+                </span>
+                <span id="vel-curve-status" class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
+              </div>
+              <div class="velocity-curve-container" id="velocity-curve-chart" style="height: 180px;">
+                <!-- Rendered dynamically by renderVelocityAnalytics() -->
               </div>
             </div>
 
