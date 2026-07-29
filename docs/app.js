@@ -635,6 +635,7 @@ async function verifyDoublePinForReset() {
         showToast('Failed to update PIN: ' + e.message, 'error');
       }
     });
+  }
 }
 
 function setupDailyTargetsSetting() {
