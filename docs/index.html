@@ -599,9 +599,6 @@
               <div id="heatmap-tooltip" class="absolute hidden z-20 pointer-events-none glass-panel p-2 text-[9px] shadow-xl font-bold leading-normal" style="color: var(--text-primary)"></div>
             </div>
 
-            <!-- Weekly Velocity -->
-            <div class="glass-panel p-4 rounded-2xl" id="dash-week-stats"></div>
-
             <!-- YTD vs Same Date Last Year (YOY card) -->
             <div id="dash-yoy-card" class="glass-panel p-4 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
               <div class="flex items-center justify-between mb-3">
@@ -662,7 +659,6 @@
               </div>
             </div>
 
-
             <!-- ══════════════════════════════════════════════════════
                  VELOCITY ANALYTICS (Feature 2) — Additive Section
                  ══════════════════════════════════════════════════════ -->
@@ -712,6 +708,9 @@
                 <!-- Rendered dynamically by renderVelocityAnalytics() -->
               </div>
             </div>
+
+            <!-- Weekly Velocity -->
+            <div class="glass-panel p-4 rounded-2xl" id="dash-week-stats"></div>
 
 
             <!-- ══════════════════════════════════════════════════════
@@ -923,6 +922,18 @@
               </div>
             </div>
 
+            <!-- Targets table / Projections & ETAs -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3" id="dash-year-progress-wrapper">
+              <span class="section-label"><i class="fa-solid fa-gauge-high text-[10px]" style="color: var(--accent3)"></i> Required Pace &amp; Projections</span>
+              <div id="dash-year-progress" class="flex flex-col gap-3"></div>
+            </div>
+
+            <!-- Milestone Projections -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3" id="dash-milestones-wrapper">
+              <span class="section-label"><i class="fa-solid fa-chart-line text-[10px]" style="color: var(--gold)"></i> Milestone Projections</span>
+              <div id="dash-milestones" class="flex flex-col gap-3"></div>
+            </div>
+
 
             <!-- ══════════════════════════════════════════════════════
                  CHAPTER 4: DEEP INSIGHTS & ANALYTICS
@@ -966,18 +977,6 @@
               <div id="chart-books-year-wrap" class="w-full flex justify-center py-2" style="height: 150px">
                 <!-- Rendered dynamically by JS -->
               </div>
-            </div>
-
-            <!-- Targets table / Projections & ETAs -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3" id="dash-year-progress-wrapper">
-              <span class="section-label"><i class="fa-solid fa-gauge-high text-[10px]" style="color: var(--accent3)"></i> Required Pace &amp; Projections</span>
-              <div id="dash-year-progress" class="flex flex-col gap-3"></div>
-            </div>
-
-            <!-- Milestone Projections -->
-            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3" id="dash-milestones-wrapper">
-              <span class="section-label"><i class="fa-solid fa-chart-line text-[10px]" style="color: var(--gold)"></i> Milestone Projections</span>
-              <div id="dash-milestones" class="flex flex-col gap-3"></div>
             </div>
 
             <!-- Combined Reading Records Card -->
