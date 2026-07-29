@@ -4641,7 +4641,7 @@ function renderHeatmap() {
   // Last 12 weeks = 84 days
   const today = new Date();
   const dates = [];
-  for (let i = 83; i >= 0; i--) {
+  for (let i = 0; i <= 83; i++) {
     const d = new Date(today.getTime() - i * 86400000);
     dates.push(d.toISOString().slice(0, 10));
   }
@@ -6576,7 +6576,7 @@ function renderActivityHeatmap(logs) {
 
   let activeCellsCount = 0;
   
-  for (let i = daysCount; i >= 0; i--) {
+  for (let i = 0; i <= daysCount; i++) {
     const activeDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
     const year = activeDate.getFullYear();
     const month = String(activeDate.getMonth() + 1).padStart(2, '0');
