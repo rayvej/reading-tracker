@@ -646,52 +646,18 @@
               <div id="heatmap-tooltip" class="absolute hidden z-20 pointer-events-none glass-panel p-2 text-[9px] shadow-xl font-bold leading-normal" style="color: var(--text-primary)"></div>
             </div>
 
-            <!-- Reading Horizon Predictor Card ("Life Reading Forecast") -->
-            <div id="reading-horizon-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden" style="border-color: rgba(var(--gold-rgb),0.25)">
+            <!-- Contextual Reading Productivity Heatmap (24x7 Matrix) -->
+            <div id="contextual-heatmap-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
               <div class="flex justify-between items-center">
-                <span class="section-label text-xs font-bold" style="color: var(--gold)">
-                  <i class="fa-solid fa-compass-drafting text-[11px]"></i> Life Reading Horizon Predictor
+                <span class="section-label" style="color: var(--text-secondary)">
+                  <i class="fa-solid fa-clock text-[10px]" style="color: var(--accent)"></i> Contextual Productivity Matrix (Hour x Day)
                 </span>
-                <span id="horizon-velocity-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">30-Day Velocity: —</span>
+                <span class="text-[9px] font-mono text-slate-400">24 HOUR × 7 DAY FOCUS INTENSITY</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-                <div class="p-3 rounded-xl border flex flex-col justify-between" style="background: var(--bg-input); border-color: var(--border)">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Reading Stack Completion</span>
-                  <div class="mt-2 text-sm font-bold text-slate-100" id="horizon-active-reads-forecast">Calculating pace...</div>
-                </div>
-                <div class="p-3 rounded-xl border flex flex-col justify-between" style="background: var(--bg-input); border-color: var(--border)">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Lifelong TBR Bookshelf Horizon</span>
-                  <div class="mt-2 text-sm font-bold text-amber-300" id="horizon-tbr-forecast">Calculating horizon...</div>
-                </div>
+              <div id="contextual-matrix-container" class="overflow-x-auto no-scrollbar py-1">
+                <!-- Rendered dynamically by JS -->
               </div>
-            </div>
-
-            <!-- Contextual Reading Productivity Heatmap (24x7 Matrix) & Genre Sunburst -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <!-- 24x7 Contextual Reading Matrix -->
-              <div id="contextual-heatmap-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                  <span class="section-label" style="color: var(--text-secondary)">
-                    <i class="fa-solid fa-clock text-[10px]" style="color: var(--accent)"></i> Contextual Productivity Matrix (Hour x Day)
-                  </span>
-                </div>
-                <div id="contextual-matrix-container" class="overflow-x-auto no-scrollbar py-1">
-                  <!-- Rendered dynamically by JS -->
-                </div>
-                <p id="contextual-peak-insight" class="text-[11px] font-semibold text-slate-300 italic border-t border-white/5 pt-2 mt-1">Peak focus reading hour: —</p>
-              </div>
-
-              <!-- Genre & Subject Sunburst / Radar Chart -->
-              <div id="genre-sunburst-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                  <span class="section-label" style="color: var(--text-secondary)">
-                    <i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent2)"></i> Genre &amp; Subject Distribution
-                  </span>
-                </div>
-                <div class="flex items-center justify-center p-2 min-h-[200px]">
-                  <canvas id="genre-sunburst-canvas" width="280" height="200" class="max-w-full"></canvas>
-                </div>
-              </div>
+              <p id="contextual-peak-insight" class="text-[11px] font-semibold text-slate-300 italic border-t border-white/5 pt-2 mt-1">Peak focus reading hour: —</p>
             </div>
 
             <!-- YTD vs Same Date Last Year (YOY card) -->
@@ -3265,6 +3231,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=92"></script>
+  <script type="module" src="app.js?v=93"></script>
 </body>
 </html>

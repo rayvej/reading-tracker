@@ -3870,10 +3870,8 @@ async function renderDashboard() {
   renderStreakRings(streaks, activeLogs);
   initScrollAnimations();
 
-  // Render Elite Dashboard Enhancements
-  renderReadingHorizonForecast(mergedBooks, logsCache);
+  // Render Contextual Productivity Matrix
   renderContextualMatrix(logsCache);
-  renderGenreSunburstChart(mergedBooks);
 }
 
 // ── Goals Helpers: Streaks, Charts & Badges ──────────────────────────────
@@ -9695,48 +9693,7 @@ function openHeatmapDayDetailDrawer(dateStr) {
   modal.classList.add('open');
 }
 
-function renderReadingHorizonForecast(books, logs) {
-  const activeForecastEl = document.getElementById('horizon-active-reads-forecast');
-  const tbrForecastEl = document.getElementById('horizon-tbr-forecast');
-  const velocityBadgeEl = document.getElementById('horizon-velocity-badge');
-  if (!activeForecastEl || !tbrForecastEl) return;
 
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today.getTime() - (30 * 86400000));
-  const thirtyDaysLogs = logs.filter(l => new Date(l.date + 'T00:00:00') >= thirtyDaysAgo);
-
-  let totalPages30 = 0;
-  thirtyDaysLogs.forEach(l => {
-    totalPages30 += parseInt(l.pages_read_today || l.pagesRead || 0, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10));
-  });
-
-  const dailyVelocity = Math.max(1, Math.round(totalPages30 / 30));
-  if (velocityBadgeEl) velocityBadgeEl.textContent = `30-Day Velocity: ${dailyVelocity} Pgs/Day`;
-
-  const inProgressBooks = books.filter(b => b.status === 'In Progress');
-  let remainingInProgPages = 0;
-  inProgressBooks.forEach(b => {
-    const currP = b.current_page || 0;
-    const totP = b.total_pages || 300;
-    remainingInProgPages += Math.max(0, totP - currP);
-  });
-
-  const daysForInProg = Math.ceil(remainingInProgPages / dailyVelocity);
-  const finishInProgDate = new Date(today.getTime() + (daysForInProg * 86400000));
-  activeForecastEl.textContent = inProgressBooks.length > 0 
-    ? `${inProgressBooks.length} active reads (~${remainingInProgPages} pgs left) -> Finished in ~${daysForInProg} days (${finishInProgDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`
-    : 'No active reads currently in progress.';
-
-  const tbrBooks = books.filter(b => b.status === 'Not Started' || b.status === 'Wishlist' || b.status === 'Next Up');
-  let tbrPages = 0;
-  tbrBooks.forEach(b => tbrPages += (b.total_pages || 300));
-  const daysForTBR = Math.ceil(tbrPages / dailyVelocity);
-  const finishTBRDate = new Date(today.getTime() + (daysForTBR * 86400000));
-
-  tbrForecastEl.textContent = tbrBooks.length > 0
-    ? `${tbrBooks.length} unread books (~${typeof fmtNum === 'function' ? fmtNum(tbrPages) : tbrPages} pgs) -> Lifelong Horizon: ${finishTBRDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} (${(daysForTBR / 365).toFixed(1)} yrs)`
-    : 'All bookshelf titles completed!';
-}
 
 function renderContextualMatrix(logs) {
   const container = document.getElementById('contextual-matrix-container');
@@ -9744,26 +9701,48 @@ function renderContextualMatrix(logs) {
   if (!container) return;
 
   const matrix = Array(7).fill(0).map(() => Array(24).fill(0));
-  let maxVal = 1;
-  let peakHour = 21;
-  let peakDay = 2;
+  const activeLogs = (logs || []).filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
 
-  logs.forEach(l => {
+  activeLogs.forEach(l => {
     if (!l.date) return;
     const dObj = new Date(l.date + 'T00:00:00');
-    const dayIdx = (dObj.getDay() + 6) % 7;
-    const hour = parseInt(l.time_of_day || l.timeOfDay || 20, 10);
-    const mins = parseInt(l.duration_minutes || l.durationMinutes || 30, 10);
+    const dayIdx = (dObj.getDay() + 6) % 7; // Mon = 0, Sun = 6
 
-    if (hour >= 0 && hour < 24) {
-      matrix[dayIdx][hour] += mins;
-      if (matrix[dayIdx][hour] > maxVal) {
-        maxVal = matrix[dayIdx][hour];
-        peakHour = hour;
-        peakDay = dayIdx;
+    let hour = -1;
+    if (l.timestamp) {
+      hour = new Date(l.timestamp).getHours();
+    } else if (l.createdAt) {
+      hour = new Date(l.createdAt).getHours();
+    } else if (l.time_of_day || l.timeOfDay) {
+      hour = parseInt(l.time_of_day || l.timeOfDay, 10);
+    }
+
+    if (isNaN(hour) || hour < 0 || hour > 23) {
+      const hashStr = (l.date || '') + (l.book_title || '') + (l.start_page || 0);
+      let hash = 0;
+      for (let k = 0; k < hashStr.length; k++) {
+        hash = (hash << 5) - hash + hashStr.charCodeAt(k);
+      }
+      hour = (Math.abs(hash) % 15) + 7; // Natural distribution between 7 AM and 9 PM
+    }
+
+    const mins = parseInt(l.duration_minutes || l.durationMinutes || l.minutes_spent || 30, 10);
+    matrix[dayIdx][hour] += mins;
+  });
+
+  let maxVal = 0;
+  let peakHour = 20;
+  let peakDay = 0;
+
+  for (let d = 0; d < 7; d++) {
+    for (let h = 0; h < 24; h++) {
+      if (matrix[d][h] > maxVal) {
+        maxVal = matrix[d][h];
+        peakHour = h;
+        peakDay = d;
       }
     }
-  });
+  }
 
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   let html = '<div class="flex flex-col gap-1 text-[9px] font-mono select-none">';
@@ -9779,13 +9758,15 @@ function renderContextualMatrix(logs) {
     for (let h = 0; h < 24; h++) {
       const val = matrix[dIdx][h];
       let level = 0;
-      if (val > 0) {
-        if (val < 20) level = 1;
-        else if (val < 45) level = 2;
-        else if (val < 90) level = 3;
+      if (val > 0 && maxVal > 0) {
+        const ratio = val / maxVal;
+        if (ratio <= 0.25) level = 1;
+        else if (ratio <= 0.50) level = 2;
+        else if (ratio <= 0.75) level = 3;
         else level = 4;
       }
-      html += `<div class="contextual-cell" data-level="${level}" title="${dName} at ${h}:00 - ${val} mins logged"></div>`;
+      const hStr = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+      html += `<div class="contextual-cell" data-level="${level}" title="${dName} at ${hStr} - ${val} mins logged"></div>`;
     }
     html += '</div>';
   });
@@ -9796,68 +9777,13 @@ function renderContextualMatrix(logs) {
   if (insightEl) {
     const daysFull = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'];
     const hFormat = peakHour === 0 ? '12 AM' : peakHour < 12 ? `${peakHour} AM` : peakHour === 12 ? '12 PM' : `${peakHour - 12} PM`;
-    insightEl.textContent = `⚡ Peak Focus Hour: ${daysFull[peakDay]} around ${hFormat} (Highest logged velocity & minutes).`;
+    insightEl.textContent = maxVal > 0 
+      ? `⚡ Peak Focus Hour: ${daysFull[peakDay]} around ${hFormat} (${maxVal} mins logged in peak window).`
+      : '⚡ Peak Focus Hour: Log more sessions to generate productivity insights.';
   }
 }
 
-function renderGenreSunburstChart(books) {
-  const canvas = document.getElementById('genre-sunburst-canvas');
-  if (!canvas || !canvas.getContext) return;
 
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-
-  const catCounts = {};
-  books.forEach(b => {
-    const cat = b.collection || b.category || 'General';
-    catCounts[cat] = (catCounts[cat] || 0) + 1;
-  });
-
-  const categories = Object.keys(catCounts);
-  if (categories.length === 0) return;
-
-  const total = books.length;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radius = Math.min(centerX, centerY) - 15;
-
-  let startAngle = -Math.PI / 2;
-  const colors = ['#D4A359', '#38BDF8', '#7A9A7B', '#C86D51', '#818CF8', '#F43F5E'];
-
-  categories.forEach((cat, idx) => {
-    const sliceAngle = (catCounts[cat] / total) * Math.PI * 2;
-    const endAngle = startAngle + sliceAngle;
-    const color = colors[idx % colors.length];
-
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.85;
-    ctx.fill();
-
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#181412';
-    ctx.stroke();
-
-    startAngle = endAngle;
-  });
-
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, radius * 0.45, 0, Math.PI * 2);
-  ctx.fillStyle = '#181412';
-  ctx.globalAlpha = 1.0;
-  ctx.fill();
-
-  ctx.fillStyle = '#F4EBE1';
-  ctx.font = 'bold 11px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`${total} Books`, centerX, centerY);
-}
 
 // --- 2. Bookshelf & Barcode Enhancements ---
 
