@@ -2139,3 +2139,17 @@ body.light-mode .fab-log-btn {
 #knowledge-mind-graph-canvas {
   touch-action: none;
 }
+
+/* Starter Importer Precision Button Styles */
+.starter-prec-btn {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.starter-prec-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+

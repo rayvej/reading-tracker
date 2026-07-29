@@ -349,6 +349,7 @@ async function initApp() {
   setupLogDetailSheet();
   setupHaptics();
   setupSettingsModal();
+  setupStarterImportModal();
   setupAccountView();
   showView('dashboard'); // Start on Dashboard
   
@@ -394,6 +395,11 @@ async function loadDatabaseData() {
         monthly_books_target: 1,
         monthly_pages_target: 300
       }, { merge: true });
+    }
+
+    // Auto-prompt clean users (0 books) with the Starter Completion Importer
+    if (booksCache.length === 0 && uid && !localStorage.getItem('rt_starter_dismissed_' + uid)) {
+      setTimeout(() => openStarterImportModal(), 600);
     }
   } catch (e) {
     console.error("Failed to load library database:", e);
@@ -861,6 +867,327 @@ async function verifyDoublePinForReset() {
         showToast('Failed to update PIN: ' + e.message, 'error');
       }
     });
+  }
+}
+
+// ── Starter / Fast Completion Importer Modal ─────────────────────────────────
+let starterSelectedPrecision = 'year'; // 'year' | 'finish' | 'range' | 'detailed'
+let starterSelectedRating = 0;
+let starterSessionBatchCount = 0;
+
+function setupStarterImportModal() {
+  const modal = $('starter-import-modal');
+  if (!modal) return;
+
+  // Open button in Settings modal
+  const btnSettingsOpen = $('btn-open-starter-importer');
+  if (btnSettingsOpen) {
+    btnSettingsOpen.addEventListener('click', () => {
+      const settingsModal = $('settings-modal');
+      if (settingsModal) settingsModal.classList.remove('open');
+      openStarterImportModal();
+    });
+  }
+
+  // Close / Skip buttons
+  const btnClose = $('starter-modal-close');
+  const btnSkip = $('starter-modal-skip');
+  if (btnClose) btnClose.addEventListener('click', () => closeStarterImportModal());
+  if (btnSkip) btnSkip.addEventListener('click', () => closeStarterImportModal());
+
+  // Precision selector buttons
+  const precBtns = {
+    year: $('btn-starter-prec-year'),
+    finish: $('btn-starter-prec-finish'),
+    range: $('btn-starter-prec-range'),
+    detailed: $('btn-starter-prec-detailed'),
+    unknown: $('btn-starter-prec-unknown')
+  };
+
+  const precSecs = {
+    year: $('starter-prec-sec-year'),
+    finish: $('starter-prec-sec-finish'),
+    range: $('starter-prec-sec-range'),
+    detailed: $('starter-prec-sec-detailed'),
+    unknown: $('starter-prec-sec-unknown')
+  };
+
+  Object.keys(precBtns).forEach(key => {
+    if (!precBtns[key]) return;
+    precBtns[key].addEventListener('click', () => {
+      starterSelectedPrecision = key;
+      Object.keys(precBtns).forEach(k => {
+        if (precBtns[k]) precBtns[k].classList.toggle('active', k === key);
+        if (precSecs[k]) precSecs[k].classList.toggle('hidden', k !== key);
+      });
+    });
+  });
+
+  // Rating stars
+  const starBtns = document.querySelectorAll('.starter-star');
+  starBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rating = parseInt(btn.dataset.star, 10);
+      starterSelectedRating = rating;
+      starBtns.forEach((b, idx) => {
+        b.classList.toggle('text-amber-400', idx < rating);
+        b.classList.toggle('text-slate-500', idx >= rating);
+      });
+    });
+  });
+
+  // Save buttons
+  const btnSaveAnother = $('starter-modal-save-another');
+  const btnSaveDone = $('starter-modal-save-done');
+
+  if (btnSaveAnother) {
+    btnSaveAnother.addEventListener('click', async () => {
+      await saveStarterBook(true);
+    });
+  }
+
+  if (btnSaveDone) {
+    btnSaveDone.addEventListener('click', async () => {
+      await saveStarterBook(false);
+    });
+  }
+}
+
+function openStarterImportModal() {
+  const modal = $('starter-import-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  starterSessionBatchCount = 0;
+  updateStarterBatchBadge();
+  resetStarterForm();
+}
+window.openStarterImportModal = openStarterImportModal;
+
+function closeStarterImportModal() {
+  const modal = $('starter-import-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  if (uid) {
+    localStorage.setItem('rt_starter_dismissed_' + uid, 'true');
+  }
+}
+
+function updateStarterBatchBadge() {
+  const badge = $('starter-batch-badge');
+  const badgeText = $('starter-batch-count-text');
+  if (!badge || !badgeText) return;
+  if (starterSessionBatchCount > 0) {
+    badgeText.textContent = `${starterSessionBatchCount} book${starterSessionBatchCount > 1 ? 's' : ''} added this session`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function resetStarterForm() {
+  if ($('starter-book-title')) $('starter-book-title').value = '';
+  if ($('starter-book-author')) $('starter-book-author').value = '';
+  if ($('starter-book-pages')) $('starter-book-pages').value = '300';
+  if ($('starter-book-notes')) $('starter-book-notes').value = '';
+
+  starterSelectedRating = 0;
+  document.querySelectorAll('.starter-star').forEach(b => {
+    b.classList.remove('text-amber-400');
+    b.classList.add('text-slate-500');
+  });
+
+  const todayStr = todayISO();
+  const currentYr = new Date().getFullYear();
+  if ($('starter-input-year')) $('starter-input-year').value = currentYr;
+  if ($('starter-input-finish-date')) $('starter-input-finish-date').value = todayStr;
+  if ($('starter-input-start-date')) $('starter-input-start-date').value = todayStr;
+  if ($('starter-input-end-date')) $('starter-input-end-date').value = todayStr;
+  if ($('starter-input-det-start')) $('starter-input-det-start').value = todayStr;
+  if ($('starter-input-det-end')) $('starter-input-det-end').value = todayStr;
+  if ($('starter-input-det-daily-pages')) $('starter-input-det-daily-pages').value = '';
+}
+
+async function saveStarterBook(batchContinue) {
+  const title = ($('starter-book-title')?.value || '').trim();
+  if (!title) {
+    showToast('Please enter a book title', 'error');
+    if ($('starter-book-title')) $('starter-book-title').focus();
+    return;
+  }
+
+  const author = ($('starter-book-author')?.value || '').trim();
+  const format = $('starter-book-format')?.value || 'Physical Book';
+  const totalPages = parseInt($('starter-book-pages')?.value || '300', 10) || 300;
+  const category = $('starter-book-category')?.value || 'Non-Fiction';
+  const notes = ($('starter-book-notes')?.value || '').trim();
+
+  let finishDate = todayISO();
+  let startDate = todayISO();
+  let createdLogs = [];
+
+  const currentYear = new Date().getFullYear();
+
+  if (starterSelectedPrecision === 'year') {
+    const yr = parseInt($('starter-input-year')?.value || currentYear, 10) || currentYear;
+    if (yr === currentYear) {
+      finishDate = todayISO();
+    } else {
+      finishDate = `${yr}-12-31`;
+    }
+    startDate = `${yr}-01-01`;
+    createdLogs.push({
+      date: finishDate,
+      pages_read: totalPages,
+      read_cycle: 1,
+      note: notes ? `Finished in ${yr}: ${notes}` : `Finished in ${yr}`
+    });
+  } else if (starterSelectedPrecision === 'finish') {
+    finishDate = $('starter-input-finish-date')?.value || todayISO();
+    startDate = finishDate;
+    createdLogs.push({
+      date: finishDate,
+      pages_read: totalPages,
+      read_cycle: 1,
+      note: notes || 'Completed'
+    });
+  } else if (starterSelectedPrecision === 'range') {
+    startDate = $('starter-input-start-date')?.value || todayISO();
+    finishDate = $('starter-input-end-date')?.value || todayISO();
+    if (startDate > finishDate) finishDate = startDate;
+
+    if (startDate === finishDate) {
+      createdLogs.push({
+        date: finishDate,
+        pages_read: totalPages,
+        read_cycle: 1,
+        note: notes || 'Completed'
+      });
+    } else {
+      const halfPages = Math.max(1, Math.floor(totalPages / 2));
+      const remPages = totalPages - halfPages;
+      createdLogs.push({
+        date: startDate,
+        pages_read: halfPages,
+        read_cycle: 1,
+        note: 'Started reading'
+      });
+      createdLogs.push({
+        date: finishDate,
+        pages_read: remPages,
+        read_cycle: 1,
+        note: notes ? `Finished: ${notes}` : 'Completed'
+      });
+    }
+  } else if (starterSelectedPrecision === 'detailed') {
+    startDate = $('starter-input-det-start')?.value || todayISO();
+    finishDate = $('starter-input-det-end')?.value || todayISO();
+    if (startDate > finishDate) finishDate = startDate;
+
+    const dailyPace = parseInt($('starter-input-det-daily-pages')?.value || '0', 10);
+    const startMs = new Date(startDate + 'T00:00:00').getTime();
+    const endMs = new Date(finishDate + 'T00:00:00').getTime();
+    const dayDiff = Math.max(1, Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
+
+    if (dailyPace > 0 && dayDiff > 1) {
+      let pagesRemaining = totalPages;
+      let currMs = startMs;
+      while (pagesRemaining > 0 && currMs <= endMs) {
+        const pagesToday = Math.min(pagesRemaining, dailyPace);
+        const dStr = new Date(currMs).toISOString().slice(0, 10);
+        createdLogs.push({
+          date: dStr,
+          pages_read: pagesToday,
+          read_cycle: 1,
+          note: pagesRemaining === pagesToday ? (notes || 'Completed') : ''
+        });
+        pagesRemaining -= pagesToday;
+        currMs += 86400000;
+      }
+      if (pagesRemaining > 0) {
+        createdLogs.push({
+          date: finishDate,
+          pages_read: pagesRemaining,
+          read_cycle: 1,
+          note: notes || 'Completed'
+        });
+      }
+    } else {
+      createdLogs.push({
+        date: finishDate,
+        pages_read: totalPages,
+        read_cycle: 1,
+        note: notes || 'Completed'
+      });
+    }
+  } else if (starterSelectedPrecision === 'unknown') {
+    finishDate = '';
+    startDate = '';
+    createdLogs.push({
+      date: todayISO(),
+      pages_read: totalPages,
+      read_cycle: 1,
+      note: notes ? `Completed (Date Unknown): ${notes}` : 'Completed (Date Unknown)'
+    });
+  }
+
+  try {
+    const bookData = {
+      title,
+      author,
+      format,
+      total_pages: totalPages,
+      current_page: totalPages,
+      status: 'completed',
+      category,
+      rating: starterSelectedRating || 0,
+      notes: notes || '',
+      start_date: startDate,
+      finish_date: finishDate,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp()
+    };
+
+    const bookRef = await addDoc(collection(db, `users/${uid}/books`), bookData);
+    const newBookId = bookRef.id;
+
+    for (const l of createdLogs) {
+      await addDoc(collection(db, `users/${uid}/reading_logs`), {
+        book_id: newBookId,
+        book_title: title,
+        date: l.date,
+        pages_read: l.pages_read,
+        read_cycle: 1,
+        note: l.note || '',
+        created_at: serverTimestamp()
+      });
+    }
+
+    booksCache = [];
+    logsCache = [];
+    await loadBooksCache();
+    await loadLogsCache();
+
+    populateBookDropdown();
+    if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
+
+    if (currentView === 'dashboard') renderDashboard();
+    if (currentView === 'goals') renderGoals();
+    if (currentView === 'wishlist') renderBookshelf();
+
+    starterSessionBatchCount++;
+    updateStarterBatchBadge();
+
+    if (batchContinue) {
+      showToast(`Saved "${title}"! Ready for next book.`, 'success');
+      resetStarterForm();
+      if ($('starter-book-title')) $('starter-book-title').focus();
+    } else {
+      closeStarterImportModal();
+      showToast(`Added "${title}" to completed library!`, 'success');
+    }
+  } catch (err) {
+    console.error("Failed to save starter book:", err);
+    showToast('Failed to save book: ' + err.message, 'error');
   }
 }
 
