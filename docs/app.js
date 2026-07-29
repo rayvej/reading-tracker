@@ -2486,8 +2486,35 @@ function renderLiveSessionBanner(books, logs) {
     etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
   }
 
-  // Show action buttons
+  // Show & Wire Action Buttons
   if (actionsEl) actionsEl.classList.remove('hidden');
+
+  const focusBtn = $('dash-live-focus-btn');
+  if (focusBtn) {
+    focusBtn.onclick = (e) => {
+      e.stopPropagation();
+      triggerHaptic();
+      if (typeof window.openFullTimerSession === 'function' && activeBook) {
+        window.openFullTimerSession(activeBook);
+      }
+    };
+  }
+
+  const quickLogBtn = $('dash-live-quick-log-btn');
+  if (quickLogBtn) {
+    quickLogBtn.onclick = (e) => {
+      e.stopPropagation();
+      triggerHaptic();
+      showView('log');
+      const sel = $('log-book');
+      if (sel && activeBook) {
+        sel.value = activeBook.title;
+        if (typeof handleBookSelection === 'function') {
+          handleBookSelection(activeBook.title, (typeof booksCache !== 'undefined' ? booksCache : []), (typeof logsCache !== 'undefined' ? logsCache : []));
+        }
+      }
+    };
+  }
 
   // Cover-Adaptive Mesh Glow — Extract dominant color from cover image
   if (glowEl && activeBook.cover_url) {
