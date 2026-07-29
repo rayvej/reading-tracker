@@ -13,6 +13,9 @@ __pycache__/
 # macOS junk
 .DS_Store
 
+# Node modules & dependencies
+node_modules/
+
 # Editor folders
 .vscode/
 .idea/

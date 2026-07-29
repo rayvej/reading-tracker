@@ -27,9 +27,9 @@
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- SheetJS for Excel (.xlsx) workbook export -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- JSZip for Markdown Vault Archive ZIP export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=89">
+  <link rel="stylesheet" href="style.css?v=93">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1468,8 +1468,8 @@
               </select>
             </div>
 
-            <!-- Status Segment Control (Includes Next Up & DNF) -->
-            <div class="seg-control flex-wrap" id="bookshelf-filter-status">
+            <!-- Status Segment Control (Horizontal Scroll Pill Bar) -->
+            <div class="seg-control seg-control-scrollable my-2" id="bookshelf-filter-status">
               <button class="seg-btn active" data-bsf="All">All</button>
               <button class="seg-btn" data-bsf="Next Up">⚡ Next Up</button>
               <button class="seg-btn" data-bsf="Not Started">Not Started</button>
@@ -1478,10 +1478,9 @@
               <button class="seg-btn" data-bsf="Wishlist">Wishlist</button>
               <button class="seg-btn" data-bsf="DNF">DNF / Paused</button>
             </div>
-            </div>
 
             <!-- Ownership Filter Segment Control -->
-            <div class="seg-control mt-1" id="bookshelf-filter-ownership">
+            <div class="seg-control mt-1 mb-4" id="bookshelf-filter-ownership">
               <button class="seg-btn active" data-bfo="All">All</button>
               <button class="seg-btn" data-bfo="Owned">Owned</button>
               <button class="seg-btn" data-bfo="Borrowed">Borrowed</button>

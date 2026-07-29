@@ -79,3 +79,16 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+// ── Background Sync: auto-flush pending reading logs when online ──────────────
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-reading-logs') {
+    event.waitUntil(
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'SYNC_OFFLINE_LOGS' });
+        });
+      })
+    );
+  }
+});

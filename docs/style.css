@@ -688,6 +688,21 @@ body.light-mode #tab-bar {
   display: none;
 }
 
+.seg-control.seg-control-scrollable {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+.seg-control.seg-control-scrollable::-webkit-scrollbar {
+  display: none;
+}
+.seg-control.seg-control-scrollable .seg-btn {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  font-size: 11.5px;
+}
+
 .seg-btn {
   flex: 1;
   border: none;

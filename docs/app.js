@@ -163,6 +163,7 @@ function setEditorialMode(mode) {
   localStorage.setItem('rt_theme', mode);
 
   const isLight = mode === 'light';
+  updateMetaThemeColor(isLight);
 
   const icon = document.getElementById('theme-icon');
   if (icon) {
@@ -1721,47 +1722,6 @@ function populateBookDropdown() {
   }
 }
 
-async function determineActiveCycleAndPage(title) {
-  const book = booksCache.find(b => b.title === title);
-  if (!book) return { cycle: 1, startPage: 0 };
-  const tot = book.total_pages || 1;
-  
-  // Get all logs for this book
-  const q = query(
-    collection(db, `users/${uid}/reading_logs`),
-    where('book_title', '==', title)
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) {
-    return { cycle: 1, startPage: 0 };
-  }
-  
-  const cycleLogs = {};
-  snap.docs.forEach(doc => {
-    const data = doc.data();
-    const c = data.read_cycle || 1;
-    if (!cycleLogs[c]) cycleLogs[c] = [];
-    cycleLogs[c].push(data);
-  });
-  
-  const cycles = Object.keys(cycleLogs).map(Number);
-  const maxCycle = Math.max(...cycles);
-  
-  const logsInMaxCycle = cycleLogs[maxCycle];
-  logsInMaxCycle.sort((a, b) => {
-    return b.date.localeCompare(a.date) || (b.end_page - a.end_page);
-  });
-  
-  const latestLog = logsInMaxCycle[0];
-  const lastEndPage = latestLog.end_page || 0;
-  
-  if (lastEndPage >= tot) {
-    return { cycle: maxCycle + 1, startPage: 0 };
-  } else {
-    return { cycle: maxCycle, startPage: lastEndPage };
-  }
-}
-
 async function submitLog() {
   const title   = $('log-book').value;
   const date    = $('log-date').value;
@@ -1799,6 +1759,10 @@ async function submitLog() {
 
     const pages = end - start;
     showToast(`✓ Logged ${pages} page${pages === 1 ? '' : 's'} in "${title.slice(0, 30)}${title.length > 30 ? '…' : ''}"`, 'success');
+
+    if (typeof openPostSessionReflectionModal === 'function') {
+      openPostSessionReflectionModal(null, title);
+    }
 
     // Refresh books cache so dropdown updates
     await loadBooksCache();
@@ -4307,7 +4271,11 @@ function setupGoalsPresetsAndSteppers() {
 
 // ── Goals & Projections Main ──────────────────────────────────────────────────
 function setupGoals() {
-  $('btn-edit-goals').addEventListener('click', openGoalsModal);
+  const btn = $('btn-edit-goals');
+  if (!btn || btn.dataset.initialized) return;
+  btn.dataset.initialized = 'true';
+
+  btn.addEventListener('click', openGoalsModal);
   $('goals-modal-close').addEventListener('click', closeGoalsModal);
   $('goals-modal').addEventListener('click', e => { if (e.target === $('goals-modal')) closeGoalsModal(); });
   $('goals-modal-save').addEventListener('click', saveGoals);
@@ -5266,6 +5234,13 @@ function renderHeatmap() {
     
     const d = new Date(dStr + 'T00:00:00');
     cell.title = `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${pages} pages read`;
+    cell.onclick = () => {
+      const dayLogs = activeLogs.filter(l => l.date === dStr);
+      const booksReadList = [...new Set(dayLogs.map(l => l.book_title).filter(Boolean))];
+      if (typeof openHeatmapDayModal === 'function') {
+        openHeatmapDayModal(dStr, dayLogs, booksReadList);
+      }
+    };
     container.appendChild(cell);
   });
 }
@@ -7168,6 +7143,7 @@ function toggleCustomGroupInput(val) {
     }
   }
 }
+window.toggleCustomGroupInput = toggleCustomGroupInput;
 
 // =========================================================================
 // SECTION 6: GITHUB-STYLE INTENSITY HEATMAP MATRIX (Interactive Tooltips & HSL Colors)
