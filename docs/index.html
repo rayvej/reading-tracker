@@ -48,7 +48,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=88">
+  <link rel="stylesheet" href="style.css?v=89">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -888,31 +888,34 @@
               <span class="text-[9px] font-bold opacity-60">Chapter 3</span>
             </div>
 
-            <div class="flex flex-col gap-4">
-              <!-- Books milestones -->
-              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5 w-full">
-                <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                  <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-xl flex items-center justify-center text-xs" style="background: rgba(var(--gold-rgb), 0.15); color: var(--gold)">
-                      <i class="fa-solid fa-trophy"></i>
-                    </div>
-                    <span class="font-bold text-xs uppercase tracking-wider" style="color: var(--text-primary)">Books Milestones</span>
-                  </div>
+            <!-- Combined Reading Milestones Card -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5 w-full" id="dash-milestones-card">
+              <div class="flex items-center justify-between">
+                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-trophy text-[10px]" style="color: var(--gold)"></i> Reading Milestones</span>
+              </div>
+              <div id="dash-milestones-tab-bar" class="seg-control w-full flex">
+                <button data-tab="books" class="seg-btn active flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-book-bookmark text-[10px]" style="color: var(--gold)"></i> Books Milestones
+                </button>
+                <button data-tab="pages" class="seg-btn flex-1 py-1.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-file-lines text-[10px]" style="color: var(--emerald)"></i> Pages Milestones
+                </button>
+              </div>
+
+              <!-- Books Milestones Panel -->
+              <div id="dash-ms-panel-books" class="dash-ms-panel flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-2 pb-1 border-b border-white/10">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Books Progress</span>
                   <span id="ms-books-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap border" style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary)">0 Books</span>
                 </div>
                 <div id="ms-books-featured"></div>
                 <div class="flex flex-col gap-2" id="ms-books-badges"></div>
               </div>
 
-              <!-- Pages milestones -->
-              <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5 w-full">
-                <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                  <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-xl flex items-center justify-center text-xs" style="background: rgba(var(--emerald-rgb), 0.15); color: var(--emerald)">
-                      <i class="fa-solid fa-medal"></i>
-                    </div>
-                    <span class="font-bold text-xs uppercase tracking-wider" style="color: var(--text-primary)">Pages Milestones</span>
-                  </div>
+              <!-- Pages Milestones Panel -->
+              <div id="dash-ms-panel-pages" class="dash-ms-panel hidden flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-2 pb-1 border-b border-white/10">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pages Progress</span>
                   <span id="ms-pages-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap border" style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary)">0 Pages</span>
                 </div>
                 <div id="ms-pages-featured"></div>
@@ -2976,6 +2979,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=88"></script>
+  <script type="module" src="app.js?v=89"></script>
 </body>
 </html>

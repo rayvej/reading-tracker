@@ -2070,6 +2070,26 @@ function setupDashboard() {
       });
     });
   }
+
+  // Dashboard Reading Milestones Tab Switcher (Books Milestones, Pages Milestones)
+  const milestonesTabBar = document.getElementById('dash-milestones-tab-bar');
+  if (milestonesTabBar) {
+    milestonesTabBar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        milestonesTabBar.querySelectorAll('button').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === targetTab);
+        });
+        document.querySelectorAll('.dash-ms-panel').forEach(panel => {
+          const isActive = panel.id === `dash-ms-panel-${targetTab}`;
+          panel.classList.toggle('hidden', !isActive);
+          if (isActive) {
+            panel.classList.add('animate-fade-in');
+          }
+        });
+      });
+    });
+  }
 }
 
 function getMedian(arr) {
