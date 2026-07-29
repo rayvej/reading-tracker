@@ -272,9 +272,14 @@
               <div class="form-control">
                 <label class="label py-1 flex items-center justify-between">
                   <span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span>
-                  <button type="button" id="scan-page-trigger" class="inline-flex items-center gap-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-sky-500/20 active:scale-95 transition-all cursor-pointer">
-                    <i class="fa-solid fa-camera"></i> Scan Page
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button type="button" id="log-btn-dictate" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 flex items-center gap-1 cursor-pointer" title="Voice Dictation">
+                      <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+                    </button>
+                    <button type="button" id="scan-page-trigger" class="inline-flex items-center gap-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-sky-500/20 active:scale-95 transition-all cursor-pointer">
+                      <i class="fa-solid fa-camera"></i> Scan Page
+                    </button>
+                  </div>
                 </label>
                 <div class="relative w-full">
                   <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" placeholder="Reflections, insights…"></textarea>
@@ -309,12 +314,19 @@
           <div class="p-5 flex flex-col gap-5 animate-fade-in">
 
             <!-- Header -->
-            <div class="flex justify-between items-center pt-1">
+            <div class="flex justify-between items-center pt-1 flex-wrap gap-2">
               <div>
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Notes &amp; Quotes</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your reflections, highlights &amp; knowledge vault</p>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Spaced Repetition Review Button -->
+                <button id="btn-spaced-repetition"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style="background: rgba(var(--accent2-rgb),0.15); border-color: rgba(var(--accent2-rgb),0.35); color: var(--gold)"
+                  title="Daily Spaced Repetition Flashcard Review">
+                  <i class="fa-solid fa-brain text-xs"></i> Daily Review
+                </button>
                 <button id="btn-quick-note-open"
                   class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
                   style="background: var(--gold)"
@@ -327,6 +339,14 @@
                   title="Export Obsidian Markdown Vault ZIP">
                   <i class="fa-solid fa-file-zipper text-xs"></i> Export
                 </button>
+              </div>
+            </div>
+
+            <!-- Notes Stats Summary Bar & View Mode Toggle -->
+            <div class="flex justify-between items-center gap-2 flex-wrap">
+              <div class="seg-control" id="knowledge-view-mode-toggle" style="width: auto">
+                <button class="seg-btn active px-3 py-1 text-xs" data-mode="feed"><i class="fa-solid fa-list"></i> Feed View</button>
+                <button class="seg-btn px-3 py-1 text-xs" data-mode="graph"><i class="fa-solid fa-diagram-project"></i> Mind Graph</button>
               </div>
             </div>
 
@@ -386,6 +406,24 @@
               <button class="quote-tag" data-tag="quotes"><i class="fa-solid fa-quote-left"></i> Highlights</button>
               <button class="quote-tag" data-tag="reflections"><i class="fa-solid fa-pen-nib"></i> Reflections</button>
               <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star text-amber-400"></i> Favorites</button>
+            </div>
+
+            <!-- Mind Graph View Canvas Container (Hidden by default) -->
+            <div id="knowledge-mind-graph-container" class="hidden glass-panel p-4 rounded-3xl flex flex-col gap-3 relative border border-amber-500/20">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-diagram-project"></i> Interactive Concept &amp; Quote Mind Graph</span>
+                <span class="text-[10px] text-slate-400">DRAG NODES • CLICK TO INSPECT</span>
+              </div>
+              <div class="relative w-full h-[450px] rounded-2xl overflow-hidden bg-slate-950/80 border border-white/10 flex items-center justify-center">
+                <canvas id="knowledge-mind-graph-canvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+                <div id="graph-node-preview" class="absolute bottom-3 left-3 right-3 glass-panel p-3 rounded-xl hidden text-xs flex justify-between items-center border border-amber-400/30 shadow-2xl">
+                  <div class="min-w-0 flex-1 pr-2">
+                    <span id="graph-preview-title" class="font-bold text-amber-300 block truncate">—</span>
+                    <span id="graph-preview-body" class="text-slate-200 line-clamp-1 text-[11px]">—</span>
+                  </div>
+                  <button id="graph-preview-close" class="text-slate-400 hover:text-slate-100 p-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
             </div>
 
             <!-- Quote Feed Container -->
@@ -584,12 +622,21 @@
 
             <!-- Reading Intensity Grid (GitHub-style) -->
             <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl relative">
-              <div class="flex justify-between items-center gap-2">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <div class="seg-control" id="dash-heatmap-tf" style="width: auto">
-                  <button class="seg-btn active px-2 py-0.5 text-[8px]" data-range="pastYear">Past Year</button>
-                  <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="thisYear">This Year</button>
-                  <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="allTime">All Time</button>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <!-- Metric Selector (Pages / Mins / Sessions / Notes) -->
+                  <div class="seg-control" id="dash-heatmap-metric" style="width: auto">
+                    <button class="seg-btn active px-2 py-0.5 text-[8px]" data-metric="pages">Pages</button>
+                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="duration">Mins</button>
+                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="sessions">Logs</button>
+                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="notes">Notes</button>
+                  </div>
+                  <div class="seg-control" id="dash-heatmap-tf" style="width: auto">
+                    <button class="seg-btn active px-2 py-0.5 text-[8px]" data-range="pastYear">Past Year</button>
+                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="thisYear">This Year</button>
+                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="allTime">All Time</button>
+                  </div>
                 </div>
               </div>
               <div id="heatmap-container" class="heatmap-grid no-scrollbar">
@@ -597,6 +644,54 @@
               </div>
               <!-- Tooltip element -->
               <div id="heatmap-tooltip" class="absolute hidden z-20 pointer-events-none glass-panel p-2 text-[9px] shadow-xl font-bold leading-normal" style="color: var(--text-primary)"></div>
+            </div>
+
+            <!-- Reading Horizon Predictor Card ("Life Reading Forecast") -->
+            <div id="reading-horizon-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden" style="border-color: rgba(var(--gold-rgb),0.25)">
+              <div class="flex justify-between items-center">
+                <span class="section-label text-xs font-bold" style="color: var(--gold)">
+                  <i class="fa-solid fa-compass-drafting text-[11px]"></i> Life Reading Horizon Predictor
+                </span>
+                <span id="horizon-velocity-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">30-Day Velocity: —</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                <div class="p-3 rounded-xl border flex flex-col justify-between" style="background: var(--bg-input); border-color: var(--border)">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Reading Stack Completion</span>
+                  <div class="mt-2 text-sm font-bold text-slate-100" id="horizon-active-reads-forecast">Calculating pace...</div>
+                </div>
+                <div class="p-3 rounded-xl border flex flex-col justify-between" style="background: var(--bg-input); border-color: var(--border)">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Lifelong TBR Bookshelf Horizon</span>
+                  <div class="mt-2 text-sm font-bold text-amber-300" id="horizon-tbr-forecast">Calculating horizon...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contextual Reading Productivity Heatmap (24x7 Matrix) & Genre Sunburst -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <!-- 24x7 Contextual Reading Matrix -->
+              <div id="contextual-heatmap-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                  <span class="section-label" style="color: var(--text-secondary)">
+                    <i class="fa-solid fa-clock text-[10px]" style="color: var(--accent)"></i> Contextual Productivity Matrix (Hour x Day)
+                  </span>
+                </div>
+                <div id="contextual-matrix-container" class="overflow-x-auto no-scrollbar py-1">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+                <p id="contextual-peak-insight" class="text-[11px] font-semibold text-slate-300 italic border-t border-white/5 pt-2 mt-1">Peak focus reading hour: —</p>
+              </div>
+
+              <!-- Genre & Subject Sunburst / Radar Chart -->
+              <div id="genre-sunburst-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                  <span class="section-label" style="color: var(--text-secondary)">
+                    <i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent2)"></i> Genre &amp; Subject Distribution
+                  </span>
+                </div>
+                <div class="flex items-center justify-center p-2 min-h-[200px]">
+                  <canvas id="genre-sunburst-canvas" width="280" height="200" class="max-w-full"></canvas>
+                </div>
+              </div>
             </div>
 
             <!-- YTD vs Same Date Last Year (YOY card) -->
@@ -1334,16 +1429,24 @@
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Bookshelf</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your library, wishlist &amp; everything in between</p>
               </div>
-              <button id="btn-add-book-trigger"
-                class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
-                style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
-                <i class="fa-solid fa-plus"></i> Add Book
-              </button>
+              <div class="flex items-center gap-2">
+                <button id="btn-scan-isbn"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style="background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent)"
+                  title="Scan ISBN Barcode with Camera">
+                  <i class="fa-solid fa-barcode"></i> Scan ISBN
+                </button>
+                <button id="btn-add-book-trigger"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
+                  style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
+                  <i class="fa-solid fa-plus"></i> Add Book
+                </button>
+              </div>
             </div>
 
             <!-- Top Library Stats Summary Banner -->
             <div id="bookshelf-stats-banner" class="glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-2 border border-white/5">
-              <div class="flex items-center gap-3 text-xs font-bold text-slate-300">
+              <div class="flex items-center gap-3 text-xs font-bold text-slate-300 flex-wrap">
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-book-bookmark text-gold text-xs"></i> <span id="st-total-books">0</span> books</span>
                 <span class="text-white/10">|</span>
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-file-lines text-accent text-xs"></i> <span id="st-total-pages">0</span> pg</span>
@@ -1399,13 +1502,16 @@
               </select>
             </div>
 
-            <!-- 5-filter Status Segment Control -->
-            <div class="seg-control" id="bookshelf-filter-status">
+            <!-- Status Segment Control (Includes Next Up & DNF) -->
+            <div class="seg-control flex-wrap" id="bookshelf-filter-status">
               <button class="seg-btn active" data-bsf="All">All</button>
+              <button class="seg-btn" data-bsf="Next Up">⚡ Next Up</button>
               <button class="seg-btn" data-bsf="Not Started">Not Started</button>
               <button class="seg-btn" data-bsf="In Progress">In Progress</button>
               <button class="seg-btn" data-bsf="Finished">Finished</button>
               <button class="seg-btn" data-bsf="Wishlist">Wishlist</button>
+              <button class="seg-btn" data-bsf="DNF">DNF / Paused</button>
+            </div>
             </div>
 
             <!-- Ownership Filter Segment Control -->
@@ -1672,6 +1778,19 @@
                 <i class="fa-solid fa-download text-sm text-emerald-400 group-hover:translate-y-0.5 transition-transform"></i>
               </button>
 
+              <!-- Goodreads & Kindle Importers Row -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                <button id="btn-import-goodreads" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.99] transition-all text-xs font-bold text-amber-300 cursor-pointer">
+                  <i class="fa-solid fa-book-bookmark text-amber-400"></i> Import Goodreads CSV
+                </button>
+                <input type="file" id="goodreads-csv-input" accept=".csv" class="hidden">
+
+                <button id="btn-import-kindle" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 active:scale-[0.99] transition-all text-xs font-bold text-sky-300 cursor-pointer">
+                  <i class="fa-solid fa-tablet-screen-button text-sky-400"></i> Import Kindle Clippings
+                </button>
+                <input type="file" id="kindle-clippings-input" accept=".txt" class="hidden">
+              </div>
+
               <!-- Backup & Restore Row -->
               <div class="grid grid-cols-2 gap-3">
                 <button id="acct-btn-export-json" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-xs font-bold text-slate-200 cursor-pointer">
@@ -1681,6 +1800,31 @@
                   <i class="fa-solid fa-file-import text-sky-400"></i> Import JSON
                 </button>
                 <input type="file" id="acct-json-file-input" accept=".json" class="hidden">
+              </div>
+
+              <!-- Personal Cloud & WebDAV Backup Panel -->
+              <div id="cloud-sync-panel" class="flex flex-col gap-2.5 p-3.5 rounded-2xl border border-amber-500/20 bg-amber-500/[0.04]">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-amber-300 flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-up text-amber-400"></i> Personal Cloud &amp; WebDAV Sync</span>
+                  <span id="cloud-sync-status-badge" class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Ready</span>
+                </div>
+                <div class="flex gap-2">
+                  <input type="url" id="webdav-url-input" class="input input-bordered glass-input flex-1 text-xs" placeholder="WebDAV Server URL (e.g. https://nextcloud.local/remote.php/webdav/)">
+                  <button id="btn-cloud-sync-now" class="btn btn-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 h-9 px-3 font-bold">Sync Now</button>
+                </div>
+              </div>
+
+              <!-- Custom Metadata Field Builder Manager -->
+              <div id="custom-fields-manager" class="flex flex-col gap-2.5 p-3.5 rounded-2xl border border-white/10 bg-white/5">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-sliders text-amber-400"></i> Custom Book Fields Builder</span>
+                  <span class="text-[10px] text-slate-400">Add custom attributes (e.g. Translator)</span>
+                </div>
+                <div class="flex gap-2">
+                  <input type="text" id="custom-field-name-input" class="input input-bordered glass-input flex-1 text-xs" placeholder="New Field Name (e.g. Translator, Edition Year)">
+                  <button id="btn-add-custom-field" class="btn btn-xs bg-gold/20 text-gold border border-gold/30 h-9 px-3 font-bold">+ Add Field</button>
+                </div>
+                <div id="custom-fields-list" class="flex flex-wrap gap-1.5 mt-1"></div>
               </div>
 
               <!-- Sample Data & Reset -->
@@ -2446,7 +2590,12 @@
       
       <!-- Notes -->
       <div class="form-control">
-        <label class="label py-1"><span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes &amp; Quotes</span></label>
+        <label class="label py-1 flex items-center justify-between">
+          <span class="label-text text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes &amp; Quotes</span>
+          <button type="button" id="edit-log-btn-dictate" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 flex items-center gap-1 cursor-pointer" title="Voice Dictation">
+            <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+          </button>
+        </label>
         <textarea id="edit-log-notes" class="textarea textarea-bordered glass-input w-full h-24 resize-none text-xs text-slate-200" placeholder="Session notes..."></textarea>
       </div>
       
@@ -2963,6 +3112,144 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       HEATMAP DAY INSPECTION DRAWER MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="heatmap-day-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.75); backdrop-filter: blur(8px)" 
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 max-h-[85vh] overflow-y-auto no-scrollbar"
+         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 id="hd-modal-date" class="text-base font-bold text-slate-100">—</h3>
+          <p id="hd-modal-subtitle" class="text-[10px] text-slate-400">Daily Activity Breakdown</p>
+        </div>
+        <button id="hd-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div id="hd-modal-summary" class="grid grid-cols-4 gap-2 text-center p-3 rounded-2xl bg-white/5 border border-white/10 text-xs">
+        <div><span class="text-[9px] text-slate-400 block">Pages</span><b id="hd-stat-pages" class="text-amber-400">0</b></div>
+        <div><span class="text-[9px] text-slate-400 block">Duration</span><b id="hd-stat-duration" class="text-sky-400">0m</b></div>
+        <div><span class="text-[9px] text-slate-400 block">Sessions</span><b id="hd-stat-logs" class="text-emerald-400">0</b></div>
+        <div><span class="text-[9px] text-slate-400 block">Notes</span><b id="hd-stat-notes" class="text-purple-400">0</b></div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sessions &amp; Logs</span>
+        <div id="hd-modal-logs-list" class="flex flex-col gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       ISBN CAMERA BARCODE SCANNER MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="isbn-scanner-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px)" 
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300"
+         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-barcode text-amber-400"></i> ISBN Barcode Scanner</span>
+        <button id="isbn-scanner-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div class="relative w-full h-48 rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-amber-500/30">
+        <video id="isbn-video-feed" class="w-full h-full object-cover" playsinline autoplay muted></video>
+        <div class="absolute inset-4 border-2 border-dashed border-amber-400/70 rounded-xl pointer-events-none flex items-center justify-center">
+          <span class="text-[10px] font-bold text-amber-300 bg-black/60 px-2 py-1 rounded">ALIGN ISBN BARCODE HERE</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-[10px] font-bold uppercase text-slate-400">Or Manual ISBN Lookup:</label>
+        <div class="flex gap-2">
+          <input type="text" id="isbn-manual-input" class="input input-bordered glass-input flex-1 text-xs" placeholder="e.g. 9780385537858">
+          <button id="btn-isbn-manual-fetch" class="btn btn-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 h-9 px-3 font-bold">Search</button>
+        </div>
+      </div>
+      <p id="isbn-status-msg" class="text-xs text-amber-400 font-semibold text-center hidden">Fetching book details...</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       POST-SESSION QUICK REFLECTION MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="post-session-reflection-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.8); backdrop-filter: blur(8px)">
+    <div class="mx-4 w-full max-w-md p-5 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300"
+         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-amber-300 flex items-center gap-2"><i class="fa-solid fa-pen-fancy"></i> Post-Session Reflection</span>
+        <button id="reflection-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300">Session complete! Capture 1 key takeaway, highlight, or quote from your reading before finishing:</p>
+      
+      <textarea id="reflection-note-text" rows="3" class="w-full p-3 text-xs rounded-xl glass-input border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400" placeholder="Write your insight or quote here..."></textarea>
+      
+      <div class="flex gap-2">
+        <button id="btn-reflection-skip" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-white/10 text-slate-300 hover:bg-white/20">Skip Note</button>
+        <button id="btn-reflection-save" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-gold text-slate-950 shadow-lg">Save Reflection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       SPACED REPETITION FLASHCARDS MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="spaced-repetition-modal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto"
+       style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px)" 
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="mx-4 w-full max-w-md p-6 rounded-[24px] flex flex-col gap-4 shadow-2xl [.open_&]:scale-100 scale-95 transition-all duration-300 min-h-[420px] justify-between"
+         style="background: var(--bg-elevated); border: 1px solid var(--border-strong)">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2"><i class="fa-solid fa-brain"></i> Daily Quote Flashcard Review</span>
+        <div class="flex items-center gap-2">
+          <span id="sr-card-progress" class="text-[10px] font-mono text-slate-400">Card 1 / 5</span>
+          <button id="sr-modal-close" class="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 text-slate-300 hover:bg-white/20">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Flashcard Content Area -->
+      <div id="sr-flashcard-box" class="relative flex-1 my-3 p-5 rounded-2xl glass-panel border border-amber-500/20 flex flex-col justify-between cursor-pointer transition-transform hover:scale-[1.01]" onclick="toggleFlashcardAnswer()">
+        <span class="text-[9px] font-bold uppercase tracking-widest text-amber-400" id="sr-card-box-level">Box Level 1 • Tap to Reveal Source</span>
+        
+        <blockquote id="sr-card-quote" class="font-serif text-sm italic font-medium text-slate-100 my-auto py-2 leading-relaxed">
+          "Select a quote..."
+        </blockquote>
+
+        <div id="sr-card-answer" class="hidden border-t border-white/10 pt-3 text-xs flex flex-col gap-0.5">
+          <span id="sr-card-author" class="font-bold text-amber-300">— Author</span>
+          <span id="sr-card-book" class="text-[10px] text-slate-400 italic">Book Title</span>
+        </div>
+      </div>
+
+      <!-- Leitner Review Buttons -->
+      <div class="flex gap-2">
+        <button onclick="rateFlashcard('again')" class="flex-1 py-3 rounded-xl font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 active:scale-95">
+          Again (Box 1)
+        </button>
+        <button onclick="rateFlashcard('good')" class="flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 active:scale-95">
+          Good (+1 Box)
+        </button>
+        <button onclick="rateFlashcard('easy')" class="flex-1 py-3 rounded-xl font-bold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 active:scale-95">
+          Easy (+2 Box)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        TOAST
        ════════════════════════════════════════════════════════════ -->
   <div id="toast" class="toast toast-top toast-center z-[1000] hidden" role="alert" aria-live="polite">
@@ -2978,6 +3265,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=89"></script>
+  <script type="module" src="app.js?v=90"></script>
 </body>
 </html>
