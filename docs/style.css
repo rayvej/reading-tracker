@@ -1821,27 +1821,26 @@ body.light-mode .fab-log-btn {
   align-items: center;
   justify-content: center;
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 180px;
+  height: 180px;
   margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .streak-ring-container svg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-90deg);
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
 }
 
 .streak-ring-bg {
   fill: none;
-  stroke-width: 10;
-  stroke-linecap: round;
+  stroke-width: 8px;
 }
 
 .streak-ring-fill {
   fill: none;
-  stroke-width: 10;
+  stroke-width: 8px;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1853,22 +1852,32 @@ body.light-mode .fab-log-btn {
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
 }
 
 .streak-center-number {
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 900;
   color: var(--text-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
 }
 
 .streak-center-text {
   font-size: 8px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--accent);
+  line-height: 1;
 }
 
 .streak-repair-widget {

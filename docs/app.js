@@ -480,6 +480,9 @@ function setupSettingsModal() {
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (backdrop) backdrop.addEventListener('click', closeModal);
 
+  // Daily Reading Targets inputs
+  setupDailyTargetsSetting();
+
   // Load sample data
   const btnSample = $('btn-load-sample-data');
   if (btnSample) {
@@ -631,6 +634,33 @@ async function verifyDoublePinForReset() {
       } catch (e) {
         showToast('Failed to update PIN: ' + e.message, 'error');
       }
+    });
+}
+
+function setupDailyTargetsSetting() {
+  const minInput = $('setting-target-minutes');
+  const pagInput = $('setting-target-pages');
+
+  const savedMin = localStorage.getItem('rt_target_minutes') || '40';
+  const savedPag = localStorage.getItem('rt_target_pages') || '30';
+
+  if (minInput) {
+    minInput.value = savedMin;
+    minInput.addEventListener('change', () => {
+      const val = Math.max(1, parseInt(minInput.value || '40', 10));
+      localStorage.setItem('rt_target_minutes', val);
+      showToast(`✓ Daily minutes target set to ${val} mins`, 'success');
+      if (currentView === 'dashboard') renderDashboard();
+    });
+  }
+
+  if (pagInput) {
+    pagInput.value = savedPag;
+    pagInput.addEventListener('change', () => {
+      const val = Math.max(1, parseInt(pagInput.value || '30', 10));
+      localStorage.setItem('rt_target_pages', val);
+      showToast(`✓ Daily pages target set to ${val} pages`, 'success');
+      if (currentView === 'dashboard') renderDashboard();
     });
   }
 }
@@ -2723,27 +2753,30 @@ function renderStreakRings(streaks, activeLogs) {
   const todayMinutes = todayLogs.reduce((s, l) => s + (l.duration_minutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
   const hasSessionToday = todayLogs.length > 0;
   
-  const dailyMinutesTarget = 40;
-  const dailyPagesTarget = 30;
+  const dailyMinutesTarget = Math.max(1, parseInt(localStorage.getItem('rt_target_minutes') || '40', 10));
+  const dailyPagesTarget = Math.max(1, parseInt(localStorage.getItem('rt_target_pages') || '30', 10));
   
   const minutesPct = Math.min(100, (todayMinutes / dailyMinutesTarget) * 100);
   const minutesRing = $('streak-ring-minutes');
   if (minutesRing) {
-    const circumference = 427;
+    const circumference = 477.5;
+    minutesRing.style.strokeDasharray = `${circumference}`;
     minutesRing.style.strokeDashoffset = circumference - (circumference * minutesPct / 100);
   }
   
   const pagesPct = Math.min(100, (todayPages / dailyPagesTarget) * 100);
   const pagesRing = $('streak-ring-pages');
   if (pagesRing) {
-    const circumference = 301;
+    const circumference = 364.4;
+    pagesRing.style.strokeDasharray = `${circumference}`;
     pagesRing.style.strokeDashoffset = circumference - (circumference * pagesPct / 100);
   }
   
   const consistencyPct = hasSessionToday ? 100 : 0;
   const consistencyRing = $('streak-ring-consistency');
   if (consistencyRing) {
-    const circumference = 176;
+    const circumference = 251.3;
+    consistencyRing.style.strokeDasharray = `${circumference}`;
     consistencyRing.style.strokeDashoffset = circumference - (circumference * consistencyPct / 100);
   }
   
