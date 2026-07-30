@@ -960,31 +960,37 @@ body.light-mode .seg-btn.active {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Micro Segment Control (for card headers) */
+/* Micro Segment Control (for card headers & compact toggles) */
 .seg-control-micro {
   display: inline-flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1.5px;
   gap: 1.5px;
   width: auto;
+  flex-shrink: 0;
 }
 
 .seg-btn-micro {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  border-radius: 4.5px;
-  padding: 2px 7px;
+  border-radius: 4px;
+  padding: 2px 6px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease-in-out;
   line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
 }
 
 .seg-btn-micro:hover:not(.active) {
@@ -995,8 +1001,8 @@ body.light-mode .seg-btn.active {
 .seg-btn-micro.active {
   background: rgba(var(--accent-rgb), 0.16);
   color: var(--accent);
-  border-color: rgba(var(--accent-rgb), 0.3);
-  font-weight: 700;
+  border-color: rgba(var(--accent-rgb), 0.25);
+  font-weight: 600;
 }
 
 body.light-mode .seg-control-micro {

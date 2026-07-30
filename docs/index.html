@@ -340,9 +340,9 @@
 
             <!-- Notes Stats Summary Bar & View Mode Toggle -->
             <div class="flex justify-between items-center gap-2 flex-wrap">
-              <div class="seg-control" id="knowledge-view-mode-toggle" style="width: auto">
-                <button class="seg-btn active px-3 py-1 text-xs" data-mode="feed"><i class="fa-solid fa-list"></i> Feed View</button>
-                <button class="seg-btn px-3 py-1 text-xs" data-mode="graph"><i class="fa-solid fa-diagram-project"></i> Mind Graph</button>
+              <div class="seg-control-micro" id="knowledge-view-mode-toggle">
+                <button class="seg-btn-micro active" data-mode="feed"><i class="fa-solid fa-list text-[8px]"></i> Feed View</button>
+                <button class="seg-btn-micro" data-mode="graph"><i class="fa-solid fa-diagram-project text-[8px]"></i> Mind Graph</button>
               </div>
             </div>
 
@@ -617,21 +617,21 @@
             </div>
 
             <!-- Reading Intensity Grid (GitHub-style) -->
-            <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl relative">
+            <div class="glass-panel p-3.5 flex flex-col gap-2.5 rounded-xl relative">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <div class="flex items-center gap-2 flex-wrap">
+                <span class="section-label whitespace-nowrap" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <!-- Metric Selector (Pages / Mins / Sessions / Notes) -->
-                  <div class="seg-control" id="dash-heatmap-metric" style="width: auto">
-                    <button class="seg-btn active px-2 py-0.5 text-[8px]" data-metric="pages">Pages</button>
-                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="duration">Mins</button>
-                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="sessions">Logs</button>
-                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-metric="notes">Notes</button>
+                  <div class="seg-control-micro" id="dash-heatmap-metric">
+                    <button class="seg-btn-micro active" data-metric="pages">Pages</button>
+                    <button class="seg-btn-micro" data-metric="duration">Mins</button>
+                    <button class="seg-btn-micro" data-metric="sessions">Logs</button>
+                    <button class="seg-btn-micro" data-metric="notes">Notes</button>
                   </div>
-                  <div class="seg-control" id="dash-heatmap-tf" style="width: auto">
-                    <button class="seg-btn active px-2 py-0.5 text-[8px]" data-range="pastYear">Past Year</button>
-                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="thisYear">This Year</button>
-                    <button class="seg-btn px-2 py-0.5 text-[8px]" data-range="allTime">All Time</button>
+                  <div class="seg-control-micro" id="dash-heatmap-tf">
+                    <button class="seg-btn-micro active" data-range="pastYear">Past Year</button>
+                    <button class="seg-btn-micro" data-range="thisYear">This Year</button>
+                    <button class="seg-btn-micro" data-range="allTime">All Time</button>
                   </div>
                 </div>
               </div>
