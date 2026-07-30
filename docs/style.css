@@ -422,7 +422,7 @@ h3, .heading-3 {
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.45) !important;
 }
 
-/* 3. Obsidian Dark Preview Button */
+/* 3. Obsidian Preview Button */
 .theme-select-btn[data-theme="obsidian"] {
   background: #070709 !important;
   color: #F0F0F5 !important;
