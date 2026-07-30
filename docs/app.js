@@ -1195,29 +1195,55 @@ async function saveStarterBook(batchContinue) {
 function setupDailyTargetsSetting() {
   const minInput = $('setting-target-minutes');
   const pagInput = $('setting-target-pages');
+  const prefMins = $('pref-daily-minutes');
+  const prefPag = $('pref-daily-pages');
 
-  const savedMin = localStorage.getItem('rt_target_minutes') || '40';
-  const savedPag = localStorage.getItem('rt_target_pages') || '30';
+  const getSavedMin = () => localStorage.getItem('rt_target_minutes') || localStorage.getItem('rt_pref_mins') || '40';
+  const getSavedPag = () => localStorage.getItem('rt_target_pages') || localStorage.getItem('rt_pref_pages') || '30';
 
-  if (minInput) {
-    minInput.value = savedMin;
-    minInput.addEventListener('change', () => {
-      const val = Math.max(1, parseInt(minInput.value || '40', 10));
-      localStorage.setItem('rt_target_minutes', val);
-      showToast(`✓ Daily minutes target set to ${val} mins`, 'success');
-      if (currentView === 'dashboard') renderDashboard();
-    });
-  }
+  const updateMin = (val, showToastMsg = false) => {
+    const num = Math.max(1, parseInt(val || '40', 10));
+    localStorage.setItem('rt_target_minutes', num);
+    localStorage.setItem('rt_pref_mins', num);
+    if (minInput && minInput.value !== String(num)) minInput.value = num;
+    if (prefMins && prefMins.value !== String(num)) prefMins.value = num;
+    if (showToastMsg) showToast(`✓ Daily minutes target set to ${num} mins`, 'success');
+    if (currentView === 'dashboard') renderDashboard();
+  };
 
-  if (pagInput) {
-    pagInput.value = savedPag;
-    pagInput.addEventListener('change', () => {
-      const val = Math.max(1, parseInt(pagInput.value || '30', 10));
-      localStorage.setItem('rt_target_pages', val);
-      showToast(`✓ Daily pages target set to ${val} pages`, 'success');
-      if (currentView === 'dashboard') renderDashboard();
-    });
-  }
+  const updatePag = (val, showToastMsg = false) => {
+    const num = Math.max(1, parseInt(val || '30', 10));
+    localStorage.setItem('rt_target_pages', num);
+    localStorage.setItem('rt_pref_pages', num);
+    if (pagInput && pagInput.value !== String(num)) pagInput.value = num;
+    if (prefPag && prefPag.value !== String(num)) prefPag.value = num;
+    if (showToastMsg) showToast(`✓ Daily pages target set to ${num} pages`, 'success');
+    if (currentView === 'dashboard') renderDashboard();
+  };
+
+  const currentMin = getSavedMin();
+  const currentPag = getSavedPag();
+
+  // Persist canonical values immediately
+  localStorage.setItem('rt_target_minutes', currentMin);
+  localStorage.setItem('rt_pref_mins', currentMin);
+  localStorage.setItem('rt_target_pages', currentPag);
+  localStorage.setItem('rt_pref_pages', currentPag);
+
+  if (minInput) minInput.value = currentMin;
+  if (prefMins) prefMins.value = currentMin;
+  if (pagInput) pagInput.value = currentPag;
+  if (prefPag) prefPag.value = currentPag;
+
+  [minInput, prefMins].filter(Boolean).forEach(el => {
+    el.addEventListener('input', () => updateMin(el.value, false));
+    el.addEventListener('change', () => updateMin(el.value, true));
+  });
+
+  [pagInput, prefPag].filter(Boolean).forEach(el => {
+    el.addEventListener('input', () => updatePag(el.value, false));
+    el.addEventListener('change', () => updatePag(el.value, true));
+  });
 }
 
 // ── Daily Morning Reminders & Notifications ───────────────────────────────
@@ -1471,12 +1497,15 @@ async function renderAccountView() {
 
   // Load saved preferences
   const prefFormat = localStorage.getItem('rt_pref_format') || 'Physical';
-  const prefPages = localStorage.getItem('rt_pref_pages') || '25';
-  const prefMins = localStorage.getItem('rt_pref_mins') || '30';
+  const prefPages = localStorage.getItem('rt_target_pages') || localStorage.getItem('rt_pref_pages') || '30';
+  const prefMins = localStorage.getItem('rt_target_minutes') || localStorage.getItem('rt_pref_mins') || '40';
 
   if ($('pref-default-format')) $('pref-default-format').value = prefFormat;
   if ($('pref-daily-pages')) $('pref-daily-pages').value = prefPages;
   if ($('pref-daily-minutes')) $('pref-daily-minutes').value = prefMins;
+
+  // Re-sync all targets
+  setupDailyTargetsSetting();
 
   // Load saved Gemini API Key
   const savedGeminiKey = getGeminiApiKey();
