@@ -1001,37 +1001,37 @@
             </div>
 
             <!-- SVG Donut Chart Collection Split -->
-            <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl">
+            <div class="glass-panel p-3 flex flex-col gap-2 rounded-xl">
               <div class="flex justify-between items-center">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent)"></i> Collection Split (Read)</span>
-                <div class="seg-control" id="donut-chart-toggle" style="width: auto">
-                  <button class="seg-btn active px-2.5 py-0.5" data-mode="pages">Pages</button>
-                  <button class="seg-btn px-2.5 py-0.5" data-mode="books">Books</button>
+                <div class="seg-control-micro" id="donut-chart-toggle">
+                  <button class="seg-btn-micro active" data-mode="pages">Pages</button>
+                  <button class="seg-btn-micro" data-mode="books">Books</button>
                 </div>
               </div>
-              <div id="chart-donut-wrap" class="flex items-center justify-center gap-6 py-2">
+              <div id="chart-donut-wrap" class="flex items-center justify-center gap-4 py-1">
                 <!-- Rendered by JS -->
               </div>
             </div>
 
             <!-- SVG Donut Chart By Category -->
-            <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl">
+            <div class="glass-panel p-3 flex flex-col gap-2 rounded-xl">
               <div class="flex justify-between items-center">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent3)"></i> By Category (Read)</span>
-                <div class="seg-control" id="cat-chart-toggle" style="width: auto">
-                  <button class="seg-btn active px-2.5 py-0.5" data-mode="pages">Pages</button>
-                  <button class="seg-btn px-2.5 py-0.5" data-mode="books">Books</button>
+                <div class="seg-control-micro" id="cat-chart-toggle">
+                  <button class="seg-btn-micro active" data-mode="pages">Pages</button>
+                  <button class="seg-btn-micro" data-mode="books">Books</button>
                 </div>
               </div>
-              <div id="chart-bar-wrap" class="w-full flex justify-center py-2" style="height: auto; min-height: 160px">
+              <div id="chart-bar-wrap" class="w-full flex justify-center py-1" style="height: auto; min-height: 140px">
                 <!-- Rendered by JS -->
               </div>
             </div>
 
             <!-- Books read per year bar chart -->
-            <div class="glass-panel p-4 flex flex-col gap-3 rounded-2xl" id="dash-chart-books-year">
+            <div class="glass-panel p-3 flex flex-col gap-2 rounded-xl" id="dash-chart-books-year">
               <span class="section-label"><i class="fa-solid fa-chart-column text-[10px]" style="color: var(--accent2)"></i> Books Read per Year</span>
-              <div id="chart-books-year-wrap" class="w-full flex justify-center py-2" style="height: 150px">
+              <div id="chart-books-year-wrap" class="w-full flex justify-center py-1" style="height: 140px">
                 <!-- Rendered dynamically by JS -->
               </div>
             </div>

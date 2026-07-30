@@ -960,6 +960,55 @@ body.light-mode .seg-btn.active {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Micro Segment Control (for card headers) */
+.seg-control-micro {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.5px;
+  gap: 1.5px;
+  width: auto;
+}
+
+.seg-btn-micro {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: 4.5px;
+  padding: 2px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-in-out;
+  line-height: 1.2;
+}
+
+.seg-btn-micro:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.seg-btn-micro.active {
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  font-weight: 700;
+}
+
+body.light-mode .seg-control-micro {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-mode .seg-btn-micro.active {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border-color: var(--border-strong);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SLEEK STAT TILES & TAB CARDS SYSTEM
    ══════════════════════════════════════════════════════════════ */
