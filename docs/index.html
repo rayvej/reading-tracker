@@ -788,18 +788,18 @@
                     <i class="fa-solid fa-chart-line text-[11px]" style="color: var(--accent)"></i> Analytics &amp; Insights
                   </span>
                 </div>
-                <div id="insights-tab-bar" class="seg-control seg-control-scrollable w-full flex overflow-x-auto no-scrollbar">
-                  <button data-tab="volume" class="seg-btn active py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                    <i class="fa-solid fa-book-bookmark text-[10px]"></i> Volume
+                <div id="insights-tab-bar" class="seg-control w-full">
+                  <button data-tab="volume" class="seg-btn active">
+                    <i class="fa-solid fa-book-bookmark text-[9px]"></i> Volume
                   </button>
-                  <button data-tab="years" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                    <i class="fa-solid fa-calendar-days text-[10px]"></i> Years
+                  <button data-tab="years" class="seg-btn">
+                    <i class="fa-solid fa-calendar-days text-[9px]"></i> Years
                   </button>
-                  <button data-tab="pace" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                    <i class="fa-solid fa-gauge text-[10px]"></i> Pace
+                  <button data-tab="pace" class="seg-btn">
+                    <i class="fa-solid fa-gauge text-[9px]"></i> Pace
                   </button>
-                  <button data-tab="sessions" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                    <i class="fa-solid fa-clock text-[10px]"></i> Sessions
+                  <button data-tab="sessions" class="seg-btn">
+                    <i class="fa-solid fa-clock text-[9px]"></i> Sessions
                   </button>
                 </div>
               </div>
@@ -807,25 +807,25 @@
               <div class="w-full">
                 <!-- PANEL 1: VOLUME -->
                 <div id="insights-panel-volume" class="insights-tab-panel flex flex-col gap-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(var(--gold-rgb), 0.08); border-color: rgba(var(--gold-rgb), 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider" style="color: var(--gold)">
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div class="stat-tile-sleek" style="background: rgba(var(--gold-rgb), 0.06); border-color: rgba(var(--gold-rgb), 0.2)">
+                      <div class="tile-header" style="color: var(--gold)">
                         <span>Total Reads</span>
-                        <i class="fa-solid fa-book-open"></i>
+                        <i class="fa-solid fa-book-open text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="sv-total-reads">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)">Incl. re-reads</div>
+                      <div class="tile-val" id="sv-total-reads">—</div>
+                      <div class="tile-sub">Incl. re-reads</div>
                     </div>
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(var(--emerald-rgb), 0.08); border-color: rgba(var(--emerald-rgb), 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider" style="color: var(--emerald)">
+                    <div class="stat-tile-sleek" style="background: rgba(var(--emerald-rgb), 0.06); border-color: rgba(var(--emerald-rgb), 0.2)">
+                      <div class="tile-header" style="color: var(--emerald)">
                         <span>Total Pages</span>
-                        <i class="fa-solid fa-file-lines"></i>
+                        <i class="fa-solid fa-file-lines text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="sv-total-pages">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)">Lifetime volume</div>
+                      <div class="tile-val" id="sv-total-pages">—</div>
+                      <div class="tile-sub">Lifetime volume</div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs p-3.5 rounded-2xl border" style="background: var(--bg-card); border-color: var(--border-strong)">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs stat-detail-card">
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Re-read Bonus Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="sv-reread-bonus">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Re-read</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="sv-books-reread">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Unique Authors</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="sv-unique-authors">—</span></div>
@@ -840,25 +840,25 @@
 
                 <!-- PANEL 2: YEARS -->
                 <div id="insights-panel-years" class="insights-tab-panel hidden flex flex-col gap-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-sky-500 uppercase tracking-wider">
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div class="stat-tile-sleek" style="background: rgba(56, 189, 248, 0.06); border-color: rgba(56, 189, 248, 0.2)">
+                      <div class="tile-header text-sky-500">
                         <span>Best Year (Reads)</span>
-                        <i class="fa-solid fa-crown"></i>
+                        <i class="fa-solid fa-crown text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="yt-best-reads-year">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)"><b id="yt-best-reads-count" style="color: var(--text-primary)">0</b> books completed</div>
+                      <div class="tile-val" id="yt-best-reads-year">—</div>
+                      <div class="tile-sub"><b id="yt-best-reads-count" style="color: var(--text-primary)">0</b> books completed</div>
                     </div>
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-purple-500 uppercase tracking-wider">
+                    <div class="stat-tile-sleek" style="background: rgba(168, 85, 247, 0.06); border-color: rgba(168, 85, 247, 0.2)">
+                      <div class="tile-header text-purple-500">
                         <span>Best Year (Pages)</span>
-                        <i class="fa-solid fa-fire"></i>
+                        <i class="fa-solid fa-fire text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="yt-best-pages-year">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)"><b id="yt-best-pages-count" style="color: var(--text-primary)">0</b> pages read</div>
+                      <div class="tile-val" id="yt-best-pages-year">—</div>
+                      <div class="tile-sub"><b id="yt-best-pages-count" style="color: var(--text-primary)">0</b> pages read</div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs p-3.5 rounded-2xl border" style="background: var(--bg-card); border-color: var(--border-strong)">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs stat-detail-card">
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Years Tracking</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="yt-years-since">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">First Year Read</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="yt-first-year">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Most Recent Year</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="yt-recent-year">—</span></div>
@@ -871,25 +871,25 @@
 
                 <!-- PANEL 3: PACE -->
                 <div id="insights-panel-pace" class="insights-tab-panel hidden flex flex-col gap-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-blue-500 uppercase tracking-wider">
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div class="stat-tile-sleek" style="background: rgba(59, 130, 246, 0.06); border-color: rgba(59, 130, 246, 0.2)">
+                      <div class="tile-header text-blue-500">
                         <span>Avg Days/Book</span>
-                        <i class="fa-solid fa-hourglass-half"></i>
+                        <i class="fa-solid fa-hourglass-half text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="rp-avg-days-book">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)">Completion speed</div>
+                      <div class="tile-val" id="rp-avg-days-book">—</div>
+                      <div class="tile-sub">Completion speed</div>
                     </div>
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-indigo-500 uppercase tracking-wider">
+                    <div class="stat-tile-sleek" style="background: rgba(99, 102, 241, 0.06); border-color: rgba(99, 102, 241, 0.2)">
+                      <div class="tile-header text-indigo-500">
                         <span>Pages / Hour</span>
-                        <i class="fa-solid fa-bolt"></i>
+                        <i class="fa-solid fa-bolt text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="rp-pages-hr">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)">Reading rate</div>
+                      <div class="tile-val" id="rp-pages-hr">—</div>
+                      <div class="tile-sub">Reading rate</div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs p-3.5 rounded-2xl border" style="background: var(--bg-card); border-color: var(--border-strong)">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs stat-detail-card">
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Avg Reads per Year</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rp-avg-reads-yr">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Avg Pages per Active Year</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rp-avg-pages-yr">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Fastest Book (days)</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rp-fastest">—</span></div>
@@ -904,25 +904,25 @@
 
                 <!-- PANEL 4: SESSIONS -->
                 <div id="insights-panel-sessions" class="insights-tab-panel hidden flex flex-col gap-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(236, 72, 153, 0.08); border-color: rgba(236, 72, 153, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-pink-500 uppercase tracking-wider">
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div class="stat-tile-sleek" style="background: rgba(236, 72, 153, 0.06); border-color: rgba(236, 72, 153, 0.2)">
+                      <div class="tile-header text-pink-500">
                         <span>Sessions</span>
-                        <i class="fa-solid fa-layer-group"></i>
+                        <i class="fa-solid fa-layer-group text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="li-sessions">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)">Logged sessions</div>
+                      <div class="tile-val" id="li-sessions">—</div>
+                      <div class="tile-sub">Logged sessions</div>
                     </div>
-                    <div class="p-3.5 rounded-2xl border flex flex-col gap-1" style="background: rgba(244, 63, 94, 0.08); border-color: rgba(244, 63, 94, 0.25)">
-                      <div class="flex items-center justify-between text-[10px] font-bold text-rose-500 uppercase tracking-wider">
+                    <div class="stat-tile-sleek" style="background: rgba(244, 63, 94, 0.06); border-color: rgba(244, 63, 94, 0.2)">
+                      <div class="tile-header text-rose-500">
                         <span>Hours Logged</span>
-                        <i class="fa-solid fa-stopwatch"></i>
+                        <i class="fa-solid fa-stopwatch text-[10px]"></i>
                       </div>
-                      <div class="text-2xl font-black tabular-nums" style="color: var(--text-primary)" id="li-hours">—</div>
-                      <div class="text-[9px] font-medium" style="color: var(--text-secondary)"><b id="li-minutes" style="color: var(--text-primary)">0</b> total minutes</div>
+                      <div class="tile-val" id="li-hours">—</div>
+                      <div class="tile-sub"><b id="li-minutes" style="color: var(--text-primary)">0</b> total minutes</div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs p-3.5 rounded-2xl border" style="background: var(--bg-card); border-color: var(--border-strong)">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs stat-detail-card">
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Total Logged Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="li-logged-pages">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Avg Pages / Session</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="li-avg-pages">—</span></div>
                     <div class="flex justify-between border-b sm:border-b-0 pb-1.5 sm:pb-0" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Avg Mins / Session</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="li-avg-mins">—</span></div>
@@ -949,12 +949,12 @@
               <div class="flex items-center justify-between">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-trophy text-[10px]" style="color: var(--gold)"></i> Reading Milestones</span>
               </div>
-              <div id="dash-milestones-tab-bar" class="seg-control seg-control-scrollable w-full flex overflow-x-auto no-scrollbar">
-                <button data-tab="books" class="seg-btn active py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-book-bookmark text-[10px]" style="color: var(--gold)"></i> Books Milestones
+              <div id="dash-milestones-tab-bar" class="seg-control w-full">
+                <button data-tab="books" class="seg-btn active">
+                  <i class="fa-solid fa-book-bookmark text-[9px]" style="color: var(--gold)"></i> Books
                 </button>
-                <button data-tab="pages" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-file-lines text-[10px]" style="color: var(--emerald)"></i> Pages Milestones
+                <button data-tab="pages" class="seg-btn">
+                  <i class="fa-solid fa-file-lines text-[9px]" style="color: var(--emerald)"></i> Pages
                 </button>
               </div>
 
@@ -1041,42 +1041,42 @@
               <div class="flex items-center justify-between">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-trophy text-[10px]" style="color: var(--gold)"></i> Reading Records</span>
               </div>
-              <div id="dash-records-tab-bar" class="seg-control seg-control-scrollable w-full flex overflow-x-auto no-scrollbar">
-                <button data-tab="length" class="seg-btn active py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-arrows-left-right-to-line text-[10px]" style="color: var(--accent)"></i> Book Length
+              <div id="dash-records-tab-bar" class="seg-control w-full">
+                <button data-tab="length" class="seg-btn active">
+                  <i class="fa-solid fa-arrows-left-right-to-line text-[9px]" style="color: var(--accent)"></i> Length
                 </button>
-                <button data-tab="speed" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-bolt text-[10px]" style="color: var(--accent2)"></i> Reading Speed
+                <button data-tab="speed" class="seg-btn">
+                  <i class="fa-solid fa-bolt text-[9px]" style="color: var(--accent2)"></i> Speed
                 </button>
-                <button data-tab="authors" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-feather-pointed text-[10px]" style="color: var(--accent3)"></i> Authors &amp; Genres
+                <button data-tab="authors" class="seg-btn">
+                  <i class="fa-solid fa-feather-pointed text-[9px]" style="color: var(--accent3)"></i> Authors
                 </button>
               </div>
 
               <!-- Book Length Records Panel -->
-              <div id="dash-records-length" class="dash-records-panel flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-book">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Shortest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-shortest-book">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Title</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-title">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Shortest Title</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-shortest-title">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Median Book Length</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-median-length">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books &gt; 500 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-large">—</span></div>
-                <div class="flex justify-between"><span style="color: var(--text-secondary)">Books &lt; 100 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-small">—</span></div>
+              <div id="dash-records-length" class="dash-records-panel flex flex-col text-xs stat-detail-card">
+                <div class="flex justify-between border-b pb-1.5 pt-1" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-book">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Shortest Book Read</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-shortest-book">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Longest Title</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-longest-title">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Shortest Title</span><span class="font-bold truncate text-right max-w-[200px]" style="color: var(--text-primary)" id="rec-shortest-title">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Median Book Length</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-median-length">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books &gt; 500 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-large">—</span></div>
+                <div class="flex justify-between pt-1.5"><span style="color: var(--text-secondary)">Books &lt; 100 Pages</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-small">—</span></div>
               </div>
 
               <!-- Reading Speed Records Panel -->
-              <div id="dash-records-speed" class="dash-records-panel hidden flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 7 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-fast">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 30 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-medium">—</span></div>
-                <div class="flex justify-between"><span style="color: var(--text-secondary)">Fastest Completion Speed</span><span class="font-bold" style="color: var(--text-primary)" id="rec-speed-record">—</span></div>
+              <div id="dash-records-speed" class="dash-records-panel hidden flex flex-col text-xs stat-detail-card">
+                <div class="flex justify-between border-b pb-1.5 pt-1" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 7 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-fast">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Books Read in &lt; 30 Days</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-speed-medium">—</span></div>
+                <div class="flex justify-between pt-1.5"><span style="color: var(--text-secondary)">Fastest Completion Speed</span><span class="font-bold" style="color: var(--text-primary)" id="rec-speed-record">—</span></div>
               </div>
 
               <!-- Author & Genre Records Panel -->
-              <div id="dash-records-authors" class="dash-records-panel hidden flex flex-col gap-2.5 text-xs">
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Most Read Author</span><span class="font-bold truncate max-w-[200px] text-right" style="color: var(--text-primary)" id="rec-top-author">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Reads by Top Author</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-top-author-reads">—</span></div>
-                <div class="flex justify-between border-b pb-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Authors Read &gt; 1 Book</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-authors-multi">—</span></div>
-                <div class="flex justify-between"><span style="color: var(--text-secondary)">Books with Multiple Reads</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-multi-reads">—</span></div>
+              <div id="dash-records-authors" class="dash-records-panel hidden flex flex-col text-xs stat-detail-card">
+                <div class="flex justify-between border-b pb-1.5 pt-1" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Most Read Author</span><span class="font-bold truncate max-w-[200px] text-right" style="color: var(--text-primary)" id="rec-top-author">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Reads by Top Author</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-top-author-reads">—</span></div>
+                <div class="flex justify-between border-b py-1.5" style="border-color: var(--border)"><span style="color: var(--text-secondary)">Authors Read &gt; 1 Book</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-authors-multi">—</span></div>
+                <div class="flex justify-between pt-1.5"><span style="color: var(--text-secondary)">Books with Multiple Reads</span><span class="font-bold tabular-nums" style="color: var(--text-primary)" id="rec-books-multi-reads">—</span></div>
               </div>
             </div>
 
@@ -1085,18 +1085,18 @@
               <div class="flex items-center justify-between">
                 <span class="section-label" style="color: var(--text-secondary)"><i class="fa-solid fa-chart-pie text-[10px]" style="color: var(--accent)"></i> Detailed Breakdowns</span>
               </div>
-              <div id="dash-breakdown-tab-bar" class="seg-control seg-control-scrollable w-full flex overflow-x-auto no-scrollbar">
-                <button data-tab="monthly" class="seg-btn active py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-calendar-minus text-[10px]" style="color: var(--accent)"></i> Monthly
+              <div id="dash-breakdown-tab-bar" class="seg-control w-full">
+                <button data-tab="monthly" class="seg-btn active">
+                  <i class="fa-solid fa-calendar-minus text-[9px]" style="color: var(--accent)"></i> Monthly
                 </button>
-                <button data-tab="dayofweek" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-calendar-day text-[10px]" style="color: var(--accent2)"></i> Day of Week
+                <button data-tab="dayofweek" class="seg-btn">
+                  <i class="fa-solid fa-calendar-day text-[9px]" style="color: var(--accent2)"></i> Weekday
                 </button>
-                <button data-tab="seasonal" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-cloud-sun text-[10px]" style="color: var(--accent3)"></i> Seasonal
+                <button data-tab="seasonal" class="seg-btn">
+                  <i class="fa-solid fa-cloud-sun text-[9px]" style="color: var(--accent3)"></i> Seasonal
                 </button>
-                <button data-tab="yearly" class="seg-btn py-1.5 text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap">
-                  <i class="fa-solid fa-code-compare text-[10px]" style="color: var(--gold)"></i> Yearly
+                <button data-tab="yearly" class="seg-btn">
+                  <i class="fa-solid fa-code-compare text-[9px]" style="color: var(--gold)"></i> Yearly
                 </button>
               </div>
 

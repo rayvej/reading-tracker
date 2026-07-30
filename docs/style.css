@@ -874,15 +874,15 @@ body.light-mode #tab-bar {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   iOS SEGMENT CONTROL
+   ULTRA-SLIM SEGMENT CONTROL SYSTEM
    ══════════════════════════════════════════════════════════════ */
 .seg-control {
   display: flex;
-  background: var(--bg-input);
-  border: 0.5px solid var(--border-strong);
-  border-radius: 12px;
-  padding: 3px;
-  gap: 3px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
   width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
@@ -891,6 +891,12 @@ body.light-mode #tab-bar {
 }
 .seg-control::-webkit-scrollbar {
   display: none;
+}
+
+.seg-control.seg-control-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
 }
 
 .seg-control.seg-control-scrollable {
@@ -903,37 +909,110 @@ body.light-mode #tab-bar {
   display: none;
 }
 .seg-control.seg-control-scrollable .seg-btn {
-  flex: 0 0 auto;
-  padding: 7px 14px;
-  font-size: 11.5px;
+  flex: 1 1 0%;
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
 .seg-btn {
-  flex: 1 0 auto;
+  flex: 1 1 0%;
   min-width: max-content;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
   font-size: 11px;
-  font-weight: 700;
-  border-radius: 9px;
-  padding: 6px 10px;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  border-radius: 7px;
+  padding: 4px 8px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  transition: all 0.15s ease-in-out;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.seg-btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .seg-btn.active {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-weight: 800;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .seg-control {
+  background: rgba(0, 0, 0, 0.03);
 }
 
 body.light-mode .seg-btn.active {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SLEEK STAT TILES & TAB CARDS SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+.stat-tile-sleek {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.18s var(--ease-ios-spring), border-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-tile-sleek:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.stat-tile-sleek .tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-tile-sleek .tile-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.stat-tile-sleek .tile-sub {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.stat-detail-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* ═══════════════════════════════════════════════════════════════
