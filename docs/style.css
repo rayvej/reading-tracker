@@ -305,14 +305,14 @@
    ══════════════════════════════════════════════════════════════ */
 
 /* Global Body Font Defaults to Theme Body Font */
-body, p, button, input, select, textarea {
+body, p, button, input, select, textarea, div, span, label, td, th {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
 }
 
 /* Headings, Tile Titles, Section Labels & Card Titles */
 h1, h2, h3, h4, h5, h6,
 .heading-1, .heading-2, .heading-3, .heading-editorial,
-.book-card-title, .section-label, .card-title {
+.book-card-title, .section-label, .card-title, .label-text {
   font-family: var(--font-header) !important;
   color: var(--text-primary);
 }
@@ -322,6 +322,8 @@ h1, h2, h3, h4, h5, h6,
 .stat-value,
 .number-display,
 #timer-display,
+.timer-clock-display,
+.stat-num,
 [id^="stat-"],
 [id^="kn-stat-"],
 [id^="sv-"],
@@ -1613,9 +1615,9 @@ body.light-mode .fab-log-btn {
 /* ═══════════════════════════════════════════════════════════════
    BESPOKE EDITORIAL DESIGN SYSTEM (Warm Espresso / Obsidian / Paper)
    ══════════════════════════════════════════════════════════════ */
-.font-serif { font-family: 'Newsreader', 'Lora', Georgia, serif !important; }
-.font-sans { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
-.font-mono { font-family: 'JetBrains Mono', monospace !important; }
+.font-serif { font-family: var(--font-header) !important; }
+.font-sans { font-family: var(--font-body) !important; }
+.font-mono { font-family: var(--font-figures) !important; }
 
 /* Dynamic Cover Hero Card */
 .hero-book-card-editorial {
