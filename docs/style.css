@@ -1507,7 +1507,7 @@ body.light-mode .fab-log-btn {
 }
 
 .quote-card blockquote {
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: var(--font-header) !important;
   font-style: italic;
   color: var(--text-primary);
   line-height: 1.5;
@@ -1665,7 +1665,7 @@ body.light-mode .fab-log-btn {
 }
 
 .timer-clock-display {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-figures) !important;
   font-size: 3.5rem;
   font-weight: 300;
   letter-spacing: -0.04em;
@@ -1692,7 +1692,7 @@ body.light-mode .fab-log-btn {
   transform: rotate(180deg);
   padding: 14px 4px;
   border-radius: 3px 6px 6px 3px;
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-header) !important;
   font-size: 0.8rem;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1955,7 +1955,7 @@ body.light-mode .fab-log-btn {
   transform: rotate(180deg);
   padding: 14px 4px;
   border-radius: 3px 6px 6px 3px;
-  font-family: 'Newsreader', serif;
+  font-family: var(--font-header) !important;
   font-size: 0.8rem;
   white-space: nowrap;
   text-overflow: ellipsis;
