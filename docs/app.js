@@ -1634,12 +1634,12 @@ function syncAccountThemeSwitch() {
   const switchEl = $('acct-theme-toggle-switch');
   const textEl = $('acct-theme-status-text');
   const iconEl = $('acct-theme-icon');
-  const isDark = document.body.classList.contains('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
   
-  if (switchEl) switchEl.checked = isDark;
-  if (textEl) textEl.textContent = isDark ? 'Dark Mode Active' : 'Light Mode Active';
+  if (switchEl) switchEl.checked = !isLight;
+  if (textEl) textEl.textContent = isLight ? 'Light Mode Active' : 'Dark Mode Active';
   if (iconEl) {
-    iconEl.className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    iconEl.className = isLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
   }
 }
 
@@ -5809,10 +5809,10 @@ function renderDonutChart() {
   const bahaiDash = (bahaiVal / total) * circ;
   const nonBahaiDash = (nonBahaiVal / total) * circ;
 
-  const isDark = document.body.classList.contains('light-mode');
-  const c1 = isDark ? '#D6A85C' : '#FF9F0A'; // Bahai (Gold)
-  const c2 = isDark ? '#38BDF8' : '#0A84FF'; // Non-Bahai (Sky Blue)
-  const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const isLight = document.body.classList.contains('light-mode');
+  const c1 = isLight ? '#FF9F0A' : '#D6A85C'; // Bahai (Gold)
+  const c2 = isLight ? '#0A84FF' : '#38BDF8'; // Non-Bahai (Sky Blue)
+  const trackColor = 'var(--border)';
 
   const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: trackColor, 'stroke-width': sw }));
@@ -7591,9 +7591,8 @@ function renderBooksPerYearChart(completions, containerId) {
   const barWidth = Math.min(45, (plotWidth / years.length) * 0.6);
   const gap = (plotWidth - (barWidth * years.length)) / (years.length > 1 ? years.length - 1 : 1);
 
-  const isDark = document.body.classList.contains('light-mode');
-  const labelColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const labelColor = 'var(--text-secondary)';
+  const gridColor = 'var(--border)';
 
   const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, class: 'w-full h-full', style: 'display:block' });
 
@@ -7798,8 +7797,7 @@ function renderCategoryPieChart(books, containerId) {
   const chartFlex = el('div', 'flex flex-col items-center justify-center gap-6 py-3 w-full');
   const svgWrapper = el('div', 'relative w-36 h-36 shrink-0 flex items-center justify-center');
   
-  const isDark = document.body.classList.contains('light-mode');
-  const trackColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const trackColor = 'var(--border)';
 
   const svg = svgEl('svg', { viewBox: '0 0 100 100', class: 'w-full h-full', style: 'display:block' });
   svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '37', fill: 'none', stroke: trackColor, 'stroke-width': '8' }));
