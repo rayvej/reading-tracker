@@ -617,21 +617,22 @@
             </div>
 
             <!-- Reading Intensity Grid (GitHub-style) -->
-            <div class="glass-panel p-3.5 flex flex-col gap-2.5 rounded-xl relative">
+            <div class="glass-panel p-3 flex flex-col gap-2 rounded-xl relative">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <span class="section-label whitespace-nowrap" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="flex items-center gap-1.5 flex-nowrap overflow-x-auto no-scrollbar max-w-full">
                   <!-- Metric Selector (Pages / Mins / Sessions / Notes) -->
-                  <div class="seg-control-micro" id="dash-heatmap-metric">
-                    <button class="seg-btn-micro active" data-metric="pages">Pages</button>
-                    <button class="seg-btn-micro" data-metric="duration">Mins</button>
-                    <button class="seg-btn-micro" data-metric="sessions">Logs</button>
-                    <button class="seg-btn-micro" data-metric="notes">Notes</button>
+                  <div class="seg-control-nano" id="dash-heatmap-metric">
+                    <button class="seg-btn-nano active" data-metric="pages">Pages</button>
+                    <button class="seg-btn-nano" data-metric="duration">Mins</button>
+                    <button class="seg-btn-nano" data-metric="sessions">Logs</button>
+                    <button class="seg-btn-nano" data-metric="notes">Notes</button>
                   </div>
-                  <div class="seg-control-micro" id="dash-heatmap-tf">
-                    <button class="seg-btn-micro active" data-range="pastYear">Past Year</button>
-                    <button class="seg-btn-micro" data-range="thisYear">This Year</button>
-                    <button class="seg-btn-micro" data-range="allTime">All Time</button>
+                  <div class="h-3.5 w-[1px] shrink-0" style="background: var(--border)"></div>
+                  <div class="seg-control-nano" id="dash-heatmap-tf">
+                    <button class="seg-btn-nano active" data-range="pastYear">Past Year</button>
+                    <button class="seg-btn-nano" data-range="thisYear">This Year</button>
+                    <button class="seg-btn-nano" data-range="allTime">All Time</button>
                   </div>
                 </div>
               </div>

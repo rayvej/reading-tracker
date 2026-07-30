@@ -1015,6 +1015,59 @@ body.light-mode .seg-btn-micro.active {
   border-color: var(--border-strong);
 }
 
+/* Nano Segment Control (Ultra-compact header controls) */
+.seg-control-nano {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px;
+  gap: 1px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.seg-btn-nano {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  border-radius: 3.5px;
+  padding: 1.5px 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease-in-out;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seg-btn-nano:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.seg-btn-nano.active {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  font-weight: 600;
+}
+
+body.light-mode .seg-control-nano {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-mode .seg-btn-nano.active {
+  background: var(--bg-elevated);
+  color: var(--accent);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SLEEK STAT TILES & TAB CARDS SYSTEM
    ══════════════════════════════════════════════════════════════ */
