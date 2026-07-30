@@ -4502,7 +4502,7 @@ async function renderDashboard() {
           <span>${lifetimeReads} / ${nextBookMilestone} Books</span>
         </div>
         <div class="w-full bg-theme-card rounded-full h-1.5 overflow-hidden border border-theme mt-0.5">
-          <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (lifetimeReads/nextBookMilestone)*100)}%"></div>
+          <div class="h-full transition-all rounded-full" style="background: var(--gold); width: ${Math.min(100, (lifetimeReads/nextBookMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-theme-secondary mt-1">
           <span>To go: <b>${booksToMilestone} books</b></span>
@@ -4517,7 +4517,7 @@ async function renderDashboard() {
           <span>${fmtNum(lifetimePages)} / ${fmtNum(nextPageMilestone)} Pages</span>
         </div>
         <div class="w-full bg-theme-card rounded-full h-1.5 overflow-hidden border border-theme mt-0.5">
-          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (lifetimePages/nextPageMilestone)*100)}%"></div>
+          <div class="h-full transition-all rounded-full" style="background: var(--emerald); width: ${Math.min(100, (lifetimePages/nextPageMilestone)*100)}%"></div>
         </div>
         <div class="flex justify-between text-[10px] text-theme-secondary mt-1">
           <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
@@ -4549,7 +4549,7 @@ async function renderDashboard() {
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
                 <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase shrink-0">${pct}%</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0" style="background: rgba(var(--accent-rgb), 0.12); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.2)">${pct}%</span>
               </div>
               <div class="text-[9px] text-theme-secondary truncate mt-0.5">${b.author || ''}</div>
             </div>
@@ -6778,7 +6778,7 @@ function renderBookCard(b) {
       </div>
       ${isAct ? `
         <div class="w-full bg-theme-card border border-theme rounded-full h-1 overflow-hidden mt-0.5">
-          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+          <div class="h-full transition-all" style="background: var(--emerald); width: ${progressPct}%"></div>
         </div>
       ` : ''}
     `;
@@ -6848,7 +6848,7 @@ function renderBookCard(b) {
           <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
         </div>
         <div class="w-full bg-theme-card border border-theme rounded-full h-1.5 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
+          <div class="h-full transition-all" style="background: var(--emerald); width: ${progressPct}%"></div>
         </div>
       </div>
     ` : ''}
