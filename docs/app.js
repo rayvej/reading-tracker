@@ -931,8 +931,8 @@ function setupStarterImportModal() {
       const rating = parseInt(btn.dataset.star, 10);
       starterSelectedRating = rating;
       starBtns.forEach((b, idx) => {
-        b.classList.toggle('text-amber-400', idx < rating);
-        b.classList.toggle('text-slate-500', idx >= rating);
+        b.classList.toggle('text-theme-gold', idx < rating);
+        b.classList.toggle('text-theme-tertiary', idx >= rating);
       });
     });
   });
@@ -993,8 +993,8 @@ function resetStarterForm() {
 
   starterSelectedRating = 0;
   document.querySelectorAll('.starter-star').forEach(b => {
-    b.classList.remove('text-amber-400');
-    b.classList.add('text-slate-500');
+    b.classList.remove('text-theme-gold');
+    b.classList.add('text-theme-tertiary');
   });
 
   const todayStr = todayISO();
@@ -1487,7 +1487,7 @@ async function renderAccountView() {
       $('gemini-key-status').className = 'font-bold text-emerald-400';
     } else {
       $('gemini-key-status').textContent = 'Not Set';
-      $('gemini-key-status').className = 'font-bold text-amber-400';
+      $('gemini-key-status').className = 'font-bold text-theme-gold';
     }
   }
 }
@@ -3266,11 +3266,11 @@ function renderLiveSessionBanner(books, logs) {
     if (velocityLabel) velocityLabel.textContent = '';
     if (actionsEl) actionsEl.classList.add('hidden');
     if (coverContainerEl) {
-      coverContainerEl.innerHTML = `<div class="w-16 h-24 rounded-xl bg-slate-800 border border-white/10 flex items-center justify-center shadow-lg overflow-hidden"><i class="fa-solid fa-book text-slate-500 text-xl"></i></div>`;
+      coverContainerEl.innerHTML = `<div class="w-16 h-24 rounded-xl bg-theme-card border border-theme flex items-center justify-center shadow-lg overflow-hidden"><i class="fa-solid fa-book text-theme-tertiary text-xl"></i></div>`;
     }
     if (etaBadgeEl) {
       etaBadgeEl.textContent = 'Standby';
-      etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-800 text-slate-400 border border-white/5';
+      etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-theme-card text-theme-secondary border border-theme';
     }
     return;
   }
@@ -3560,9 +3560,9 @@ function renderVelocityCurve(activeLogs, selectedYear) {
           <stop offset="100%" stop-color="var(--gold)" />
         </linearGradient>
       </defs>
-      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
-      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
-      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="rgba(255,255,255,0.08)" />
+      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="var(--border)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="var(--border)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="var(--border)" />
       <path d="${targetPath}" fill="none" stroke="rgba(var(--gold-rgb), 0.35)" stroke-width="1.5" stroke-dasharray="4,3" />
       ${areaPath ? `<path d="${areaPath}" fill="url(#velAreaGrad)" />` : ''}
       ${actualPath ? `<path d="${actualPath}" fill="none" stroke="url(#velLineGrad)" stroke-width="2.5" stroke-linecap="round" />` : ''}
@@ -3706,16 +3706,16 @@ function openChartDrilldownModal(categoryOrCollectionName, categoryBooksList) {
   listEl.innerHTML = '';
 
   if (categoryBooksList.length === 0) {
-    listEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No books found in this selection.</p>';
+    listEl.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-4">No books found in this selection.</p>';
   } else {
     categoryBooksList.forEach(b => {
       const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0;
       const statusColor = isFinished ? 'emerald' : b.status === 'In Progress' ? 'blue' : 'amber';
-      const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex justify-between items-center gap-3 active:scale-[0.99] cursor-pointer hover:bg-white/[0.06] transition-all');
+      const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-theme flex justify-between items-center gap-3 active:scale-[0.99] cursor-pointer hover:bg-white/[0.06] transition-all');
       row.innerHTML = `
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-slate-200 truncate">${b.title}</div>
-          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'} · ${b.total_pages || 0} pg</div>
+          <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown'} · ${b.total_pages || 0} pg</div>
         </div>
         <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-${statusColor}-500/10 text-${statusColor}-400 border border-${statusColor}-500/20">${b.status}</span>
       `;
@@ -3746,24 +3746,24 @@ function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
     if (dayLogs.length === 0) {
       contentEl.innerHTML = `
         <div class="text-center py-6 flex flex-col items-center gap-2">
-          <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 text-sm"><i class="fa-solid fa-moon"></i></div>
-          <p class="text-xs text-slate-400 font-medium">No reading sessions recorded for this date.</p>
+          <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-theme-tertiary text-sm"><i class="fa-solid fa-moon"></i></div>
+          <p class="text-xs text-theme-secondary font-medium">No reading sessions recorded for this date.</p>
         </div>
       `;
     } else {
       dayLogs.forEach(l => {
         const pagesRead = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
-        const card = el('div', 'p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col gap-1.5');
+        const card = el('div', 'p-3.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col gap-1.5');
         card.innerHTML = `
           <div class="flex justify-between items-start">
-            <span class="text-xs font-bold text-slate-100 truncate flex-1 pr-2">${l.book_title}</span>
+            <span class="text-xs font-bold text-theme-primary truncate flex-1 pr-2">${l.book_title}</span>
             <span class="text-xs font-black text-emerald-400 tabular-nums">+${pagesRead} pg</span>
           </div>
-          <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+          <div class="flex justify-between text-[10px] text-theme-secondary font-semibold">
             <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
             <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified duration'}</span>
           </div>
-          ${l.notes ? `<div class="text-[10px] text-slate-300 italic bg-white/5 p-2 rounded-xl mt-1 border border-white/5">${l.notes}</div>` : ''}
+          ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-white/5 p-2 rounded-xl mt-1 border border-theme">${l.notes}</div>` : ''}
         `;
         contentEl.appendChild(card);
       });
@@ -4158,24 +4158,24 @@ async function renderDashboard() {
   const weekAvg = (thisWeekPages / 7).toFixed(1);
   
   $('dash-week-stats').innerHTML = `
-    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">📊 Weekly Velocity (Last 7 Days)</div>
+    <div class="text-[10px] font-bold uppercase tracking-widest text-theme-secondary">📊 Weekly Velocity (Last 7 Days)</div>
     <div class="grid grid-cols-3 gap-2.5 mt-2 text-center">
-      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
-        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Sessions</div>
-        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${thisWeekSessions}</div>
+      <div class="bg-theme-card p-2 rounded-xl border border-theme">
+        <div class="text-[9px] text-theme-secondary uppercase font-bold tracking-wider">Sessions</div>
+        <div class="text-sm font-extrabold text-theme-primary mt-0.5">${thisWeekSessions}</div>
       </div>
-      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
-        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Pages Read</div>
-        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${fmtNum(thisWeekPages)}</div>
+      <div class="bg-theme-card p-2 rounded-xl border border-theme">
+        <div class="text-[9px] text-theme-secondary uppercase font-bold tracking-wider">Pages Read</div>
+        <div class="text-sm font-extrabold text-theme-primary mt-0.5">${fmtNum(thisWeekPages)}</div>
       </div>
-      <div class="bg-slate-900/30 p-2 rounded-xl border border-white/5">
-        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Minutes</div>
-        <div class="text-sm font-extrabold text-slate-200 mt-0.5">${thisWeekMinutes}m</div>
+      <div class="bg-theme-card p-2 rounded-xl border border-theme">
+        <div class="text-[9px] text-theme-secondary uppercase font-bold tracking-wider">Minutes</div>
+        <div class="text-sm font-extrabold text-theme-primary mt-0.5">${thisWeekMinutes}m</div>
       </div>
     </div>
-    <div class="flex justify-between items-center text-[10px] text-slate-400 mt-2 border-t border-white/5 pt-2 font-medium">
+    <div class="flex justify-between items-center text-[10px] text-theme-secondary mt-2 border-t border-theme pt-2 font-medium">
       <span>vs. Previous 7 Days: <b class="${pageDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pageDeltaStr}</b></span>
-      <span>Avg Pages/Day: <b class="text-slate-200">${weekAvg}</b></span>
+      <span>Avg Pages/Day: <b class="text-theme-primary">${weekAvg}</b></span>
     </div>
   `;
 
@@ -4211,17 +4211,17 @@ async function renderDashboard() {
 
   $('dash-year-progress').innerHTML = `
     <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Elapsed</span><span class="text-slate-200 font-bold">${ytdDaysElapsed}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Days Remaining</span><span class="text-slate-200 font-bold">${daysRemainingInYear}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Books Completed</span><span class="text-slate-200 font-bold">${booksYTD}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400 font-medium">Pages Read</span><span class="text-slate-200 font-bold">${fmtNum(pagesYTD)}</span></div>
-      <div class="flex justify-between col-span-2 border-t border-white/5 pt-2 mt-1">
-        <span class="text-slate-400 font-medium">Pages/Calendar Day (YTD)</span>
-        <span class="text-slate-200 font-bold">${pagesPerCalendarDay}</span>
+      <div class="flex justify-between"><span class="text-theme-secondary font-medium">Days Elapsed</span><span class="text-theme-primary font-bold">${ytdDaysElapsed}</span></div>
+      <div class="flex justify-between"><span class="text-theme-secondary font-medium">Days Remaining</span><span class="text-theme-primary font-bold">${daysRemainingInYear}</span></div>
+      <div class="flex justify-between"><span class="text-theme-secondary font-medium">Books Completed</span><span class="text-theme-primary font-bold">${booksYTD}</span></div>
+      <div class="flex justify-between"><span class="text-theme-secondary font-medium">Pages Read</span><span class="text-theme-primary font-bold">${fmtNum(pagesYTD)}</span></div>
+      <div class="flex justify-between col-span-2 border-t border-theme pt-2 mt-1">
+        <span class="text-theme-secondary font-medium">Pages/Calendar Day (YTD)</span>
+        <span class="text-theme-primary font-bold">${pagesPerCalendarDay}</span>
       </div>
       <div class="flex justify-between col-span-2">
-        <span class="text-slate-400 font-medium">Books Completed/Month</span>
-        <span class="text-slate-200 font-bold">${booksPerMonthYTD}</span>
+        <span class="text-theme-secondary font-medium">Books Completed/Month</span>
+        <span class="text-theme-primary font-bold">${booksPerMonthYTD}</span>
       </div>
     </div>
   `;
@@ -4231,29 +4231,29 @@ async function renderDashboard() {
     <div class="flex flex-col gap-3.5">
       <!-- Books Milestone -->
       <div class="flex flex-col gap-1">
-        <div class="flex justify-between text-xs font-semibold text-slate-200">
+        <div class="flex justify-between text-xs font-semibold text-theme-primary">
           <span>📚 Next Books Milestone</span>
           <span>${lifetimeReads} / ${nextBookMilestone} Books</span>
         </div>
-        <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+        <div class="w-full bg-theme-card rounded-full h-1.5 overflow-hidden border border-theme mt-0.5">
           <div class="bg-gradient-to-r from-gold to-yellow-500 h-full transition-all" style="width: ${Math.min(100, (lifetimeReads/nextBookMilestone)*100)}%"></div>
         </div>
-        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+        <div class="flex justify-between text-[10px] text-theme-secondary mt-1">
           <span>To go: <b>${booksToMilestone} books</b></span>
           <span>ETA: <b>${booksETA}</b></span>
         </div>
       </div>
       
       <!-- Pages Milestone -->
-      <div class="flex flex-col gap-1 border-t border-white/5 pt-3.5">
-        <div class="flex justify-between text-xs font-semibold text-slate-200">
+      <div class="flex flex-col gap-1 border-t border-theme pt-3.5">
+        <div class="flex justify-between text-xs font-semibold text-theme-primary">
           <span>📄 Next Pages Milestone</span>
           <span>${fmtNum(lifetimePages)} / ${fmtNum(nextPageMilestone)} Pages</span>
         </div>
-        <div class="w-full bg-slate-900/50 rounded-full h-1.5 overflow-hidden border border-white/5 mt-0.5">
+        <div class="w-full bg-theme-card rounded-full h-1.5 overflow-hidden border border-theme mt-0.5">
           <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${Math.min(100, (lifetimePages/nextPageMilestone)*100)}%"></div>
         </div>
-        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+        <div class="flex justify-between text-[10px] text-theme-secondary mt-1">
           <span>To go: <b>${fmtNum(pagesToMilestone)} pages</b></span>
           <span>ETA: <b>${pagesETA}</b></span>
         </div>
@@ -4267,7 +4267,7 @@ async function renderDashboard() {
   if (activeEl) {
     activeEl.innerHTML = '';
     if (active.length === 0) {
-      activeEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
+      activeEl.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No books currently in progress</p>';
     } else {
       active.forEach(b => {
         const pagesReadAccum = b.pages_read || 0;
@@ -4276,19 +4276,19 @@ async function renderDashboard() {
         const estDays = Math.ceil(left / 10);
         const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
         
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
+                <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/10 uppercase shrink-0">${pct}%</span>
               </div>
-              <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${b.author || ''}</div>
             </div>
           </div>
-          <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
+          <div class="flex justify-between text-[9px] text-theme-secondary mt-1 border-t border-theme pt-1.5 font-semibold">
             <span>Pages Left: <b>${left}</b></span>
             <span>ETA @ 10pg/day: <b>${estDays} days</b></span>
           </div>
@@ -4309,19 +4309,19 @@ async function renderDashboard() {
   if (upNextEl) {
     upNextEl.innerHTML = '';
     if (upNext.length === 0) {
-      upNextEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No upcoming books</p>';
+      upNextEl.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No upcoming books</p>';
     } else {
       upNext.forEach(b => {
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-slate-100 truncate">${b.title}</div>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase shrink-0">${b.priority} Prio</span>
+                <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-theme-gold border border-amber-500/10 uppercase shrink-0">${b.priority} Prio</span>
               </div>
-              <div class="text-[9px] text-slate-400 truncate mt-0.5">${b.author || ''}</div>
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${b.author || ''}</div>
             </div>
           </div>
         `;
@@ -4341,21 +4341,21 @@ async function renderDashboard() {
       .sort((a, b) => b.date.localeCompare(a.date));
       
     if (recentCompletions.length === 0) {
-      recentEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books recently finished</p>';
+      recentEl.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No books recently finished</p>';
     } else {
       recentCompletions.forEach(c => {
         const book = mergedBooks.find(b => b.title === c.title) || { title: c.title, author: '' };
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-white/5 active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(book, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-slate-100 truncate">${c.title}</div>
+                <div class="text-xs font-bold text-theme-primary truncate">${c.title}</div>
                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase shrink-0">Finished</span>
               </div>
-              <div class="text-[9px] text-slate-400 truncate mt-0.5">${book.author || ''}</div>
-              <div class="flex justify-between text-[9px] text-slate-400 mt-1 border-t border-white/5 pt-1.5 font-semibold">
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${book.author || ''}</div>
+              <div class="flex justify-between text-[9px] text-theme-secondary mt-1 border-t border-theme pt-1.5 font-semibold">
                 <span>Date: <b>${fmtDate(c.date)}</b></span>
                 <span>Pages: <b>${c.pages} pg</b></span>
               </div>
@@ -4463,10 +4463,10 @@ function renderDailyCard(activeLogs, dailyPagesTarget) {
   if (dotsContainer) {
     dotsContainer.innerHTML = streakData.dots.map(d => `
       <div class="flex flex-col items-center gap-1">
-        <span class="text-[8px] font-bold text-slate-400 uppercase">${d.day}</span>
+        <span class="text-[8px] font-bold text-theme-secondary uppercase">${d.day}</span>
         <div class="w-5 h-5 rounded-full flex items-center justify-center transition-all ${
           d.active ? 'bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black shadow-sm shadow-amber-500/30 text-[10px]' : 
-          (d.isToday ? 'border border-amber-400/50 bg-amber-400/10 text-amber-300 text-[8px]' : 'bg-white/5 border border-white/10 text-slate-600 text-[8px]')
+          (d.isToday ? 'border border-amber-400/50 bg-amber-400/10 text-theme-gold text-[8px]' : 'bg-white/5 border border-theme text-slate-600 text-[8px]')
         }">
           ${d.active ? '✓' : ''}
         </div>
@@ -4550,9 +4550,9 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
         </linearGradient>
       </defs>
       <!-- Grid lines -->
-      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2,2" />
-      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2,2" />
-      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="rgba(255,255,255,0.1)" />
+      <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="var(--border)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH/2}" x2="${width - padR}" y2="${padT + graphH/2}" stroke="var(--border)" stroke-dasharray="2,2" />
+      <line x1="${padL}" y1="${padT + graphH}" x2="${width - padR}" y2="${padT + graphH}" stroke="var(--border-strong)" />
       
       <!-- Target Pace Line -->
       <path d="${targetPathStr}" fill="none" stroke="rgba(245, 158, 11, 0.4)" stroke-width="1.5" stroke-dasharray="4,3" />
@@ -4640,16 +4640,16 @@ function renderAchievementBadges(stats, streak, logsCache, yearBooks, aBT) {
   container.innerHTML = badges.map(b => `
     <div class="flex flex-col items-center text-center p-2.5 rounded-2xl border transition-all ${
       b.unlocked 
-        ? 'bg-gradient-to-b from-amber-500/10 to-amber-500/5 border-amber-500/30 text-amber-300 shadow-md shadow-amber-500/5' 
-        : 'bg-black/20 border-white/5 text-slate-500 opacity-60'
+        ? 'bg-gradient-to-b from-amber-500/10 to-amber-500/5 border-amber-500/30 text-theme-gold shadow-md shadow-amber-500/5' 
+        : 'bg-black/20 border-theme text-theme-tertiary opacity-60'
     }">
       <div class="w-8 h-8 rounded-xl flex items-center justify-center mb-1 text-sm ${
-        b.unlocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/5 text-slate-600'
+        b.unlocked ? 'bg-amber-500/20 text-theme-gold border border-amber-500/30' : 'bg-white/5 text-slate-600'
       }">
         <i class="fa-solid ${b.icon}"></i>
       </div>
-      <div class="text-[10px] font-extrabold text-slate-200 truncate w-full leading-tight">${b.title}</div>
-      <div class="text-[8px] font-semibold text-slate-400 mt-0.5">${b.unlocked ? '✓ Unlocked' : b.progress}</div>
+      <div class="text-[10px] font-extrabold text-theme-primary truncate w-full leading-tight">${b.title}</div>
+      <div class="text-[8px] font-semibold text-theme-secondary mt-0.5">${b.unlocked ? '✓ Unlocked' : b.progress}</div>
     </div>
   `).join('');
 }
@@ -4691,10 +4691,10 @@ function setupGoalsTimeframeSwitcher() {
 
       switcher.querySelectorAll('button').forEach(b => {
         const isActive = b.dataset.timeframe === tf;
-        b.classList.toggle('text-amber-400', isActive);
+        b.classList.toggle('text-theme-gold', isActive);
         b.classList.toggle('bg-amber-500/10', isActive);
         b.classList.toggle('shadow-sm', isActive);
-        b.classList.toggle('text-slate-400', !isActive);
+        b.classList.toggle('text-theme-secondary', !isActive);
       });
 
       // Filter sections
@@ -4784,10 +4784,10 @@ function setupGoalsPresetsAndSteppers() {
           const isSelected = b === btn;
           b.classList.toggle('border-amber-500/30', isSelected);
           b.classList.toggle('bg-amber-500/10', isSelected);
-          b.classList.toggle('text-amber-300', isSelected);
-          b.classList.toggle('border-white/10', !isSelected);
+          b.classList.toggle('text-theme-gold', isSelected);
+          b.classList.toggle('border-theme', !isSelected);
           b.classList.toggle('bg-white/5', !isSelected);
-          b.classList.toggle('text-slate-300', !isSelected);
+          b.classList.toggle('text-theme-secondary', !isSelected);
         });
       });
     });
@@ -4939,56 +4939,56 @@ async function renderGoals() {
   const progressStr = (cur, target) => {
     const pct = target > 0 ? Math.round((cur / target) * 100) : 0;
     const left = Math.max(0, target - cur);
-    return `<div class="text-right"><div class="font-extrabold text-slate-200">${pct}%</div><div class="text-[8px] text-slate-400 mt-0.5">${left} left</div></div>`;
+    return `<div class="text-right"><div class="font-extrabold text-theme-primary">${pct}%</div><div class="text-[8px] text-theme-secondary mt-0.5">${left} left</div></div>`;
   };
 
   $('goals-table-body').innerHTML = `
     <tr>
       <td>Books This Month</td>
-      <td class="text-center font-bold text-slate-300">${mBT}</td>
-      <td class="text-center font-bold text-slate-300">${monthBooks}</td>
+      <td class="text-center font-bold text-theme-secondary">${mBT}</td>
+      <td class="text-center font-bold text-theme-secondary">${monthBooks}</td>
       <td>${progressStr(monthBooks, mBT)}</td>
     </tr>
     <tr>
       <td>Pages This Month</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(mPT)}</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(monthPages)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(mPT)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(monthPages)}</td>
       <td>${progressStr(monthPages, mPT)}</td>
     </tr>
     <tr>
       <td>Sessions This Month</td>
-      <td class="text-center font-bold text-slate-300">${mST}</td>
-      <td class="text-center font-bold text-slate-300">${monthSessions}</td>
+      <td class="text-center font-bold text-theme-secondary">${mST}</td>
+      <td class="text-center font-bold text-theme-secondary">${monthSessions}</td>
       <td>${progressStr(monthSessions, mST)}</td>
     </tr>
     <tr>
       <td>Minutes This Month</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(mMT)}</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(monthMinutes)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(mMT)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(monthMinutes)}</td>
       <td>${progressStr(monthMinutes, mMT)}</td>
     </tr>
-    <tr class="border-t border-white/5 bg-white/2">
+    <tr class="border-t border-theme bg-white/2">
       <td>Books This Year</td>
-      <td class="text-center font-bold text-slate-300">${aBT}</td>
-      <td class="text-center font-bold text-slate-300">${yearBooks}</td>
+      <td class="text-center font-bold text-theme-secondary">${aBT}</td>
+      <td class="text-center font-bold text-theme-secondary">${yearBooks}</td>
       <td>${progressStr(yearBooks, aBT)}</td>
     </tr>
     <tr>
       <td>Pages This Year</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(aPT)}</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(yearPages)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(aPT)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(yearPages)}</td>
       <td>${progressStr(yearPages, aPT)}</td>
     </tr>
     <tr>
       <td>Sessions This Year</td>
-      <td class="text-center font-bold text-slate-300">${aST}</td>
-      <td class="text-center font-bold text-slate-300">${yearSessions}</td>
+      <td class="text-center font-bold text-theme-secondary">${aST}</td>
+      <td class="text-center font-bold text-theme-secondary">${yearSessions}</td>
       <td>${progressStr(yearSessions, aST)}</td>
     </tr>
     <tr>
       <td>Minutes Reading YTD</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(aMT)}</td>
-      <td class="text-center font-bold text-slate-300">${fmtNum(yearMinutes)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(aMT)}</td>
+      <td class="text-center font-bold text-theme-secondary">${fmtNum(yearMinutes)}</td>
       <td>${progressStr(yearMinutes, aMT)}</td>
     </tr>
   `;
@@ -5030,37 +5030,37 @@ async function renderGoals() {
     <tr>
       <td>Books</td>
       <td class="text-center">${reqBooksPace} /mo</td>
-      <td class="text-center font-extrabold text-slate-200">${currentBooksPace} /mo</td>
+      <td class="text-center font-extrabold text-theme-primary">${currentBooksPace} /mo</td>
       <td class="text-right">${statusBadge(currentBooksPace, reqBooksPace)}</td>
     </tr>
-    <tr class="text-[8px] text-slate-400">
+    <tr class="text-[8px] text-theme-secondary">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearBooks/Math.max(1, dayOfYear), daysInYear)} books</b></td>
     </tr>
     <tr>
       <td>Pages</td>
       <td class="text-center">${reqPagesPace} /day</td>
-      <td class="text-center font-extrabold text-slate-200">${currentPagesPace} /day</td>
+      <td class="text-center font-extrabold text-theme-primary">${currentPagesPace} /day</td>
       <td class="text-right">${statusBadge(currentPagesPace, reqPagesPace)}</td>
     </tr>
-    <tr class="text-[8px] text-slate-400">
+    <tr class="text-[8px] text-theme-secondary">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentPagesPace, daysInYear))} pages</b></td>
     </tr>
     <tr>
       <td>Sessions</td>
       <td class="text-center">${reqSessionsPace} /wk</td>
-      <td class="text-center font-extrabold text-slate-200">${currentSessionsPace} /wk</td>
+      <td class="text-center font-extrabold text-theme-primary">${currentSessionsPace} /wk</td>
       <td class="text-right">${statusBadge(currentSessionsPace, reqSessionsPace)}</td>
     </tr>
-    <tr class="text-[8px] text-slate-400">
+    <tr class="text-[8px] text-theme-secondary">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${estYearEnd(yearSessions/Math.max(1, dayOfYear), daysInYear)} sessions</b></td>
     </tr>
     <tr>
       <td>Minutes</td>
       <td class="text-center">${reqMinutesPace} /day</td>
-      <td class="text-center font-extrabold text-slate-200">${currentMinutesPace} /day</td>
+      <td class="text-center font-extrabold text-theme-primary">${currentMinutesPace} /day</td>
       <td class="text-right">${statusBadge(currentMinutesPace, reqMinutesPace)}</td>
     </tr>
-    <tr class="text-[8px] text-slate-400">
+    <tr class="text-[8px] text-theme-secondary">
       <td colspan="4" class="text-right border-none pt-0 pb-2">Year-End Est: <b>${fmtNum(estYearEnd(currentMinutesPace, daysInYear))} minutes</b></td>
     </tr>
   `;
@@ -5097,19 +5097,19 @@ async function renderGoals() {
   $('projection-table-body').innerHTML = `
     <tr>
       <td>Finish "In Progress" Books (${inProgressBooks.length} books left, ${pagesLeftIP} pg)</td>
-      <td class="text-right font-bold text-slate-200">${ipETA}</td>
+      <td class="text-right font-bold text-theme-primary">${ipETA}</td>
     </tr>
     <tr>
       <td>Reach 50 Books Lifetime (Current: ${totalReadsLifetime})</td>
-      <td class="text-right font-bold text-slate-200">${lifetime50ETA}</td>
+      <td class="text-right font-bold text-theme-primary">${lifetime50ETA}</td>
     </tr>
     <tr>
       <td>Reach 100 Books Lifetime (Current: ${totalReadsLifetime})</td>
-      <td class="text-right font-bold text-slate-200">${lifetime100ETA}</td>
+      <td class="text-right font-bold text-theme-primary">${lifetime100ETA}</td>
     </tr>
     <tr>
       <td>Reach 30k Pages Lifetime (Current: ${fmtNum(totalPagesReadLifetime)})</td>
-      <td class="text-right font-bold text-slate-200">${pages30kETA}</td>
+      <td class="text-right font-bold text-theme-primary">${pages30kETA}</td>
     </tr>
   `;
 
@@ -5118,7 +5118,7 @@ async function renderGoals() {
   etasContainer.innerHTML = '';
   
   if (inProgressBooks.length === 0) {
-    etasContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No books currently in progress</p>';
+    etasContainer.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No books currently in progress</p>';
   } else {
     inProgressBooks.forEach(b => {
       const left = Math.max(0, b.total_pages - b.pages_read);
@@ -5143,21 +5143,21 @@ async function renderGoals() {
       const effectiveRate = avgRate > 0 ? (0.6 * avgRate + 0.4 * pagesPerDayRate) : pagesPerDayRate;
       const bookETA = calculateETA(left, effectiveRate);
       
-      const card = el('div', 'glass-panel p-4 rounded-2xl flex flex-col gap-2.5 border border-white/5');
+      const card = el('div', 'glass-panel p-4 rounded-2xl flex flex-col gap-2.5 border border-theme');
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
           <div class="min-w-0 flex-1">
-            <div class="text-xs font-extrabold text-slate-100 truncate">${b.title}</div>
-            <div class="text-[9px] text-slate-400 mt-0.5">Last read: ${lastReadStr} · ${left} pages left (${pct}%)</div>
+            <div class="text-xs font-extrabold text-theme-primary truncate">${b.title}</div>
+            <div class="text-[9px] text-theme-secondary mt-0.5">Last read: ${lastReadStr} · ${left} pages left (${pct}%)</div>
           </div>
-          <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/10 uppercase shrink-0">${pct}%</span>
+          <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-amber-500/10 text-theme-gold border border-amber-500/10 uppercase shrink-0">${pct}%</span>
         </div>
-        <div class="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden">
+        <div class="w-full bg-theme-card/60 rounded-full h-1.5 overflow-hidden">
           <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background: linear-gradient(90deg, var(--gold), var(--gold-light))"></div>
         </div>
-        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-0.5 border-t border-white/5 pt-2 font-semibold">
-          <span>Pace: <b class="text-slate-200">${effectiveRate.toFixed(1)} pg/day</b></span>
-          <span>ETA: <b class="text-amber-300 font-bold">${bookETA}</b></span>
+        <div class="flex justify-between items-center text-[10px] text-theme-secondary mt-0.5 border-t border-theme pt-2 font-semibold">
+          <span>Pace: <b class="text-theme-primary">${effectiveRate.toFixed(1)} pg/day</b></span>
+          <span>ETA: <b class="text-theme-gold font-bold">${bookETA}</b></span>
         </div>
       `;
       etasContainer.appendChild(card);
@@ -5252,23 +5252,23 @@ function renderAchievementsVault() {
     card.className = `p-3 rounded-2xl flex flex-col gap-2 border transition-all ${
       t.unlocked 
         ? 'bg-amber-500/10 border-amber-500/30 text-amber-200 shadow-lg' 
-        : 'bg-white/[0.03] border-white/5 text-slate-400 opacity-70'
+        : 'bg-white/[0.03] border-theme text-theme-secondary opacity-70'
     }`;
 
     card.innerHTML = `
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl ${t.unlocked ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-500'} flex items-center justify-center text-sm shrink-0">
+        <div class="w-8 h-8 rounded-xl ${t.unlocked ? 'bg-amber-500/20 text-theme-gold' : 'bg-white/5 text-theme-tertiary'} flex items-center justify-center text-sm shrink-0">
           <i class="fa-solid ${t.icon}"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold ${t.unlocked ? 'text-amber-200' : 'text-slate-300'} truncate">${t.title}</div>
-          <div class="text-[9px] text-slate-400 truncate">${t.desc}</div>
+          <div class="text-xs font-bold ${t.unlocked ? 'text-amber-200' : 'text-theme-secondary'} truncate">${t.title}</div>
+          <div class="text-[9px] text-theme-secondary truncate">${t.desc}</div>
         </div>
       </div>
       <div class="w-full bg-black/30 rounded-full h-1.5 overflow-hidden mt-1">
         <div class="h-full rounded-full transition-all duration-500 ${t.unlocked ? 'bg-amber-400' : 'bg-slate-600'}" style="width: ${pct}%;"></div>
       </div>
-      <div class="flex justify-between items-center text-[9px] font-mono text-slate-400">
+      <div class="flex justify-between items-center text-[9px] font-mono text-theme-secondary">
         <span>${t.unlocked ? 'UNLOCKED ✓' : 'LOCKED'}</span>
         <span>${fmtNum(t.current)} / ${fmtNum(t.target)}</span>
       </div>
@@ -5507,9 +5507,9 @@ function renderDonutChart() {
   svg.appendChild(svgEl('circle', { cx, cy, r, fill: 'none', stroke: trackColor, 'stroke-width': sw }));
 
   const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-1');
-  const overlayTotal = el('span', 'text-base font-black text-slate-100 tracking-tight');
+  const overlayTotal = el('span', 'text-base font-black text-theme-primary tracking-tight');
   overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[9px] font-bold uppercase tracking-wider text-slate-400 text-center mt-0.5 max-w-[80px] leading-tight');
+  const overlayLabel = el('span', 'text-[9px] font-bold uppercase tracking-wider text-theme-secondary text-center mt-0.5 max-w-[80px] leading-tight');
   overlayLabel.textContent = collectionChartMode === 'pages' ? 'Pages' : 'Books';
   centerOverlay.appendChild(overlayTotal);
   centerOverlay.appendChild(overlayLabel);
@@ -5574,14 +5574,14 @@ function renderDonutChart() {
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c1}"></span>
       <div>
         <div class="text-[10px] font-bold text-slate-350">Bahá'í</div>
-        <div class="text-xs font-black text-slate-100">${pctBahai}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(bahaiVal)} ${unitStr})</span></div>
+        <div class="text-xs font-black text-theme-primary">${pctBahai}% <span class="text-[9px] font-bold text-theme-secondary">(${fmtNum(bahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
     <div class="flex items-center gap-2">
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c2}"></span>
       <div>
         <div class="text-[10px] font-bold text-slate-350">Non-Bahá'í</div>
-        <div class="text-xs font-black text-slate-100">${pctNon}% <span class="text-[9px] font-bold text-slate-400">(${fmtNum(nonBahaiVal)} ${unitStr})</span></div>
+        <div class="text-xs font-black text-theme-primary">${pctNon}% <span class="text-[9px] font-bold text-theme-secondary">(${fmtNum(nonBahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
   `;
@@ -5740,23 +5740,23 @@ function renderRecentLogs() {
   
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
   if (activeLogs.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2 font-medium">No recent logs recorded</p>';
+    container.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No recent logs recorded</p>';
     return;
   }
 
   const logsToDisplay = activeLogs.slice(0, recentLogsLimit);
   
   logsToDisplay.forEach(l => {
-    const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-white/5 hover:bg-slate-900/30 transition-all cursor-pointer group relative overflow-hidden');
+    const card = el('div', 'glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 border border-theme hover:bg-theme-card transition-all cursor-pointer group relative overflow-hidden');
     const pages = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
     
     card.innerHTML = `
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-100 truncate">${l.book_title}</span>
+          <span class="text-xs font-bold text-theme-primary truncate">${l.book_title}</span>
           <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-gold/15 text-gold border border-gold/20 shrink-0">+${pages} pg</span>
         </div>
-        <div class="text-[9px] text-slate-400 mt-0.5 flex items-center gap-2">
+        <div class="text-[9px] text-theme-secondary mt-0.5 flex items-center gap-2">
           <span>Cycle ${l.read_cycle || 1}</span>
           <span>•</span>
           <span>pp. ${l.start_page || 0} → ${l.end_page || 0}</span>
@@ -5765,8 +5765,8 @@ function renderRecentLogs() {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <div class="text-xs font-bold text-slate-200">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
-        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-slate-400 border border-white/10 flex items-center justify-center transition-all shrink-0 active:scale-95" title="Edit Log">
+        <div class="text-xs font-bold text-theme-primary">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
+        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-theme-secondary border border-theme flex items-center justify-center transition-all shrink-0 active:scale-95" title="Edit Log">
           <i class="fa-solid fa-pen text-[10px]"></i>
         </button>
       </div>
@@ -5787,7 +5787,7 @@ function renderRecentLogs() {
   if (activeLogs.length > recentLogsLimit) {
     const remaining = activeLogs.length - recentLogsLimit;
     const loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 transition-all active:scale-95 cursor-pointer mt-2';
+    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all active:scale-95 cursor-pointer mt-2';
     loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Logs (${remaining} remaining)`;
     loadMoreBtn.onclick = () => {
       recentLogsLimit += 35;
@@ -6203,7 +6203,7 @@ async function renderCoverManagerGrid() {
   container.innerHTML = '';
   
   allBooks.forEach(b => {
-    const card = el('div', 'glass-panel p-3.5 rounded-2xl border border-white/5 flex flex-col gap-3');
+    const card = el('div', 'glass-panel p-3.5 rounded-2xl border border-theme flex flex-col gap-3');
     const isWl = b._isWishlist || false;
     const storeSearchUrl = `https://www.bahaibookstore.com/catalogsearch/result/?q=${encodeURIComponent((b.title||'').replace(/\/[A-Z0-9]+$/,''))}`;
 
@@ -6213,13 +6213,13 @@ async function renderCoverManagerGrid() {
           ${getCoverHTML(b, 'w-14 h-21 shadow-md')}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-xs font-bold text-slate-100 leading-snug line-clamp-2">${b.title}</div>
-          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'}</div>
+          <div class="text-xs font-bold text-theme-primary leading-snug line-clamp-2">${b.title}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown Author'}</div>
           
           <div class="flex flex-wrap items-center gap-2 mt-2">
-            ${b.cover_url ? `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-check text-[8px]"></i> Approved</span>` : `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Needs Cover</span>`}
+            ${b.cover_url ? `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-check text-[8px]"></i> Approved</span>` : `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-theme-gold border border-amber-500/30">Needs Cover</span>`}
             
-            <a href="${storeSearchUrl}" target="_blank" rel="noopener" class="text-[9px] font-bold text-amber-400 hover:underline flex items-center gap-1">
+            <a href="${storeSearchUrl}" target="_blank" rel="noopener" class="text-[9px] font-bold text-theme-gold hover:underline flex items-center gap-1">
               <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i> Find on Baha'i Bookstore
             </a>
           </div>
@@ -6227,7 +6227,7 @@ async function renderCoverManagerGrid() {
       </div>
 
       <!-- Candidate Choices / Custom URL Bar -->
-      <div class="flex flex-col gap-2 pt-2 border-t border-white/5" id="cover-candidates-${b.id}">
+      <div class="flex flex-col gap-2 pt-2 border-t border-theme" id="cover-candidates-${b.id}">
         <div class="flex items-center gap-2">
           <input type="text" class="input input-xs glass-input flex-1 text-[11px] px-2.5 h-8 py-0 rounded-xl" id="cover-url-input-${b.id}" placeholder="Paste Cover Image URL..." value="${b.cover_url || ''}">
           <button class="px-3 py-1 rounded-xl text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all h-8" onclick="saveCoverFromInput('${b.id}', ${isWl})">
@@ -6235,7 +6235,7 @@ async function renderCoverManagerGrid() {
           </button>
         </div>
         <div class="flex gap-2 items-center flex-wrap" id="cover-candidate-thumbs-${b.id}">
-          <button class="text-[10px] font-bold text-slate-400 hover:text-amber-300 flex items-center gap-1" onclick="fetchAndDisplayCandidates('${b.id}', '${(b.title||'').replace(/'/g, "\\'")}', '${(b.author||'').replace(/'/g, "\\'")}', '${b.collection||''}', ${isWl})">
+          <button class="text-[10px] font-bold text-theme-secondary hover:text-theme-gold flex items-center gap-1" onclick="fetchAndDisplayCandidates('${b.id}', '${(b.title||'').replace(/'/g, "\\'")}', '${(b.author||'').replace(/'/g, "\\'")}', '${b.collection||''}', ${isWl})">
             <i class="fa-solid fa-magnifying-glass text-[9px]"></i> Search Candidates
           </button>
         </div>
@@ -6255,18 +6255,18 @@ window.saveCoverFromInput = async function(id, isWishlist) {
 
 window.fetchAndDisplayCandidates = async function(id, title, author, collection, isWishlist) {
   const container = $(`cover-candidate-thumbs-${id}`);
-  if (container) container.innerHTML = `<span class="text-[10px] text-amber-400 animate-pulse"><i class="fa-solid fa-spinner fa-spin"></i> Fetching covers...</span>`;
+  if (container) container.innerHTML = `<span class="text-[10px] text-theme-gold animate-pulse"><i class="fa-solid fa-spinner fa-spin"></i> Fetching covers...</span>`;
 
   const { candidates } = await searchCoverCandidates(title, author, collection);
   if (!container) return;
   
   if (candidates.length === 0) {
-    container.innerHTML = `<span class="text-[10px] text-slate-400">No candidates found automatically. Click "Find on Baha'i Bookstore" above and paste the image link!</span>`;
+    container.innerHTML = `<span class="text-[10px] text-theme-secondary">No candidates found automatically. Click "Find on Baha'i Bookstore" above and paste the image link!</span>`;
     return;
   }
 
   container.innerHTML = candidates.map(c => `
-    <div class="relative group cursor-pointer border border-white/10 hover:border-gold rounded-lg overflow-hidden w-12 h-18 bg-black/40" onclick="applyCandidateCover('${id}', '${c.url}', ${isWishlist})">
+    <div class="relative group cursor-pointer border border-theme hover:border-gold rounded-lg overflow-hidden w-12 h-18 bg-black/40" onclick="applyCandidateCover('${id}', '${c.url}', ${isWishlist})">
       <img src="${c.url}" class="w-full h-full object-cover" loading="lazy">
       <span class="absolute bottom-0 inset-x-0 bg-black/70 text-[7px] text-center font-bold text-white py-0.5 truncate">${c.source}</span>
     </div>
@@ -6348,7 +6348,7 @@ window.autoFindSingleCover = async function(titleId, authorId, targetInputId, pr
   }
   
   const preview = $(previewId);
-  if (preview) preview.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-400 text-xs"></i>`;
+  if (preview) preview.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-theme-gold text-xs"></i>`;
   
   const { candidates } = await searchCoverCandidates(title, author);
   if (candidates && candidates.length > 0) {
@@ -6367,7 +6367,7 @@ function renderBookshelfContent(container, filtered) {
   container.innerHTML = '';
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-slate-500 gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-slate-400">No books found</div><p class="text-xs text-slate-500">Try a different filter or add a new book</p></div>`;
+    container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-theme-tertiary gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-theme-secondary">No books found</div><p class="text-xs text-theme-tertiary">Try a different filter or add a new book</p></div>`;
     return;
   }
 
@@ -6384,10 +6384,10 @@ function renderBookshelfContent(container, filtered) {
       const groupItems = groups[groupName];
 
       const section = el('div', 'flex flex-col gap-2 mb-2');
-      const header = el('div', 'bookshelf-section-header flex items-center justify-between text-xs font-black tracking-tight text-slate-200');
+      const header = el('div', 'bookshelf-section-header flex items-center justify-between text-xs font-black tracking-tight text-theme-primary');
       header.innerHTML = `
-        <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-amber-400 text-xs"></i> ${groupName}</span>
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/10 text-slate-300">${groupItems.length}</span>
+        <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-theme-gold text-xs"></i> ${groupName}</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/10 text-theme-secondary">${groupItems.length}</span>
       `;
       section.appendChild(header);
 
@@ -6408,21 +6408,21 @@ function renderBookCard(b) {
   const isAct = b.status === 'In Progress';
   const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
 
-  let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
+  let badgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
   if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
-  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
 
-  let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
+  let ownBadgeColor = 'bg-theme-card/40 text-slate-350 border-theme';
   if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
 
   const prioClasses = {
     'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
-    'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
-    'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
+    'Medium': 'bg-amber-500/10 text-theme-gold border-amber-500/10',
+    'Low': 'bg-theme-card/40 text-theme-secondary border-theme'
   };
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
 
@@ -6435,7 +6435,7 @@ function renderBookCard(b) {
 
   if (bookshelfViewMode === 'grid') {
     // 2-Column Compact Grid Card
-    const card = el('div', `bookshelf-card-item glass-panel p-3 rounded-2xl border border-white/5 flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+    const card = el('div', `bookshelf-card-item glass-panel p-3 rounded-2xl border border-theme flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
     card.dataset.id = b.id;
 
     card.innerHTML = `
@@ -6445,8 +6445,8 @@ function renderBookCard(b) {
       <div class="flex items-start gap-2.5 min-w-0">
         ${getCoverHTML(b, 'w-12 h-18 shrink-0')}
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-slate-100 leading-tight line-clamp-2">${b.title}</div>
-          <div class="text-[10px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown'}</div>
+          <div class="text-xs font-bold text-theme-primary leading-tight line-clamp-2">${b.title}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown'}</div>
           <div class="flex flex-wrap gap-1 mt-1.5">
             <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
             <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${b.priority}</span>
@@ -6454,7 +6454,7 @@ function renderBookCard(b) {
         </div>
       </div>
       ${isAct ? `
-        <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1 overflow-hidden mt-0.5">
+        <div class="w-full bg-theme-card border border-theme rounded-full h-1 overflow-hidden mt-0.5">
           <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
         </div>
       ` : ''}
@@ -6474,7 +6474,7 @@ function renderBookCard(b) {
     return card;
   }
 
-  const card = el('div', `bookshelf-card-item glass-panel p-4 rounded-3xl border border-white/5 flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+  const card = el('div', `bookshelf-card-item glass-panel p-4 rounded-3xl border border-theme flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
 
   const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
@@ -6482,10 +6482,10 @@ function renderBookCard(b) {
   if (b.where_to_buy) {
     const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
     buyHTML = `
-      <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-        <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
+      <div class="text-[11px] text-theme-secondary flex items-center gap-1.5 mt-0.5">
+        <i class="fa-solid fa-shopping-cart text-[10px] text-theme-gold"></i>
         <span>Where to Buy:</span>
-        ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
+        ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-theme-primary truncate font-semibold">${b.where_to_buy}</span>`}
       </div>
     `;
   }
@@ -6493,8 +6493,8 @@ function renderBookCard(b) {
   let notesHTML = '';
   if (b.notes) {
     notesHTML = `
-      <div class="text-[11px] text-slate-300 italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
-        <i class="fa-solid fa-quote-left text-[9px] text-slate-500 mr-1 align-top"></i>${b.notes}
+      <div class="text-[11px] text-theme-secondary italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
+        <i class="fa-solid fa-quote-left text-[9px] text-theme-tertiary mr-1 align-top"></i>${b.notes}
       </div>
     `;
   }
@@ -6506,11 +6506,11 @@ function renderBookCard(b) {
       ` : ''}
       ${getCoverHTML(b, 'w-14 h-21 shrink-0')}
       <div class="min-w-0 flex-1">
-        <div class="text-sm font-bold text-slate-100 leading-snug line-clamp-2">&#8203;${b.title}</div>
-        <div class="text-[11px] text-slate-400 truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+        <div class="text-sm font-bold text-theme-primary leading-snug line-clamp-2">&#8203;${b.title}</div>
+        <div class="text-[11px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
         <div class="flex flex-wrap gap-1.5 mt-2">
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.group || 'Other'}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
         </div>
@@ -6520,11 +6520,11 @@ function renderBookCard(b) {
 
     ${isAct ? `
       <div class="flex flex-col gap-1.5 mt-0.5">
-        <div class="flex justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+        <div class="flex justify-between text-[9px] text-theme-secondary font-bold uppercase tracking-wider">
           <span>Reading Progress</span>
           <span>${currentCyclePages} / ${b.total_pages} pg (${progressPct}%)</span>
         </div>
-        <div class="w-full bg-slate-900/40 border border-white/5 rounded-full h-1.5 overflow-hidden">
+        <div class="w-full bg-theme-card border border-theme rounded-full h-1.5 overflow-hidden">
           <div class="bg-gradient-to-r from-blue-400 to-emerald-400 h-full transition-all" style="width: ${progressPct}%"></div>
         </div>
       </div>
@@ -6533,15 +6533,15 @@ function renderBookCard(b) {
     ${buyHTML}
     ${notesHTML}
 
-    <div class="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-2.5 font-semibold mt-1">
+    <div class="flex justify-between items-center text-[10px] text-theme-secondary border-t border-theme pt-2.5 font-semibold mt-1">
       <div class="flex gap-3">
-        <span>Cycle: <b class="text-slate-200">${isAct ? readCycle : (b.read_count || 0)}</b></span>
-        <span>Reads: <b class="text-slate-200">${b.read_count || 0}</b></span>
+        <span>Cycle: <b class="text-theme-primary">${isAct ? readCycle : (b.read_count || 0)}</b></span>
+        <span>Reads: <b class="text-theme-primary">${b.read_count || 0}</b></span>
       </div>
       <div class="flex gap-1.5">
         ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
         ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
-        <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-white/10 text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+        <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-theme text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
       </div>
     </div>
   `;
@@ -7319,9 +7319,9 @@ function showYearBooksPopup(year, completedBooksInYear) {
   header.innerHTML = `
     <div>
       <h3 class="text-base font-black tracking-tight" style="color: var(--text-primary)">Books Completed in ${year}</h3>
-      <p class="text-[10px] font-bold text-slate-400 mt-0.5">${completedBooksInYear.length} book${completedBooksInYear.length === 1 ? '' : 's'} read</p>
+      <p class="text-[10px] font-bold text-theme-secondary mt-0.5">${completedBooksInYear.length} book${completedBooksInYear.length === 1 ? '' : 's'} read</p>
     </div>
-    <button class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-800/40 text-slate-450" id="close-year-popup">
+    <button class="w-8 h-8 rounded-full flex items-center justify-center bg-theme-card/40 text-slate-450" id="close-year-popup">
       <i class="fa-solid fa-xmark text-sm"></i>
     </button>
   `;
@@ -7330,21 +7330,21 @@ function showYearBooksPopup(year, completedBooksInYear) {
   // Books list
   const list = el('div', 'flex flex-col gap-2.5 mt-2 overflow-y-auto max-h-[60vh] safe-padding-bottom');
   if (completedBooksInYear.length === 0) {
-    list.innerHTML = `<div class="text-xs text-slate-500 italic py-2 text-center">No completed books recorded for ${year}.</div>`;
+    list.innerHTML = `<div class="text-xs text-theme-tertiary italic py-2 text-center">No completed books recorded for ${year}.</div>`;
   } else {
     // Sort chronologically ascending
     const sorted = [...completedBooksInYear].sort((a, b) => a.date.localeCompare(b.date));
     sorted.forEach((c, idx) => {
       const book = booksCache.find(b => b.title === c.title);
-      const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-white/5 active:scale-[0.98] transition-all cursor-pointer');
+      const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-theme active:scale-[0.98] transition-all cursor-pointer');
       row.innerHTML = `
         <div class="min-w-0 pr-3 flex-1">
-          <div class="text-xs font-bold text-slate-100 truncate">${idx + 1}. ${c.title}</div>
-          <div class="text-[9px] text-slate-400 truncate mt-0.5">${book ? book.author || 'Unknown' : 'Unknown'}</div>
+          <div class="text-xs font-bold text-theme-primary truncate">${idx + 1}. ${c.title}</div>
+          <div class="text-[9px] text-theme-secondary truncate mt-0.5">${book ? book.author || 'Unknown' : 'Unknown'}</div>
         </div>
         <div class="text-right shrink-0">
           <div class="text-[10px] font-black text-emerald">${c.date}</div>
-          <div class="text-[8px] text-slate-400 font-semibold mt-0.5">${c.pages || 0} pg</div>
+          <div class="text-[8px] text-theme-secondary font-semibold mt-0.5">${c.pages || 0} pg</div>
         </div>
       `;
       if (book) {
@@ -7443,9 +7443,9 @@ function renderCategoryPieChart(books, containerId) {
   svg.appendChild(svgEl('circle', { cx: '50', cy: '50', r: '37', fill: 'none', stroke: trackColor, 'stroke-width': '8' }));
 
   const centerOverlay = el('div', 'absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-1');
-  const overlayTotal = el('span', 'text-base font-black text-slate-100 tracking-tight');
+  const overlayTotal = el('span', 'text-base font-black text-theme-primary tracking-tight');
   overlayTotal.textContent = fmtNum(total);
-  const overlayLabel = el('span', 'text-[9px] font-bold tracking-wider text-slate-400 uppercase text-center mt-0.5 max-w-[80px] leading-tight');
+  const overlayLabel = el('span', 'text-[9px] font-bold tracking-wider text-theme-secondary uppercase text-center mt-0.5 max-w-[80px] leading-tight');
   overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
   
   centerOverlay.appendChild(overlayTotal);
@@ -7479,7 +7479,7 @@ function renderCategoryPieChart(books, containerId) {
     const legendItem = el('div', 'flex items-center gap-2.5 text-xs p-1.5 px-2.5 rounded-xl border border-transparent transition-all');
     legendItem.innerHTML = `
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${colors[cat]}"></span>
-      <span class="font-semibold text-slate-200">${cat}</span>
+      <span class="font-semibold text-theme-primary">${cat}</span>
       <span class="text-slate-450 font-bold ml-auto">${valLabel} (${pctVal}%)</span>
     `;
     legendGrid.appendChild(legendItem);
@@ -7488,14 +7488,14 @@ function renderCategoryPieChart(books, containerId) {
       segment.setAttribute('stroke-width', '12');
       overlayTotal.textContent = fmtNum(count);
       overlayLabel.textContent = cat;
-      legendItem.classList.add('bg-white/5', 'border-white/10');
+      legendItem.classList.add('bg-white/5', 'border-theme');
     });
 
     segment.addEventListener('mouseleave', () => {
       segment.setAttribute('stroke-width', '10');
       overlayTotal.textContent = fmtNum(total);
       overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
-      legendItem.classList.remove('bg-white/5', 'border-white/10');
+      legendItem.classList.remove('bg-white/5', 'border-theme');
     });
 
     legendItem.classList.add('cursor-pointer');
@@ -7842,28 +7842,28 @@ function openBookDetailModal(b) {
   const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
   
   // Badges
-  let badgeColor = 'bg-slate-800/40 text-slate-400 border-white/5';
+  let badgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
   if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
-  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/10';
+  else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
   
-  let ownBadgeColor = 'bg-slate-800/40 text-slate-350 border-white/5';
+  let ownBadgeColor = 'bg-theme-card/40 text-slate-350 border-theme';
   if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
 
   const prioClasses = {
     'High': 'bg-rose-500/10 text-rose-400 border-rose-500/10',
-    'Medium': 'bg-amber-500/10 text-amber-400 border-amber-500/10',
-    'Low': 'bg-slate-800/40 text-slate-400 border-white/5'
+    'Medium': 'bg-amber-500/10 text-theme-gold border-amber-500/10',
+    'Low': 'bg-theme-card/40 text-theme-secondary border-theme'
   };
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
   
   $('bd-badges').innerHTML = `
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${b.status}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-800/40 text-slate-350 border border-white/5">${b.group || 'Other'}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.group || 'Other'}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
   `;
@@ -7957,10 +7957,10 @@ function openBookDetailModal(b) {
     if (b.where_to_buy) {
       const isUrl = b.where_to_buy.startsWith('http://') || b.where_to_buy.startsWith('https://');
       buyContainer.innerHTML = `
-        <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-          <i class="fa-solid fa-shopping-cart text-[10px] text-amber-400"></i>
+        <div class="text-[11px] text-theme-secondary flex items-center gap-1.5 mt-0.5">
+          <i class="fa-solid fa-shopping-cart text-[10px] text-theme-gold"></i>
           <span>Where to Buy:</span>
-          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-amber-400 underline truncate hover:text-amber-300 font-semibold">${b.where_to_buy}</a>` : `<span class="text-slate-200 truncate font-semibold">${b.where_to_buy}</span>`}
+          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold">${b.where_to_buy}</a>` : `<span class="text-theme-primary truncate font-semibold">${b.where_to_buy}</span>`}
         </div>
       `;
     }
@@ -7974,7 +7974,7 @@ function openBookDetailModal(b) {
   
   const bookLogs = logsCache.filter(l => l.book_title === b.title);
   if (bookLogs.length === 0) {
-    timeline.innerHTML = `<div class="text-xs text-slate-500 italic py-2">No read sessions logged yet.</div>`;
+    timeline.innerHTML = `<div class="text-xs text-theme-tertiary italic py-2">No read sessions logged yet.</div>`;
   } else {
     // Sort chronologically ASCENDING
     const sortedLogs = [...bookLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -7984,7 +7984,7 @@ function openBookDetailModal(b) {
       
       const item = el('div', 'flex flex-col gap-1 relative pl-4');
       // Timeline bullet indicator
-      const bullet = el('div', 'absolute left-[-16px] top-[4px] w-2 h-2 rounded-full border bg-slate-950 border-white/20');
+      const bullet = el('div', 'absolute left-[-16px] top-[4px] w-2 h-2 rounded-full border bg-theme-card border-white/20');
       if (l.notes && l.notes.includes('Historical')) bullet.classList.add('bg-emerald-500', 'border-emerald-500/20');
       else bullet.classList.add('bg-blue-500', 'border-blue-500/20');
       
@@ -7992,17 +7992,17 @@ function openBookDetailModal(b) {
       if (l.notes) {
         notesHTML = `
           <div class="text-[11px] text-slate-350 italic px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] mt-1 whitespace-pre-wrap leading-relaxed">
-            <i class="fa-solid fa-quote-left text-[8px] text-slate-500 mr-1 align-top"></i>${l.notes}
+            <i class="fa-solid fa-quote-left text-[8px] text-theme-tertiary mr-1 align-top"></i>${l.notes}
           </div>
         `;
       }
       
       item.innerHTML = `
-        <div class="flex justify-between items-center text-[10px] font-bold text-slate-400">
+        <div class="flex justify-between items-center text-[10px] font-bold text-theme-secondary">
           <span>${l.date}</span>
-          <span class="text-slate-300">Cycle ${l.read_cycle}</span>
+          <span class="text-theme-secondary">Cycle ${l.read_cycle}</span>
         </div>
-        <div class="text-xs font-bold text-slate-200">
+        <div class="text-xs font-bold text-theme-primary">
           Read p. ${l.start_page} – ${l.end_page} <span class="text-emerald-400 font-semibold">(+${addedPages} pg)</span>${minutes}
         </div>
         ${notesHTML}
@@ -8037,7 +8037,7 @@ function openBookDetailModal(b) {
     if (!focusBtn && editBtn.parentNode) {
       focusBtn = document.createElement('button');
       focusBtn.id = 'bd-action-focus';
-      focusBtn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all active:scale-[0.98]';
+      focusBtn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 hover:bg-amber-500/30 text-theme-gold border border-amber-500/30 transition-all active:scale-[0.98]';
       focusBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Focus Session';
       editBtn.parentNode.insertBefore(focusBtn, editBtn);
     }
@@ -8495,7 +8495,7 @@ function renderPendingShelfNotifiers() {
         <span class="text-xs text-white font-medium block truncate">Draft: ${item.bookTitle}</span>
       </div>
       <div class="flex gap-1.5 shrink-0">
-        <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-white/5 border border-white/5 text-xs"><i class="fa-solid fa-trash"></i></button>
+        <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-white/5 border border-theme text-xs"><i class="fa-solid fa-trash"></i></button>
         <button onclick="loadScannedShelfItem(${idx})" class="bg-sky-500 hover:bg-sky-600 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg">Load Scan</button>
       </div>
     </div>
@@ -8829,9 +8829,9 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     const isFiltered = knowledgeSelectedBook !== 'all' || selectedTag !== 'all' || searchQuery !== '';
     feed.innerHTML = `
       <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
-        <i class="fa-solid fa-quote-left text-3xl text-amber-400/40"></i>
-        <p class="text-sm font-bold text-slate-200">${isFiltered ? 'No notes match your active filter or search' : 'No notes recorded yet'}</p>
-        <p class="text-xs text-slate-400 mb-2">${isFiltered ? 'Try clearing your search query, changing the book filter, or switching tags.' : 'Log a session with notes or click Quick Note to capture your thoughts.'}</p>
+        <i class="fa-solid fa-quote-left text-3xl text-theme-gold/40"></i>
+        <p class="text-sm font-bold text-theme-primary">${isFiltered ? 'No notes match your active filter or search' : 'No notes recorded yet'}</p>
+        <p class="text-xs text-theme-secondary mb-2">${isFiltered ? 'Try clearing your search query, changing the book filter, or switching tags.' : 'Log a session with notes or click Quick Note to capture your thoughts.'}</p>
         ${isFiltered ? `
           <button id="kn-btn-clear-filters" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-900 shadow-md cursor-pointer transition-all active:scale-95" style="background: var(--gold)">
             <i class="fa-solid fa-rotate-left mr-1"></i> Clear All Filters
@@ -8859,12 +8859,12 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     
     let photoHTML = '';
     if (n.photoUrl) {
-      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-white/10"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" /></div>`;
+      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-theme"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" /></div>`;
     }
 
     let pageHTML = '';
     if (n.pageLabel) {
-      pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-amber-400 mr-1"></i>${n.pageLabel}</span>`;
+      pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-theme-gold mr-1"></i>${n.pageLabel}</span>`;
     }
 
     card.innerHTML = `
@@ -8872,16 +8872,16 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
         "${n.notes.replace(/^>\s*/, '')}"
       </blockquote>
-      <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-white/5">
+      <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-theme">
         <div class="flex flex-col min-w-0 pr-2">
           <span class="font-bold truncate" style="color: var(--gold)">${n.title}</span>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[10px] text-slate-400">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
+            <span class="text-[10px] text-theme-secondary">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
             ${pageHTML}
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <button class="quote-card-action-btn hover:text-amber-400" data-action="share" title="Share Quote Card PNG">
+          <button class="quote-card-action-btn hover:text-theme-gold" data-action="share" title="Share Quote Card PNG">
             <i class="fa-solid fa-camera-retro"></i>
           </button>
           <button class="quote-card-action-btn ${n.isFavorite ? 'active-fav' : ''}" data-action="fav" data-id="${n.id}" title="${n.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}">
@@ -8991,11 +8991,11 @@ function updateQuickNoteFavUI() {
   const favIcon = $('qn-fav-icon');
   const favLabel = $('qn-fav-label');
   if (favIcon) {
-    favIcon.className = qnModalFavorite ? 'fa-solid fa-star text-amber-400' : 'fa-regular fa-star';
+    favIcon.className = qnModalFavorite ? 'fa-solid fa-star text-theme-gold' : 'fa-regular fa-star';
   }
   if (favLabel) {
     favLabel.textContent = qnModalFavorite ? 'Favorited' : 'Mark Favorite';
-    favLabel.className = qnModalFavorite ? 'text-amber-400 font-bold' : 'text-slate-400';
+    favLabel.className = qnModalFavorite ? 'text-theme-gold font-bold' : 'text-theme-secondary';
   }
 }
 
@@ -9681,7 +9681,7 @@ window.render3DSpineBookshelf = async function(items) {
 
   const books = list || [];
   if (!books.length) {
-    shelfContainer.innerHTML = '<div class="text-xs text-slate-400/60 py-6 text-center w-full font-mono">No matching books for active filter</div>';
+    shelfContainer.innerHTML = '<div class="text-xs text-theme-secondary/60 py-6 text-center w-full font-mono">No matching books for active filter</div>';
     return;
   }
 
@@ -9714,7 +9714,7 @@ window.render3DSpineBookshelf = async function(items) {
     }
 
     const spine = document.createElement('div');
-    spine.className = 'book-spine-item relative overflow-hidden shadow-lg border-x border-white/10';
+    spine.className = 'book-spine-item relative overflow-hidden shadow-lg border-x border-theme';
     spine.style.cssText = `width: ${width}px; height: ${height}px; background: ${grad}; color: #F5EBE6; font-size: ${fontSize};`;
     spine.title = `${safeTitle}${safeAuthor ? ' by ' + safeAuthor : ''} (${pages} pages — ${pct}% read)`;
 
@@ -9935,7 +9935,7 @@ function renderYearWrappedSlides(targetYear) {
     {
       title: `Year ${targetYear} in Reading`,
       badge: 'ANNUAL SUMMARY',
-      icon: 'fa-book-open-reader text-amber-400',
+      icon: 'fa-book-open-reader text-theme-gold',
       bigVal: `${fmtNum(totalPagesYear)}`,
       bigLabel: 'Total Pages Read',
       subStats: [
@@ -9957,7 +9957,7 @@ function renderYearWrappedSlides(targetYear) {
     {
       title: 'Favorite Authors & Genres',
       badge: 'TOP PREFERENCES',
-      icon: 'fa-crown text-amber-300',
+      icon: 'fa-crown text-theme-gold',
       bigVal: topAuthorName,
       bigLabel: `Most Read Author`,
       subStats: [
@@ -9979,7 +9979,7 @@ function renderYearWrappedSlides(targetYear) {
     {
       title: 'Quote of the Year',
       badge: 'MEMORABLE EXCERPT',
-      icon: 'fa-quote-left text-amber-400',
+      icon: 'fa-quote-left text-theme-gold',
       bigVal: `"${topQuote.replace(/^>\s*/, '')}"`,
       bigLabel: `— Excerpt from ${topQuoteBook}`,
       subStats: [
@@ -9998,23 +9998,23 @@ function renderYearWrappedSlides(targetYear) {
   viewport.innerHTML = slidesData.map((s, i) => `
     <div class="wrapped-slide absolute inset-0 p-6 flex flex-col justify-between text-center ${i === 0 ? 'active-slide' : 'next-slide'}" data-slide-index="${i}">
       <div class="flex flex-col items-center gap-1.5 mt-2">
-        <span class="text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">${s.badge}</span>
-        <h3 class="text-xl font-black tracking-tight text-slate-100 mt-1">${s.title}</h3>
+        <span class="text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/10 text-theme-gold border border-amber-500/20">${s.badge}</span>
+        <h3 class="text-xl font-black tracking-tight text-theme-primary mt-1">${s.title}</h3>
       </div>
 
       <div class="my-auto flex flex-col items-center justify-center gap-2">
-        <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-xl">
+        <div class="w-14 h-14 rounded-2xl bg-white/5 border border-theme flex items-center justify-center text-2xl shadow-xl">
           <i class="fa-solid ${s.icon}"></i>
         </div>
-        <div class="text-2xl sm:text-3xl font-black text-amber-300 leading-tight ${i === 4 ? 'italic font-serif text-base text-amber-100 max-h-36 overflow-y-auto px-2' : ''}">${s.bigVal}</div>
-        <div class="text-xs font-bold text-slate-400">${s.bigLabel}</div>
+        <div class="text-2xl sm:text-3xl font-black text-theme-gold leading-tight ${i === 4 ? 'italic font-serif text-base text-amber-100 max-h-36 overflow-y-auto px-2' : ''}">${s.bigVal}</div>
+        <div class="text-xs font-bold text-theme-secondary">${s.bigLabel}</div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-left">
+      <div class="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-white/[0.04] border border-theme text-left">
         ${s.subStats.map(st => `
           <div>
-            <div class="text-[9px] font-extrabold uppercase text-slate-400">${st.label}</div>
-            <div class="text-xs font-bold text-slate-200 mt-0.5">${st.val}</div>
+            <div class="text-[9px] font-extrabold uppercase text-theme-secondary">${st.label}</div>
+            <div class="text-xs font-bold text-theme-primary mt-0.5">${st.val}</div>
           </div>
         `).join('')}
       </div>
@@ -10143,15 +10143,15 @@ function openHeatmapDayDetailDrawer(dateStr) {
 
   if (listContainer) {
     if (logs.length === 0) {
-      listContainer.innerHTML = '<div class="text-xs text-slate-400 italic text-center py-4">No reading sessions recorded on this date.</div>';
+      listContainer.innerHTML = '<div class="text-xs text-theme-secondary italic text-center py-4">No reading sessions recorded on this date.</div>';
     } else {
       listContainer.innerHTML = logs.map(l => `
-        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-xs flex flex-col gap-1">
-          <div class="flex justify-between items-center font-bold text-amber-300">
+        <div class="p-3 rounded-xl bg-white/5 border border-theme text-xs flex flex-col gap-1">
+          <div class="flex justify-between items-center font-bold text-theme-gold">
             <span>${l.book_title || 'Session'}</span>
             <span>+${l.pages_read_today || l.pagesRead || 0} pgs (${l.duration_minutes || l.durationMinutes || 0}m)</span>
           </div>
-          ${l.notes ? `<p class="text-[11px] text-slate-300 italic mt-1 line-clamp-2">"${l.notes}"</p>` : ''}
+          ${l.notes ? `<p class="text-[11px] text-theme-secondary italic mt-1 line-clamp-2">"${l.notes}"</p>` : ''}
         </div>
       `).join('');
     }
@@ -10214,14 +10214,14 @@ function renderContextualMatrix(logs) {
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   let html = '<div class="flex flex-col gap-1 text-[9px] font-mono select-none">';
   
-  html += '<div class="contextual-grid"><span class="text-slate-500 font-bold"></span>';
+  html += '<div class="contextual-grid"><span class="text-theme-tertiary font-bold"></span>';
   for (let h = 0; h < 24; h += 2) {
-    html += `<span class="col-span-2 text-slate-400 font-bold text-center">${h}h</span>`;
+    html += `<span class="col-span-2 text-theme-secondary font-bold text-center">${h}h</span>`;
   }
   html += '</div>';
 
   dayNames.forEach((dName, dIdx) => {
-    html += `<div class="contextual-grid"><span class="text-slate-400 font-bold">${dName}</span>`;
+    html += `<div class="contextual-grid"><span class="text-theme-secondary font-bold">${dName}</span>`;
     for (let h = 0; h < 24; h++) {
       const val = matrix[dIdx][h];
       let level = 0;
@@ -10952,9 +10952,9 @@ function initCustomFieldsManager() {
   const renderFields = () => {
     if (!list) return;
     list.innerHTML = customBookFields.map((f, i) => `
-      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 text-slate-200 border border-white/10 flex items-center gap-1.5">
+      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 text-theme-primary border border-theme flex items-center gap-1.5">
         ${f}
-        <button onclick="removeCustomField(${i})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="removeCustomField(${i})" class="text-theme-secondary hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>
       </span>
     `).join('');
   };

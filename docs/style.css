@@ -2167,3 +2167,44 @@ body.light-mode .fab-log-btn {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   THEME UTILITY HELPER CLASSES & HIGH-CLASS EDITORIAL TYPOGRAPHY
+   ══════════════════════════════════════════════════════════════ */
+.text-theme-primary { color: var(--text-primary) !important; }
+.text-theme-secondary { color: var(--text-secondary) !important; }
+.text-theme-tertiary { color: var(--text-tertiary) !important; }
+.text-theme-accent { color: var(--accent) !important; }
+.text-theme-gold { color: var(--gold) !important; }
+.text-theme-emerald { color: var(--emerald) !important; }
+.text-theme-rose { color: var(--rose) !important; }
+
+.bg-theme-card { background: var(--bg-card) !important; }
+.bg-theme-elevated { background: var(--bg-elevated) !important; }
+.bg-theme-input { background: var(--bg-input) !important; }
+.bg-theme-solid { background: var(--bg-solid) !important; }
+.bg-theme-accent { background: var(--accent) !important; }
+.bg-theme-gold { background: var(--gold) !important; }
+
+.border-theme { border-color: var(--border) !important; }
+.border-theme-strong { border-color: var(--border-strong) !important; }
+
+/* Editorial Serif Aesthetics for Espresso & Parched Paper */
+[data-theme="espresso"] .book-card-title,
+[data-theme="espresso"] blockquote,
+[data-theme="espresso"] .heading-editorial,
+[data-theme="parched-paper"] .book-card-title,
+[data-theme="parched-paper"] blockquote,
+[data-theme="parched-paper"] .heading-editorial {
+  font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+/* Futuristic Cyber Inset Glass Highlights for Glass Studio & Obsidian */
+[data-theme="glass-studio"] .glass-panel,
+[data-theme="glass-studio"] .ios-modal-card,
+[data-theme="obsidian"] .glass-panel,
+[data-theme="obsidian"] .ios-modal-card {
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), var(--shadow-card);
+}
+
+

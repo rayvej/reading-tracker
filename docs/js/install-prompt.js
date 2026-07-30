@@ -34,38 +34,38 @@ function showInstallBanner(type) {
 
   const banner = document.createElement('div');
   banner.id = 'pwa-install-banner';
-  banner.className = 'fixed bottom-4 left-4 right-4 z-50 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-md flex items-center justify-between animate-fade-in';
+  banner.className = 'fixed bottom-4 left-4 right-4 z-50 bg-theme-elevated text-theme-primary p-4 rounded-2xl shadow-2xl border border-theme-strong backdrop-blur-md flex items-center justify-between animate-fade-in';
 
   if (type === 'chrome') {
     banner.innerHTML = `
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center font-bold text-lg">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg" style="background: rgba(var(--gold-rgb), 0.2); color: var(--gold)">
           📚
         </div>
         <div>
-          <h4 class="text-sm font-semibold">Install Reading Tracker</h4>
-          <p class="text-xs text-slate-400">Add to home screen for offline access</p>
+          <h4 class="text-sm font-semibold text-theme-primary">Install Reading Tracker</h4>
+          <p class="text-xs text-theme-secondary">Add to home screen for offline access</p>
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button id="pwa-install-btn" class="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 transition-all">
+        <button id="pwa-install-btn" class="px-3 py-1.5 font-bold rounded-lg text-xs transition-all" style="background: var(--gold); color: #181412">
           Install
         </button>
-        <button id="pwa-dismiss-btn" class="text-slate-400 hover:text-white p-1 text-sm">✕</button>
+        <button id="pwa-dismiss-btn" class="text-theme-secondary hover:text-theme-primary p-1 text-sm">✕</button>
       </div>
     `;
   } else if (type === 'ios') {
     banner.innerHTML = `
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-sky-500/20 text-sky-400 rounded-xl flex items-center justify-center font-bold text-lg">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg" style="background: rgba(var(--accent-rgb), 0.2); color: var(--accent)">
           📱
         </div>
         <div class="pr-2">
-          <h4 class="text-sm font-semibold">Add to Home Screen</h4>
-          <p class="text-xs text-slate-400">Tap <span class="text-sky-400 font-semibold">Share <i class="fa-solid fa-arrow-up-from-bracket"></i></span> then <strong>Add to Home Screen</strong></p>
+          <h4 class="text-sm font-semibold text-theme-primary">Add to Home Screen</h4>
+          <p class="text-xs text-theme-secondary">Tap <span class="font-semibold" style="color: var(--accent)">Share <i class="fa-solid fa-arrow-up-from-bracket"></i></span> then <strong>Add to Home Screen</strong></p>
         </div>
       </div>
-      <button id="pwa-dismiss-btn" class="text-slate-400 hover:text-white p-1 text-sm">✕</button>
+      <button id="pwa-dismiss-btn" class="text-theme-secondary hover:text-theme-primary p-1 text-sm">✕</button>
     `;
   }
 
