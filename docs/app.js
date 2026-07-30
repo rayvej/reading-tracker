@@ -101,6 +101,27 @@ let activeChart = null;
 const $  = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; };
 
+function debounce(fn, delay = 150) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+let viewDirtyFlags = {
+  dashboard: true,
+  bookshelf: true,
+  goals: true,
+  wishlist: true,
+  log: true,
+  account: true
+};
+function markViewsDirty() {
+  Object.keys(viewDirtyFlags).forEach(k => viewDirtyFlags[k] = true);
+  if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear();
+}
+
 function fmtDate(iso) {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -2124,8 +2145,10 @@ async function getMergedBooks() {
     };
   });
 
+  const bookTitleSet = new Set(booksCache.map(b => (b.title || '').toLowerCase()));
+
   const wishlistOnly = wishlistCache
-    .filter(w => !booksCache.some(b => b.title.toLowerCase() === w.title.toLowerCase()))
+    .filter(w => !bookTitleSet.has((w.title || '').toLowerCase()))
     .map(w => {
       let ownership = 'Wishlist';
       if (w.status === 'Owned' || w.status === 'Owned and Read' || w.status === 'Gifted' || w.status === 'Gifted and Read') {
@@ -2200,13 +2223,17 @@ function showView(name) {
     v.classList.toggle('hidden', !isActive);
   });
 
-  // Refresh content on tab open
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'knowledge') renderKnowledgeView();
-  if (name === 'goals')     renderGoals();
-  if (name === 'wishlist')  renderBookshelf();
-  if (name === 'log')       renderLogView();
-  if (name === 'account')   renderAccountView();
+  // Refresh content on tab open only if dirty or first render
+  const key = name === 'wishlist' ? 'bookshelf' : name;
+  if (viewDirtyFlags[key] !== false || name === 'knowledge') {
+    if (name === 'dashboard') renderDashboard();
+    if (name === 'knowledge') renderKnowledgeView();
+    if (name === 'goals')     renderGoals();
+    if (name === 'wishlist')  renderBookshelf();
+    if (name === 'log')       renderLogView();
+    if (name === 'account')   renderAccountView();
+    if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
+  }
 
   // Hide wishlist fab if present
   const fab = $('wishlist-fab');
@@ -3051,6 +3078,8 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
 
   const completions = [];
   const logsByBookCycle = {};
+  const mergedBooksMap = new Map(mergedBooks.map(b => [b.title, b]));
+  const completionCountsMap = new Map();
   
   logsCache.forEach(l => {
     const key = `${l.book_title}-${l.read_cycle || 1}`;
@@ -3063,7 +3092,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     const parts = key.split('-');
     const title = parts.slice(0, -1).join('-');
     const cycle = parseInt(parts[parts.length - 1], 10);
-    const book = mergedBooks.find(b => b.title === title);
+    const book = mergedBooksMap.get(title);
     if (book) {
       const tot = parseInt(book.total_pages || 0, 10);
       const cycleLogs = logsByBookCycle[key];
@@ -3079,6 +3108,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
           category: book.group || book.group_name || book.reading_group || book.category || 'Other',
           ownership: book.ownership || 'Owned'
         });
+        completionCountsMap.set(title, (completionCountsMap.get(title) || 0) + 1);
       }
     }
   });
@@ -3088,7 +3118,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     const rc = b.read_count || 0;
     const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || rc > 0;
     if (isFinished) {
-      const existingCount = completions.filter(c => c.title === b.title).length;
+      const existingCount = completionCountsMap.get(b.title) || 0;
       const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
       for (let i = 0; i < neededCount; i++) {
         completions.push({
@@ -3100,6 +3130,9 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
           category: b.group || b.group_name || b.reading_group || b.category || 'Other',
           ownership: b.ownership || 'Owned'
         });
+      }
+      if (neededCount > 0) {
+        completionCountsMap.set(b.title, existingCount + neededCount);
       }
     }
   });
@@ -5837,9 +5870,12 @@ function openAddBookModal() {
 function setupBookshelf() {
   const searchEl = $('wishlist-search');
   if (searchEl) {
+    const debouncedSearch = debounce(() => {
+      renderBookshelf({ skipViewTransition: true });
+    }, 150);
     searchEl.addEventListener('input', e => {
       bookshelfSearchTerm = e.target.value;
-      renderBookshelf();
+      debouncedSearch();
     });
   }
 
@@ -5981,7 +6017,7 @@ function updateBatchBarUI() {
   if (countEl) countEl.textContent = `${bookshelfSelectedIds.size} selected`;
 }
 
-async function renderBookshelf() {
+async function renderBookshelf(options = {}) {
   const allItems = await getMergedBooks();
 
   // 1. Calculate top stats summary
@@ -6056,7 +6092,7 @@ async function renderBookshelf() {
   }
 
   // View Transitions API
-  if (document.startViewTransition) {
+  if (document.startViewTransition && !options.skipViewTransition) {
     document.startViewTransition(() => renderBookshelfContent(container, filtered));
   } else {
     renderBookshelfContent(container, filtered);
@@ -6400,6 +6436,8 @@ function renderBookshelfContent(container, filtered) {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
+
   if (bookshelfGrouping === 'group') {
     // Group books by item.group
     const groups = {};
@@ -6421,14 +6459,18 @@ function renderBookshelfContent(container, filtered) {
       section.appendChild(header);
 
       const itemsContainer = el('div', bookshelfViewMode === 'grid' ? 'bookshelf-grid' : 'flex flex-col gap-3');
-      groupItems.forEach(b => itemsContainer.appendChild(renderBookCard(b)));
+      const itemFrag = document.createDocumentFragment();
+      groupItems.forEach(b => itemFrag.appendChild(renderBookCard(b)));
+      itemsContainer.appendChild(itemFrag);
       section.appendChild(itemsContainer);
 
-      container.appendChild(section);
+      fragment.appendChild(section);
     });
+    container.appendChild(fragment);
   } else {
     container.className = bookshelfViewMode === 'grid' ? 'bookshelf-grid' : 'flex flex-col gap-3';
-    filtered.forEach(b => container.appendChild(renderBookCard(b)));
+    filtered.forEach(b => fragment.appendChild(renderBookCard(b)));
+    container.appendChild(fragment);
   }
 }
 
@@ -8570,13 +8612,13 @@ window.getBooksCache = () => booksCache;
 window.setBooksCache = (arr) => { 
   booksCache = arr; 
   window.booksCache = arr; 
-  if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); 
+  markViewsDirty();
   if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf();
 };
 window.getLogsCache = () => logsCache;
-window.setLogsCache = (arr) => { logsCache = arr; if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); };
+window.setLogsCache = (arr) => { logsCache = arr; markViewsDirty(); };
 window.getWishlistCache = () => wishlistCache;
-window.setWishlistCache = (arr) => { wishlistCache = arr; if (typeof reconciledStatsCache !== 'undefined') reconciledStatsCache.clear(); };
+window.setWishlistCache = (arr) => { wishlistCache = arr; markViewsDirty(); };
 
 // Run scanner setup
 (function initScannerOnRuntime() {
@@ -9683,6 +9725,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const hmBackdrop = document.getElementById('heatmap-day-backdrop');
   if (hmClose) hmClose.onclick = closeHeatmapDayModal;
   if (hmBackdrop) hmBackdrop.onclick = closeHeatmapDayModal;
+
+  const ctxClose = document.getElementById('contextual-detail-close-btn');
+  const ctxBackdrop = document.getElementById('contextual-detail-backdrop');
+  if (ctxClose) ctxClose.onclick = closeContextualDetailModal;
+  if (ctxBackdrop) ctxBackdrop.onclick = closeContextualDetailModal;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeHeatmapDayModal();
+      closeContextualDetailModal();
+    }
+  });
 });
 
 (function restoreEditorialTheme() {
@@ -10197,6 +10251,9 @@ function renderContextualMatrix(logs) {
   if (!container) return;
 
   const matrix = Array(7).fill(0).map(() => Array(24).fill(0));
+  const matrixLogs = Array(7).fill(0).map(() => Array(24).fill(0).map(() => []));
+  const dayTotalMins = Array(7).fill(0);
+
   const activeLogs = (logs || []).filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
 
   activeLogs.forEach(l => {
@@ -10224,6 +10281,8 @@ function renderContextualMatrix(logs) {
 
     const mins = parseInt(l.duration_minutes || l.durationMinutes || l.minutes_spent || 30, 10);
     matrix[dayIdx][hour] += mins;
+    dayTotalMins[dayIdx] += mins;
+    matrixLogs[dayIdx][hour].push({ ...l, calculatedHour: hour, calculatedMins: mins });
   });
 
   let maxVal = 0;
@@ -10240,7 +10299,18 @@ function renderContextualMatrix(logs) {
     }
   }
 
+  // Store matrix state globally for detail modal lookups
+  window._contextualMatrixState = {
+    matrix,
+    matrixLogs,
+    maxVal,
+    peakHour,
+    peakDay,
+    dayTotalMins
+  };
+
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const dayFullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   let html = '<div class="flex flex-col gap-1 text-[9px] font-mono select-none">';
   
   html += '<div class="contextual-grid"><span class="text-theme-tertiary font-bold"></span>';
@@ -10262,7 +10332,11 @@ function renderContextualMatrix(logs) {
         else level = 4;
       }
       const hStr = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
-      html += `<div class="contextual-cell" data-level="${level}" title="${dName} at ${hStr} - ${val} mins logged"></div>`;
+      const nextH = (h + 1) % 24;
+      const nextHStr = nextH === 0 ? '12 AM' : nextH < 12 ? `${nextH} AM` : nextH === 12 ? '12 PM' : `${nextH - 12} PM`;
+      const slotTitle = `${dayFullNames[dIdx]} @ ${hStr}–${nextHStr}: ${val} mins logged (Tap for details)`;
+
+      html += `<div class="contextual-cell" data-level="${level}" data-day="${dIdx}" data-hour="${h}" title="${slotTitle}" tabIndex="0" role="button" aria-label="${slotTitle}"></div>`;
     }
     html += '</div>';
   });
@@ -10270,12 +10344,197 @@ function renderContextualMatrix(logs) {
 
   container.innerHTML = html;
 
+  // Attach tap & keyboard event listeners via event delegation
+  container.onclick = (e) => {
+    const cell = e.target.closest('.contextual-cell');
+    if (!cell) return;
+    const dIdx = parseInt(cell.dataset.day, 10);
+    const hour = parseInt(cell.dataset.hour, 10);
+    openContextualDetailModal(dIdx, hour, cell);
+  };
+
+  container.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const cell = e.target.closest('.contextual-cell');
+      if (!cell) return;
+      e.preventDefault();
+      const dIdx = parseInt(cell.dataset.day, 10);
+      const hour = parseInt(cell.dataset.hour, 10);
+      openContextualDetailModal(dIdx, hour, cell);
+    }
+  };
+
   if (insightEl) {
     const daysFull = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'];
     const hFormat = peakHour === 0 ? '12 AM' : peakHour < 12 ? `${peakHour} AM` : peakHour === 12 ? '12 PM' : `${peakHour - 12} PM`;
     insightEl.textContent = maxVal > 0 
-      ? `⚡ Peak Focus Hour: ${daysFull[peakDay]} around ${hFormat} (${maxVal} mins logged in peak window).`
-      : '⚡ Peak Focus Hour: Log more sessions to generate productivity insights.';
+      ? `⚡ Peak Focus Hour: ${daysFull[peakDay]} around ${hFormat} (${maxVal} mins logged in peak window). Tap any square for detailed breakdown.`
+      : '⚡ Peak Focus Hour: Log more sessions to generate productivity insights. Tap any square to view time slot details.';
+  }
+}
+
+function openContextualDetailModal(dayIdx, hour, targetCell) {
+  const modal = document.getElementById('modal-contextual-detail');
+  if (!modal) return;
+
+  triggerHaptic();
+
+  // Highlight selected cell on matrix
+  const container = document.getElementById('contextual-matrix-container');
+  if (container) {
+    container.querySelectorAll('.contextual-cell').forEach(c => c.classList.remove('active-cell'));
+  }
+  if (targetCell) {
+    targetCell.classList.add('active-cell');
+  }
+
+  const state = window._contextualMatrixState || {};
+  const matrix = state.matrix || Array(7).fill(0).map(() => Array(24).fill(0));
+  const matrixLogs = state.matrixLogs || Array(7).fill(0).map(() => Array(24).fill(0).map(() => []));
+  const maxVal = state.maxVal || 0;
+  const dayTotalMins = state.dayTotalMins || Array(7).fill(0);
+
+  const slotLogs = matrixLogs[dayIdx]?.[hour] || [];
+  const val = matrix[dayIdx]?.[hour] || 0;
+  const dayTotal = dayTotalMins[dayIdx] || 0;
+  const pctOfDay = dayTotal > 0 ? Math.round((val / dayTotal) * 100) : 0;
+  const totalPages = slotLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const avgMins = slotLogs.length > 0 ? Math.round(val / slotLogs.length) : 0;
+
+  const dayFullNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const dayName = dayFullNames[dayIdx] || 'Day';
+
+  const hStr = hour === 0 ? '12:00 AM' : hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
+  const nextH = (hour + 1) % 24;
+  const nextHStr = nextH === 0 ? '12:00 AM' : nextH < 12 ? `${nextH}:00 AM` : nextH === 12 ? '12:00 PM' : `${nextH - 12}:00 PM`;
+
+  // Intensity level calculation
+  let level = 0;
+  let levelText = 'No Activity Logged';
+  let levelColor = 'text-theme-secondary';
+  let levelBg = 'bg-white/5';
+
+  if (val > 0 && maxVal > 0) {
+    const ratio = val / maxVal;
+    if (ratio <= 0.25) {
+      level = 1;
+      levelText = 'Light Focus Intensity';
+      levelColor = 'text-amber-300';
+      levelBg = 'bg-amber-500/10 border-amber-500/20';
+    } else if (ratio <= 0.50) {
+      level = 2;
+      levelText = 'Moderate Focus Intensity';
+      levelColor = 'text-amber-400';
+      levelBg = 'bg-amber-500/20 border-amber-500/30';
+    } else if (ratio <= 0.75) {
+      level = 3;
+      levelText = 'High Focus Intensity';
+      levelColor = 'text-amber-400 font-bold';
+      levelBg = 'bg-amber-500/30 border-amber-500/40';
+    } else {
+      level = 4;
+      levelText = '🔥 Peak Focus Window';
+      levelColor = 'text-amber-300 font-black';
+      levelBg = 'bg-amber-500/40 border-amber-400/50 shadow-sm';
+    }
+  }
+
+  const titleEl = document.getElementById('contextual-detail-modal-title');
+  const subtitleEl = document.getElementById('contextual-detail-modal-subtitle');
+  if (titleEl) titleEl.textContent = `${dayName}s @ ${hStr} – ${nextHStr}`;
+  if (subtitleEl) subtitleEl.innerHTML = `<span class="px-2 py-0.5 rounded-md border text-[9px] uppercase tracking-wider font-semibold ${levelBg} ${levelColor}">${levelText}</span>`;
+
+  const contentEl = document.getElementById('contextual-detail-modal-content');
+  if (contentEl) {
+    let html = '';
+
+    // Quick Stats Grid
+    html += `
+      <div class="grid grid-cols-4 gap-2">
+        <div class="p-2.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col items-center justify-center text-center">
+          <span class="text-[9px] font-semibold text-theme-secondary uppercase tracking-wider">Duration</span>
+          <span class="text-sm font-black text-theme-primary mt-0.5 tabular-nums">${val} <span class="text-[10px] font-normal text-theme-secondary">m</span></span>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col items-center justify-center text-center">
+          <span class="text-[9px] font-semibold text-theme-secondary uppercase tracking-wider">Sessions</span>
+          <span class="text-sm font-black text-theme-primary mt-0.5 tabular-nums">${slotLogs.length}</span>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col items-center justify-center text-center">
+          <span class="text-[9px] font-semibold text-theme-secondary uppercase tracking-wider">Pages</span>
+          <span class="text-sm font-black text-emerald-400 mt-0.5 tabular-nums">+${totalPages}</span>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col items-center justify-center text-center">
+          <span class="text-[9px] font-semibold text-theme-secondary uppercase tracking-wider">Avg Length</span>
+          <span class="text-sm font-black text-theme-primary mt-0.5 tabular-nums">${avgMins} <span class="text-[10px] font-normal text-theme-secondary">m</span></span>
+        </div>
+      </div>
+    `;
+
+    // Contextual Insight Callout
+    if (val > 0) {
+      const isPeak = dayIdx === state.peakDay && hour === state.peakHour;
+      html += `
+        <div class="p-3 rounded-2xl border text-xs leading-relaxed flex items-center gap-2.5" style="background: rgba(var(--accent-rgb), 0.08); border-color: rgba(var(--accent-rgb), 0.2); color: var(--text-primary)">
+          <i class="fa-solid ${isPeak ? 'fa-crown text-amber-400' : 'fa-chart-pie text-theme-gold'} text-base flex-shrink-0"></i>
+          <div>
+            ${isPeak 
+              ? `<strong>Peak Weekly Focus Window!</strong> This hour represents your highest overall reading productivity of the entire week.` 
+              : `Accounts for <strong>${pctOfDay}%</strong> of your total ${dayName} reading duration.`}
+          </div>
+        </div>
+      `;
+    }
+
+    // Sessions List
+    html += `<div class="text-xs font-bold text-theme-secondary uppercase tracking-wider mt-1 px-1">Session Logs (${slotLogs.length})</div>`;
+
+    if (slotLogs.length === 0) {
+      html += `
+        <div class="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-theme flex flex-col items-center gap-2">
+          <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-theme-tertiary text-lg"><i class="fa-solid fa-moon"></i></div>
+          <p class="text-xs text-theme-primary font-bold">No Reading Activity</p>
+          <p class="text-[11px] text-theme-secondary">No reading sessions have been logged on ${dayName}s between ${hStr} and ${nextHStr}.</p>
+        </div>
+      `;
+    } else {
+      slotLogs.forEach(l => {
+        const pagesRead = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+        let dateStr = l.date;
+        try {
+          dateStr = new Date(l.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch (e) {}
+
+        const duration = l.duration_minutes || l.durationMinutes || l.minutes_spent || l.calculatedMins || 0;
+
+        html += `
+          <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col gap-2 transition-all hover:bg-white/[0.07]">
+            <div class="flex justify-between items-start gap-2">
+              <span class="text-xs font-black text-theme-primary truncate flex-1">${l.book_title || 'Untitled Book'}</span>
+              <span class="text-xs font-black text-emerald-400 tabular-nums whitespace-nowrap">+${pagesRead} pgs</span>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-theme-secondary font-medium">
+              <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[9px]"></i> ${dateStr}</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-book-open text-[9px]"></i> Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
+              <span class="flex items-center gap-1 font-bold text-amber-300"><i class="fa-regular fa-clock text-[9px]"></i> ${duration} mins</span>
+            </div>
+            ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-black/20 p-2 rounded-xl border border-theme">${l.notes}</div>` : ''}
+          </div>
+        `;
+      });
+    }
+
+    contentEl.innerHTML = html;
+  }
+
+  modal.classList.add('open');
+}
+
+function closeContextualDetailModal() {
+  const modal = document.getElementById('modal-contextual-detail');
+  if (modal) modal.classList.remove('open');
+  const container = document.getElementById('contextual-matrix-container');
+  if (container) {
+    container.querySelectorAll('.contextual-cell.active-cell').forEach(c => c.classList.remove('active-cell'));
   }
 }
 

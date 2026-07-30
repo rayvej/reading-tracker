@@ -2227,11 +2227,21 @@ body.light-mode .fab-log-btn {
   height: 14px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.05);
-  transition: transform 0.15s ease, background-color 0.2s ease;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .contextual-cell:hover {
-  transform: scale(1.3);
+  transform: scale(1.35);
   z-index: 10;
+}
+.contextual-cell:focus-visible,
+.contextual-cell.active-cell {
+  outline: 2px solid var(--accent, #d4a359);
+  outline-offset: 1px;
+  transform: scale(1.35);
+  z-index: 20;
+  box-shadow: 0 0 12px rgba(212, 163, 89, 0.8) !important;
 }
 .contextual-cell[data-level="1"] { background: rgba(212, 163, 89, 0.25); }
 .contextual-cell[data-level="2"] { background: rgba(212, 163, 89, 0.50); }
@@ -2292,8 +2302,10 @@ body.light-mode .fab-log-btn {
 [data-theme="glass-studio"] .glass-panel,
 [data-theme="glass-studio"] .ios-modal-card,
 [data-theme="obsidian"] .glass-panel,
-[data-theme="obsidian"] .ios-modal-card {
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), var(--shadow-card);
+/* Performance rendering optimizations for off-screen cards */
+.bookshelf-card-item, .log-entry-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 110px;
 }
 
 

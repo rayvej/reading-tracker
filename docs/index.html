@@ -2571,6 +2571,30 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
+       CONTEXTUAL PRODUCTIVITY MATRIX DETAIL MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-contextual-detail" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 [&.open]:opacity-100 [&.open]:pointer-events-auto" role="dialog" aria-modal="true" aria-labelledby="contextual-detail-modal-title">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md" id="contextual-detail-backdrop"></div>
+    <div class="glass-panel w-full max-w-md mx-4 rounded-3xl p-5 border border-theme flex flex-col gap-4 relative z-10 animate-scale-up" style="background: var(--bg-elevated); color: var(--text-primary);">
+      <div class="flex justify-between items-center border-b border-theme pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-md" style="background: rgba(212, 163, 89, 0.15); color: var(--accent); border: 1px solid rgba(212, 163, 89, 0.3);">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div>
+            <h3 id="contextual-detail-modal-title" class="text-base font-black tracking-tight text-theme-primary">Time Slot Focus Details</h3>
+            <p id="contextual-detail-modal-subtitle" class="text-[10px] font-medium text-theme-secondary mt-0.5">Contextual reading activity</p>
+          </div>
+        </div>
+        <button id="contextual-detail-close-btn" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all cursor-pointer" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="contextual-detail-modal-content" class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto no-scrollbar"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
        SETTINGS & DATA MANAGEMENT MODAL
        ════════════════════════════════════════════════════════════ -->
   <div id="settings-modal" class="ios-modal-overlay"
