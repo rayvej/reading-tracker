@@ -3545,7 +3545,7 @@ function renderVelocityCurve(activeLogs, selectedYear) {
   
   const monthLabels = months.map((m, i) => {
     const x = padL + (i / 11) * graphW;
-    return `<text x="${x.toFixed(1)}" y="${height - 5}" text-anchor="middle" fill="var(--text-tertiary)" font-size="8" font-weight="600" font-family="Inter">${m}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${height - 5}" text-anchor="middle" fill="var(--text-tertiary)" font-size="8" font-weight="600" font-family="var(--font-body)">${m}</text>`;
   }).join('');
   
   container.innerHTML = `
@@ -7248,7 +7248,7 @@ function renderBooksPerYearChart(completions, containerId) {
     const text = svgEl('text', {
       x: paddingLeft - 8, y: y + 3,
       'text-anchor': 'end',
-      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: -apple-system, sans-serif`
+      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: var(--font-body)`
     });
     text.textContent = tick;
     svg.appendChild(text);
@@ -7278,7 +7278,7 @@ function renderBooksPerYearChart(completions, containerId) {
     const valText = svgEl('text', {
       x: x + barWidth / 2, y: y - 5,
       'text-anchor': 'middle',
-      style: `font-size: 8px; font-weight: 800; fill: var(--text-primary); font-family: -apple-system, sans-serif`
+      style: `font-size: 8px; font-weight: 800; fill: var(--text-primary); font-family: var(--font-body)`
     });
     valText.textContent = val;
     svg.appendChild(valText);
@@ -7286,7 +7286,7 @@ function renderBooksPerYearChart(completions, containerId) {
     const yearText = svgEl('text', {
       x: x + barWidth / 2, y: height - 8,
       'text-anchor': 'middle',
-      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: -apple-system, sans-serif`
+      style: `font-size: 8px; fill: ${labelColor}; font-weight: 600; font-family: var(--font-body)`
     });
     yearText.textContent = year;
     svg.appendChild(yearText);
@@ -10717,7 +10717,8 @@ function drawMindGraphCanvas(ctx, state) {
 
 function drawMindGraphPillLabel(ctx, text, x, y, isHovered, color) {
   ctx.save();
-  ctx.font = isHovered ? 'bold 10px Inter, system-ui, sans-serif' : '9.5px Inter, system-ui, sans-serif';
+  const themeFont = getComputedStyle(document.documentElement).getPropertyValue('--font-body') || 'system-ui';
+  ctx.font = isHovered ? `bold 10px ${themeFont}` : `9.5px ${themeFont}`;
   const textWidth = ctx.measureText(text).width;
   const rectW = textWidth + 12;
   const rectH = 17;

@@ -66,9 +66,9 @@
   /* ── Typography & Figure Tokens ── */
   --font-header:     'Playfair Display', 'Cinzel', Georgia, serif;
   --font-body:       'Newsreader', Georgia, serif;
-  --font-figures:    'Playfair Display', 'Cinzel', Georgia, serif;
-  --figure-weight:   800;
-  --figure-spacing:  -0.02em;
+  --font-figures:    'Lora', 'Newsreader', Georgia, serif;
+  --figure-weight:   700;
+  --figure-spacing:  -0.01em;
 }
 
 [data-theme="espresso"][data-mode="light"] {
@@ -266,9 +266,9 @@
   /* ── Typography & Figure Tokens ── */
   --font-header:     'EB Garamond', Georgia, serif;
   --font-body:       'EB Garamond', Georgia, serif;
-  --font-figures:    'EB Garamond', Georgia, serif;
+  --font-figures:    'Lora', 'EB Garamond', Georgia, serif;
   --figure-weight:   700;
-  --figure-spacing:  0.01em;
+  --figure-spacing:  0em;
 }
 
 [data-theme="parched-paper"][data-mode="dark"] {
