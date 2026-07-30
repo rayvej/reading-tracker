@@ -358,7 +358,7 @@ h3, .heading-3 {
 .section-label,
 .label-text,
 .stat-label {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--font-header) !important;
   font-size: 0.6875rem !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -366,10 +366,10 @@ h3, .heading-3 {
   color: var(--text-tertiary) !important;
 }
 
-/* Tabular Numbers for Metrics */
+/* Tabular Numbers for Metrics (Consumes Theme Figure Font) */
 .tabular-nums {
-  font-family: 'Inter', system-ui, sans-serif !important;
-  font-variant-numeric: tabular-nums !important;
+  font-family: var(--font-figures) !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -510,7 +510,7 @@ body.light-mode::after {
 html { height: 100%; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   background: var(--bg);
   background-attachment: fixed;
   color: var(--text-primary);
