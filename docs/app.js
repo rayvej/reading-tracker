@@ -1039,13 +1039,64 @@ function setupStarterImportModal() {
   const modal = $('starter-import-modal');
   if (!modal) return;
 
-  // Open button in Settings modal
+  // Open button in Settings modal & Account View
   const btnSettingsOpen = $('btn-open-starter-importer');
   if (btnSettingsOpen) {
     btnSettingsOpen.addEventListener('click', () => {
       const settingsModal = $('settings-modal');
       if (settingsModal) settingsModal.classList.remove('open');
       openStarterImportModal();
+    });
+  }
+
+  const btnAcctQuickAdd = $('acct-btn-quick-add-completed');
+  if (btnAcctQuickAdd) {
+    btnAcctQuickAdd.addEventListener('click', () => {
+      openStarterImportModal();
+    });
+  }
+
+  // Group selection toggle for custom group text box
+  const groupSelect = $('starter-book-group');
+  if (groupSelect) {
+    groupSelect.addEventListener('change', (e) => {
+      const customContainer = $('starter-group-custom-container');
+      if (customContainer) customContainer.classList.toggle('hidden', e.target.value !== 'Other');
+    });
+  }
+
+  // Auto-Find Cover Artwork
+  const btnSearchCover = $('starter-btn-search-cover');
+  if (btnSearchCover) {
+    btnSearchCover.addEventListener('click', () => {
+      if (typeof window.autoFindSingleCover === 'function') {
+        window.autoFindSingleCover('starter-book-title', 'starter-book-author', 'starter-book-cover-url', 'starter-cover-preview');
+      }
+    });
+  }
+
+  // Upload Cover Photo File Listener
+  const coverFileEl = $('starter-book-cover-file');
+  if (coverFileEl) {
+    coverFileEl.addEventListener('change', function() {
+      if (typeof window.handleCoverFileUpload === 'function') {
+        window.handleCoverFileUpload(this, 'starter-book-cover-url', 'starter-cover-preview');
+      }
+    });
+  }
+
+  // Cover URL live input listener for preview box
+  const coverUrlEl = $('starter-book-cover-url');
+  if (coverUrlEl) {
+    coverUrlEl.addEventListener('input', function() {
+      const val = this.value.trim();
+      const preview = $('starter-cover-preview');
+      if (!preview) return;
+      if (val) {
+        preview.innerHTML = `<img src="${val}" class="w-full h-full object-cover rounded-lg" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'fa-solid fa-image\\'></i>'">`;
+      } else {
+        preview.innerHTML = `<i class="fa-solid fa-image"></i>`;
+      }
     });
   }
 
@@ -1147,7 +1198,18 @@ function updateStarterBatchBadge() {
 function resetStarterForm() {
   if ($('starter-book-title')) $('starter-book-title').value = '';
   if ($('starter-book-author')) $('starter-book-author').value = '';
+  if ($('starter-book-collection')) $('starter-book-collection').value = 'Bahai';
+  if ($('starter-book-group')) $('starter-book-group').value = 'Non-Fiction';
+  if ($('starter-book-group-custom')) $('starter-book-group-custom').value = '';
+  if ($('starter-group-custom-container')) $('starter-group-custom-container').classList.add('hidden');
+  if ($('starter-book-format')) $('starter-book-format').value = 'Physical Book';
   if ($('starter-book-pages')) $('starter-book-pages').value = '300';
+  if ($('starter-book-category')) $('starter-book-category').value = 'Non-Fiction';
+  if ($('starter-book-priority')) $('starter-book-priority').value = 'Medium';
+  if ($('starter-book-cost')) $('starter-book-cost').value = '';
+  if ($('starter-book-where-to-buy')) $('starter-book-where-to-buy').value = '';
+  if ($('starter-book-cover-url')) $('starter-book-cover-url').value = '';
+  if ($('starter-cover-preview')) $('starter-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
   if ($('starter-book-notes')) $('starter-book-notes').value = '';
 
   starterSelectedRating = 0;
@@ -1180,6 +1242,11 @@ async function saveStarterBook(batchContinue) {
   }
 
   const author = ($('starter-book-author')?.value || '').trim();
+  const collection = $('starter-book-collection')?.value || 'Bahai';
+  let group = $('starter-book-group')?.value || 'Non-Fiction';
+  if (group === 'Other' && $('starter-book-group-custom')?.value.trim()) {
+    group = $('starter-book-group-custom').value.trim();
+  }
   const format = $('starter-book-format')?.value || 'Physical Book';
   const totalPages = parseInt($('starter-book-pages')?.value || '300', 10);
   if (isNaN(totalPages) || totalPages <= 0) {
@@ -1188,6 +1255,10 @@ async function saveStarterBook(batchContinue) {
     return;
   }
   const category = $('starter-book-category')?.value || 'Non-Fiction';
+  const priority = $('starter-book-priority')?.value || 'Medium';
+  const cost = parseFloat($('starter-book-cost')?.value || '0') || 0;
+  const whereToBuy = ($('starter-book-where-to-buy')?.value || '').trim();
+  const coverUrl = ($('starter-book-cover-url')?.value || '').trim();
   const notes = ($('starter-book-notes')?.value || '').trim();
 
   isStarterBookSubmitting = true;
@@ -1309,11 +1380,18 @@ async function saveStarterBook(batchContinue) {
     const bookData = {
       title,
       author,
+      collection,
+      group,
       format,
       total_pages: totalPages,
       current_page: totalPages,
       status: 'completed',
       category,
+      priority,
+      cost,
+      where_to_buy: whereToBuy,
+      cover_url: coverUrl,
+      cover_image: coverUrl,
       rating: starterSelectedRating || 0,
       notes: notes || '',
       start_date: startDate,
@@ -1893,7 +1971,40 @@ function setupAccountView() {
     });
   }
 
-  // Developer 10-Year Simulation & Diagnostic Suite Handlers
+  // Developer 10-Year Simulation & Diagnostic Suite Handlers (Hidden / Standalone)
+  function openDevSuiteModal() {
+    const devModal = $('dev-suite-modal');
+    if (devModal) devModal.classList.add('open');
+  }
+  window.openDevSuiteModal = openDevSuiteModal;
+
+  window.DevSuite = {
+    seed10Yr: async () => {
+      if (confirm('Seed 10-Year Master Archivist Profile (2016–2026)? An automatic backup of your live data will be created first.')) {
+        await runCustomProfileImport('10yr');
+      }
+    },
+    seedPower: async () => {
+      if (confirm('Seed High-Velocity Power Reader Profile? An automatic backup of your live data will be created first.')) {
+        await runCustomProfileImport('power');
+      }
+    },
+    seedChaos: async () => {
+      if (confirm('Seed Chaos & Edge Case Stress Profile? An automatic backup of your live data will be created first.')) {
+        await runCustomProfileImport('chaos');
+      }
+    },
+    runAudit: () => {
+      runDiagnosticAudit();
+    },
+    restoreData: async () => {
+      await restoreLiveUserBackup();
+    },
+    openModal: () => {
+      openDevSuiteModal();
+    }
+  };
+
   const dev10yr = $('dev-seed-10yr');
   if (dev10yr) {
     dev10yr.addEventListener('click', async () => {
@@ -1930,6 +2041,24 @@ function setupAccountView() {
     devRestore.addEventListener('click', async () => {
       await restoreLiveUserBackup();
     });
+  }
+
+  // Keyboard shortcut Ctrl+Shift+D / Cmd+Shift+D to trigger hidden Dev Suite
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+      e.preventDefault();
+      openDevSuiteModal();
+      showToast('Developer Diagnostic Suite opened', 'info');
+    }
+  });
+
+  // URL parameter ?dev=true or ?debug=1 trigger
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('dev') || urlParams.has('debug')) {
+    setTimeout(() => {
+      openDevSuiteModal();
+      showToast('Developer Mode Active', 'info');
+    }, 500);
   }
 
   // Reading Preferences Change Listeners
