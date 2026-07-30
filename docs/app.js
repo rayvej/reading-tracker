@@ -712,8 +712,9 @@ function setupSettingsModal() {
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (backdrop) backdrop.addEventListener('click', closeModal);
 
-  // Daily Reading Targets inputs
+  // Daily Reading Targets & Notifications inputs
   setupDailyTargetsSetting();
+  setupNotificationSettingsUI();
 
   // Load sample data
   const btnSample = $('btn-load-sample-data');
@@ -1217,6 +1218,204 @@ function setupDailyTargetsSetting() {
       if (currentView === 'dashboard') renderDashboard();
     });
   }
+}
+
+// ── Daily Morning Reminders & Notifications ───────────────────────────────
+let reminderTimerId = null;
+
+function generateDailyReminderPayload(overrideBooks, overrideLogs) {
+  const booksToSearch = overrideBooks || booksCache || [];
+  const logsToSearch = overrideLogs || logsCache || [];
+
+  const activeBooks = booksToSearch.filter(b => b.status === 'In Progress');
+  if (activeBooks.length === 0 && booksToSearch.length === 0) return null;
+
+  const book = activeBooks.length > 0 ? activeBooks[0] : booksToSearch[0];
+  const activeLogs = logsToSearch.filter(l => l.book_id === book.id || (l.title && l.title.toLowerCase() === book.title.toLowerCase()));
+
+  const currentPage = typeof getBookCurrentProgress === 'function' 
+    ? getBookCurrentProgress(book, activeLogs) 
+    : (book.current_page || 0);
+  const totalPages = Number(book.total_pages) || 1;
+  const remainingPages = Math.max(0, totalPages - currentPage);
+  const progressPct = Math.min(100, Math.round((currentPage / totalPages) * 100));
+
+  const timedLogs = activeLogs.filter(l => Number(l.minutes_spent) > 0 && Number(l.pages_read) > 0);
+  let estTimeText = "";
+
+  if (timedLogs.length > 0) {
+    const totalMins = timedLogs.reduce((sum, l) => sum + Number(l.minutes_spent), 0);
+    const totalPagesLogged = timedLogs.reduce((sum, l) => sum + Number(l.pages_read), 0);
+    const pagesPerMin = totalPagesLogged / (totalMins || 1);
+    
+    if (pagesPerMin > 0 && remainingPages > 0) {
+      const estMinsRemaining = Math.round(remainingPages / pagesPerMin);
+      const hours = Math.floor(estMinsRemaining / 60);
+      const mins = estMinsRemaining % 60;
+      estTimeText = hours > 0 ? `Est. ${hours}h ${mins}m remaining` : `Est. ${mins}m remaining`;
+    } else {
+      estTimeText = `Est. complete soon`;
+    }
+  } else {
+    const dailyPagePace = 25;
+    const daysLeft = Math.ceil(remainingPages / dailyPagePace);
+    estTimeText = daysLeft > 1 ? `Est. ${daysLeft} days remaining` : `Est. 1 day remaining`;
+  }
+
+  const logsWithNotes = activeLogs
+    .filter(l => l.notes && l.notes.trim().length > 0 && !l.notes.startsWith('Historical cycle'))
+    .sort((a, b) => new Date(b.date || b.timestamp || 0) - new Date(a.date || a.timestamp || 0));
+
+  const rawNote = logsWithNotes.length > 0 ? logsWithNotes[0].notes.trim() : (book.notes ? book.notes.trim() : null);
+
+  const title = `${book.title} (${progressPct}% Complete)`;
+  let body = `Page ${currentPage} of ${totalPages} • ${estTimeText}`;
+
+  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const includeQuote = savedSettings.includeQuote !== false;
+
+  if (includeQuote && rawNote) {
+    const cleanQuote = rawNote.length > 120 ? rawNote.substring(0, 117) + "..." : rawNote;
+    body += `\n\nRecent Note:\n"${cleanQuote}"`;
+  }
+
+  return {
+    title,
+    body,
+    bookTitle: book.title,
+    currentPage,
+    totalPages,
+    progressPct,
+    estTimeText,
+    recentNote: rawNote,
+    bookId: book.id
+  };
+}
+
+function getMillisecondsUntilNextReminder(timeStr = "07:00") {
+  const parts = (timeStr || "07:00").split(':').map(Number);
+  const targetHours = isNaN(parts[0]) ? 7 : parts[0];
+  const targetMins = isNaN(parts[1]) ? 0 : parts[1];
+
+  const now = new Date();
+  const target = new Date();
+  target.setHours(targetHours, targetMins, 0, 0);
+
+  if (target <= now) {
+    target.setDate(target.getDate() + 1);
+  }
+
+  return target.getTime() - now.getTime();
+}
+
+function scheduleDailyReminderAlarm() {
+  if (reminderTimerId) clearTimeout(reminderTimerId);
+
+  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const isEnabled = savedSettings.enabled !== false;
+  const reminderTime = savedSettings.time || "07:00";
+
+  if (!isEnabled) return;
+
+  const ms = getMillisecondsUntilNextReminder(reminderTime);
+
+  reminderTimerId = setTimeout(() => {
+    triggerDailyReminder(false);
+    scheduleDailyReminderAlarm();
+  }, ms);
+}
+
+function triggerDailyReminder(isTest = false) {
+  const payload = generateDailyReminderPayload();
+  if (!payload) {
+    if (isTest) showToast('No active book available for reminder test.', 'warning');
+    return;
+  }
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(payload.title, {
+          body: payload.body,
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: 'daily-reading-reminder',
+          data: { url: `/#book-${payload.bookId}` }
+        });
+      });
+    } else {
+      new Notification(payload.title, {
+        body: payload.body,
+        icon: 'icon-192.png',
+        tag: 'daily-reading-reminder'
+      });
+    }
+    if (isTest) showToast(`Notification sent: ${payload.title}`, 'success');
+  } else if (isTest) {
+    showToast(`Reminder Preview:\n${payload.title}\n${payload.body}`, 'info');
+  }
+}
+
+function setupNotificationSettingsUI() {
+  const enableToggle = $('setting-reminder-enable');
+  const timePicker = $('setting-reminder-time');
+  const quoteToggle = $('setting-reminder-quote');
+  const btnPush = $('btn-request-notification-permission');
+  const btnTest = $('btn-test-notification');
+
+  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const isEnabled = savedSettings.enabled !== false;
+  const timeVal = savedSettings.time || "07:00";
+  const includeQuote = savedSettings.includeQuote !== false;
+
+  if (enableToggle) enableToggle.checked = isEnabled;
+  if (timePicker) timePicker.value = timeVal;
+  if (quoteToggle) quoteToggle.checked = includeQuote;
+
+  function updateSavedSettings() {
+    const newSettings = {
+      enabled: enableToggle ? enableToggle.checked : true,
+      time: timePicker ? timePicker.value || "07:00" : "07:00",
+      includeQuote: quoteToggle ? quoteToggle.checked : true
+    };
+    localStorage.setItem('rt_reminder_settings', JSON.stringify(newSettings));
+    if (db && uid) {
+      setDoc(doc(db, `users/${uid}/settings/notifications`), newSettings, { merge: true }).catch(err => {
+        console.warn('Failed to sync notification settings to Firestore:', err);
+      });
+    }
+    scheduleDailyReminderAlarm();
+  }
+
+  if (enableToggle) enableToggle.addEventListener('change', updateSavedSettings);
+  if (timePicker) timePicker.addEventListener('change', () => {
+    updateSavedSettings();
+    showToast(`Daily reminder time set to ${timePicker.value}`, 'success');
+  });
+  if (quoteToggle) quoteToggle.addEventListener('change', updateSavedSettings);
+
+  if (btnPush) {
+    btnPush.addEventListener('click', async () => {
+      if (!('Notification' in window)) {
+        showToast('Notifications are not supported in this browser.', 'warning');
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        showToast('Push Notifications enabled successfully!', 'success');
+      } else if (perm === 'denied') {
+        showToast('Notification permission denied in browser settings.', 'error');
+      }
+    });
+  }
+
+  if (btnTest) {
+    btnTest.addEventListener('click', () => {
+      triggerDailyReminder(true);
+    });
+  }
+
+  scheduleDailyReminderAlarm();
 }
 
 // ── Account View & Management ────────────────────────────────────────────────

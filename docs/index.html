@@ -2657,6 +2657,45 @@
         </button>
       </div>
 
+      <!-- Notifications Section -->
+      <div class="flex flex-col gap-3 pt-2 border-t border-white/10">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Daily Morning Nudge</h4>
+        
+        <div class="flex flex-col gap-3 p-3.5 rounded-2xl border border-white/10 bg-white/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+              <div>
+                <div class="text-sm font-bold">Enable Daily Reminders</div>
+                <div class="text-[11px] text-slate-400">Progress, time estimate &amp; recent note</div>
+              </div>
+            </div>
+            <input type="checkbox" id="setting-reminder-enable" class="toggle toggle-amber toggle-sm" checked />
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-white/5">
+            <label for="setting-reminder-time" class="text-xs font-bold text-slate-300">Reminder Time</label>
+            <input type="time" id="setting-reminder-time" value="07:00" class="bg-slate-800 text-amber-300 font-bold border border-white/10 rounded-xl px-2.5 py-1 text-xs focus:outline-none focus:border-amber-400" />
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-white/5">
+            <span class="text-xs font-bold text-slate-300">Include Recent Note/Quote</span>
+            <input type="checkbox" id="setting-reminder-quote" class="toggle toggle-amber toggle-xs" checked />
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+            <button id="btn-request-notification-permission" class="flex-1 py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all text-center">
+              <i class="fa-solid fa-shield-halved mr-1"></i> Enable Push
+            </button>
+            <button id="btn-test-notification" class="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-bold transition-all text-center">
+              <i class="fa-solid fa-paper-plane mr-1"></i> Test Now
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Security / PIN section -->
       <div class="flex flex-col gap-3 pt-2 border-t border-white/10">
         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Security</h4>
