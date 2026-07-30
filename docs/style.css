@@ -340,33 +340,89 @@ h3, .heading-3 {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SETTINGS SELECTOR BUTTON STATES (Adapts to All Themes & Modes)
+   SETTINGS SELECTOR BUTTON PREVIEWS (100% Legible in ALL Modes)
    ══════════════════════════════════════════════════════════════ */
 .mode-select-btn,
 .theme-select-btn,
 .font-select-btn {
-  background: var(--bg-input) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text-primary) !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   cursor: pointer;
 }
 
-.mode-select-btn:hover,
-.theme-select-btn:hover,
-.font-select-btn:hover {
-  border-color: var(--gold) !important;
-  transform: translateY(-1px);
+/* 1. Warm Espresso Preview Button */
+.theme-select-btn[data-theme="espresso"] {
+  background: #181412 !important;
+  color: #F4EBE1 !important;
+  border: 1px solid rgba(212, 178, 140, 0.35) !important;
+}
+.theme-select-btn[data-theme="espresso"].active,
+.theme-select-btn[data-theme="espresso"]:hover {
+  border: 2px solid #C86D51 !important;
+  box-shadow: 0 0 12px rgba(200, 109, 81, 0.45) !important;
 }
 
-.mode-select-btn.active,
-.theme-select-btn.active,
+/* 2. Glass Studio Preview Button */
+.theme-select-btn[data-theme="glass-studio"] {
+  background: #0B0C10 !important;
+  color: #38BDF8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+.theme-select-btn[data-theme="glass-studio"].active,
+.theme-select-btn[data-theme="glass-studio"]:hover {
+  border: 2px solid #38BDF8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45) !important;
+}
+
+/* 3. Obsidian Dark Preview Button */
+.theme-select-btn[data-theme="obsidian"] {
+  background: #070709 !important;
+  color: #F0F0F5 !important;
+  border: 1px solid rgba(129, 140, 248, 0.35) !important;
+}
+.theme-select-btn[data-theme="obsidian"].active,
+.theme-select-btn[data-theme="obsidian"]:hover {
+  border: 2px solid #818CF8 !important;
+  box-shadow: 0 0 12px rgba(129, 140, 248, 0.45) !important;
+}
+
+/* 4. Parched Paper Preview Button */
+.theme-select-btn[data-theme="parched-paper"] {
+  background: #F8F5EE !important;
+  color: #2A2118 !important;
+  border: 1px solid rgba(60, 45, 30, 0.3) !important;
+}
+.theme-select-btn[data-theme="parched-paper"].active,
+.theme-select-btn[data-theme="parched-paper"]:hover {
+  border: 2px solid #B84A2A !important;
+  box-shadow: 0 0 12px rgba(184, 74, 42, 0.4) !important;
+}
+
+/* Color Mode Selector Buttons */
+.mode-select-btn[data-mode="dark"] {
+  background: #181412 !important;
+  color: #F4EBE1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+.mode-select-btn[data-mode="light"] {
+  background: #FDFBF7 !important;
+  color: #2C2219 !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+.mode-select-btn.active {
+  border: 2px solid var(--gold) !important;
+  box-shadow: 0 0 12px rgba(var(--gold-rgb), 0.4) !important;
+}
+
+/* Typography Identity Selector Buttons */
+.font-select-btn {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong) !important;
+}
 .font-select-btn.active {
-  background: rgba(var(--gold-rgb), 0.18) !important;
-  border-color: var(--gold) !important;
+  border: 2px solid var(--gold) !important;
   color: var(--gold) !important;
-  box-shadow: 0 4px 14px -2px rgba(var(--gold-rgb), 0.3) !important;
-  font-weight: 800 !important;
+  box-shadow: 0 0 12px rgba(var(--gold-rgb), 0.35) !important;
 }
 
 
