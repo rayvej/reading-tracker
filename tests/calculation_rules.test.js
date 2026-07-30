@@ -9,6 +9,20 @@ const assert = require('assert');
 function calculateReconciledMetrics(books, logs) {
   const activeLogs = logs.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
 
+  const logsByTitleAndCycle = new Map();
+  for (let i = 0; i < activeLogs.length; i++) {
+    const l = activeLogs[i];
+    if (!l.book_title) continue;
+    const cycleNum = parseInt(l.read_cycle || 1, 10);
+    const key = `${l.book_title}___${cycleNum}`;
+    let list = logsByTitleAndCycle.get(key);
+    if (!list) {
+      list = [];
+      logsByTitleAndCycle.set(key, list);
+    }
+    list.push(l);
+  }
+
   let finishedTitles = 0;
   let activeTitles = 0;
   let unreadTitles = 0;
@@ -16,7 +30,8 @@ function calculateReconciledMetrics(books, logs) {
   let finishedCyclesPages = 0;
   let activeCyclesPages = 0;
 
-  books.forEach(b => {
+  for (let i = 0; i < books.length; i++) {
+    const b = books[i];
     const rc = parseInt(b.read_count || 0, 10);
     const totalPages = parseInt(b.total_pages || 0, 10);
     const status = b.status || 'Unread';
@@ -36,9 +51,14 @@ function calculateReconciledMetrics(books, logs) {
 
     if (status === 'In Progress' || rc > 0) {
       const currentCycle = rc + (isFinishedStatus ? 1 : 1);
-      const bookLogs = activeLogs.filter(l => l.book_title === b.title && parseInt(l.read_cycle || 1, 10) === currentCycle);
-      if (bookLogs.length > 0) {
-        const maxEndPage = Math.max(...bookLogs.map(l => parseInt(l.end_page || 0, 10)));
+      const key = `${b.title}___${currentCycle}`;
+      const bookLogs = logsByTitleAndCycle.get(key);
+      if (bookLogs && bookLogs.length > 0) {
+        let maxEndPage = 0;
+        for (let j = 0; j < bookLogs.length; j++) {
+          const ep = parseInt(bookLogs[j].end_page || 0, 10);
+          if (ep > maxEndPage) maxEndPage = ep;
+        }
         if (totalPages > 0) {
           activeCyclesPages += maxEndPage % totalPages;
         } else {
@@ -48,7 +68,7 @@ function calculateReconciledMetrics(books, logs) {
         activeCyclesPages += parseInt(b.current_page || 0, 10);
       }
     }
-  });
+  }
 
   return {
     totalCatalogTitles: books.length,

@@ -46,6 +46,28 @@ try {
 }
 const gp     = new GoogleAuthProvider();
 
+// ── Optimistic Local-First & Idempotent Firestore Sync Pattern ─────────────
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return 'rt_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+  }
+  return 'rt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+async function optimisticSaveDoc(collectionSubpath, data) {
+  const docId = data.id || generateId();
+  data.id = docId;
+
+  if (db && uid && !window.isMockAuth) {
+    const docRef = doc(db, `users/${uid}/${collectionSubpath}/${docId}`);
+    setDoc(docRef, data, { merge: true }).catch(err => {
+      console.warn(`[Optimistic Sync] Background write queued for ${collectionSubpath}/${docId}:`, err.message);
+    });
+  }
+
+  return { id: docId, ...data };
+}
+
 // ── Security & Sanitization Helper ──────────────────────────────────────────
 export function escapeHtml(str) {
   if (typeof str !== 'string') return str;
@@ -100,6 +122,42 @@ let activeChart = null;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; };
+
+// Global Chart.js registry to prevent memory leaks and duplicate canvas bindings
+const chartRegistry = new Map();
+function registerChart(canvasId, chartInstance) {
+  if (chartRegistry.has(canvasId)) {
+    try { chartRegistry.get(canvasId).destroy(); } catch (e) { console.warn('Chart destroy:', e); }
+  }
+  chartRegistry.set(canvasId, chartInstance);
+  return chartInstance;
+}
+
+// Micro Error Boundary wrapper for safe rendering
+function safeRender(containerId, renderFn, fallbackHtml = null) {
+  try {
+    return renderFn();
+  } catch (err) {
+    console.error(`[Micro Error Boundary] Render error in container '${containerId}':`, err);
+    if (containerId) {
+      const container = typeof containerId === 'string' ? $(containerId) : containerId;
+      if (container) {
+        container.innerHTML = fallbackHtml || `
+          <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold flex items-center justify-between">
+            <span>Unable to render view cleanly.</span>
+            <button onclick="location.reload()" class="px-2.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-[10px] font-bold">Reload</button>
+          </div>
+        `;
+      }
+    }
+  }
+}
+
+// Diacritic-insensitive search normalization
+function normalizeSearchStr(str) {
+  if (typeof str !== 'string') return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
 
 function debounce(fn, delay = 150) {
   let timeoutId;
@@ -289,12 +347,29 @@ onAuthStateChanged(auth, async user => {
 
 // ── PIN ───────────────────────────────────────────────────────────────────────
 async function checkAndShowPin() {
-  // Ensure PIN exists in Firestore (set default '1234' if first time)
-  const settingsRef = doc(db, `users/${uid}/settings/app`);
-  const snap = await getDoc(settingsRef);
-  if (!snap.exists() || !snap.data().pin_hash) {
-    const defaultHash = await hashPin('1234');
-    await setDoc(settingsRef, { pin_hash: defaultHash }, { merge: true });
+  let storedHash = localStorage.getItem('rt_pin_hash');
+  if (!storedHash) {
+    if (db && uid) {
+      try {
+        const settingsRef = doc(db, `users/${uid}/settings/app`);
+        const snap = await getDoc(settingsRef);
+        if (snap.exists() && snap.data()?.pin_hash) {
+          storedHash = snap.data().pin_hash;
+          localStorage.setItem('rt_pin_hash', storedHash);
+        } else {
+          storedHash = await hashPin('1234');
+          localStorage.setItem('rt_pin_hash', storedHash);
+          setDoc(settingsRef, { pin_hash: storedHash }, { merge: true }).catch(err => console.warn('PIN setDoc background error:', err));
+        }
+      } catch (e) {
+        console.warn('PIN remote fetch error, using default:', e);
+        storedHash = await hashPin('1234');
+        localStorage.setItem('rt_pin_hash', storedHash);
+      }
+    } else {
+      storedHash = await hashPin('1234');
+      localStorage.setItem('rt_pin_hash', storedHash);
+    }
   }
   showScreen('pin-screen');
   pinBuffer = '';
@@ -326,16 +401,45 @@ $('pin-pad').addEventListener('click', async e => {
   pinBuffer += key.dataset.key;
   renderPinDots();
   if (pinBuffer.length === PIN_LENGTH) {
+    if (typeof performance !== 'undefined' && performance.mark) {
+      performance.clearMarks('pin-submitted');
+      performance.clearMarks('dashboard-rendered');
+      performance.clearMarks('dashboard-full-interactive');
+      performance.clearMeasures('PIN-to-Dashboard Latency');
+      performance.clearMeasures('PIN-to-Dashboard Interactive Latency');
+      performance.mark('pin-submitted');
+    }
     await verifyPin(pinBuffer);
   }
 });
 
 async function verifyPin(pin) {
-  const settingsRef = doc(db, `users/${uid}/settings/app`);
-  const snap = await getDoc(settingsRef);
-  const storedHash = snap.data()?.pin_hash;
-  const inputHash  = await hashPin(pin);
-  if (inputHash === storedHash) {
+  let storedHash = localStorage.getItem('rt_pin_hash');
+  const inputHash = await hashPin(pin);
+
+  // Fast path: Check local storage hash first (<5ms, non-blocking)
+  if (storedHash && inputHash === storedHash) {
+    sessionStorage.setItem(SESSION_KEY, uid);
+    showScreen('app');
+    await initApp();
+    return;
+  }
+
+  // Fallback path: If local hash is missing or fails, attempt Firestore fetch without locking out user
+  if (!storedHash && db && uid) {
+    try {
+      const settingsRef = doc(db, `users/${uid}/settings/app`);
+      const snap = await getDoc(settingsRef);
+      if (snap.exists() && snap.data()?.pin_hash) {
+        storedHash = snap.data().pin_hash;
+        localStorage.setItem('rt_pin_hash', storedHash);
+      }
+    } catch (e) {
+      console.warn('Firestore PIN fallback fetch error:', e);
+    }
+  }
+
+  if (storedHash && inputHash === storedHash) {
     sessionStorage.setItem(SESSION_KEY, uid);
     showScreen('app');
     await initApp();
@@ -374,57 +478,85 @@ async function initApp() {
   setupAccountView();
   showView('dashboard'); // Start on Dashboard
   
+  window.saveNewBook = saveNewBook;
+  window.submitLog = submitLog;
+  window.initApp = initApp;
+  window.optimisticSaveDoc = optimisticSaveDoc;
+  window.importFromJSON = importFromJSON;
+  window.exportToJSON = exportToJSON;
+  
+  Object.defineProperty(window, 'booksCache', { get: () => booksCache, set: v => { booksCache = v; }, configurable: true });
+  Object.defineProperty(window, 'logsCache', { get: () => logsCache, set: v => { logsCache = v; }, configurable: true });
+  
   // 2. Load database content asynchronously in the background
   loadDatabaseData();
 }
+window.initApp = initApp;
 
 async function loadDatabaseData() {
   try {
-    // Try to load cache first so it works offline/online instantly!
+    // 1. Fast Partition: Load books & logs cache from storage
     await loadBooksCache();
     await loadLogsCache();
-
-    // Startup Correction: remap mislabeled New Era logs from cycle 2 to 1
-    const mislabeledLogs = logsCache.filter(l => l.book_title === 'Bahá’u’lláh and the New Era' && parseInt(l.read_cycle || 1, 10) === 2);
-    if (mislabeledLogs.length > 0) {
-      console.log(`[Startup-Correction] Correcting ${mislabeledLogs.length} mislabeled log cycles for New Era`);
-      for (const l of mislabeledLogs) {
-        await updateDoc(doc(db, `users/${uid}/reading_logs/${l.id}`), { read_cycle: 1 });
-        l.read_cycle = 1;
-      }
-    }
 
     populateBookDropdown();
     if (typeof populateGroupDatalist === 'function') populateGroupDatalist(booksCache);
     
-    // Refresh active views immediately from cache
+    // 2. Render active view shell immediately from cache
     if (currentView === 'dashboard') renderDashboard();
     if (currentView === 'goals')     renderGoals();
     if (currentView === 'wishlist')  renderBookshelf();
     if (currentView === 'knowledge') renderKnowledgeView();
 
-    // Run background self-healing for any data status inconsistencies
-    healBookStatuses();
+    // 3. Defer background tasks (remap corrections, self-healing, goals config) so they don't block main thread
+    const runDeferredTasks = async () => {
+      // Startup Correction: remap mislabeled New Era logs from cycle 2 to 1
+      const mislabeledLogs = logsCache.filter(l => l.book_title === 'Bahá’u’lláh and the New Era' && parseInt(l.read_cycle || 1, 10) === 2);
+      if (mislabeledLogs.length > 0) {
+        console.log(`[Startup-Correction] Correcting ${mislabeledLogs.length} mislabeled log cycles for New Era`);
+        for (const l of mislabeledLogs) {
+          if (db && uid) {
+            updateDoc(doc(db, `users/${uid}/reading_logs/${l.id}`), { read_cycle: 1 }).catch(() => {});
+          }
+          l.read_cycle = 1;
+        }
+      }
 
-    // Ensure default goals config exists for user
-    const goalsRef = doc(db, `users/${uid}/goals/config`);
-    const goalsSnap = await getDoc(goalsRef);
-    if (!goalsSnap.exists()) {
-      await setDoc(goalsRef, {
-        annual_books_target: 12,
-        annual_pages_target: 3000,
-        monthly_books_target: 1,
-        monthly_pages_target: 300
-      }, { merge: true });
-    }
+      // Run background self-healing for any data status inconsistencies
+      healBookStatuses();
 
-    // Auto-prompt clean users (0 books) with the Starter Completion Importer
-    if (booksCache.length === 0 && uid && !localStorage.getItem('rt_starter_dismissed_' + uid)) {
-      setTimeout(() => openStarterImportModal(), 600);
+      // Ensure default goals config exists for user
+      if (db && uid) {
+        try {
+          const goalsRef = doc(db, `users/${uid}/goals/config`);
+          const goalsSnap = await getDoc(goalsRef);
+          if (!goalsSnap.exists()) {
+            await setDoc(goalsRef, {
+              annual_books_target: 12,
+              annual_pages_target: 3000,
+              monthly_books_target: 1,
+              monthly_pages_target: 300
+            }, { merge: true });
+          }
+        } catch (e) {
+          console.warn('Goals config background check error:', e);
+        }
+      }
+
+      // Auto-prompt clean users (0 books) with the Starter Completion Importer
+      const userKey = uid || 'local';
+      if ((!booksCache || booksCache.length === 0) && !localStorage.getItem('rt_starter_dismissed_' + userKey)) {
+        setTimeout(() => openStarterImportModal(), 400);
+      }
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => runDeferredTasks(), { timeout: 2000 });
+    } else {
+      setTimeout(runDeferredTasks, 100);
     }
   } catch (e) {
     console.error("Failed to load library database:", e);
-    // Only alert if we have no cached data at all
     if (booksCache.length === 0) {
       showToast("Database connection offline. Showing local data.", "error");
     }
@@ -717,7 +849,10 @@ function runDiagnosticAudit() {
 }
 
 // ── Settings & Data Management ────────────────────────────────────────────────
+let isSettingsModalSetup = false;
 function setupSettingsModal() {
+  if (isSettingsModalSetup) return;
+  isSettingsModalSetup = true;
   const btnOpen = $('btn-settings-open');
   const btnClose = $('settings-modal-close');
   const backdrop = $('settings-modal-backdrop');
@@ -897,7 +1032,10 @@ let starterSelectedPrecision = 'year'; // 'year' | 'finish' | 'range' | 'detaile
 let starterSelectedRating = 0;
 let starterSessionBatchCount = 0;
 
+let isStarterImportSetup = false;
 function setupStarterImportModal() {
+  if (isStarterImportSetup) return;
+  isStarterImportSetup = true;
   const modal = $('starter-import-modal');
   if (!modal) return;
 
@@ -1029,7 +1167,11 @@ function resetStarterForm() {
   if ($('starter-input-det-daily-pages')) $('starter-input-det-daily-pages').value = '';
 }
 
+let isStarterBookSubmitting = false;
+
 async function saveStarterBook(batchContinue) {
+  if (isStarterBookSubmitting) return;
+
   const title = ($('starter-book-title')?.value || '').trim();
   if (!title) {
     showToast('Please enter a book title', 'error');
@@ -1039,9 +1181,20 @@ async function saveStarterBook(batchContinue) {
 
   const author = ($('starter-book-author')?.value || '').trim();
   const format = $('starter-book-format')?.value || 'Physical Book';
-  const totalPages = parseInt($('starter-book-pages')?.value || '300', 10) || 300;
+  const totalPages = parseInt($('starter-book-pages')?.value || '300', 10);
+  if (isNaN(totalPages) || totalPages <= 0) {
+    showToast('Please enter a valid page length (> 0)', 'error');
+    if ($('starter-book-pages')) $('starter-book-pages').focus();
+    return;
+  }
   const category = $('starter-book-category')?.value || 'Non-Fiction';
   const notes = ($('starter-book-notes')?.value || '').trim();
+
+  isStarterBookSubmitting = true;
+  const btnDone = $('starter-modal-save-done');
+  const btnAnother = $('starter-modal-save-another');
+  if (btnDone) btnDone.disabled = true;
+  if (btnAnother) btnAnother.disabled = true;
 
   let finishDate = todayISO();
   let startDate = todayISO();
@@ -1169,12 +1322,14 @@ async function saveStarterBook(batchContinue) {
       updated_at: serverTimestamp()
     };
 
-    const bookRef = await addDoc(collection(db, `users/${uid}/books`), bookData);
-    const newBookId = bookRef.id;
+    const savedBook = await optimisticSaveDoc('books', bookData);
+    if (!booksCache.some(b => b.id === savedBook.id || b.title === savedBook.title)) {
+      booksCache.push(savedBook);
+    }
 
     for (const l of createdLogs) {
-      await addDoc(collection(db, `users/${uid}/reading_logs`), {
-        book_id: newBookId,
+      const savedLog = await optimisticSaveDoc('reading_logs', {
+        book_id: savedBook.id,
         book_title: title,
         date: l.date,
         pages_read: l.pages_read,
@@ -1182,6 +1337,9 @@ async function saveStarterBook(batchContinue) {
         note: l.note || '',
         created_at: serverTimestamp()
       });
+      if (!logsCache.some(log => log.id === savedLog.id)) {
+        logsCache.unshift(savedLog);
+      }
     }
 
     booksCache = [];
@@ -1210,6 +1368,12 @@ async function saveStarterBook(batchContinue) {
   } catch (err) {
     console.error("Failed to save starter book:", err);
     showToast('Failed to save book: ' + err.message, 'error');
+  } finally {
+    isStarterBookSubmitting = false;
+    const btnDone = $('starter-modal-save-done');
+    const btnAnother = $('starter-modal-save-another');
+    if (btnDone) btnDone.disabled = false;
+    if (btnAnother) btnAnother.disabled = false;
   }
 }
 
@@ -1542,7 +1706,10 @@ async function renderAccountView() {
   }
 }
 
+let isAccountViewSetup = false;
 function setupAccountView() {
+  if (isAccountViewSetup) return;
+  isAccountViewSetup = true;
   // Edit Display Name
   const btnEditName = $('btn-edit-profile-name');
   if (btnEditName) {
@@ -2001,43 +2168,68 @@ async function exportToJSON() {
 }
 
 function importFromJSON(file) {
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.books || !Array.isArray(data.books)) {
-        throw new Error('Invalid backup file format: missing books array');
-      }
-
-      showToast(`Importing ${data.books.length} books and ${(data.logs || []).length} logs...`, 'info');
-
-      if (db && uid) {
-        for (const b of data.books) {
-          const ref = doc(db, `users/${uid}/books/${b.id || Date.now()}`);
-          await setDoc(ref, b, { merge: true });
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.books || !Array.isArray(data.books)) {
+          throw new Error('Invalid backup file format: missing books array');
         }
-        if (data.logs && Array.isArray(data.logs)) {
-          for (const l of data.logs) {
-            const ref = doc(db, `users/${uid}/reading_logs/${l.id || Date.now()}`);
-            await setDoc(ref, l, { merge: true });
-          }
+
+        showToast(`Importing ${data.books.length} books and ${(data.logs || []).length} logs...`, 'info');
+
+        // Optimistic local-first: hydrate memory caches IMMEDIATELY
+        booksCache = data.books || [];
+        logsCache = data.logs || [];
+        if (data.wishlist && Array.isArray(data.wishlist)) {
+          wishlistCache = data.wishlist;
         }
+
+        // Re-render UI from restored caches (non-fatal — render errors must not block import)
+        try {
+          await renderBookshelf();
+          renderDashboard();
+          renderAccountView();
+          populateBookDropdown();
+        } catch (renderErr) {
+          console.warn('[Import] Render after import failed (data intact):', renderErr.message);
+        }
+
+        // Background Firestore sync (non-blocking — a network failure must never prevent local restore)
+        if (db && uid) {
+          (async () => {
+            try {
+              for (const b of data.books) {
+                const ref = doc(db, `users/${uid}/books/${b.id || Date.now()}`);
+                await setDoc(ref, b, { merge: true });
+              }
+              if (data.logs && Array.isArray(data.logs)) {
+                for (const l of data.logs) {
+                  const ref = doc(db, `users/${uid}/reading_logs/${l.id || Date.now()}`);
+                  await setDoc(ref, l, { merge: true });
+                }
+              }
+            } catch (syncErr) {
+              console.warn('[Import] Background Firestore sync failed (local data intact):', syncErr.message);
+            }
+          })();
+        }
+
+        showToast('Import completed successfully!', 'success');
+        resolve(true);
+      } catch (err) {
+        console.error('Import JSON error:', err);
+        showToast('Failed to import backup: ' + err.message, 'error');
+        resolve(false);
       }
-
-      booksCache = [];
-      logsCache = [];
-      await loadBooksCache();
-      await loadLogsCache();
-
-      renderDashboard();
-      renderAccountView();
-      showToast('Import completed successfully!', 'success');
-    } catch (err) {
-      console.error('Import JSON error:', err);
-      showToast('Failed to import backup: ' + err.message, 'error');
-    }
-  };
-  reader.readAsText(file);
+    };
+    reader.onerror = () => {
+      showToast('Failed to read backup file.', 'error');
+      resolve(false);
+    };
+    reader.readAsText(file);
+  });
 }
 
 // ── Books Cache ───────────────────────────────────────────────────────────────
@@ -2226,12 +2418,12 @@ function showView(name) {
   // Refresh content on tab open only if dirty or first render
   const key = name === 'wishlist' ? 'bookshelf' : name;
   if (viewDirtyFlags[key] !== false || name === 'knowledge') {
-    if (name === 'dashboard') renderDashboard();
-    if (name === 'knowledge') renderKnowledgeView();
-    if (name === 'goals')     renderGoals();
-    if (name === 'wishlist')  renderBookshelf();
-    if (name === 'log')       renderLogView();
-    if (name === 'account')   renderAccountView();
+    if (name === 'dashboard') safeRender('view-dashboard', () => renderDashboard());
+    if (name === 'knowledge') safeRender('view-knowledge', () => renderKnowledgeView());
+    if (name === 'goals')     safeRender('view-goals', () => renderGoals());
+    if (name === 'wishlist')  safeRender('view-wishlist', () => renderBookshelf());
+    if (name === 'log')       safeRender('view-log', () => typeof renderLogView === 'function' && renderLogView());
+    if (name === 'account')   safeRender('view-account', () => renderAccountView());
     if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
   }
 
@@ -2320,31 +2512,43 @@ function populateBookDropdown() {
   }
 }
 
+let isSubmitLogSubmitting = false;
+
 async function submitLog() {
+  if (isSubmitLogSubmitting) return;
+
   const title   = $('log-book').value;
   const date    = $('log-date').value;
-  const start   = parseInt($('log-start').value) || 0;
+  const start   = parseInt($('log-start').value);
   const end     = parseInt($('log-end').value);
   const cycle   = parseInt($('log-cycle').value) || 1;
   const mins    = parseInt($('log-minutes').value) || null;
   const notes   = $('log-notes').value.trim() || null;
 
-  if (!title)          { showToast('Please select a book.', 'error'); return; }
-  if (!date)           { showToast('Please enter a date.', 'error'); return; }
+  if (!title)                  { showToast('Please select a book.', 'error'); return; }
+  if (!date)                   { showToast('Please enter a date.', 'error'); return; }
+  if (isNaN(start) || start < 0) { showToast('Start page cannot be negative.', 'error'); return; }
   if (isNaN(end) || end <= 0) { showToast('Please enter a valid end page.', 'error'); return; }
-  if (end <= start)    { showToast('End page must be greater than start page.', 'error'); return; }
+  if (end <= start)            { showToast('End page must be greater than start page.', 'error'); return; }
+  if (mins !== null && (isNaN(mins) || mins <= 0)) { showToast('Minutes spent must be a positive number.', 'error'); return; }
 
+  isSubmitLogSubmitting = true;
   const btn = $('log-submit');
-  btn.disabled = true; btn.textContent = 'Saving…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   try {
-    // Add log entry
-    await addDoc(collection(db, `users/${uid}/reading_logs`), {
+    const newLog = {
       date, book_title: title, read_cycle: cycle,
       start_page: start, end_page: end,
       minutes_spent: mins, notes,
       created_at: serverTimestamp()
-    });
+    };
+
+    // Add log entry (Optimistic local-first + idempotent background setDoc sync)
+    const savedLog = await optimisticSaveDoc('reading_logs', newLog);
+    if (!logsCache.some(l => l.id === savedLog.id)) {
+      logsCache.unshift(savedLog);
+    }
 
     // Recalculate book status
     await recalculateBook(title, cycle);
@@ -2363,7 +2567,6 @@ async function submitLog() {
     }
 
     // Refresh books cache so dropdown updates
-    await loadBooksCache();
     populateBookDropdown();
     $('log-book').value = title;
 
@@ -2371,15 +2574,13 @@ async function submitLog() {
     $('log-start').value = end;
     $('log-start-hint').textContent = '↑ Auto-filled from last session';
     $('log-start-hint').className = 'input-hint found';
-    
-    // Invalidate logs cache so new entry shows up
-    logsCache = [];
 
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
     console.error(e);
   } finally {
-    btn.disabled = false; btn.textContent = 'Log Reading Session';
+    isSubmitLogSubmitting = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Log Reading Session'; }
   }
 }
 
@@ -2510,7 +2711,10 @@ function calculateStreaks(logs) {
   return { current, longest };
 }
 
+let isDashboardSetup = false;
 function setupDashboard() {
+  if (isDashboardSetup) return;
+  isDashboardSetup = true;
   // Segment filter (Bahá'í / Non-Bahá'í / All)
   $('dash-seg').addEventListener('click', e => {
     const btn = e.target.closest('[data-col]');
@@ -4432,14 +4636,48 @@ async function renderDashboard() {
     }
   }
 
-  // ── Render Charts & Advanced Analytics ──
-  renderCharts(completions);
-  renderVelocityAnalytics(activeLogs, books, selectedYear);
-  renderStreakRings(streaks, activeLogs);
-  initScrollAnimations();
+  if (typeof performance !== 'undefined' && performance.mark && performance.getEntriesByName('pin-submitted').length > 0) {
+    performance.mark('dashboard-rendered');
+    try {
+      performance.measure('PIN-to-Dashboard Shell Latency', 'pin-submitted', 'dashboard-rendered');
+      const measures = performance.getEntriesByName('PIN-to-Dashboard Shell Latency');
+      if (measures.length > 0) {
+        const latest = measures[measures.length - 1];
+        console.log(`⚡ [BENCHMARK] PIN-to-Dashboard Shell Render Latency: ${latest.duration.toFixed(2)} ms`);
+      }
+    } catch (e) {}
+  }
 
-  // Render Contextual Productivity Matrix
-  renderContextualMatrix(logsCache);
+  // ── Render Charts & Advanced Analytics (Deferred for sub-200ms initial DOM paint) ──
+  if ('requestAnimationFrame' in window) {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        renderCharts(completions);
+        renderVelocityAnalytics(activeLogs, books, selectedYear);
+        renderStreakRings(streaks, activeLogs);
+        renderContextualMatrix(logsCache);
+        initScrollAnimations();
+
+        if (typeof performance !== 'undefined' && performance.mark && performance.getEntriesByName('pin-submitted').length > 0) {
+          performance.mark('dashboard-full-interactive');
+          try {
+            performance.measure('PIN-to-Dashboard Full Interactive Latency', 'pin-submitted', 'dashboard-full-interactive');
+            const measures = performance.getEntriesByName('PIN-to-Dashboard Full Interactive Latency');
+            if (measures.length > 0) {
+              const latest = measures[measures.length - 1];
+              console.log(`📊 [BENCHMARK] PIN-to-Dashboard Full Interactive Latency: ${latest.duration.toFixed(2)} ms`);
+            }
+          } catch (e) {}
+        }
+      }, 30);
+    });
+  } else {
+    renderCharts(completions);
+    renderVelocityAnalytics(activeLogs, books, selectedYear);
+    renderStreakRings(streaks, activeLogs);
+    renderContextualMatrix(logsCache);
+    initScrollAnimations();
+  }
 }
 
 // ── Goals Helpers: Streaks, Charts & Badges ──────────────────────────────
@@ -5466,7 +5704,11 @@ function openGoalsModal() {
 }
 function closeGoalsModal() { $('goals-modal').classList.remove('open'); }
 
+let isSaveGoalsSubmitting = false;
+
 async function saveGoals() {
+  if (isSaveGoalsSubmitting) return;
+
   const parseVal = (id, fallback) => {
     const raw = $(id)?.value;
     if (raw === undefined || raw === null || raw.trim() === '') return fallback;
@@ -5480,11 +5722,15 @@ async function saveGoals() {
                   'goal-monthly-books', 'goal-monthly-pages', 'goal-monthly-sessions', 'goal-monthly-minutes'];
   for (const id of inputs) {
     const raw = $(id)?.value;
-    if (raw && parseInt(raw, 10) <= 0) {
+    if (raw !== undefined && raw !== null && raw.trim() !== '' && parseInt(raw, 10) <= 0) {
       showToast('Target goals must be positive numbers', 'error');
       return;
     }
   }
+
+  isSaveGoalsSubmitting = true;
+  const saveBtn = $('goals-modal-save');
+  if (saveBtn) saveBtn.disabled = true;
 
   const data = {
     daily_pages_target:      parseVal('goal-daily-pages', 20),
@@ -5503,6 +5749,9 @@ async function saveGoals() {
     if (db && uid) await setDoc(doc(db, `users/${uid}/goals/config`), data, { merge: true });
   } catch (e) {
     console.warn('[Goals] Local save only (offline/auth):', e.message);
+  } finally {
+    isSaveGoalsSubmitting = false;
+    if (saveBtn) saveBtn.disabled = false;
   }
   goalsCache = data;
   try {
@@ -5867,7 +6116,10 @@ function openAddBookModal() {
   $('add-book-modal').classList.add('open');
 }
 
+let isBookshelfSetup = false;
 function setupBookshelf() {
+  if (isBookshelfSetup) return;
+  isBookshelfSetup = true;
   const searchEl = $('wishlist-search');
   if (searchEl) {
     const debouncedSearch = debounce(() => {
@@ -6790,7 +7042,11 @@ async function markBookComplete(b) {
   }
 }
 
+let isSaveNewBookSubmitting = false;
+
 async function saveNewBook() {
+  if (isSaveNewBookSubmitting) return;
+
   const title = $('ab-title').value.trim();
   const author = $('ab-author').value.trim() || null;
   const coll = $('ab-collection').value;
@@ -6810,7 +7066,12 @@ async function saveNewBook() {
   const coverUrl = $('ab-cover-url')?.value?.trim() || null;
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
-  
+  if (cost < 0) { showToast('Cost cannot be negative.', 'error'); return; }
+
+  isSaveNewBookSubmitting = true;
+  const saveBtn = $('add-book-save');
+  if (saveBtn) saveBtn.disabled = true;
+
   try {
     const isFinished = status === 'Finished';
     const isWishlistStatus = ['Want to Buy', 'Gifted', 'Borrowed', 'Owned'].includes(status);
@@ -6834,29 +7095,24 @@ async function saveNewBook() {
       date_added: todayISO()
     };
     
-    // Save to main books collection
-    await addDoc(collection(db, `users/${uid}/books`), newBook);
+    // Save to main books collection (Optimistic local-first + idempotent background setDoc sync)
+    const savedBook = await optimisticSaveDoc('books', newBook);
+    if (!booksCache.some(b => b.id === savedBook.id || b.title === savedBook.title)) {
+      booksCache.push(savedBook);
+    }
     
     // If it's a wishlist item, also add to legacy wishlist collection for complete database safety
     if (isWishlistStatus) {
-      await addDoc(collection(db, `users/${uid}/wishlist`), {
-        title,
-        author,
-        category: group,
-        priority: prio,
-        status: status,
-        est_pages: pages,
-        est_cost: cost,
-        where_to_buy: buyLink,
-        notes: notes,
-        cover_url: coverUrl,
-        date_added: todayISO()
+      await optimisticSaveDoc('wishlist', {
+        title, author, category: group, priority: prio, status: status,
+        est_pages: pages, est_cost: cost, where_to_buy: buyLink, notes: notes,
+        cover_url: coverUrl, date_added: todayISO()
       });
       wishlistCache = []; // Reset wishlist cache to force reload
     }
     
     if (isFinished) {
-      await addDoc(collection(db, `users/${uid}/reading_logs`), {
+      const histLog = {
         date: todayISO(),
         book_title: title,
         read_cycle: 1,
@@ -6865,8 +7121,11 @@ async function saveNewBook() {
         minutes_spent: null,
         notes: "Historical starting complete",
         created_at: serverTimestamp()
-      });
-      logsCache = [];
+      };
+      const savedHistLog = await optimisticSaveDoc('reading_logs', histLog);
+      if (!logsCache.some(l => l.id === savedHistLog.id)) {
+        logsCache.unshift(savedHistLog);
+      }
     }
     
     // Reset form fields
@@ -6884,11 +7143,14 @@ async function saveNewBook() {
     
     $('add-book-modal').classList.remove('open');
     showToast(`✓ Book "${title}" successfully registered!`, 'success');
-    await loadBooksCache();
     await renderBookshelf();
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to add book: ' + e.message, 'error');
+  } finally {
+    isSaveNewBookSubmitting = false;
+    const saveBtn = $('add-book-save');
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 
@@ -6918,7 +7180,11 @@ function openEditBookModal(b) {
   $('edit-book-modal').classList.add('open');
 }
 
+let isSaveEditBookSubmitting = false;
+
 async function saveEditBook() {
+  if (isSaveEditBookSubmitting) return;
+
   const id = $('eb-book-id').value;
   const title = $('eb-title').value.trim();
   const author = $('eb-author').value.trim() || null;
@@ -6936,6 +7202,14 @@ async function saveEditBook() {
 
   if (!title) { showToast('Please enter a book title.', 'error'); return; }
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
+  if (cost < 0) { showToast('Cost cannot be negative.', 'error'); return; }
+  if (rc < 0) { showToast('Read count cannot be negative.', 'error'); return; }
+  if (prog < 0) { showToast('Reading progress cannot be negative.', 'error'); return; }
+  if (status === 'In Progress' && prog > pages) { showToast('Progress cannot exceed total pages.', 'error'); return; }
+
+  isSaveEditBookSubmitting = true;
+  const saveBtn = $('edit-book-save');
+  if (saveBtn) saveBtn.disabled = true;
 
   try {
     const updates = {
@@ -6999,6 +7273,10 @@ async function saveEditBook() {
     populateBookDropdown();
   } catch (e) {
     showToast('Failed to update book: ' + e.message, 'error');
+  } finally {
+    isSaveEditBookSubmitting = false;
+    const saveBtn = $('edit-book-save');
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 
@@ -7093,7 +7371,11 @@ function closeEditLogModal() {
   currentEditingLog = null;
 }
 
+let isSaveLogEditSubmitting = false;
+
 async function saveLogEdit() {
+  if (isSaveLogEditSubmitting) return;
+
   const logId = $('edit-log-id').value;
   if (!logId || !currentEditingLog) {
     showToast('Error: No log entry selected for editing', 'error');
@@ -7101,15 +7383,21 @@ async function saveLogEdit() {
   }
 
   const date = $('edit-log-date').value;
-  const start = parseInt($('edit-log-start').value, 10) || 0;
+  const start = parseInt($('edit-log-start').value, 10);
   const end = parseInt($('edit-log-end').value, 10);
   const cycle = parseInt($('edit-log-cycle').value, 10) || 1;
   const mins = parseInt($('edit-log-minutes').value, 10) || null;
   const notes = $('edit-log-notes').value.trim() || null;
 
   if (!date) { showToast('Please enter a date.', 'error'); return; }
+  if (isNaN(start) || start < 0) { showToast('Start page cannot be negative.', 'error'); return; }
   if (isNaN(end) || end <= 0) { showToast('Please enter a valid end page.', 'error'); return; }
   if (end <= start) { showToast('End page must be greater than start page.', 'error'); return; }
+  if (mins !== null && (isNaN(mins) || mins <= 0)) { showToast('Minutes spent must be a positive number.', 'error'); return; }
+
+  isSaveLogEditSubmitting = true;
+  const saveBtn = $('edit-log-save');
+  if (saveBtn) saveBtn.disabled = true;
 
   try {
     const originalTitle = currentEditingLog.book_title;
@@ -7147,6 +7435,9 @@ async function saveLogEdit() {
   } catch (e) {
     showToast('Failed to update log: ' + e.message, 'error');
     console.error(e);
+  } finally {
+    isSaveLogEditSubmitting = false;
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 
@@ -8924,8 +9215,11 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     return;
   }
 
-  // 8. Render Quote Cards
-  filtered.forEach(n => {
+  // 8. Render Quote Cards in Paginated Chunks (25 per batch for 60 FPS performance)
+  let limit = window.knowledgeFeedLimit || 25;
+  const itemsToRender = filtered.slice(0, limit);
+
+  itemsToRender.forEach(n => {
     const card = el('div', 'quote-card animate-fade-in flex flex-col gap-2 relative');
     
     let photoHTML = '';
@@ -9000,6 +9294,18 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
 
     feed.appendChild(card);
   });
+
+  if (filtered.length > limit) {
+    const remaining = filtered.length - limit;
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'w-full py-3.5 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all active:scale-95 cursor-pointer mt-2';
+    loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Notes (${remaining} remaining)`;
+    loadMoreBtn.onclick = () => {
+      window.knowledgeFeedLimit = (window.knowledgeFeedLimit || 25) + 30;
+      renderKnowledgeView(selectedTag);
+    };
+    feed.appendChild(loadMoreBtn);
+  }
 
   // Wire Export Vault ZIP button
   const zipBtn = $('btn-export-markdown-zip');
@@ -9161,8 +9467,12 @@ function initQuickNoteModalListeners() {
     };
   }
 
+  let isQuickNoteSubmitting = false;
+
   if (saveBtn) {
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
+      if (isQuickNoteSubmitting) return;
+
       const titleInput = $('qn-title-input') ? $('qn-title-input').value.trim() : '';
       const textInput = $('qn-text-input') ? $('qn-text-input').value.trim() : '';
       const bookSelect = $('qn-book-select') ? $('qn-book-select').value : '';
@@ -9172,30 +9482,40 @@ function initQuickNoteModalListeners() {
         return;
       }
 
-      let bookTitle = bookSelect || titleInput || 'Quick Note';
-      let authorName = '';
+      isQuickNoteSubmitting = true;
+      saveBtn.disabled = true;
 
-      if (bookSelect) {
-        const matchedBook = booksCache.find(b => b.title === bookSelect);
-        if (matchedBook) authorName = matchedBook.author || '';
+      try {
+        let bookTitle = bookSelect || titleInput || 'Quick Note';
+        let authorName = '';
+
+        if (bookSelect) {
+          const matchedBook = booksCache.find(b => b.title === bookSelect);
+          if (matchedBook) authorName = matchedBook.author || '';
+        }
+
+        const newNote = {
+          id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title: bookTitle,
+          author: authorName,
+          date: todayISO(),
+          notes: textInput || 'Photo Quote',
+          photoUrl: qnUploadedPhotoData ? qnUploadedPhotoData.dataUrl : null,
+          isFavorite: qnModalFavorite,
+          isQuote: true
+        };
+
+        saveStandaloneNote(newNote);
+        closeQuickNoteModal();
+        showToast('Quick Note saved to vault!', 'success');
+        Haptics.success();
+        renderKnowledgeView();
+      } catch (err) {
+        showToast('Failed to save note: ' + err.message, 'error');
+      } finally {
+        isQuickNoteSubmitting = false;
+        saveBtn.disabled = false;
       }
-
-      const newNote = {
-        id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        title: bookTitle,
-        author: authorName,
-        date: todayISO(),
-        notes: textInput || 'Photo Quote',
-        photoUrl: qnUploadedPhotoData ? qnUploadedPhotoData.dataUrl : null,
-        isFavorite: qnModalFavorite,
-        isQuote: true
-      };
-
-      saveStandaloneNote(newNote);
-      closeQuickNoteModal();
-      showToast('Quick Note saved to vault!', 'success');
-      Haptics.success();
-      renderKnowledgeView();
     };
   }
 }

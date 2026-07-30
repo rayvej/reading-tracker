@@ -1,12 +1,18 @@
-const CACHE_NAME = 'reading-tracker-v94';
+const CACHE_NAME = 'reading-tracker-v95';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=94',
-  BASE + 'app.js?v=94',
+  BASE + 'style.css?v=95',
+  BASE + 'app.js?v=95',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
+  BASE + 'js/seed10YearData.js',
+  BASE + 'js/modules/ui.js',
+  BASE + 'js/modules/stats.js',
+  BASE + 'js/modules/export.js',
+  BASE + 'js/modules/image.js',
+  BASE + 'js/modules/offline.js',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',
@@ -17,17 +23,20 @@ const STATIC_ASSETS = [
   'https://cdn.tailwindcss.com'
 ];
 
-// ── Install: cache all static assets (bypass HTTP cache) ─────────────────────
+// ── Install: cache static assets gracefully ──────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return Promise.all(
+      return Promise.allSettled(
         STATIC_ASSETS.map(url => {
           return fetch(url, { cache: 'reload' }).then(response => {
             if (!response.ok) {
-              throw new Error(`Request for ${url} failed with status ${response.status}`);
+              console.warn(`[SW] Precache skipped for ${url}: status ${response.status}`);
+              return;
             }
             return cache.put(url, response);
+          }).catch(err => {
+            console.warn(`[SW] Precache fetch error for ${url}:`, err);
           });
         })
       );
