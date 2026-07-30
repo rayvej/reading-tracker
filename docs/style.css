@@ -1,6 +1,6 @@
 /* ─── Reading Tracker — iOS HIG Design System v13 — Sunset Sky Palette ─── */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS — Warm Espresso Editorial Palette (Default)
@@ -62,6 +62,13 @@
   --radius:          16px;
   --radius-lg:       20px;
   --radius-xl:       24px;
+
+  /* ── Typography & Figure Tokens ── */
+  --font-header:     'Playfair Display', 'Cinzel', Georgia, serif;
+  --font-body:       'Newsreader', Georgia, serif;
+  --font-figures:    'Playfair Display', 'Cinzel', Georgia, serif;
+  --figure-weight:   800;
+  --figure-spacing:  -0.02em;
 }
 
 [data-theme="espresso"][data-mode="light"] {
@@ -122,6 +129,13 @@
   --border-color:    rgba(255, 255, 255, 0.06);
   --shadow-card:     0 16px 40px -12px rgba(0, 0, 0, 0.85);
   --blur:            blur(24px) saturate(200%);
+
+  /* ── Typography & Figure Tokens ── */
+  --font-header:     'Outfit', 'Space Grotesk', system-ui, sans-serif;
+  --font-body:       'Outfit', system-ui, sans-serif;
+  --font-figures:    'JetBrains Mono', 'Fira Code', monospace;
+  --figure-weight:   700;
+  --figure-spacing:  -0.03em;
 }
 
 [data-theme="glass-studio"][data-mode="light"] {
@@ -182,6 +196,13 @@
   --border-strong:   rgba(255, 255, 255, 0.18);
   --border-color:    rgba(255, 255, 255, 0.06);
   --shadow-card:     0 12px 32px -10px rgba(0, 0, 0, 0.8);
+
+  /* ── Typography & Figure Tokens ── */
+  --font-header:     'Space Grotesk', system-ui, sans-serif;
+  --font-body:       'Space Grotesk', system-ui, sans-serif;
+  --font-figures:    'Space Mono', 'Consolas', monospace;
+  --figure-weight:   700;
+  --figure-spacing:  0.02em;
 }
 
 [data-theme="obsidian"][data-mode="light"] {
@@ -241,6 +262,13 @@
   --border-strong:   rgba(60, 45, 30, 0.22);
   --border-color:    rgba(60, 45, 30, 0.08);
   --shadow-card:     0 10px 25px -8px rgba(60, 45, 30, 0.12);
+
+  /* ── Typography & Figure Tokens ── */
+  --font-header:     'EB Garamond', Georgia, serif;
+  --font-body:       'EB Garamond', Georgia, serif;
+  --font-figures:    'EB Garamond', Georgia, serif;
+  --figure-weight:   700;
+  --figure-spacing:  0.01em;
 }
 
 [data-theme="parched-paper"][data-mode="dark"] {
@@ -273,21 +301,46 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   TYPOGRAPHY HIERARCHY & MODE SWITCHER
+   THEME-BOUND DYNAMIC TYPOGRAPHY & FIGURES HIERARCHY
    ══════════════════════════════════════════════════════════════ */
 
-/* Serif Mode (Literary Editorial) */
+/* Global Body Font Defaults to Theme Body Font */
+body, p, button, input, select, textarea {
+  font-family: var(--font-body, 'Inter'), system-ui, -apple-system, sans-serif;
+}
+
+/* Headings & Title Typography */
+h1, h2, h3, .heading-1, .heading-2, .heading-3, .heading-editorial, .book-card-title {
+  font-family: var(--font-header, 'Playfair Display'), system-ui, sans-serif !important;
+  color: var(--text-primary);
+}
+
+/* Theme-Specific Numerical Figures & Stat Display Binding */
+.tabular-nums,
+.stat-value,
+.number-display,
+#timer-display,
+[id^="stat-"],
+[id^="kn-stat-"],
+[id^="sv-"],
+[id^="yt-"],
+[id^="rp-"] {
+  font-family: var(--font-figures, 'JetBrains Mono') !important;
+  font-weight: var(--figure-weight, 800) !important;
+  letter-spacing: var(--figure-spacing, 0em) !important;
+}
+
+/* User Font Preference Overrides (Serif vs Sans) */
 :root[data-font="serif"] h1,
 :root[data-font="serif"] h2,
 :root[data-font="serif"] h3,
 :root[data-font="serif"] .font-serif,
 :root[data-font="serif"] .heading-editorial,
 :root[data-font="serif"] .book-card-title {
-  font-family: 'Newsreader', 'Lora', Georgia, serif !important;
+  font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
   letter-spacing: -0.015em;
 }
 
-/* Sans Mode (Modern Clean) */
 :root[data-font="sans"] h1,
 :root[data-font="sans"] h2,
 :root[data-font="sans"] h3,
@@ -295,30 +348,26 @@
 :root[data-font="sans"] .heading-editorial,
 :root[data-font="sans"] .book-card-title {
   font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  font-weight: 700;
   letter-spacing: -0.025em;
 }
 
-/* Standard Heading Styles across all views */
+/* Standard Heading Sizes */
 h1, .heading-1 {
   font-size: 1.625rem;
   line-height: 1.25;
   font-weight: 800;
-  color: var(--text-primary);
 }
 
 h2, .heading-2 {
   font-size: 1.25rem;
   line-height: 1.3;
   font-weight: 700;
-  color: var(--text-primary);
 }
 
 h3, .heading-3 {
   font-size: 1.0625rem;
   line-height: 1.35;
   font-weight: 600;
-  color: var(--text-primary);
 }
 
 /* Section Labels & Micro Labels */
