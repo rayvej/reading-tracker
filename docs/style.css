@@ -306,12 +306,14 @@
 
 /* Global Body Font Defaults to Theme Body Font */
 body, p, button, input, select, textarea {
-  font-family: var(--font-body, 'Inter'), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
 }
 
-/* Headings & Title Typography */
-h1, h2, h3, .heading-1, .heading-2, .heading-3, .heading-editorial, .book-card-title {
-  font-family: var(--font-header, 'Playfair Display'), system-ui, sans-serif !important;
+/* Headings, Tile Titles, Section Labels & Card Titles */
+h1, h2, h3, h4, h5, h6,
+.heading-1, .heading-2, .heading-3, .heading-editorial,
+.book-card-title, .section-label, .card-title {
+  font-family: var(--font-header) !important;
   color: var(--text-primary);
 }
 
@@ -324,31 +326,11 @@ h1, h2, h3, .heading-1, .heading-2, .heading-3, .heading-editorial, .book-card-t
 [id^="kn-stat-"],
 [id^="sv-"],
 [id^="yt-"],
-[id^="rp-"] {
-  font-family: var(--font-figures, 'JetBrains Mono') !important;
+[id^="rp-"],
+[id^="yoy-"] {
+  font-family: var(--font-figures) !important;
   font-weight: var(--figure-weight, 800) !important;
   letter-spacing: var(--figure-spacing, 0em) !important;
-}
-
-/* User Font Preference Overrides (Serif vs Sans) */
-:root[data-font="serif"] h1,
-:root[data-font="serif"] h2,
-:root[data-font="serif"] h3,
-:root[data-font="serif"] .font-serif,
-:root[data-font="serif"] .heading-editorial,
-:root[data-font="serif"] .book-card-title {
-  font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
-  letter-spacing: -0.015em;
-}
-
-:root[data-font="sans"] h1,
-:root[data-font="sans"] h2,
-:root[data-font="sans"] h3,
-:root[data-font="sans"] .font-serif,
-:root[data-font="sans"] .heading-editorial,
-:root[data-font="sans"] .book-card-title {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  letter-spacing: -0.025em;
 }
 
 /* Standard Heading Sizes */
