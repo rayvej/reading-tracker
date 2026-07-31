@@ -122,3 +122,32 @@ ${n.notes || ''}
   document.body.removeChild(a);
   showToast('✓ Markdown Vault ZIP downloaded!', 'success');
 }
+
+export function exportBibTeX(booksCache) {
+  if (!booksCache || !booksCache.length) {
+    showToast('No books available to export citations.', 'error');
+    return;
+  }
+  let bibtex = `% Reading Tracker BibTeX Export - Generated ${new Date().toISOString().slice(0, 10)}\n\n`;
+  booksCache.forEach((b, idx) => {
+    const authorLast = (b.author || 'author').split(' ').pop().toLowerCase().replace(/[^a-z]/g, '');
+    const titleFirst = (b.title || 'title').split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+    const key = `${authorLast || 'ref'}${b.year || '2026'}${titleFirst || idx+1}`;
+    bibtex += `@book{${key},\n`;
+    bibtex += `  title     = {${b.title || 'Untitled'}},\n`;
+    if (b.author) bibtex += `  author    = {${b.author}},\n`;
+    if (b.year)   bibtex += `  year      = {${b.year}},\n`;
+    if (b.total_pages) bibtex += `  pages     = {${b.total_pages}},\n`;
+    bibtex += `}\n\n`;
+  });
+
+  const blob = new Blob([bibtex], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Reading_Tracker_Citations_${new Date().toISOString().slice(0, 10)}.bib`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('✓ BibTeX (.bib) Citations Downloaded!', 'success');
+}
+

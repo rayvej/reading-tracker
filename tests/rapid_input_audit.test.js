@@ -71,7 +71,7 @@ async function runOptimisticSyncAudit() {
     if (pagesEl) pagesEl.value = '250';
     if (costEl) costEl.value = '15.99';
     
-    const beforeCount = window.booksCache.length;
+    const beforeCount = (window.booksCache || []).length;
     
     // Call saveNewBook directly in rapid loop to simulate multi-click submit
     const p1 = window.saveNewBook();
@@ -82,7 +82,7 @@ async function runOptimisticSyncAudit() {
     
     await Promise.allSettled([p1, p2, p3, p4, p5]);
     
-    const afterCount = window.booksCache.length;
+    const afterCount = (window.booksCache || []).length;
     const addedCount = afterCount - beforeCount;
     return { beforeCount, afterCount, addedCount, success: addedCount === 1 };
   });
@@ -110,7 +110,7 @@ async function runOptimisticSyncAudit() {
     document.getElementById('log-end').value = '50';
     document.getElementById('log-minutes').value = '30';
     
-    const beforeCount = window.logsCache.length;
+    const beforeCount = (window.logsCache || []).length;
     
     // Call submitLog directly in rapid loop
     const p1 = window.submitLog();
@@ -121,7 +121,7 @@ async function runOptimisticSyncAudit() {
     
     await Promise.allSettled([p1, p2, p3, p4, p5]);
     
-    const afterCount = window.logsCache.length;
+    const afterCount = (window.logsCache || []).length;
     const addedCount = afterCount - beforeCount;
     return { beforeCount, afterCount, addedCount, success: addedCount === 1 };
   });

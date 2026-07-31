@@ -9618,6 +9618,10 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   const zipBtn = $('btn-export-markdown-zip');
   if (zipBtn) zipBtn.onclick = exportObsidianMarkdownVault;
 
+  // Wire BibTeX Citation Exporter button
+  const bibtexBtn = $('btn-export-bibtex');
+  if (bibtexBtn) bibtexBtn.onclick = exportBibTeXCitations;
+
   // Wire Quick Note Open Button
   const quickNoteBtn = $('btn-quick-note-open');
   if (quickNoteBtn) quickNoteBtn.onclick = openQuickNoteModal;
@@ -9825,6 +9829,38 @@ function initQuickNoteModalListeners() {
       }
     };
   }
+}
+
+/**
+ * Export BibTeX Citations File for Scholarly Research
+ */
+function exportBibTeXCitations() {
+  if (!booksCache || !booksCache.length) {
+    showToast('No books available in library to export citations.', 'error');
+    return;
+  }
+  let bibtex = `% Reading Tracker BibTeX Citations Export - Generated ${new Date().toISOString().slice(0, 10)}\n\n`;
+  booksCache.forEach((b, idx) => {
+    const authorLast = (b.author || 'author').split(' ').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const titleFirst = (b.title || 'title').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const key = `${authorLast || 'ref'}${b.year || '2026'}_${titleFirst || idx+1}`;
+    bibtex += `@book{${key},\n`;
+    bibtex += `  title     = {${(b.title || 'Untitled').replace(/[{}]/g, '')}},\n`;
+    if (b.author) bibtex += `  author    = {${b.author.replace(/[{}]/g, '')}},\n`;
+    if (b.year)   bibtex += `  year      = {${b.year}},\n`;
+    if (b.total_pages) bibtex += `  pages     = {${b.total_pages}},\n`;
+    if (b.category || b.collection) bibtex += `  keywords  = {${b.collection || b.category}},\n`;
+    bibtex += `}\n\n`;
+  });
+
+  const blob = new Blob([bibtex], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Reading_Tracker_BibTeX_Citations_${new Date().toISOString().slice(0, 10)}.bib`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('✓ BibTeX (.bib) Citations Exported!', 'success');
 }
 
 /**
