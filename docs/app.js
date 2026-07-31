@@ -88,6 +88,16 @@ let booksCache = [];          // all book docs { id, ...data }
 let wishlistCache = [];       // all wishlist items
 let logsCache = [];           // cached reading logs
 let goalsCache = {};
+
+if (typeof window !== 'undefined') {
+  try {
+    Object.defineProperty(window, 'booksCache', { get: () => booksCache, set: v => { booksCache = v; }, configurable: true });
+    Object.defineProperty(window, 'logsCache', { get: () => logsCache, set: v => { logsCache = v; }, configurable: true });
+  } catch (e) {
+    window.booksCache = booksCache;
+    window.logsCache = logsCache;
+  }
+}
 let dashboardStats = null;
 let currentView       = 'dashboard'; // Start on dashboard as default premium screen
 let dashFilter        = 'all';
@@ -461,6 +471,12 @@ async function verifyPin(pin) {
 
 // ── Seed Import ───────────────────────────────────────────────────────────────
 async function initApp() {
+  window.booksCache = booksCache || [];
+  window.logsCache = logsCache || [];
+  try {
+    Object.defineProperty(window, 'booksCache', { get: () => booksCache || [], set: v => { booksCache = v; }, configurable: true });
+    Object.defineProperty(window, 'logsCache', { get: () => logsCache || [], set: v => { logsCache = v; }, configurable: true });
+  } catch (e) {}
   showScreen('app');
   
   // 1. Initialize UI handlers immediately (synchronously)
@@ -485,14 +501,18 @@ async function initApp() {
   window.importFromJSON = importFromJSON;
   window.exportToJSON = exportToJSON;
   
-  Object.defineProperty(window, 'booksCache', { get: () => booksCache, set: v => { booksCache = v; }, configurable: true });
-  Object.defineProperty(window, 'logsCache', { get: () => logsCache, set: v => { logsCache = v; }, configurable: true });
+  window.saveNewBook = saveNewBook;
+  window.submitLog = submitLog;
+  window.initApp = initApp;
+  window.optimisticSaveDoc = optimisticSaveDoc;
+  window.importFromJSON = importFromJSON;
+  window.exportToJSON = exportToJSON;
   
   // 2. Load database content asynchronously in the background
   loadDatabaseData();
 }
 window.initApp = initApp;
-
+window.saveNewBook = saveNewBook;
 async function loadDatabaseData() {
   try {
     // 1. Fast Partition: Load books & logs cache from storage
@@ -1529,43 +1549,41 @@ function generateDailyReminderPayload(overrideBooks, overrideLogs) {
   const remainingPages = Math.max(0, totalPages - currentPage);
   const progressPct = Math.min(100, Math.round((currentPage / totalPages) * 100));
 
-  const timedLogs = activeLogs.filter(l => Number(l.minutes_spent) > 0 && Number(l.pages_read) > 0);
-  let estTimeText = "";
-
-  if (timedLogs.length > 0) {
-    const totalMins = timedLogs.reduce((sum, l) => sum + Number(l.minutes_spent), 0);
-    const totalPagesLogged = timedLogs.reduce((sum, l) => sum + Number(l.pages_read), 0);
-    const pagesPerMin = totalPagesLogged / (totalMins || 1);
-    
-    if (pagesPerMin > 0 && remainingPages > 0) {
-      const estMinsRemaining = Math.round(remainingPages / pagesPerMin);
-      const hours = Math.floor(estMinsRemaining / 60);
-      const mins = estMinsRemaining % 60;
-      estTimeText = hours > 0 ? `Est. ${hours}h ${mins}m remaining` : `Est. ${mins}m remaining`;
-    } else {
-      estTimeText = `Est. complete soon`;
-    }
+  // Calculate estimated completion date based on reading pace
+  const logsWithPages = activeLogs.filter(l => Number(l.pages_read) > 0);
+  let daysLeft = 7;
+  if (logsWithPages.length > 0) {
+    const totalPagesLogged = logsWithPages.reduce((sum, l) => sum + Number(l.pages_read), 0);
+    const uniqueDays = new Set(logsWithPages.map(l => (l.date || '').substring(0, 10))).size || 1;
+    const pagesPerDay = totalPagesLogged / uniqueDays;
+    daysLeft = pagesPerDay > 0 ? Math.ceil(remainingPages / pagesPerDay) : 7;
   } else {
-    const dailyPagePace = 25;
-    const daysLeft = Math.ceil(remainingPages / dailyPagePace);
-    estTimeText = daysLeft > 1 ? `Est. ${daysLeft} days remaining` : `Est. 1 day remaining`;
+    daysLeft = Math.ceil(remainingPages / 25);
   }
 
+  const estFinishDate = new Date(Date.now() + Math.max(1, daysLeft) * 86400000);
+  const finishDateStr = estFinishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  // Fetch the latest note from the latest log in the reading log section
   const logsWithNotes = activeLogs
     .filter(l => l.notes && l.notes.trim().length > 0 && !l.notes.startsWith('Historical cycle'))
     .sort((a, b) => new Date(b.date || b.timestamp || 0) - new Date(a.date || a.timestamp || 0));
 
-  const rawNote = logsWithNotes.length > 0 ? logsWithNotes[0].notes.trim() : (book.notes ? book.notes.trim() : null);
+  const latestLogNote = logsWithNotes.length > 0 ? logsWithNotes[0].notes.trim() : (book.notes ? book.notes.trim() : null);
 
-  const title = `${book.title} (${progressPct}% Complete)`;
-  let body = `Page ${currentPage} of ${totalPages} • ${estTimeText}`;
+  const title = `📖 ${book.title} (${progressPct}% • Est. Finish: ${finishDateStr})`;
 
   const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
-  const includeQuote = savedSettings.includeQuote !== false;
+  const customText = (savedSettings.customText || '').trim();
 
-  if (includeQuote && rawNote) {
-    const cleanQuote = rawNote.length > 120 ? rawNote.substring(0, 117) + "..." : rawNote;
-    body += `\n\nRecent Note:\n"${cleanQuote}"`;
+  let body = "";
+  if (customText) {
+    body = customText;
+  } else if (latestLogNote) {
+    const cleanNote = latestLogNote.length > 150 ? latestLogNote.substring(0, 147) + "..." : latestLogNote;
+    body = `"${cleanNote}"`;
+  } else {
+    body = `Page ${currentPage} of ${totalPages} (${remainingPages} pg remaining)`;
   }
 
   return {
@@ -1575,8 +1593,8 @@ function generateDailyReminderPayload(overrideBooks, overrideLogs) {
     currentPage,
     totalPages,
     progressPct,
-    estTimeText,
-    recentNote: rawNote,
+    finishDateStr,
+    recentNote: latestLogNote,
     bookId: book.id
   };
 }
@@ -1649,6 +1667,7 @@ function setupNotificationSettingsUI() {
   const enableToggle = $('setting-reminder-enable');
   const timePicker = $('setting-reminder-time');
   const quoteToggle = $('setting-reminder-quote');
+  const customTextInput = $('setting-reminder-custom-text');
   const btnPush = $('btn-request-notification-permission');
   const btnTest = $('btn-test-notification');
 
@@ -1656,16 +1675,19 @@ function setupNotificationSettingsUI() {
   const isEnabled = savedSettings.enabled !== false;
   const timeVal = savedSettings.time || "07:00";
   const includeQuote = savedSettings.includeQuote !== false;
+  const customText = savedSettings.customText || '';
 
   if (enableToggle) enableToggle.checked = isEnabled;
   if (timePicker) timePicker.value = timeVal;
   if (quoteToggle) quoteToggle.checked = includeQuote;
+  if (customTextInput) customTextInput.value = customText;
 
   function updateSavedSettings() {
     const newSettings = {
       enabled: enableToggle ? enableToggle.checked : true,
       time: timePicker ? timePicker.value || "07:00" : "07:00",
-      includeQuote: quoteToggle ? quoteToggle.checked : true
+      includeQuote: quoteToggle ? quoteToggle.checked : true,
+      customText: customTextInput ? customTextInput.value.trim() : ''
     };
     localStorage.setItem('rt_reminder_settings', JSON.stringify(newSettings));
     if (db && uid) {
@@ -1682,6 +1704,7 @@ function setupNotificationSettingsUI() {
     showToast(`Daily reminder time set to ${timePicker.value}`, 'success');
   });
   if (quoteToggle) quoteToggle.addEventListener('change', updateSavedSettings);
+  if (customTextInput) customTextInput.addEventListener('change', updateSavedSettings);
 
   if (btnPush) {
     btnPush.addEventListener('click', async () => {
@@ -2644,6 +2667,7 @@ function populateBookDropdown() {
 let isSubmitLogSubmitting = false;
 
 async function submitLog() {
+  if (typeof window !== 'undefined') window.submitLog = submitLog;
   if (isSubmitLogSubmitting) return;
 
   const title   = $('log-book').value;
@@ -7329,6 +7353,7 @@ async function markBookComplete(b) {
 let isSaveNewBookSubmitting = false;
 
 async function saveNewBook() {
+  if (typeof window !== 'undefined') window.saveNewBook = saveNewBook;
   if (isSaveNewBookSubmitting) return;
 
   const title = $('ab-title').value.trim();
@@ -11882,5 +11907,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const hdClose = document.getElementById('hd-modal-close');
   if (hdClose) hdClose.onclick = () => document.getElementById('heatmap-day-modal').classList.remove('open');
 });
+
+if (typeof window !== 'undefined') {
+  window.saveNewBook = saveNewBook;
+  window.submitLog = submitLog;
+  window.initApp = initApp;
+}
 
 
