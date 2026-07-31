@@ -1,32 +1,78 @@
 /**
  * Gemini AI Service for Scholarly Note Analysis & Automation
- * Integrates directly with Gemini 1.5 Flash REST API using client-side API Key.
+ * Integrates directly with Gemini REST API using client-side API Key & multi-model fallback.
  */
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro'
+];
+
+/**
+ * Execute Gemini REST API request trying candidate models until a supported model succeeds
+ */
+export async function callGeminiApiWithFallback(apiKey, bodyObj) {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error('Gemini API key is not configured');
+  }
+
+  const cleanKey = apiKey.trim();
+  const cachedModel = typeof localStorage !== 'undefined' ? localStorage.getItem('rt_gemini_working_model') : null;
+  const modelsToTry = cachedModel 
+    ? [cachedModel, ...GEMINI_CANDIDATE_MODELS.filter(m => m !== cachedModel)]
+    : GEMINI_CANDIDATE_MODELS;
+
+  let lastErrorMsg = '';
+
+  for (const modelName of modelsToTry) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj)
+      });
+
+      if (response.ok) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('rt_gemini_working_model', modelName);
+        }
+        return await response.json();
+      }
+
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || `API error (${response.status})`;
+      lastErrorMsg = errMsg;
+
+      // If model not found or not supported for generateContent, try next candidate model
+      if (response.status === 404 || errMsg.includes('not found') || errMsg.includes('not supported') || errMsg.includes('ModelService')) {
+        console.warn(`[Gemini API] Model ${modelName} returned: "${errMsg}". Retrying next candidate model...`);
+        continue;
+      } else {
+        throw new Error(errMsg);
+      }
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('ModelService')) {
+        lastErrorMsg = e.message;
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  throw new Error(lastErrorMsg || 'No supported Gemini model found for generateContent');
+}
 
 /**
  * Validate user's Gemini API Key by making a minimal prompt call
  */
 export async function testGeminiApiKey(apiKey) {
-  if (!apiKey || !apiKey.trim()) {
-    throw new Error('API key is empty');
-  }
-
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: 'Respond with the exact word: OK' }] }]
-    })
+  const data = await callGeminiApiWithFallback(apiKey, {
+    contents: [{ parts: [{ text: 'Respond with the exact word: OK' }] }]
   });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.error?.message || `API error (${response.status})`);
-  }
-
-  const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return { success: true, text: text.trim() };
 }
@@ -79,25 +125,15 @@ Identify:
 
 Return ONLY a valid, raw JSON object with keys: "title", "summary", "quote", "characters", "themes", "era", "location". Do not include markdown code block formatting or additional commentary.`;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { inline_data: { mime_type: mimeType, data: base64Data } },
-          { text: prompt }
-        ]
-      }]
-    })
+  const data = await callGeminiApiWithFallback(apiKey, {
+    contents: [{
+      parts: [
+        { inline_data: { mime_type: mimeType, data: base64Data } },
+        { text: prompt }
+      ]
+    }]
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Gemini API error (${response.status})`);
-  }
-
-  const data = await response.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return parseGeminiJsonResponse(rawText);
 }
@@ -125,20 +161,10 @@ Please:
 
 Return ONLY a valid, raw JSON object with keys: "title", "summary", "quote", "characters", "themes", "era", "location". Do not include markdown code blocks.`;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
+  const data = await callGeminiApiWithFallback(apiKey, {
+    contents: [{ parts: [{ text: prompt }] }]
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Gemini API error (${response.status})`);
-  }
-
-  const data = await response.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return parseGeminiJsonResponse(rawText);
 }
@@ -160,19 +186,11 @@ Text to process:
 Return ONLY the corrected string. Do not add quotes, introductory text, or explanations.`;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+    const data = await callGeminiApiWithFallback(apiKey, {
+      contents: [{ parts: [{ text: prompt }] }]
     });
-
-    if (response.ok) {
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return text.trim() || rawText;
-    }
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return text.trim() || rawText;
   } catch (e) {
     console.warn('Gemini transliteration fetch failed, using fallback:', e);
   }
@@ -290,20 +308,10 @@ Identify:
 
 Return ONLY a valid raw JSON object with keys: "title", "summary", "quote", "page", "paragraph", "characters", "themes", "era", "location". Do not include markdown code block syntax.`;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
+  const data = await callGeminiApiWithFallback(apiKey, {
+    contents: [{ parts: [{ text: prompt }] }]
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Gemini API error (${response.status})`);
-  }
-
-  const data = await response.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   const parsed = parseGeminiJsonResponse(rawText);
 
@@ -320,4 +328,5 @@ Return ONLY a valid raw JSON object with keys: "title", "summary", "quote", "pag
     location: parsed.location || ''
   };
 }
+
 

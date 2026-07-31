@@ -31,7 +31,7 @@ import { initializeFirestore, getFirestore, persistentLocalCache,
          serverTimestamp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { firebaseConfig }                          from './firebase-config.js';
 import { generate10YearArchivistData, generateHighVelocityData, generateChaosStressData } from './js/seed10YearData.js';
-import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardizeTransliteration, generateScholarlyDigest, fetchActiveBookStoryFromGemini } from './js/modules/gemini-service.js';
+import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardizeTransliteration, generateScholarlyDigest, fetchActiveBookStoryFromGemini, callGeminiApiWithFallback } from './js/modules/gemini-service.js';
 
 window.categoryChartMode = 'pages';
 
@@ -9095,29 +9095,21 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
     }
   };
 
-  const response = await fetch(SCANNER_CONFIG.getApiUrl(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errJson = await response.json().catch(() => ({}));
-    const msg = errJson.error?.message || `Status ${response.status}`;
-    if (response.status === 403 || msg.includes('disabled') || msg.includes('API key not valid')) {
+  try {
+    const resultData = await callGeminiApiWithFallback(apiKey, payload);
+    const textBody = resultData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!textBody) {
+      throw new Error("Transcribing algorithm returned an empty payload.");
+    }
+    return JSON.parse(textBody);
+  } catch (err) {
+    if (err.message.includes('403') || err.message.includes('disabled') || err.message.includes('API key not valid')) {
       localStorage.removeItem('rt_gemini_api_key');
       openGeminiKeyModal();
       throw new Error("Invalid or disabled Gemini API Key. Please enter a free key from Google AI Studio.");
     }
-    throw new Error(`Google Gemini AI Error: ${msg}`);
+    throw new Error(`Google Gemini AI Error: ${err.message}`);
   }
-
-  const resultData = await response.json();
-  const textBody = resultData.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!textBody) {
-    throw new Error("Transcribing algorithm returned an empty payload.");
-  }
-  return JSON.parse(textBody);
 }
 
 function openVerificationModal(text, pageNumber) {
