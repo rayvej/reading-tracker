@@ -4177,6 +4177,62 @@ function closeHeatmapDayModal() {
   if (modal) modal.classList.remove('open');
 }
 
+function renderAnnualChallengeWidget(books, logs) {
+  const countEl = $('annual-challenge-count');
+  const targetTextEl = $('annual-challenge-target-text');
+  const pctEl = $('annual-challenge-pct');
+  const barEl = $('annual-challenge-bar');
+  const statusBadgeEl = $('annual-challenge-status-badge');
+  const paceTextEl = $('annual-challenge-pace-text');
+
+  if (!countEl || !barEl) return;
+
+  const savedTarget = parseInt(localStorage.getItem('rt_setting_annual_target') || '25', 10);
+  const annualTarget = isNaN(savedTarget) || savedTarget <= 0 ? 25 : savedTarget;
+  const currentYear = new Date().getFullYear();
+  
+  // Count books finished in current year (or finished status)
+  const finishedThisYear = books.filter(b => {
+    return ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || (b.read_count && b.read_count > 0);
+  }).length;
+
+  const pct = Math.min(100, Math.round((finishedThisYear / annualTarget) * 100));
+  countEl.textContent = finishedThisYear;
+  targetTextEl.textContent = ` / ${annualTarget} books finished`;
+  pctEl.textContent = `${pct}%`;
+  barEl.style.width = `${pct}%`;
+
+  // Calculate day of year pace
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const expectedPaceCount = Math.round((dayOfYear / 365) * annualTarget);
+
+  if (finishedThisYear >= expectedPaceCount) {
+    const diffAhead = finishedThisYear - expectedPaceCount;
+    if (statusBadgeEl) {
+      statusBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      statusBadgeEl.textContent = 'On Track';
+    }
+    if (paceTextEl) {
+      paceTextEl.textContent = diffAhead > 0 
+        ? `🎉 You are ${diffAhead} book${diffAhead === 1 ? '' : 's'} ahead of your ${currentYear} target schedule!` 
+        : `✨ Right on track for your ${annualTarget} book target in ${currentYear}!`;
+    }
+  } else {
+    const diffBehind = expectedPaceCount - finishedThisYear;
+    if (statusBadgeEl) {
+      statusBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      statusBadgeEl.textContent = 'Behind Pace';
+    }
+    if (paceTextEl) {
+      paceTextEl.textContent = `📚 ${diffBehind} book${diffBehind === 1 ? '' : 's'} behind schedule to reach ${annualTarget} books this year. Keep reading!`;
+    }
+  }
+}
+
 async function renderDashboard() {
   await loadLogsCache();
   populateYearDropdown(logsCache);
@@ -4781,6 +4837,7 @@ async function renderDashboard() {
   if ('requestAnimationFrame' in window) {
     requestAnimationFrame(() => {
       setTimeout(() => {
+        renderAnnualChallengeWidget(mergedBooks, logsCache);
         renderCharts(completions);
         renderVelocityAnalytics(activeLogs, books, selectedYear);
         renderStreakRings(streaks, activeLogs);
@@ -6084,28 +6141,91 @@ function setupStopwatch() {
   const display = $('timer-display');
   
   if (!toggleBtn) return;
+
+  function saveTimerState(running, startTimestamp, accumulatedSeconds) {
+    try {
+      localStorage.setItem('rt_timer_state', JSON.stringify({
+        running,
+        startTimestamp,
+        accumulatedSeconds
+      }));
+    } catch (e) {}
+  }
+
+  function updateTimerDisplay(totalSecs) {
+    const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+    const secs = String(totalSecs % 60).padStart(2, '0');
+    if (display) display.textContent = `${mins}:${secs}`;
+  }
+
+  function startTick() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      const stored = localStorage.getItem('rt_timer_state');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.running && parsed.startTimestamp) {
+            const elapsed = Math.floor((Date.now() - parsed.startTimestamp) / 1000) + (parsed.accumulatedSeconds || 0);
+            timerSeconds = elapsed;
+            updateTimerDisplay(timerSeconds);
+            const minsInput = $('log-minutes');
+            if (minsInput) minsInput.value = Math.max(1, Math.ceil(timerSeconds / 60));
+            return;
+          }
+        } catch (e) {}
+      }
+      timerSeconds++;
+      updateTimerDisplay(timerSeconds);
+    }, 1000);
+  }
+
+  // Restore running timer state from localStorage on init
+  const savedState = localStorage.getItem('rt_timer_state');
+  if (savedState) {
+    try {
+      const parsed = JSON.parse(savedState);
+      if (parsed.running && parsed.startTimestamp) {
+        const elapsed = Math.floor((Date.now() - parsed.startTimestamp) / 1000) + (parsed.accumulatedSeconds || 0);
+        timerSeconds = elapsed;
+        timerRunning = true;
+        updateTimerDisplay(timerSeconds);
+        toggleBtn.textContent = 'Pause';
+        toggleBtn.style.cssText = 'background:rgba(var(--rose-rgb),0.1);border-color:rgba(var(--rose-rgb),0.25);color:var(--rose)';
+        if (display) display.classList.add('timer-running');
+        if (resetBtn) resetBtn.classList.add('hidden');
+        startTick();
+      } else if (parsed.accumulatedSeconds > 0) {
+        timerSeconds = parsed.accumulatedSeconds;
+        updateTimerDisplay(timerSeconds);
+        toggleBtn.textContent = 'Resume';
+        toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
+        if (resetBtn) resetBtn.classList.remove('hidden');
+      }
+    } catch (e) {}
+  }
   
   toggleBtn.addEventListener('click', () => {
     if (timerRunning) {
       clearInterval(timerInterval);
+      timerInterval = null;
       timerRunning = false;
       toggleBtn.textContent = 'Resume';
       toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
       display.classList.remove('timer-running');
       resetBtn.classList.remove('hidden');
-      $('log-minutes').value = Math.ceil(timerSeconds / 60);
+      saveTimerState(false, null, timerSeconds);
+      const minsInput = $('log-minutes');
+      if (minsInput) minsInput.value = Math.max(1, Math.ceil(timerSeconds / 60));
     } else {
       timerRunning = true;
       toggleBtn.textContent = 'Pause';
       toggleBtn.style.cssText = 'background:rgba(var(--rose-rgb),0.1);border-color:rgba(var(--rose-rgb),0.25);color:var(--rose)';
       display.classList.add('timer-running');
       resetBtn.classList.add('hidden');
-      timerInterval = setInterval(() => {
-        timerSeconds++;
-        const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
-        const secs = String(timerSeconds % 60).padStart(2, '0');
-        display.textContent = `${mins}:${secs}`;
-      }, 1000);
+      const startMs = Date.now();
+      saveTimerState(true, startMs, timerSeconds);
+      startTick();
     }
   });
 
@@ -6119,7 +6239,42 @@ function setupStopwatch() {
     toggleBtn.textContent = 'Start';
     toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
     resetBtn.classList.add('hidden');
-    $('log-minutes').value = '';
+    localStorage.removeItem('rt_timer_state');
+    const minsInput = $('log-minutes');
+    if (minsInput) minsInput.value = '';
+  });
+
+  // Setup Stepper preset button handlers
+  document.querySelectorAll('.btn-stepper-chip').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      
+      const stepEnd = btn.dataset.stepEnd;
+      const stepMin = btn.dataset.stepMin;
+
+      if (stepEnd) {
+        const endInput = $('log-end');
+        const startInput = $('log-start');
+        if (endInput) {
+          const currentEnd = parseInt(endInput.value, 10);
+          const currentStart = parseInt(startInput ? startInput.value : 0, 10) || 0;
+          const base = !isNaN(currentEnd) && currentEnd > 0 ? currentEnd : currentStart;
+          endInput.value = base + parseInt(stepEnd, 10);
+          endInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+
+      if (stepMin) {
+        const minInput = $('log-minutes');
+        if (minInput) {
+          const currentMin = parseInt(minInput.value, 10) || 0;
+          minInput.value = currentMin + parseInt(stepMin, 10);
+          minInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    });
   });
 }
 

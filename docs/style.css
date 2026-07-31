@@ -1038,6 +1038,28 @@ input[type="checkbox"].toggle.toggle-amber:checked {
   border-color: #f59e0b;
 }
 
+/* Micro Stepper Preset Chips for Log Form */
+.btn-stepper-chip {
+  padding: 1.5px 7px;
+  font-size: 9.5px;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: rgba(var(--gold-rgb), 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(var(--gold-rgb), 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.btn-stepper-chip:hover {
+  background: rgba(var(--gold-rgb), 0.22);
+}
+
+.btn-stepper-chip:active {
+  transform: scale(0.92);
+}
+
 /* Micro Segment Control (for card headers & compact toggles) */
 .seg-control-micro {
   display: inline-flex;
