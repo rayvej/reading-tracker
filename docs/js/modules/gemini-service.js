@@ -3,7 +3,7 @@
  * Integrates directly with Gemini REST API using client-side API Key & multi-model fallback.
  */
 
-const GEMINI_CANDIDATE_MODELS = [
+const DEFAULT_GEMINI_CANDIDATES = [
   'gemini-1.5-flash-latest',
   'gemini-1.5-flash',
   'gemini-2.0-flash',
@@ -11,6 +11,39 @@ const GEMINI_CANDIDATE_MODELS = [
   'gemini-1.5-flash-8b',
   'gemini-1.5-pro'
 ];
+
+/**
+ * Dynamically fetch active supported models for user's API key via Google ModelService ListModels
+ */
+export async function getActiveGeminiModel(apiKey) {
+  const cachedModel = typeof localStorage !== 'undefined' ? localStorage.getItem('rt_gemini_working_model') : null;
+  if (cachedModel && cachedModel.trim()) {
+    return cachedModel.trim();
+  }
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey.trim())}`);
+    if (res.ok) {
+      const data = await res.json();
+      const models = data.models || [];
+      const validModels = models.filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'));
+      
+      if (validModels.length > 0) {
+        const flashModel = validModels.find(m => m.name && m.name.includes('flash'));
+        const chosen = flashModel ? flashModel.name : validModels[0].name;
+        const cleanName = chosen.replace(/^models\//, '');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('rt_gemini_working_model', cleanName);
+        }
+        return cleanName;
+      }
+    }
+  } catch (e) {
+    console.warn('[Gemini ListModels] Dynamic lookup failed, falling back to candidates:', e);
+  }
+
+  return 'gemini-1.5-flash';
+}
 
 /**
  * Execute Gemini REST API request trying candidate models until a supported model succeeds
@@ -21,14 +54,16 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
   }
 
   const cleanKey = apiKey.trim();
-  const cachedModel = typeof localStorage !== 'undefined' ? localStorage.getItem('rt_gemini_working_model') : null;
-  const modelsToTry = cachedModel 
-    ? [cachedModel, ...GEMINI_CANDIDATE_MODELS.filter(m => m !== cachedModel)]
-    : GEMINI_CANDIDATE_MODELS;
+  const dynamicModel = await getActiveGeminiModel(cleanKey);
+
+  const candidatesToTry = [...new Set([
+    dynamicModel,
+    ...DEFAULT_GEMINI_CANDIDATES
+  ].map(m => m.replace(/^models\//, '')))];
 
   let lastErrorMsg = '';
 
-  for (const modelName of modelsToTry) {
+  for (const modelName of candidatesToTry) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
     try {
       const response = await fetch(url, {
@@ -55,8 +90,11 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
         continue;
       }
 
-      // If model not found or not supported for generateContent, try next candidate model
+      // If model not found or not supported for generateContent, invalidate cache and try next model
       if (response.status === 404 || errMsg.includes('not found') || errMsg.includes('not supported') || errMsg.includes('ModelService')) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('rt_gemini_working_model');
+        }
         console.warn(`[Gemini API] Model ${modelName} returned: "${errMsg}". Retrying next candidate model...`);
         continue;
       } else {
@@ -69,6 +107,10 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
       }
       throw e;
     }
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('rt_gemini_working_model');
   }
 
   throw new Error(lastErrorMsg || 'Google Free Tier rate limit reached. Please retry in a few seconds.');
