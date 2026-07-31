@@ -4,7 +4,7 @@
  */
 
 import assert from 'assert';
-import { fallbackTransliterate, generateScholarlyDigest } from '../docs/js/modules/gemini-service.js';
+import { fallbackTransliterate, generateScholarlyDigest, fetchActiveBookStoryFromGemini } from '../docs/js/modules/gemini-service.js';
 
 console.log('🧪 Running Scholarly Suite Test Suite...\n');
 
@@ -81,6 +81,16 @@ const activeStories = mockStories.filter(s => s.bookId === activeBook.id || s.bo
 assert.strictEqual(activeStories.length, 1, 'Should find 1 story for currently reading book');
 assert.strictEqual(activeStories[0].title, 'Active Book Story', 'Should prioritize story matching currently reading book');
 console.log('  ✅ Currently reading story prioritization verified!\n');
+
+// 5. Test fetchActiveBookStoryFromGemini module export & key validation
+console.log('Test 5: AI Story Fetching Module Export & Key Validation...');
+assert.strictEqual(typeof fetchActiveBookStoryFromGemini, 'function', 'fetchActiveBookStoryFromGemini is exportable');
+await assert.rejects(
+  async () => await fetchActiveBookStoryFromGemini('The Dawn-Breakers', 'Nabíl-i-A‘ẓam', 120, 688, ''),
+  /Gemini API key is not configured/,
+  'Should reject when API key is empty'
+);
+console.log('  ✅ AI Story Fetching module verified!\n');
 
 console.log('🎉 ALL SCHOLARLY SUITE TESTS PASSED SUCCESSFULLY!');
 

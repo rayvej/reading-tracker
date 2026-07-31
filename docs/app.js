@@ -31,7 +31,7 @@ import { initializeFirestore, getFirestore, persistentLocalCache,
          serverTimestamp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { firebaseConfig }                          from './firebase-config.js';
 import { generate10YearArchivistData, generateHighVelocityData, generateChaosStressData } from './js/seed10YearData.js';
-import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardizeTransliteration, generateScholarlyDigest } from './js/modules/gemini-service.js';
+import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardizeTransliteration, generateScholarlyDigest, fetchActiveBookStoryFromGemini } from './js/modules/gemini-service.js';
 
 window.categoryChartMode = 'pages';
 
@@ -11972,6 +11972,68 @@ function deleteStarredStory(storyId) {
   if (typeof renderDashboardDailyStory === 'function') renderDashboardDailyStory();
 }
 
+async function fetchAndCacheActiveBookStory(activeBook, forceRefresh = false) {
+  if (!activeBook) return null;
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    if (forceRefresh) showToast('Please set your Gemini API key in Settings to fetch AI stories.', 'info');
+    return null;
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cacheRaw = localStorage.getItem('rt_daily_ai_story_cache');
+  let cache = null;
+  try {
+    cache = cacheRaw ? JSON.parse(cacheRaw) : null;
+  } catch (e) {}
+
+  const currentBenchmark = activeBook.pages_read || 0;
+
+  if (!forceRefresh && cache && cache.date === todayStr && cache.bookId === activeBook.id && cache.pageBenchmark === currentBenchmark) {
+    return cache.story;
+  }
+
+  try {
+    if (forceRefresh) showToast(`Fetching AI story for "${activeBook.title}" (Page ${currentBenchmark})...`, 'info');
+    const storyData = await fetchActiveBookStoryFromGemini(
+      activeBook.title,
+      activeBook.author,
+      currentBenchmark,
+      activeBook.total_pages || 0,
+      apiKey
+    );
+
+    const newStory = addStarredStory({
+      bookId: activeBook.id,
+      bookTitle: activeBook.title,
+      title: storyData.title,
+      summary: storyData.summary,
+      quote: storyData.quote,
+      page: storyData.page,
+      paragraph: storyData.paragraph,
+      characters: storyData.characters,
+      themes: storyData.themes,
+      era: storyData.era,
+      location: storyData.location
+    });
+
+    localStorage.setItem('rt_daily_ai_story_cache', JSON.stringify({
+      date: todayStr,
+      bookId: activeBook.id,
+      pageBenchmark: currentBenchmark,
+      story: newStory
+    }));
+
+    if (forceRefresh) showToast('✦ New AI Story fetched & saved to Knowledge Vault!', 'success');
+    renderDashboardDailyStory();
+    return newStory;
+  } catch (err) {
+    console.warn('[AI Story Fetch Error]:', err);
+    if (forceRefresh) showToast(`Failed to fetch AI story: ${err.message}`, 'error');
+    return null;
+  }
+}
+
 function renderDashboardDailyStory() {
   const card = document.getElementById('dash-starred-story-card');
   if (!card) return;
@@ -12008,6 +12070,20 @@ function renderDashboardDailyStory() {
       if (s.bookTitle && activeBook.title && s.bookTitle.trim().toLowerCase() === activeBook.title.trim().toLowerCase()) return true;
       return false;
     });
+
+    // Check if 24-hour daily AI story auto-fetch should trigger for activeBook
+    const apiKey = getGeminiApiKey();
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const cacheRaw = localStorage.getItem('rt_daily_ai_story_cache');
+    let cache = null;
+    try { cache = cacheRaw ? JSON.parse(cacheRaw) : null; } catch(e){}
+
+    if (apiKey && (!cache || cache.date !== todayStr || cache.bookId !== activeBook.id) && !window._isFetchingAiStory) {
+      window._isFetchingAiStory = true;
+      fetchAndCacheActiveBookStory(activeBook, false).finally(() => {
+        window._isFetchingAiStory = false;
+      });
+    }
 
     // If no explicit starred story exists for activeBook, check if there are logged notes/reflections for activeBook
     if (activeBookStories.length === 0) {
@@ -12098,6 +12174,24 @@ function initScholarSuite() {
     btnNextStory.addEventListener('click', () => {
       window._currentStorySpotlightIdx = (window._currentStorySpotlightIdx || 0) + 1;
       renderDashboardDailyStory();
+    });
+  }
+
+  // AI Refresh story button on dashboard
+  const btnAiFetch = document.getElementById('btn-starred-story-ai-fetch');
+  if (btnAiFetch) {
+    btnAiFetch.addEventListener('click', async () => {
+      const inProgressBooks = (booksCache || []).filter(b => b.status === 'In Progress');
+      const activeBook = inProgressBooks[0] || (booksCache || [])[0];
+      if (!activeBook) {
+        showToast('Please add a book to your library first.', 'info');
+        return;
+      }
+      btnAiFetch.disabled = true;
+      btnAiFetch.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Fetching...';
+      await fetchAndCacheActiveBookStory(activeBook, true);
+      btnAiFetch.disabled = false;
+      btnAiFetch.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> ✦ AI Refresh';
     });
   }
 

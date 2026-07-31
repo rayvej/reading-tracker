@@ -260,3 +260,64 @@ export function generateScholarlyDigest(book, sessions = [], stories = [], quote
 
   return { bibtex, chicago, apa, markdown: md };
 }
+
+/**
+ * Fetch an authentic historical story / key passage from a book based on current page progress
+ */
+export async function fetchActiveBookStoryFromGemini(bookTitle, author, pagesRead = 0, totalPages = 0, apiKey) {
+  if (!apiKey || !apiKey.trim()) throw new Error('Gemini API key is not configured');
+
+  const pageInfo = pagesRead > 0 
+    ? `around page ${pagesRead}${totalPages > 0 ? ` of ${totalPages}` : ''}`
+    : `from the beginning of the book`;
+
+  const prompt = `You are an expert Bahá'í scholar and historical research assistant.
+The user is currently reading the book "${bookTitle}" by ${author || 'Unknown Author'}.
+They are currently ${pageInfo}.
+
+Please retrieve or construct a notable, authentic historical story, passage, or narrative anecdote from "${bookTitle}" that occurs in or near this section of the book (around page ${pagesRead > 0 ? pagesRead : 1}).
+
+Identify:
+1. "title": A short, memorable, evocative title for the story (e.g., "Mullá Husayn at the Gate of Shiraz", "Táhirih at Badašt", "The Siege of the Shrine of Shaykh Ṭabarsí").
+2. "summary": A compelling 2-3 sentence narrative summary of the event or teaching in this section.
+3. "quote": An inspiring quote, verbatim excerpt, or key passage from this part of the book.
+4. "page": Estimate or specify the page number near ${pagesRead > 0 ? pagesRead : 1}.
+5. "paragraph": Section or paragraph identifier (e.g., "§14" or "Chapter 3").
+6. "characters": Array of historical figures mentioned, using standard Bahá'í transliterations (e.g. Bahá'u'lláh, 'Abdu'l-Bahá, The Báb, Táhirih, Mullá Husayn, Quddús).
+7. "themes": Array of 1-3 thematic tags (e.g., Heroism, Search for Truth, Covenant, Devotion).
+8. "era": Historical era (e.g., Heroic Age, Formative Age, 1844-1853).
+9. "location": Geographical location if relevant (e.g., Shiraz, 'Akká, Baghdad, Tehran).
+
+Return ONLY a valid raw JSON object with keys: "title", "summary", "quote", "page", "paragraph", "characters", "themes", "era", "location". Do not include markdown code block syntax.`;
+
+  const response = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey.trim())}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Gemini API error (${response.status})`);
+  }
+
+  const data = await response.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const parsed = parseGeminiJsonResponse(rawText);
+
+  return {
+    bookTitle: bookTitle,
+    title: parsed.title || `Passage from ${bookTitle}`,
+    summary: parsed.summary || parsed.quote || '',
+    quote: parsed.quote || '',
+    page: parsed.page || (pagesRead > 0 ? pagesRead : null),
+    paragraph: parsed.paragraph || null,
+    characters: Array.isArray(parsed.characters) ? parsed.characters : [],
+    themes: Array.isArray(parsed.themes) ? parsed.themes : ['Scholarship'],
+    era: parsed.era || '',
+    location: parsed.location || ''
+  };
+}
+
