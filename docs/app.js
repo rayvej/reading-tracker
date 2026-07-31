@@ -12119,43 +12119,6 @@ function renderDashboardDailyStory() {
   }
 }
 
-  // Final pool of stories: activeBookStories if non-empty, otherwise full stories array
-  const displayPool = (activeBookStories.length > 0) ? activeBookStories : stories;
-
-  if (!displayPool || displayPool.length === 0) {
-    card.classList.add('hidden');
-    return;
-  }
-
-  card.classList.remove('hidden');
-
-  const idx = window._currentStorySpotlightIdx || 0;
-  const story = displayPool[idx % displayPool.length];
-
-  const badgeEl = document.getElementById('dash-story-badge');
-  const titleEl = document.getElementById('dash-story-title');
-  const summaryEl = document.getElementById('dash-story-summary');
-  const bookEl = document.getElementById('dash-story-book');
-  const pageEl = document.getElementById('dash-story-page');
-
-  if (badgeEl) {
-    if (activeBookStories.length > 0 && activeBook) {
-      badgeEl.innerHTML = `<i class="fa-solid fa-book-open-reader text-amber-400"></i> Daily Spotlight • Currently Reading`;
-    } else {
-      badgeEl.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i> Daily Starred Story Spotlight`;
-    }
-  }
-
-  if (titleEl) titleEl.textContent = story.title || 'Starred Story';
-  if (summaryEl) summaryEl.textContent = story.summary || story.quote || 'No summary available.';
-  if (bookEl) bookEl.textContent = story.bookTitle || 'Bahá\'í Historical Text';
-  if (pageEl) {
-    let pLabel = story.page ? `Page ${story.page}` : '';
-    if (story.paragraph) pLabel += (pLabel ? `, ${story.paragraph}` : story.paragraph);
-    pageEl.textContent = pLabel || (story.isReflection ? 'Reflection' : 'Anecdote');
-  }
-}
-
 function openAddStoryModal() {
   const modal = document.getElementById('modal-add-story');
   if (!modal) return;
