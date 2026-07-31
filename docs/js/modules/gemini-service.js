@@ -4,10 +4,11 @@
  */
 
 const GEMINI_CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
   'gemini-1.5-flash-latest',
   'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
+  'gemini-1.5-flash-8b',
   'gemini-1.5-pro'
 ];
 
@@ -47,6 +48,13 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
       const errMsg = errData.error?.message || `API error (${response.status})`;
       lastErrorMsg = errMsg;
 
+      // Handle 429 Quota / Rate limit errors specifically
+      if (response.status === 429 || errMsg.includes('Quota exceeded') || errMsg.includes('rate-limit') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+        console.warn(`[Gemini API] Quota/Rate limit on ${modelName}: "${errMsg}". Trying next candidate model...`);
+        lastErrorMsg = `Quota exceeded for free tier. Please wait a few seconds before retrying.`;
+        continue;
+      }
+
       // If model not found or not supported for generateContent, try next candidate model
       if (response.status === 404 || errMsg.includes('not found') || errMsg.includes('not supported') || errMsg.includes('ModelService')) {
         console.warn(`[Gemini API] Model ${modelName} returned: "${errMsg}". Retrying next candidate model...`);
@@ -55,7 +63,7 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
         throw new Error(errMsg);
       }
     } catch (e) {
-      if (e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('ModelService')) {
+      if (e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('ModelService') || e.message.includes('Quota exceeded')) {
         lastErrorMsg = e.message;
         continue;
       }
@@ -63,18 +71,30 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
     }
   }
 
-  throw new Error(lastErrorMsg || 'No supported Gemini model found for generateContent');
+  throw new Error(lastErrorMsg || 'Google Free Tier rate limit reached. Please retry in a few seconds.');
 }
 
 /**
  * Validate user's Gemini API Key by making a minimal prompt call
  */
 export async function testGeminiApiKey(apiKey) {
-  const data = await callGeminiApiWithFallback(apiKey, {
-    contents: [{ parts: [{ text: 'Respond with the exact word: OK' }] }]
-  });
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return { success: true, text: text.trim() };
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error('API key is empty');
+  }
+
+  try {
+    const data = await callGeminiApiWithFallback(apiKey, {
+      contents: [{ parts: [{ text: 'Respond with the exact word: OK' }] }]
+    });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return { success: true, text: text.trim(), isRateLimited: false };
+  } catch (err) {
+    // If the error is a quota / rate limit error (429 / Quota exceeded), the API key IS valid!
+    if (err.message.includes('Quota exceeded') || err.message.includes('Rate Limit') || err.message.includes('rate limit') || err.message.includes('RESOURCE_EXHAUSTED') || err.message.includes('429')) {
+      return { success: true, text: 'OK', isRateLimited: true };
+    }
+    throw err;
+  }
 }
 
 /**

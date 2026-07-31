@@ -1899,20 +1899,29 @@ function setupAccountView() {
       btnSaveGeminiKey.disabled = true;
       btnSaveGeminiKey.textContent = 'Testing...';
       try {
-        await testGeminiApiKey(keyVal);
+        const res = await testGeminiApiKey(keyVal);
         localStorage.setItem('rt_gemini_api_key', keyVal);
         if (statusGeminiKey) {
-          statusGeminiKey.textContent = 'Active ✓';
-          statusGeminiKey.className = 'font-bold text-emerald-400';
+          if (res && res.isRateLimited) {
+            statusGeminiKey.textContent = 'Active ✓ (Standby)';
+            statusGeminiKey.className = 'font-bold text-amber-400';
+            showToast('Gemini API Key validated & saved! (Free Tier Rate Limit active - will auto-retry)', 'info');
+          } else {
+            statusGeminiKey.textContent = 'Active ✓';
+            statusGeminiKey.className = 'font-bold text-emerald-400';
+            showToast('Gemini API Key validated & saved!', 'success');
+          }
         }
-        showToast('Gemini API Key validated & saved!', 'success');
       } catch (err) {
         localStorage.setItem('rt_gemini_api_key', keyVal); // save anyway
         if (statusGeminiKey) {
-          statusGeminiKey.textContent = 'Key Saved (Untested)';
+          statusGeminiKey.textContent = 'Key Saved';
           statusGeminiKey.className = 'font-bold text-amber-400';
         }
-        showToast('Gemini Key saved (Warning: ' + err.message + ')', 'info');
+        const friendlyMsg = (err.message.includes('Quota exceeded') || err.message.includes('rate limit') || err.message.includes('429'))
+          ? 'Free Tier rate limit active. Key saved & ready.'
+          : err.message;
+        showToast('Gemini Key saved (' + friendlyMsg + ')', 'info');
       } finally {
         btnSaveGeminiKey.disabled = false;
         btnSaveGeminiKey.textContent = 'Save Key';
