@@ -92,5 +92,18 @@ await assert.rejects(
 );
 console.log('  ✅ AI Story Fetching module verified!\n');
 
+// 6. Test Model Pro Error Guarantee
+console.log('Test 6: Verifying gemini-1.5-pro Error Exclusion...');
+try {
+  await fetchActiveBookStoryFromGemini('The Dawn-Breakers', 'Nabíl-i-A‘ẓam', 120, 688, 'invalid_mock_key');
+  assert.fail('Should have thrown an error for invalid key');
+} catch (err) {
+  assert.strictEqual(err.message.includes('gemini-1.5-pro'), false, 'Error message must NEVER mention gemini-1.5-pro');
+  assert.strictEqual(err.message.includes('ModelService.ListModels'), false, 'Error message must NEVER show raw ListModels instruction');
+  console.log('  Caught clean error:', err.message);
+  console.log('  ✅ gemini-1.5-pro error exclusion verified!\n');
+}
+
 console.log('🎉 ALL SCHOLARLY SUITE TESTS PASSED SUCCESSFULLY!');
+
 

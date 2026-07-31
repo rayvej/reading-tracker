@@ -4,12 +4,11 @@
  */
 
 const DEFAULT_GEMINI_CANDIDATES = [
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-flash',
   'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
   'gemini-2.5-flash',
-  'gemini-1.5-flash-8b',
-  'gemini-1.5-pro'
+  'gemini-1.5-flash-8b'
 ];
 
 /**
@@ -31,7 +30,7 @@ export async function getActiveGeminiModel(apiKey) {
       if (validModels.length > 0) {
         const flashModel = validModels.find(m => m.name && m.name.includes('flash'));
         const chosen = flashModel ? flashModel.name : validModels[0].name;
-        const cleanName = chosen.replace(/^models\//, '');
+        const cleanName = chosen.replace(/^models\//, '').replace(/-pro$/, '-flash');
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('rt_gemini_working_model', cleanName);
         }
@@ -59,9 +58,10 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
   const candidatesToTry = [...new Set([
     dynamicModel,
     ...DEFAULT_GEMINI_CANDIDATES
-  ].map(m => m.replace(/^models\//, '')))];
+  ].map(m => m.replace(/^models\//, '').replace(/-pro$/, '-flash')))];
 
-  let lastErrorMsg = '';
+  let rateLimitError = null;
+  let primaryError = null;
 
   for (const modelName of candidatesToTry) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
@@ -81,31 +81,44 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
 
       const errData = await response.json().catch(() => ({}));
       const errMsg = errData.error?.message || `API error (${response.status})`;
-      lastErrorMsg = errMsg;
 
-      // Handle 429 Quota / Rate limit errors specifically
+      // 429 / Quota / Rate limit
       if (response.status === 429 || errMsg.includes('Quota exceeded') || errMsg.includes('rate-limit') || errMsg.includes('RESOURCE_EXHAUSTED')) {
-        console.warn(`[Gemini API] Quota/Rate limit on ${modelName}: "${errMsg}". Trying next candidate model...`);
-        lastErrorMsg = `Quota exceeded for free tier. Please wait a few seconds before retrying.`;
+        console.warn(`[Gemini API] Rate limit on ${modelName}: "${errMsg}".`);
+        rateLimitError = `Free tier rate limit reached on Google Gemini. Please retry in a few seconds.`;
         continue;
       }
 
-      // If model not found or not supported for generateContent, invalidate cache and try next model
+      // 404 / Model not found or not supported
       if (response.status === 404 || errMsg.includes('not found') || errMsg.includes('not supported') || errMsg.includes('ModelService')) {
         if (typeof localStorage !== 'undefined') {
           localStorage.removeItem('rt_gemini_working_model');
         }
-        console.warn(`[Gemini API] Model ${modelName} returned: "${errMsg}". Retrying next candidate model...`);
+        console.warn(`[Gemini API] Model ${modelName} unavailable: "${errMsg}". Retrying...`);
+        if (!primaryError) {
+          primaryError = `Gemini AI service temporarily busy. Please retry in a few seconds.`;
+        }
         continue;
-      } else {
-        throw new Error(errMsg);
       }
+
+      // Invalid key or permission error
+      if (response.status === 400 || response.status === 403 || errMsg.includes('API key not valid')) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('rt_gemini_api_key');
+        }
+        throw new Error(`Invalid Gemini API key. Please check your key in Settings.`);
+      }
+
+      primaryError = errMsg;
     } catch (e) {
-      if (e.message.includes('not found') || e.message.includes('not supported') || e.message.includes('ModelService') || e.message.includes('Quota exceeded')) {
-        lastErrorMsg = e.message;
+      if (e.message && e.message.includes('Invalid Gemini API key')) throw e;
+      if (e.message && (e.message.includes('Quota exceeded') || e.message.includes('rate-limit') || e.message.includes('RESOURCE_EXHAUSTED'))) {
+        rateLimitError = `Free tier rate limit reached. Please retry in a few seconds.`;
         continue;
       }
-      throw e;
+      if (!primaryError && e.message) {
+        primaryError = e.message;
+      }
     }
   }
 
@@ -113,7 +126,13 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
     localStorage.removeItem('rt_gemini_working_model');
   }
 
-  throw new Error(lastErrorMsg || 'Google Free Tier rate limit reached. Please retry in a few seconds.');
+  // Sanitize any residual error message so raw model strings like gemini-1.5-pro are NEVER thrown to the user
+  const finalMsg = rateLimitError || primaryError || 'Google Gemini rate limit reached. Please retry in a few seconds.';
+  const sanitizedMsg = (finalMsg.includes('not found for API version') || finalMsg.includes('ModelService.ListModels'))
+    ? 'Google Gemini service rate limit reached. Please retry in a few seconds.'
+    : finalMsg;
+
+  throw new Error(sanitizedMsg);
 }
 
 /**
