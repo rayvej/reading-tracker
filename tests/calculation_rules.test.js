@@ -3,7 +3,7 @@
  * Run via Node.js
  */
 
-const assert = require('assert');
+import assert from 'assert';
 
 // Mock implementation of calculateReconciledMetrics matching stats.js
 function calculateReconciledMetrics(books, logs) {

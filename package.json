@@ -1,4 +1,8 @@
 {
+  "type": "module",
+  "scripts": {
+    "test": "node tests/calculation_rules.test.js && node tests/production_integrity.test.js && node tests/feature_sweep.test.js && node tests/rapid_input_audit.test.js && node tests/backup_restore_audit.test.js"
+  },
   "dependencies": {
     "firebase-tools": "^15.24.0",
     "puppeteer-core": "^25.3.0"
