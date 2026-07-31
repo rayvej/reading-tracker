@@ -538,7 +538,8 @@ body {
 }
 
 /* Touch Target Minimum Dimensions Safeguard (iOS HIG 44px / Material 36px Minimum) */
-button, input[type="button"], a.btn, .btn-circle, .w-8 {
+button:not(.seg-btn):not(.seg-btn-micro):not(.seg-btn-nano):not(.btn-stepper-chip),
+input[type="button"], a.btn, .btn-circle, .w-8 {
   touch-action: manipulation;
   min-width: 36px !important;
   min-height: 36px !important;
@@ -917,6 +918,7 @@ body.light-mode #tab-bar {
 .seg-btn {
   flex: 1 1 0%;
   min-width: max-content;
+  min-height: 0 !important;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
@@ -1040,6 +1042,8 @@ input[type="checkbox"].toggle.toggle-amber:checked {
 
 /* Micro Stepper Preset Chips for Log Form */
 .btn-stepper-chip {
+  min-height: 0 !important;
+  min-width: 0 !important;
   padding: 1.5px 7px;
   font-size: 9.5px;
   font-weight: 700;
@@ -1075,6 +1079,8 @@ input[type="checkbox"].toggle.toggle-amber:checked {
 
 .seg-btn-micro {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 0 !important;
+  min-width: 0 !important;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
@@ -1130,6 +1136,8 @@ body.light-mode .seg-btn-micro.active {
 
 .seg-btn-nano {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 0 !important;
+  min-width: 0 !important;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
@@ -1137,11 +1145,11 @@ body.light-mode .seg-btn-micro.active {
   font-weight: 600;
   letter-spacing: 0.015em;
   border-radius: 3.5px;
-  padding: 1.5px 5px;
+  padding: 2px 5.5px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.12s ease-in-out;
-  line-height: 1.1;
+  line-height: 1.15;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2638,5 +2646,80 @@ body.light-mode .fab-log-btn {
   content-visibility: auto;
   contain-intrinsic-size: 0 110px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SCHOLAR SUITE & GEMINI AI INTEGRATION STYLES
+   ══════════════════════════════════════════════════════════════ */
+.btn-translit-chip {
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+.btn-translit-chip:hover {
+  background: rgba(var(--gold-rgb), 0.25);
+  transform: translateY(-1px);
+}
+.btn-translit-chip:active {
+  transform: scale(0.92);
+}
+
+.story-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.story-card:hover {
+  border-color: rgba(var(--gold-rgb), 0.4);
+  transform: translateY(-2px);
+}
+.story-card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(var(--gold-rgb), 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(var(--gold-rgb), 0.25);
+}
+.character-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+}
+
+.scholarly-tab-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(var(--gold-rgb), 0.2);
+  color: var(--gold);
+}
+
 
 

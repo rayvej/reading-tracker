@@ -31,6 +31,7 @@ import { initializeFirestore, getFirestore, persistentLocalCache,
          serverTimestamp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { firebaseConfig }                          from './firebase-config.js';
 import { generate10YearArchivistData, generateHighVelocityData, generateChaosStressData } from './js/seed10YearData.js';
+import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardizeTransliteration, generateScholarlyDigest } from './js/modules/gemini-service.js';
 
 window.categoryChartMode = 'pages';
 
@@ -1865,20 +1866,49 @@ function setupAccountView() {
     });
   }
 
-  // Gemini API Key Save Button
+  // Gemini API Key Save & Validate Button
   const btnSaveGeminiKey = $('btn-save-gemini-key');
   const inputGeminiKey = $('acct-gemini-api-key');
+  const statusGeminiKey = $('gemini-key-status');
+
+  if (inputGeminiKey) {
+    inputGeminiKey.value = localStorage.getItem('rt_gemini_api_key') || '';
+  }
+
   if (btnSaveGeminiKey && inputGeminiKey) {
-    btnSaveGeminiKey.addEventListener('click', () => {
+    btnSaveGeminiKey.addEventListener('click', async () => {
       const keyVal = inputGeminiKey.value.trim();
-      if (keyVal) {
-        localStorage.setItem('rt_gemini_api_key', keyVal);
-        showToast('Gemini API Key saved successfully!', 'success');
-      } else {
+      if (!keyVal) {
         localStorage.removeItem('rt_gemini_api_key');
+        if (statusGeminiKey) {
+          statusGeminiKey.textContent = 'Not Set';
+          statusGeminiKey.className = 'font-bold text-theme-secondary';
+        }
         showToast('Gemini API Key removed.', 'info');
+        return;
       }
-      renderAccountView();
+
+      btnSaveGeminiKey.disabled = true;
+      btnSaveGeminiKey.textContent = 'Testing...';
+      try {
+        await testGeminiApiKey(keyVal);
+        localStorage.setItem('rt_gemini_api_key', keyVal);
+        if (statusGeminiKey) {
+          statusGeminiKey.textContent = 'Active ✓';
+          statusGeminiKey.className = 'font-bold text-emerald-400';
+        }
+        showToast('Gemini API Key validated & saved!', 'success');
+      } catch (err) {
+        localStorage.setItem('rt_gemini_api_key', keyVal); // save anyway
+        if (statusGeminiKey) {
+          statusGeminiKey.textContent = 'Key Saved (Untested)';
+          statusGeminiKey.className = 'font-bold text-amber-400';
+        }
+        showToast('Gemini Key saved (Warning: ' + err.message + ')', 'info');
+      } finally {
+        btnSaveGeminiKey.disabled = false;
+        btnSaveGeminiKey.textContent = 'Save Key';
+      }
     });
   }
 
@@ -4050,11 +4080,6 @@ function renderStreakRings(streaks, activeLogs) {
       localStorage.setItem('rt_streak_repair_earned_' + todayISO, '1');
     }
   }
-  
-  const repairLabel = $('streak-repair-label');
-  if (repairLabel) repairLabel.textContent = `${tokens} Streak Shield${tokens !== 1 ? 's' : ''} Available`;
-  const repairCount = $('streak-repair-count');
-  if (repairCount) repairCount.textContent = tokens;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -7353,7 +7378,6 @@ async function markBookComplete(b) {
 let isSaveNewBookSubmitting = false;
 
 async function saveNewBook() {
-  if (typeof window !== 'undefined') window.saveNewBook = saveNewBook;
   if (isSaveNewBookSubmitting) return;
 
   const title = $('ab-title').value.trim();
@@ -7462,6 +7486,7 @@ async function saveNewBook() {
     if (saveBtn) saveBtn.disabled = false;
   }
 }
+if (typeof window !== 'undefined') window.saveNewBook = saveNewBook;
 
 let activeBookObjectForEdit = null;
 
@@ -7792,31 +7817,6 @@ function setupLibrary() {}
 function setupWishlist() {}
 function renderLibrary() {}
 function renderWishlist() { renderBookshelf(); }
-
-async function addWishlistItem() {
-  const title = $('wl-title').value.trim();
-  if (!title) { showToast('Please enter a title', 'error'); return; }
-
-  const item = {
-    title,
-    author:       $('wl-author').value.trim(),
-    category:     $('wl-category').value,
-    priority:     $('wl-priority').value,
-    status:       $('wl-status').value,
-    est_pages:    parseInt($('wl-pages').value) || 0,
-    est_cost:     0,
-    where_to_buy: '',
-    date_added:   todayISO(),
-    notes:        ''
-  };
-
-  await addDoc(collection(db, `users/${uid}/wishlist`), item);
-  wishlistCache = []; // invalidate cache
-  $('wishlist-modal').classList.remove('open');
-  $('wl-title').value = ''; $('wl-author').value = ''; $('wl-pages').value = '';
-  showToast('Added to wishlist ✓', 'success');
-  renderWishlist();
-}
 
 
 
@@ -9947,70 +9947,7 @@ tags: [reading-log, highlight]
 
 /* ═══════════════════════════════════════════════════════════════
    SABBATICAL & STREAK FREEZE MODULE (Custom Reasons)
-   ══════════════════════════════════════════════════════════════ */
-let sabbaticalSelectedReason = 'Vacation';
 
-function initSabbaticalModule() {
-  const modal = $('modal-sabbatical');
-  const closeBtn = $('sabbatical-modal-close');
-  const backdrop = $('sabbatical-modal-backdrop');
-  const confirmBtn = $('btn-sabbatical-confirm');
-
-  if (!modal) return;
-
-  // Reason buttons
-  document.querySelectorAll('#sabbatical-reasons-grid .reason-btn').forEach(btn => {
-    btn.onclick = () => {
-      if (navigator.vibrate) navigator.vibrate([8]);
-      document.querySelectorAll('#sabbatical-reasons-grid .reason-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      sabbaticalSelectedReason = btn.dataset.reason;
-
-      const customContainer = $('sabbatical-custom-container');
-      if (customContainer) {
-        customContainer.classList.toggle('hidden', sabbaticalSelectedReason !== 'Custom');
-      }
-    };
-  });
-
-  const closeModal = () => modal.classList.remove('open');
-  if (closeBtn) closeBtn.onclick = closeModal;
-  if (backdrop) backdrop.onclick = closeModal;
-
-  if (confirmBtn) {
-    confirmBtn.onclick = async () => {
-      let finalReason = sabbaticalSelectedReason;
-      if (sabbaticalSelectedReason === 'Custom') {
-        const customInput = $('sabbatical-custom-reason');
-        finalReason = (customInput && customInput.value.trim()) ? customInput.value.trim() : 'Custom Sabbatical';
-      }
-
-      const daysInput = $('sabbatical-days');
-      const daysCount = parseInt(daysInput ? daysInput.value : '7', 10) || 7;
-
-      const sabbaticalRecord = {
-        id: 'sab_' + Date.now(),
-        reason: finalReason,
-        days: daysCount,
-        startDate: todayISO(),
-        endDate: new Date(Date.now() + daysCount * 86400000).toISOString().slice(0, 10),
-        created_at: new Date().toISOString()
-      };
-
-      if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-      showToast(`🛡️ Streak Freeze Activated for ${daysCount} Days (${finalReason})`);
-      closeModal();
-    };
-  }
-}
-
-window.openSabbaticalModal = function() {
-  const modal = $('modal-sabbatical');
-  if (modal) {
-    modal.classList.add('open');
-    if (navigator.vibrate) navigator.vibrate([10]);
-  }
-};
 
 /* ═══════════════════════════════════════════════════════════════
    BESPOKE EDITORIAL APP EXTENSIONS (CSV Export, Timer, Analytics)
@@ -10833,14 +10770,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // =========================================================================
 
 let currentHeatmapMetric = 'pages';
-let customBookFields = JSON.parse(localStorage.getItem('rt_custom_book_fields') || '["Translator", "Historical Era"]');
 let currentLeitnerCards = [];
 let currentLeitnerIndex = 0;
 
 // --- 1. Dashboard Enhancements ---
 
 function initHeatmapMetricListeners() {
-  const metricButtons = document.querySelectorAll('#dash-heatmap-metric .seg-btn');
+  const metricButtons = document.querySelectorAll('#dash-heatmap-metric button');
   metricButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       metricButtons.forEach(b => b.classList.remove('active'));
@@ -11896,39 +11832,438 @@ function initKindleImporter() {
   };
 }
 
-function initCustomFieldsManager() {
-  const addBtn = document.getElementById('btn-add-custom-field');
-  const input = document.getElementById('custom-field-name-input');
-  const list = document.getElementById('custom-fields-list');
+// ── STARRED STORIES VAULT STATE & HELPERS ──────────────────────────────────────
+let starredStoriesCache = [];
 
-  const renderFields = () => {
-    if (!list) return;
-    list.innerHTML = customBookFields.map((f, i) => `
-      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 text-theme-primary border border-theme flex items-center gap-1.5">
-        ${f}
-        <button onclick="removeCustomField(${i})" class="text-theme-secondary hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>
-      </span>
-    `).join('');
-  };
-
-  window.removeCustomField = (idx) => {
-    customBookFields.splice(idx, 1);
-    localStorage.setItem('rt_custom_book_fields', JSON.stringify(customBookFields));
-    renderFields();
-  };
-
-  if (addBtn && input) {
-    addBtn.onclick = () => {
-      const val = input.value.trim();
-      if (val && !customBookFields.includes(val)) {
-        customBookFields.push(val);
-        localStorage.setItem('rt_custom_book_fields', JSON.stringify(customBookFields));
-        input.value = '';
-        renderFields();
-      }
-    };
+function getStarredStories() {
+  if (Array.isArray(starredStoriesCache) && starredStoriesCache.length > 0) {
+    return starredStoriesCache;
   }
-  renderFields();
+  try {
+    const raw = localStorage.getItem('rt_starred_stories');
+    if (raw) {
+      starredStoriesCache = JSON.parse(raw);
+      return starredStoriesCache;
+    }
+  } catch (e) {
+    console.warn('Failed to parse rt_starred_stories:', e);
+  }
+  // Seed sample Bahá'í starred stories if empty
+  starredStoriesCache = [
+    {
+      id: 'story_sample_1',
+      bookId: 'sample_dawnbreakers',
+      bookTitle: 'The Dawn-Breakers',
+      title: 'Mullá Husayn at the Gate of Shiraz',
+      summary: 'Mullá Husayn arrives in Shiraz in May 1844 after forty days of fasting and prayer, led by intuition to meet the Báb near the city gates.',
+      quote: 'He who was to fulfill the longing of his heart was standing before him at the gate of the city.',
+      page: 52,
+      paragraph: '§14',
+      characters: ['Mullá Husayn', 'The Báb'],
+      themes: ['Heroism', 'Search for Truth', 'Heroic Age'],
+      era: 'Heroic Age (1844)',
+      location: 'Shiraz, Persia',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'story_sample_2',
+      bookId: 'sample_memorials',
+      bookTitle: 'Memorials of the Faithful',
+      title: 'The Hospitality of ‘Abdu’l-Bahá in Haifa',
+      summary: '‘Abdu’l-Bahá welcomed every traveler and pilgrim with deep personal care, serving meals with His own hands and comforting the sick.',
+      quote: 'Service to humanity is service to God.',
+      page: 110,
+      paragraph: '§28',
+      characters: ['‘Abdu’l-Bahá'],
+      themes: ['Hospitality', 'Service', 'Covenant'],
+      era: 'Formative Age',
+      location: 'Haifa, Palestine',
+      createdAt: new Date().toISOString()
+    }
+  ];
+  localStorage.setItem('rt_starred_stories', JSON.stringify(starredStoriesCache));
+  return starredStoriesCache;
+}
+
+function saveStarredStories(stories) {
+  starredStoriesCache = stories;
+  localStorage.setItem('rt_starred_stories', JSON.stringify(stories));
+  if (db && uid && !window.isMockAuth) {
+    const docRef = doc(db, `users/${uid}/scholar_data/starred_stories`);
+    setDoc(docRef, { stories: stories, updatedAt: new Date().toISOString() }, { merge: true }).catch(err => {
+      console.warn('[Sync] Starred stories write error:', err.message);
+    });
+  }
+}
+
+function addStarredStory(storyData) {
+  const stories = getStarredStories();
+  const newStory = {
+    id: generateId(),
+    bookId: storyData.bookId || '',
+    bookTitle: storyData.bookTitle || 'Historical Account',
+    title: storyData.title || 'Starred Story',
+    summary: storyData.summary || '',
+    quote: storyData.quote || '',
+    page: storyData.page || null,
+    paragraph: storyData.paragraph || null,
+    characters: Array.isArray(storyData.characters) ? storyData.characters : (storyData.characters ? storyData.characters.split(',').map(s => s.trim()).filter(Boolean) : []),
+    themes: Array.isArray(storyData.themes) ? storyData.themes : (storyData.themes ? storyData.themes.split(',').map(s => s.trim()).filter(Boolean) : []),
+    era: storyData.era || '',
+    location: storyData.location || '',
+    createdAt: new Date().toISOString()
+  };
+  stories.unshift(newStory);
+  saveStarredStories(stories);
+  return newStory;
+}
+
+function deleteStarredStory(storyId) {
+  let stories = getStarredStories();
+  stories = stories.filter(s => s.id !== storyId);
+  saveStarredStories(stories);
+  if (typeof renderKnowledgeView === 'function') renderKnowledgeView();
+  if (typeof renderDashboardDailyStory === 'function') renderDashboardDailyStory();
+}
+
+function renderDashboardDailyStory() {
+  const card = document.getElementById('dash-starred-story-card');
+  if (!card) return;
+  const stories = getStarredStories();
+  if (!stories || stories.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+
+  const idx = window._currentStorySpotlightIdx || 0;
+  const story = stories[idx % stories.length];
+
+  const titleEl = document.getElementById('dash-story-title');
+  const summaryEl = document.getElementById('dash-story-summary');
+  const bookEl = document.getElementById('dash-story-book');
+  const pageEl = document.getElementById('dash-story-page');
+
+  if (titleEl) titleEl.textContent = story.title || 'Starred Story';
+  if (summaryEl) summaryEl.textContent = story.summary || story.quote || 'No summary available.';
+  if (bookEl) bookEl.textContent = story.bookTitle || 'Bahá\'í Historical Text';
+  if (pageEl) {
+    let pLabel = story.page ? `Page ${story.page}` : '';
+    if (story.paragraph) pLabel += (pLabel ? `, ${story.paragraph}` : story.paragraph);
+    pageEl.textContent = pLabel || 'Anecdote';
+  }
+}
+
+function openAddStoryModal() {
+  const modal = document.getElementById('modal-add-story');
+  if (!modal) return;
+  const bookSelect = document.getElementById('story-book-id');
+  if (bookSelect) {
+    bookSelect.innerHTML = '<option value="">— Select Book —</option>';
+    (booksCache || []).forEach(b => {
+      bookSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.title)} (${escapeHtml(b.author || 'Unknown')})</option>`;
+    });
+  }
+  // Clear fields
+  ['story-page', 'story-paragraph', 'story-title', 'story-summary', 'story-quote', 'story-characters', 'story-themes', 'story-era'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  modal.classList.add('open');
+}
+
+function initScholarSuite() {
+  getStarredStories();
+  renderDashboardDailyStory();
+
+  // Next story spotlight button on dashboard
+  const btnNextStory = document.getElementById('btn-starred-story-next');
+  if (btnNextStory) {
+    btnNextStory.addEventListener('click', () => {
+      window._currentStorySpotlightIdx = (window._currentStorySpotlightIdx || 0) + 1;
+      renderDashboardDailyStory();
+    });
+  }
+
+  // Quick Star Story open button
+  const btnQuickStoryOpen = document.getElementById('btn-quick-story-open');
+  if (btnQuickStoryOpen) {
+    btnQuickStoryOpen.addEventListener('click', () => openAddStoryModal());
+  }
+
+  // Close story modal
+  const btnStoryClose = document.getElementById('modal-add-story-close');
+  if (btnStoryClose) {
+    btnStoryClose.addEventListener('click', () => {
+      document.getElementById('modal-add-story').classList.remove('open');
+    });
+  }
+
+  // Save Starred Story
+  const btnSaveStory = document.getElementById('btn-save-starred-story');
+  if (btnSaveStory) {
+    btnSaveStory.addEventListener('click', () => {
+      const bookSelect = document.getElementById('story-book-id');
+      const pageVal = parseInt(document.getElementById('story-page')?.value || '0', 10);
+      const paraVal = document.getElementById('story-paragraph')?.value || '';
+      const titleVal = document.getElementById('story-title')?.value || '';
+      const summaryVal = document.getElementById('story-summary')?.value || '';
+      const quoteVal = document.getElementById('story-quote')?.value || '';
+      const charsVal = document.getElementById('story-characters')?.value || '';
+      const themesVal = document.getElementById('story-themes')?.value || '';
+      const eraVal = document.getElementById('story-era')?.value || '';
+
+      if (!titleVal.trim()) {
+        showToast('Please enter a Story Title', 'error');
+        return;
+      }
+
+      let bookTitle = 'Historical Work';
+      if (bookSelect && bookSelect.selectedIndex >= 0) {
+        bookTitle = bookSelect.options[bookSelect.selectedIndex].text || bookTitle;
+      }
+
+      addStarredStory({
+        bookId: bookSelect?.value || '',
+        bookTitle: bookTitle,
+        title: titleVal.trim(),
+        summary: summaryVal.trim(),
+        quote: quoteVal.trim(),
+        page: pageVal > 0 ? pageVal : null,
+        paragraph: paraVal.trim() || null,
+        characters: charsVal,
+        themes: themesVal,
+        era: eraVal.trim()
+      });
+
+      document.getElementById('modal-add-story').classList.remove('open');
+      showToast('Starred Story saved to Knowledge Vault!', 'success');
+
+      if (typeof renderKnowledgeView === 'function') renderKnowledgeView();
+      renderDashboardDailyStory();
+    });
+  }
+
+  // Transliteration Chips Click Listener
+  document.querySelectorAll('.btn-translit-chip').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      e.preventDefault();
+      const char = chip.dataset.char;
+      const targetId = chip.dataset.target || 'log-notes';
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        const start = targetEl.selectionStart || targetEl.value.length;
+        const end = targetEl.selectionEnd || targetEl.value.length;
+        const val = targetEl.value;
+        targetEl.value = val.substring(0, start) + char + val.substring(end);
+        targetEl.focus();
+        targetEl.setSelectionRange(start + char.length, start + char.length);
+      }
+    });
+  });
+
+  // Clean Transliteration with Gemini AI button in session log
+  const btnCleanTranslit = document.getElementById('btn-log-ai-clean-translit');
+  if (btnCleanTranslit) {
+    btnCleanTranslit.addEventListener('click', async () => {
+      const notesEl = document.getElementById('log-notes');
+      if (!notesEl || !notesEl.value.trim()) {
+        showToast('Enter some text first to clean transliterations', 'info');
+        return;
+      }
+      btnCleanTranslit.disabled = true;
+      btnCleanTranslit.textContent = '✨ Cleaning...';
+      try {
+        const key = localStorage.getItem('rt_gemini_api_key') || '';
+        const cleaned = await standardizeTransliteration(notesEl.value, key);
+        notesEl.value = cleaned;
+        showToast('Bahá\'í transliterations standardized!', 'success');
+      } catch (err) {
+        showToast('Transliteration cleaning error: ' + err.message, 'error');
+      } finally {
+        btnCleanTranslit.disabled = false;
+        btnCleanTranslit.textContent = '✨ AI Clean';
+      }
+    });
+  }
+
+  // Gemini Photo OCR for Starred Story Modal
+  const btnStoryPhotoAi = document.getElementById('btn-story-photo-ai');
+  const inputStoryPhotoFile = document.getElementById('input-story-photo-file');
+  if (btnStoryPhotoAi && inputStoryPhotoFile) {
+    btnStoryPhotoAi.addEventListener('click', () => inputStoryPhotoFile.click());
+    inputStoryPhotoFile.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const key = localStorage.getItem('rt_gemini_api_key') || '';
+      if (!key) {
+        showToast('Please add your Gemini API Key in Account settings first', 'error');
+        return;
+      }
+      btnStoryPhotoAi.disabled = true;
+      btnStoryPhotoAi.textContent = 'Scanning...';
+      try {
+        const reader = new FileReader();
+        reader.onload = async (re) => {
+          const base64 = re.target.result;
+          const result = await analyzeNoteImage(base64, file.type, key);
+          if (result.title) document.getElementById('story-title').value = result.title;
+          if (result.summary) document.getElementById('story-summary').value = result.summary;
+          if (result.quote) document.getElementById('story-quote').value = result.quote;
+          if (result.characters && Array.isArray(result.characters)) {
+            document.getElementById('story-characters').value = result.characters.join(', ');
+          }
+          if (result.themes && Array.isArray(result.themes)) {
+            document.getElementById('story-themes').value = result.themes.join(', ');
+          }
+          if (result.era || result.location) {
+            document.getElementById('story-era').value = [result.era, result.location].filter(Boolean).join(' / ');
+          }
+          showToast('Gemini extracted story details from photo!', 'success');
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        showToast('Gemini Photo Error: ' + err.message, 'error');
+      } finally {
+        btnStoryPhotoAi.disabled = false;
+        btnStoryPhotoAi.textContent = '📷 Photo OCR';
+      }
+    });
+  }
+
+  // Gemini Voice Dictation for Starred Story Modal
+  const btnStoryVoiceAi = document.getElementById('btn-story-voice-ai');
+  if (btnStoryVoiceAi) {
+    btnStoryVoiceAi.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        const raw = prompt('Enter or paste spoken transcript:');
+        if (raw) processVoiceTranscript(raw);
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      btnStoryVoiceAi.disabled = true;
+      btnStoryVoiceAi.textContent = '🎙️ Listening...';
+
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        await processVoiceTranscript(transcript);
+        btnStoryVoiceAi.disabled = false;
+        btnStoryVoiceAi.textContent = '🎙️ Voice Note';
+      };
+
+      recognition.onerror = (err) => {
+        showToast('Speech recognition error: ' + err.error, 'error');
+        btnStoryVoiceAi.disabled = false;
+        btnStoryVoiceAi.textContent = '🎙️ Voice Note';
+      };
+
+      recognition.start();
+    });
+  }
+
+  async function processVoiceTranscript(transcriptText) {
+    const key = localStorage.getItem('rt_gemini_api_key') || '';
+    if (!key) {
+      document.getElementById('story-summary').value = transcriptText;
+      showToast('Voice note added. Configure Gemini API key in Account settings for auto-extraction.', 'info');
+      return;
+    }
+    showToast('Gemini is analyzing spoken note...', 'info');
+    try {
+      const result = await analyzeVoiceTranscript(transcriptText, key);
+      if (result.title) document.getElementById('story-title').value = result.title;
+      if (result.summary) document.getElementById('story-summary').value = result.summary;
+      if (result.quote) document.getElementById('story-quote').value = result.quote;
+      if (result.characters && Array.isArray(result.characters)) {
+        document.getElementById('story-characters').value = result.characters.join(', ');
+      }
+      if (result.themes && Array.isArray(result.themes)) {
+        document.getElementById('story-themes').value = result.themes.join(', ');
+      }
+      if (result.era || result.location) {
+        document.getElementById('story-era').value = [result.era, result.location].filter(Boolean).join(' / ');
+      }
+      showToast('Gemini analyzed voice transcript!', 'success');
+    } catch (err) {
+      document.getElementById('story-summary').value = transcriptText;
+      showToast('Gemini analysis error: ' + err.message, 'error');
+    }
+  }
+
+  // Scholarly Export Modal Open & Generation
+  const btnScholarlyExportOpen = document.getElementById('btn-scholarly-export-open');
+  const modalExport = document.getElementById('modal-scholarly-export');
+  const exportBookSelect = document.getElementById('scholarly-export-book-id');
+
+  if (btnScholarlyExportOpen && modalExport) {
+    btnScholarlyExportOpen.addEventListener('click', () => {
+      if (exportBookSelect) {
+        exportBookSelect.innerHTML = '<option value="all">— All Books Summary —</option>';
+        (booksCache || []).forEach(b => {
+          exportBookSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.title)} (${escapeHtml(b.author || 'Unknown')})</option>`;
+        });
+      }
+      updateScholarlyExportPreview();
+      modalExport.classList.add('open');
+    });
+
+    if (exportBookSelect) {
+      exportBookSelect.addEventListener('change', () => updateScholarlyExportPreview());
+    }
+
+    const btnCloseExport = document.getElementById('modal-scholarly-export-close');
+    if (btnCloseExport) {
+      btnCloseExport.addEventListener('click', () => modalExport.classList.remove('open'));
+    }
+
+    const btnCopyBib = document.getElementById('btn-copy-bibtex');
+    if (btnCopyBib) {
+      btnCopyBib.addEventListener('click', () => {
+        const text = document.getElementById('cite-preview-bibtex')?.textContent || '';
+        navigator.clipboard.writeText(text);
+        showToast('BibTeX copied to clipboard!', 'success');
+      });
+    }
+
+    const btnDownloadDigest = document.getElementById('btn-download-digest');
+    if (btnDownloadDigest) {
+      btnDownloadDigest.addEventListener('click', () => {
+        const mdText = document.getElementById('cite-preview-markdown')?.value || '';
+        const blob = new Blob([mdText], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `scholarly_digest_${new Date().toISOString().slice(0, 10)}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+  }
+
+  function updateScholarlyExportPreview() {
+    const selectedBookId = exportBookSelect?.value || 'all';
+    let targetBook = null;
+    let stories = getStarredStories();
+
+    if (selectedBookId !== 'all') {
+      targetBook = (booksCache || []).find(b => b.id === selectedBookId || String(b.id) === String(selectedBookId));
+      stories = stories.filter(s => s.bookId === selectedBookId || (targetBook && s.bookTitle === targetBook.title));
+    } else if (booksCache && booksCache.length > 0) {
+      targetBook = booksCache[0];
+    }
+
+    if (!targetBook) {
+      targetBook = { title: 'Bahá\'í Research Collection', author: 'Bahá\'í Publications', year: 2026, publisher: 'Bahá\'í Publishing Trust', city: 'Wilmette, IL' };
+    }
+
+    const digest = generateScholarlyDigest(targetBook, logsCache || [], stories, []);
+    if (document.getElementById('cite-preview-chicago')) document.getElementById('cite-preview-chicago').textContent = digest.chicago;
+    if (document.getElementById('cite-preview-bibtex')) document.getElementById('cite-preview-bibtex').textContent = digest.bibtex;
+    if (document.getElementById('cite-preview-markdown')) document.getElementById('cite-preview-markdown').value = digest.markdown;
+  }
 }
 
 // Master init for all extended feature modules
@@ -11938,7 +12273,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initKnowledgeModeToggle();
   initGoodreadsImporter();
   initKindleImporter();
-  initCustomFieldsManager();
+  initScholarSuite();
 
   const hdClose = document.getElementById('hd-modal-close');
   if (hdClose) hdClose.onclick = () => document.getElementById('heatmap-day-modal').classList.remove('open');
@@ -11948,6 +12283,11 @@ if (typeof window !== 'undefined') {
   window.saveNewBook = saveNewBook;
   window.submitLog = submitLog;
   window.initApp = initApp;
+  window.getStarredStories = getStarredStories;
+  window.addStarredStory = addStarredStory;
+  window.deleteStarredStory = deleteStarredStory;
+  window.openAddStoryModal = openAddStoryModal;
 }
+
 
 

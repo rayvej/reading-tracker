@@ -44,7 +44,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=95">
+  <link rel="stylesheet" href="style.css?v=96">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -252,6 +252,24 @@
                 </div>
               </div>
 
+              <!-- Study Depth & Paragraph Ref (Scholar Suite) -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="form-control">
+                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Study Depth</span></label>
+                  <select class="select select-bordered glass-input w-full text-xs font-semibold" id="log-study-depth">
+                    <option value="Standard Reading">Standard Reading</option>
+                    <option value="Initial Skim">Initial Skim</option>
+                    <option value="Deep Analytical Study">Deep Analytical Study</option>
+                    <option value="Corpus Indexing">Corpus Indexing</option>
+                    <option value="Re-reading">Re-reading</option>
+                  </select>
+                </div>
+                <div class="form-control">
+                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Paragraph (§) Ref</span></label>
+                  <input type="text" class="input input-bordered glass-input w-full" id="log-paragraph-ref" placeholder="e.g. §105">
+                </div>
+              </div>
+
               <!-- Cycle & Minutes -->
               <div class="grid grid-cols-2 gap-3">
                 <div class="form-control">
@@ -277,6 +295,24 @@
                     </button>
                   </div>
                 </label>
+
+                <!-- Bahá'í Transliteration Quick Accent Bar -->
+                <div class="flex items-center gap-1 mb-1 overflow-x-auto no-scrollbar py-0.5" id="log-translit-bar">
+                  <span class="text-[9px] font-bold uppercase tracking-wider text-theme-secondary mr-0.5 shrink-0">Accents:</span>
+                  <button type="button" class="btn-translit-chip" data-char="á">á</button>
+                  <button type="button" class="btn-translit-chip" data-char="í">í</button>
+                  <button type="button" class="btn-translit-chip" data-char="ú">ú</button>
+                  <button type="button" class="btn-translit-chip" data-char="ḥ">ḥ</button>
+                  <button type="button" class="btn-translit-chip" data-char="ṭ">ṭ</button>
+                  <button type="button" class="btn-translit-chip" data-char="z">z</button>
+                  <button type="button" class="btn-translit-chip" data-char="ṣ">ṣ</button>
+                  <button type="button" class="btn-translit-chip" data-char="‘">‘</button>
+                  <button type="button" class="btn-translit-chip" data-char="’">’</button>
+                  <button type="button" id="btn-log-ai-clean-translit" class="ml-auto px-2 py-0.5 rounded-lg text-[9px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 active:scale-95 transition-all shrink-0 cursor-pointer" title="Clean Transliteration with Gemini AI">
+                    ✨ AI Clean
+                  </button>
+                </div>
+
                 <div class="relative w-full">
                   <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" placeholder="Reflections, insights…"></textarea>
                   <div id="ocr-loading-spinner" class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center gap-2 hidden z-20">
@@ -323,11 +359,23 @@
                   title="Daily Spaced Repetition Flashcard Review">
                   <i class="fa-solid fa-brain text-xs"></i> Daily Review
                 </button>
+                <button id="btn-quick-story-open"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
+                  style="background: linear-gradient(135deg, #F5D76E, #D6A85C)"
+                  title="Capture Starred Story / Anecdote">
+                  <i class="fa-solid fa-star text-xs"></i> Star Story
+                </button>
                 <button id="btn-quick-note-open"
                   class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
                   style="background: var(--gold)"
                   title="Add Quick Note or Photo Quote">
                   <i class="fa-solid fa-plus text-xs"></i> Quick Note
+                </button>
+                <button id="btn-scholarly-export-open"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style="background: rgba(var(--gold-rgb),0.18); border-color: rgba(var(--gold-rgb),0.4); color: var(--gold)"
+                  title="Generate Scholarly Citations & Digest">
+                  <i class="fa-solid fa-graduation-cap text-xs"></i> Scholar Digest
                 </button>
                 <button id="btn-export-bibtex"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
@@ -348,23 +396,28 @@
             <div class="flex justify-between items-center gap-2 flex-wrap">
               <div class="seg-control-micro" id="knowledge-view-mode-toggle">
                 <button class="seg-btn-micro active" data-mode="feed"><i class="fa-solid fa-list text-[8px]"></i> Feed View</button>
+                <button class="seg-btn-micro" data-mode="stories"><i class="fa-solid fa-star text-[8px] text-amber-400"></i> Starred Vault</button>
                 <button class="seg-btn-micro" data-mode="graph"><i class="fa-solid fa-diagram-project text-[8px]"></i> Mind Graph</button>
               </div>
             </div>
 
             <!-- Notes Stats Summary Bar -->
-            <div id="knowledge-stats-row" class="grid grid-cols-3 gap-2.5">
-              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">Total Notes</span>
-                <span id="kn-stat-total" class="text-lg font-black text-theme-primary tabular-nums">0</span>
+            <div id="knowledge-stats-row" class="grid grid-cols-4 gap-2">
+              <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-theme-secondary">Total Notes</span>
+                <span id="kn-stat-total" class="text-base font-black text-theme-primary tabular-nums">0</span>
               </div>
-              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-theme-gold">Favorites</span>
-                <span id="kn-stat-favs" class="text-lg font-black text-theme-gold tabular-nums">0</span>
+              <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400">Starred Stories</span>
+                <span id="kn-stat-stories" class="text-base font-black text-amber-400 tabular-nums">0</span>
               </div>
-              <div class="glass-panel p-3 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">Books Covered</span>
-                <span id="kn-stat-books" class="text-lg font-black text-theme-primary tabular-nums">0</span>
+              <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-theme-gold">Favorites</span>
+                <span id="kn-stat-favs" class="text-base font-black text-theme-gold tabular-nums">0</span>
+              </div>
+              <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-theme-secondary">Books</span>
+                <span id="kn-stat-books" class="text-base font-black text-theme-primary tabular-nums">0</span>
               </div>
             </div>
 
@@ -390,14 +443,14 @@
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-theme-secondary"></i>
                 <input type="text" id="knowledge-search-input"
                   class="w-full pl-9 pr-8 py-2.5 text-xs font-medium rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all placeholder:text-theme-tertiary"
-                  placeholder="Search notes & quotes (e.g. bahai, shoghi...)" />
+                  placeholder="Search notes & stories (e.g. Badašt, Tahirih, Covenant)..." />
                 <button id="knowledge-search-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-theme-secondary hover:text-theme-primary">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
               </div>
               <select id="knowledge-book-select"
                 class="py-2.5 px-3 text-xs font-semibold rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all cursor-pointer bg-theme-card">
-                <option value="all">📚 All Books & Notes</option>
+                <option value="all">📚 All Books &amp; Notes</option>
                 <option value="standalone">📝 Standalone Notes</option>
               </select>
             </div>
@@ -405,6 +458,7 @@
             <!-- Tag Filter Pills -->
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="knowledge-tag-bar">
               <button class="quote-tag active" data-tag="all"><i class="fa-solid fa-list-ul"></i> All Notes</button>
+              <button class="quote-tag" data-tag="stories"><i class="fa-solid fa-star text-amber-400"></i> Starred Vault</button>
               <button class="quote-tag" data-tag="quotes"><i class="fa-solid fa-quote-left"></i> Highlights</button>
               <button class="quote-tag" data-tag="reflections"><i class="fa-solid fa-pen-nib"></i> Reflections</button>
               <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star text-theme-gold"></i> Favorites</button>
@@ -467,6 +521,26 @@
             <div class="text-[10px] font-black tracking-widest uppercase mt-2 border-b pb-2 flex items-center justify-between" style="color: var(--text-tertiary); border-color: var(--border)">
               <span>Active Reading &amp; Habit Momentum</span>
               <span class="text-[9px] font-bold opacity-60">Chapter 1</span>
+            </div>
+
+            <!-- Daily Starred Story Spotlight Card (Scholar Suite) -->
+            <div id="dash-starred-story-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden border border-amber-500/30 shadow-lg hidden">
+              <div class="flex items-center justify-between z-10">
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-star text-amber-400"></i> Daily Starred Story Spotlight
+                </span>
+                <button id="btn-starred-story-next" class="text-[10px] font-bold text-theme-secondary hover:text-theme-primary flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-rotate"></i> Next Story
+                </button>
+              </div>
+              <div class="flex flex-col gap-1.5 z-10">
+                <h4 id="dash-story-title" class="text-sm font-black text-theme-gold">—</h4>
+                <p id="dash-story-summary" class="text-xs font-medium italic text-theme-primary leading-relaxed line-clamp-3">—</p>
+                <div class="flex items-center justify-between text-[10px] mt-1 pt-2 border-t border-theme">
+                  <span id="dash-story-book" class="font-bold text-theme-secondary">—</span>
+                  <span id="dash-story-page" class="font-mono text-amber-400/80">—</span>
+                </div>
+              </div>
             </div>
 
             <!-- Active Reading Live Banner (iOS Style) -->
@@ -606,19 +680,6 @@
                   <div>% Days (YTD): <b style="color: var(--text-primary)" id="stat-days-ytd-pct">—</b></div>
                 </div>
 
-                <!-- Streak Repair Token Widget (Feature 4) -->
-                <div class="streak-repair-widget" id="streak-repair-widget">
-                  <div class="flex items-center gap-3">
-                    <div class="streak-repair-icon">
-                      <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <div>
-                      <div class="text-[11px] font-bold" style="color: var(--gold)" id="streak-repair-label">0 Streak Shields Available</div>
-                      <div class="text-[9px]" style="color: var(--text-tertiary)">Read 2× your daily target in one session to earn a shield</div>
-                    </div>
-                  </div>
-                  <div class="streak-repair-earn-btn" id="streak-repair-count">0</div>
-                </div>
               </div>
             </div>
 
@@ -1751,30 +1812,6 @@
                 <input type="file" id="acct-json-file-input" accept=".json" class="hidden">
               </div>
 
-              <!-- Personal Cloud & WebDAV Backup Panel -->
-              <div id="cloud-sync-panel" class="flex flex-col gap-2.5 p-3.5 rounded-2xl border border-amber-500/20 bg-amber-500/[0.04]">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-theme-gold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-up text-theme-gold"></i> Personal Cloud &amp; WebDAV Sync</span>
-                  <span id="cloud-sync-status-badge" class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Ready</span>
-                </div>
-                <div class="flex gap-2">
-                  <input type="url" id="webdav-url-input" class="input input-bordered glass-input flex-1 text-xs" placeholder="WebDAV Server URL (e.g. https://nextcloud.local/remote.php/webdav/)">
-                  <button id="btn-cloud-sync-now" class="btn btn-xs bg-amber-500/20 text-theme-gold border border-amber-500/30 h-9 px-3 font-bold">Sync Now</button>
-                </div>
-              </div>
-
-              <!-- Custom Metadata Field Builder Manager -->
-              <div id="custom-fields-manager" class="flex flex-col gap-2.5 p-3.5 rounded-2xl border border-theme bg-white/5">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-theme-primary flex items-center gap-1.5"><i class="fa-solid fa-sliders text-theme-gold"></i> Custom Book Fields Builder</span>
-                  <span class="text-[10px] text-theme-secondary">Add custom attributes (e.g. Translator)</span>
-                </div>
-                <div class="flex gap-2">
-                  <input type="text" id="custom-field-name-input" class="input input-bordered glass-input flex-1 text-xs" placeholder="New Field Name (e.g. Translator, Edition Year)">
-                  <button id="btn-add-custom-field" class="btn btn-xs bg-gold/20 text-gold border border-gold/30 h-9 px-3 font-bold">+ Add Field</button>
-                </div>
-                <div id="custom-fields-list" class="flex flex-wrap gap-1.5 mt-1"></div>
-              </div>
 
               <!-- Sample Data & Reset -->
               <div class="flex flex-col gap-2 pt-2 border-t border-theme">
@@ -2036,51 +2073,7 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════════════════
-       WISHLIST MODAL
-       ════════════════════════════════════════════════════════════ -->
-  <div id="wishlist-modal" class="ios-modal-overlay"
-       onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="ios-modal-card flex flex-col gap-4 overflow-y-auto max-h-[90vh]">
-      <div class="flex items-center justify-between">
-        <span class="text-lg font-bold" style="color: var(--text-primary)">Add to Wishlist</span>
-        <button id="wishlist-modal-close" class="w-8 h-8 rounded-full flex items-center justify-center"
-                style="background: var(--bg-input); color: var(--text-secondary)">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Title *</span></label>
-        <input type="text" class="input input-bordered glass-input w-full" id="wl-title" placeholder="Book title"></div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Author</span></label>
-        <input type="text" class="input input-bordered glass-input w-full" id="wl-author" placeholder="Author name"></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Category</span></label>
-          <select class="select select-bordered glass-input w-full" id="wl-category">
-            <option>Bahá'í Writings</option><option>Bahá'í About the Faith</option>
-            <option>Bahá'í Other</option><option>Non-Fiction</option>
-            <option>Fiction</option><option>Other</option>
-          </select></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Priority</span></label>
-          <select class="select select-bordered glass-input w-full" id="wl-priority">
-            <option>High</option><option>Medium</option><option>Low</option>
-          </select></div>
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Status</span></label>
-          <select class="select select-bordered glass-input w-full" id="wl-status">
-            <option>Want to Buy</option><option>Owned</option><option>Gifted</option>
-            <option>Borrowed and Read</option><option>Owned and Read</option><option>Gifted and Read</option>
-          </select></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Pages</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="wl-pages" placeholder="300"></div>
-      </div>
-      <button id="wishlist-modal-save"
-        class="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-        style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207">
-        Add to Wishlist
-      </button>
-    </div>
-  </div>
+
 
   <!-- ════════════════════════════════════════════════════════════
        ADD BOOK MODAL
@@ -2825,55 +2818,7 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════════════════
-       SABBATICAL & STREAK FREEZE MODAL (Custom Reasons)
-       ════════════════════════════════════════════════════════════ -->
-  <div id="modal-sabbatical" class="ios-modal-overlay"
-       onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="ios-modal-card flex flex-col gap-4 relative z-10">
-      <div class="flex items-center justify-between pb-2 border-b border-theme">
-        <div>
-          <h3 class="text-base font-black tracking-tight text-theme-primary flex items-center gap-2">
-            <i class="fa-solid fa-umbrella-beach text-theme-gold"></i> Streak Freeze / Sabbatical
-          </h3>
-          <p class="text-[11px] font-medium text-theme-secondary mt-0.5">
-            Pause daily streak decay during life events without losing progress
-          </p>
-        </div>
-        <button id="sabbatical-modal-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
 
-      <div class="flex flex-col gap-3">
-        <label class="text-xs font-bold uppercase tracking-wider text-theme-secondary">Select Freeze Reason</label>
-        <div class="grid grid-cols-2 gap-2" id="sabbatical-reasons-grid">
-          <button type="button" class="reason-btn selected" data-reason="Vacation"><i class="fa-solid fa-umbrella-beach text-theme-gold"></i> Vacation</button>
-          <button type="button" class="reason-btn" data-reason="Sick"><i class="fa-solid fa-thermometer text-rose-400"></i> Sick / Rest</button>
-          <button type="button" class="reason-btn" data-reason="Work Sprint"><i class="fa-solid fa-briefcase text-sky-400"></i> Work Sprint</button>
-          <button type="button" class="reason-btn" data-reason="Exams"><i class="fa-solid fa-graduation-cap text-purple-400"></i> Exams</button>
-          <button type="button" class="reason-btn" data-reason="Parenting"><i class="fa-solid fa-baby text-emerald-400"></i> Family / Parenting</button>
-          <button type="button" class="reason-btn" data-reason="Custom"><i class="fa-solid fa-pen text-theme-gold"></i> Custom Reason</button>
-        </div>
-
-        <div class="form-control hidden" id="sabbatical-custom-container">
-          <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Custom Reason Details</span></label>
-          <input type="text" class="input input-bordered glass-input w-full text-xs font-bold" id="sabbatical-custom-reason" placeholder="e.g. House Move, Travel, Conference...">
-        </div>
-
-        <div class="form-control">
-          <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Freeze Duration (Days)</span></label>
-          <input type="number" class="input input-bordered glass-input w-full text-xs font-bold" id="sabbatical-days" min="1" max="180" value="7">
-        </div>
-      </div>
-
-      <div class="flex gap-2 pt-2">
-        <button id="btn-sabbatical-confirm" class="w-full py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-lg active:scale-95 transition-all">
-          <i class="fa-solid fa-shield-halved mr-1"></i> Activate Streak Freeze
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- ════════════════════════════════════════════════════════════
        FULL-SCREEN DISTRACTION-FREE READING TIMER OVERLAY
@@ -3480,6 +3425,173 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       MODAL: CAPTURE / EDIT STARRED STORY (SCHOLAR SUITE + GEMINI)
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-add-story" class="ios-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card flex flex-col gap-4 max-h-[90vh] overflow-y-auto no-scrollbar max-w-lg w-full">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-lg font-black tracking-tight text-theme-gold flex items-center gap-2">
+            <i class="fa-solid fa-star text-amber-400"></i> Starred Story &amp; Anecdote
+          </h3>
+          <p class="text-xs font-medium text-theme-secondary mt-0.5">Capture memorable historical narratives &amp; passages</p>
+        </div>
+        <button id="modal-add-story-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- AI Automation Toolbar -->
+      <div class="glass-panel p-3 rounded-2xl flex items-center justify-between gap-2 border border-amber-500/30 bg-amber-500/5">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <span class="text-xs font-bold text-amber-200">Gemini AI Auto-Fill</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" id="btn-story-photo-ai" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
+            <i class="fa-solid fa-camera"></i> Photo OCR
+          </button>
+          <button type="button" id="btn-story-voice-ai" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
+            <i class="fa-solid fa-microphone"></i> Voice Note
+          </button>
+        </div>
+        <input type="file" id="input-story-photo-file" accept="image/*" class="hidden">
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="flex flex-col gap-3">
+        <!-- Book selection -->
+        <div class="form-control">
+          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Book</span></label>
+          <select id="story-book-id" class="select select-bordered glass-input w-full text-xs font-medium">
+            <option value="">— Select Book —</option>
+          </select>
+        </div>
+
+        <!-- Citation: Page & Paragraph -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Page Number</span></label>
+            <input type="number" id="story-page" class="input input-bordered glass-input w-full" placeholder="e.g. 142">
+          </div>
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Paragraph (§)</span></label>
+            <input type="text" id="story-paragraph" class="input input-bordered glass-input w-full" placeholder="e.g. §34">
+          </div>
+        </div>
+
+        <!-- Story Title -->
+        <div class="form-control">
+          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Story Title</span></label>
+          <input type="text" id="story-title" class="input input-bordered glass-input w-full text-xs font-bold" placeholder="e.g. Táhirih at the Conference of Badašt">
+        </div>
+
+        <!-- Summary & Transliteration Quick Bar -->
+        <div class="form-control">
+          <div class="flex items-center justify-between">
+            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Narrative Summary</span></label>
+            <!-- Transliteration accent bar -->
+            <div class="flex items-center gap-1" id="story-translit-bar">
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="á">á</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="í">í</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ú">ú</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ḥ">ḥ</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ṭ">ṭ</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="z">z</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ṣ">ṣ</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="‘">‘</button>
+              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="’">’</button>
+            </div>
+          </div>
+          <textarea id="story-summary" class="textarea textarea-bordered glass-input w-full h-20 text-xs resize-none" placeholder="Summarize the anecdote or story..."></textarea>
+        </div>
+
+        <!-- Verbatim Excerpt / Quote -->
+        <div class="form-control">
+          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Verbatim Excerpt / Quote</span></label>
+          <textarea id="story-quote" class="textarea textarea-bordered glass-input w-full h-16 text-xs italic resize-none" placeholder="Exact passage quote (optional)..."></textarea>
+        </div>
+
+        <!-- Historical Characters & Figures -->
+        <div class="form-control">
+          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Historical Figures / Characters</span></label>
+          <input type="text" id="story-characters" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Táhirih, Mullá Husayn, Quddús (comma separated)">
+        </div>
+
+        <!-- Themes & Era -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Themes / Tags</span></label>
+            <input type="text" id="story-themes" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Heroism, Badašt, Steadfastness">
+          </div>
+          <div class="form-control">
+            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Historical Era / Location</span></label>
+            <input type="text" id="story-era" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Heroic Age / Badašt, 1848">
+          </div>
+        </div>
+
+        <button type="button" id="btn-save-starred-story" class="w-full py-3.5 rounded-2xl font-bold text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all shadow-lg cursor-pointer mt-1">
+          <i class="fa-solid fa-star mr-1"></i> Save Starred Story
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       MODAL: SCHOLARLY CITATIONS & DIGEST EXPORTER
+       ════════════════════════════════════════════════════════════ -->
+  <div id="modal-scholarly-export" class="ios-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card flex flex-col gap-4 max-h-[90vh] overflow-y-auto no-scrollbar max-w-lg w-full">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-lg font-black tracking-tight text-theme-gold flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-theme-gold"></i> Scholarly Digest Exporter
+          </h3>
+          <p class="text-xs font-medium text-theme-secondary mt-0.5">Generate BibTeX, Chicago citations &amp; paper summaries</p>
+        </div>
+        <button id="modal-scholarly-export-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="form-control">
+        <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Select Book</span></label>
+        <select id="scholarly-export-book-id" class="select select-bordered glass-input w-full text-xs font-medium">
+          <option value="all">— All Books Summary —</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <!-- Chicago Citation -->
+        <div class="glass-panel p-3 rounded-2xl flex flex-col gap-1 border border-theme">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-theme-gold">Chicago Style Citation</span>
+          <p id="cite-preview-chicago" class="text-xs font-serif italic text-theme-primary select-all">—</p>
+        </div>
+
+        <!-- BibTeX Code block -->
+        <div class="glass-panel p-3 rounded-2xl flex flex-col gap-1 border border-theme">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-theme-gold">BibTeX Entry</span>
+            <button type="button" id="btn-copy-bibtex" class="text-[10px] font-bold text-sky-400 hover:underline">Copy</button>
+          </div>
+          <pre id="cite-preview-bibtex" class="text-[11px] font-mono bg-black/40 p-2 rounded-xl text-emerald-400 overflow-x-auto select-all">—</pre>
+        </div>
+
+        <!-- Markdown Paper Digest -->
+        <div class="glass-panel p-3 rounded-2xl flex flex-col gap-1 border border-theme">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-theme-gold">Markdown Paper Digest</span>
+            <button type="button" id="btn-download-digest" class="text-[10px] font-bold text-amber-400 hover:underline"><i class="fa-solid fa-download"></i> Download .md</button>
+          </div>
+          <textarea id="cite-preview-markdown" class="textarea textarea-bordered glass-input w-full h-32 text-xs font-mono resize-none select-all" readonly></textarea>
+        </div>
+      </div>
     </div>
   </div>
 
