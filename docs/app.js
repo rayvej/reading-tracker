@@ -11977,25 +11977,14 @@ async function fetchAndCacheActiveBookStory(activeBook, forceRefresh = false) {
   if (!activeBook) return null;
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    if (forceRefresh) showToast('Please set your Gemini API key in Settings to fetch AI stories.', 'info');
+    if (forceRefresh) showToast('Please set your Gemini API key in Settings to use AI features.', 'info');
     return null;
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const cacheRaw = localStorage.getItem('rt_daily_ai_story_cache');
-  let cache = null;
-  try {
-    cache = cacheRaw ? JSON.parse(cacheRaw) : null;
-  } catch (e) {}
-
   const currentBenchmark = activeBook.pages_read || 0;
 
-  if (!forceRefresh && cache && cache.date === todayStr && cache.bookId === activeBook.id && cache.pageBenchmark === currentBenchmark) {
-    return cache.story;
-  }
-
   try {
-    if (forceRefresh) showToast(`Fetching AI story for "${activeBook.title}" (Page ${currentBenchmark})...`, 'info');
+    if (forceRefresh) showToast(`Fetching story for "${activeBook.title}" (Page ${currentBenchmark})...`, 'info');
     const storyData = await fetchActiveBookStoryFromGemini(
       activeBook.title,
       activeBook.author,
@@ -12003,6 +11992,8 @@ async function fetchAndCacheActiveBookStory(activeBook, forceRefresh = false) {
       activeBook.total_pages || 0,
       apiKey
     );
+
+    if (!storyData || !storyData.title) return null;
 
     const newStory = addStarredStory({
       bookId: activeBook.id,
@@ -12018,19 +12009,14 @@ async function fetchAndCacheActiveBookStory(activeBook, forceRefresh = false) {
       location: storyData.location
     });
 
-    localStorage.setItem('rt_daily_ai_story_cache', JSON.stringify({
-      date: todayStr,
-      bookId: activeBook.id,
-      pageBenchmark: currentBenchmark,
-      story: newStory
-    }));
-
-    if (forceRefresh) showToast('✦ New AI Story fetched & saved to Knowledge Vault!', 'success');
+    if (forceRefresh) showToast('✦ New story fetched & saved to Knowledge Vault!', 'success');
     renderDashboardDailyStory();
     return newStory;
   } catch (err) {
-    console.warn('[AI Story Fetch Error]:', err);
-    if (forceRefresh) showToast(`Failed to fetch AI story: ${err.message}`, 'error');
+    console.warn('[AI Story Fetch Silently Suppressed]:', err ? err.message : 'Rate limit');
+    if (forceRefresh) {
+      showToast('Google Free Tier rate limit active. Showing saved notes & stories.', 'info');
+    }
     return null;
   }
 }
@@ -12072,20 +12058,6 @@ function renderDashboardDailyStory() {
       return false;
     });
 
-    // Check if 24-hour daily AI story auto-fetch should trigger for activeBook
-    const apiKey = getGeminiApiKey();
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const cacheRaw = localStorage.getItem('rt_daily_ai_story_cache');
-    let cache = null;
-    try { cache = cacheRaw ? JSON.parse(cacheRaw) : null; } catch(e){}
-
-    if (apiKey && (!cache || cache.date !== todayStr || cache.bookId !== activeBook.id) && !window._isFetchingAiStory) {
-      window._isFetchingAiStory = true;
-      fetchAndCacheActiveBookStory(activeBook, false).finally(() => {
-        window._isFetchingAiStory = false;
-      });
-    }
-
     // If no explicit starred story exists for activeBook, check if there are logged notes/reflections for activeBook
     if (activeBookStories.length === 0) {
       const activeLogsWithNotes = (logsCache || []).filter(l => 
@@ -12109,6 +12081,43 @@ function renderDashboardDailyStory() {
       }
     }
   }
+
+  // Final pool of stories: activeBookStories if non-empty, otherwise full stories array
+  const displayPool = (activeBookStories.length > 0) ? activeBookStories : stories;
+
+  if (!displayPool || displayPool.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+
+  const idx = window._currentStorySpotlightIdx || 0;
+  const story = displayPool[idx % displayPool.length];
+
+  const badgeEl = document.getElementById('dash-story-badge');
+  const titleEl = document.getElementById('dash-story-title');
+  const summaryEl = document.getElementById('dash-story-summary');
+  const bookEl = document.getElementById('dash-story-book');
+  const pageEl = document.getElementById('dash-story-page');
+
+  if (badgeEl) {
+    if (activeBookStories.length > 0 && activeBook) {
+      badgeEl.innerHTML = `<i class="fa-solid fa-book-open-reader text-amber-400"></i> Daily Spotlight • Currently Reading`;
+    } else {
+      badgeEl.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i> Daily Starred Story Spotlight`;
+    }
+  }
+
+  if (titleEl) titleEl.textContent = story.title || 'Starred Story';
+  if (summaryEl) summaryEl.textContent = story.summary || story.quote || 'No summary available.';
+  if (bookEl) bookEl.textContent = story.bookTitle || 'Bahá\'í Historical Text';
+  if (pageEl) {
+    let pLabel = story.page ? `Page ${story.page}` : '';
+    if (story.paragraph) pLabel += (pLabel ? `, ${story.paragraph}` : story.paragraph);
+    pageEl.textContent = pLabel || (story.isReflection ? 'Reflection' : 'Anecdote');
+  }
+}
 
   // Final pool of stories: activeBookStories if non-empty, otherwise full stories array
   const displayPool = (activeBookStories.length > 0) ? activeBookStories : stories;
