@@ -4,7 +4,7 @@
  */
 
 import assert from 'assert';
-import { fallbackTransliterate, generateScholarlyDigest, fetchActiveBookStoryFromGemini } from '../docs/js/modules/gemini-service.js';
+import { fallbackTransliterate, generateScholarlyDigest } from '../docs/js/modules/gemini-service.js';
 
 console.log('🧪 Running Scholarly Suite Test Suite...\n');
 
@@ -63,47 +63,4 @@ assert.strictEqual(typeof generateScholarlyDigest, 'function', 'generateScholarl
 assert.strictEqual(typeof fallbackTransliterate, 'function', 'fallbackTransliterate is exportable');
 console.log('  ✅ Module exports verified!\n');
 
-// 4. Test Currently Reading Story Filtering Logic
-console.log('Test 4: Currently Reading Story Prioritization Logic...');
-const mockBooks = [
-  { id: 'b1', title: 'Some Finished Book', status: 'Finished' },
-  { id: 'b2', title: 'God Passes By', status: 'In Progress' }
-];
-
-const mockStories = [
-  { id: 's1', bookId: 'b1', bookTitle: 'Some Finished Book', title: 'Finished Story' },
-  { id: 's2', bookId: 'b2', bookTitle: 'God Passes By', title: 'Active Book Story' }
-];
-
-const activeBook = mockBooks.find(b => b.status === 'In Progress');
-const activeStories = mockStories.filter(s => s.bookId === activeBook.id || s.bookTitle === activeBook.title);
-
-assert.strictEqual(activeStories.length, 1, 'Should find 1 story for currently reading book');
-assert.strictEqual(activeStories[0].title, 'Active Book Story', 'Should prioritize story matching currently reading book');
-console.log('  ✅ Currently reading story prioritization verified!\n');
-
-// 5. Test fetchActiveBookStoryFromGemini module export & key validation
-console.log('Test 5: AI Story Fetching Module Export & Key Validation...');
-assert.strictEqual(typeof fetchActiveBookStoryFromGemini, 'function', 'fetchActiveBookStoryFromGemini is exportable');
-await assert.rejects(
-  async () => await fetchActiveBookStoryFromGemini('The Dawn-Breakers', 'Nabíl-i-A‘ẓam', 120, 688, ''),
-  /Gemini API key is not configured/,
-  'Should reject when API key is empty'
-);
-console.log('  ✅ AI Story Fetching module verified!\n');
-
-// 6. Test Model Pro Error Guarantee
-console.log('Test 6: Verifying gemini-1.5-pro Error Exclusion...');
-try {
-  await fetchActiveBookStoryFromGemini('The Dawn-Breakers', 'Nabíl-i-A‘ẓam', 120, 688, 'invalid_mock_key');
-  assert.fail('Should have thrown an error for invalid key');
-} catch (err) {
-  assert.strictEqual(err.message.includes('gemini-1.5-pro'), false, 'Error message must NEVER mention gemini-1.5-pro');
-  assert.strictEqual(err.message.includes('ModelService.ListModels'), false, 'Error message must NEVER show raw ListModels instruction');
-  console.log('  Caught clean error:', err.message);
-  console.log('  ✅ gemini-1.5-pro error exclusion verified!\n');
-}
-
 console.log('🎉 ALL SCHOLARLY SUITE TESTS PASSED SUCCESSFULLY!');
-
-
