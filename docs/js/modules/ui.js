@@ -90,3 +90,75 @@ export function switchTab(tabName) {
 
   localStorage.setItem('rt_active_tab', tabName);
 }
+
+export function debounce(fn, delay = 300) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+export function throttle(fn, limit = 300) {
+  let inThrottle = false;
+  return function(...args) {
+    if (!inThrottle) {
+      fn.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+let activeFocusTrap = null;
+let previousActiveElement = null;
+
+export function trapFocus(containerEl) {
+  if (!containerEl) return;
+  previousActiveElement = document.activeElement;
+  
+  const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const getFocusables = () => Array.from(containerEl.querySelectorAll(focusableSelector))
+    .filter(el => !el.disabled && el.offsetParent !== null && el.style.display !== 'none');
+  
+  const focusables = getFocusables();
+  if (focusables.length > 0) {
+    focusables[0].focus();
+  }
+
+  const keyHandler = (e) => {
+    if (e.key !== 'Tab') return;
+    const currentFocusables = getFocusables();
+    if (currentFocusables.length === 0) return;
+    const first = currentFocusables[0];
+    const last = currentFocusables[currentFocusables.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  };
+
+  containerEl.addEventListener('keydown', keyHandler);
+  activeFocusTrap = { containerEl, keyHandler };
+}
+
+export function releaseFocus() {
+  if (activeFocusTrap) {
+    const { containerEl, keyHandler } = activeFocusTrap;
+    containerEl.removeEventListener('keydown', keyHandler);
+    activeFocusTrap = null;
+  }
+  if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+    previousActiveElement.focus();
+    previousActiveElement = null;
+  }
+}
+

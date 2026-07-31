@@ -60,7 +60,7 @@ export function calculateReconciledMetrics(books, logs) {
           if (ep > maxEndPage) maxEndPage = ep;
         }
         if (totalPages > 0) {
-          activeCyclesPages += maxEndPage % totalPages;
+          activeCyclesPages += Math.min(maxEndPage, totalPages);
         } else {
           activeCyclesPages += maxEndPage;
         }

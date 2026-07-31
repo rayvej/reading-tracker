@@ -2721,5 +2721,16 @@ body.light-mode .fab-log-btn {
   color: var(--gold);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   GLOBAL KEYBOARD FOCUS INDICATORS (WCAG 2.4.7 / 2.4.11)
+   ══════════════════════════════════════════════════════════════════════════ */
+*:focus-visible {
+  outline: 2px solid var(--gold, #D6A85C) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
 
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
 

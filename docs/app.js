@@ -35,6 +35,14 @@ import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardize
 
 window.categoryChartMode = 'pages';
 
+// Request persistent storage to prevent browser eviction
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().then(granted => {
+    if (granted) console.log('[Storage] Persistent storage granted');
+    else console.warn('[Storage] Persistent storage denied — data may be evicted');
+  });
+}
+
 // ── Firebase Init ─────────────────────────────────────────────────────────────
 const fbApp  = initializeApp(firebaseConfig);
 const auth   = getAuth(fbApp);
@@ -2713,6 +2721,12 @@ async function submitLog() {
   if (isNaN(start) || start < 0) { showToast('Start page cannot be negative.', 'error'); return; }
   if (isNaN(end) || end <= 0) { showToast('Please enter a valid end page.', 'error'); return; }
   if (end <= start)            { showToast('End page must be greater than start page.', 'error'); return; }
+  // Validate end page against book's total pages
+  const selectedBook = booksCache.find(b => b.title === title || b.id === title);
+  if (selectedBook && selectedBook.total_pages && end > selectedBook.total_pages) {
+    showToast(`End page (${end}) exceeds book length (${selectedBook.total_pages} pages).`, 'error');
+    return;
+  }
   if (mins !== null && (isNaN(mins) || mins <= 0)) { showToast('Minutes spent must be a positive number.', 'error'); return; }
 
   isSubmitLogSubmitting = true;
@@ -2805,7 +2819,7 @@ async function recalculateBook(title, cycle) {
   if (newStatus === 'Finished') {
     newPagesRead = tot;
   } else if (newStatus === 'In Progress') {
-    newPagesRead = (tot > 0 && maxActiveEnd > tot) ? (maxActiveEnd % tot) : maxActiveEnd;
+    newPagesRead = Math.min(maxActiveEnd, tot);
   } else {
     newPagesRead = 0;
   }
@@ -4782,10 +4796,10 @@ async function renderDashboard() {
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
+                <div class="text-xs font-bold text-theme-primary truncate">${escapeHtml(b.title)}</div>
                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0" style="background: rgba(var(--accent-rgb), 0.12); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.2)">${pct}%</span>
               </div>
-              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${b.author || ''}</div>
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || '')}</div>
             </div>
           </div>
           <div class="flex justify-between text-[9px] text-theme-secondary mt-1 border-t border-theme pt-1.5 font-semibold">
@@ -4818,10 +4832,10 @@ async function renderDashboard() {
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-theme-gold border border-amber-500/10 uppercase shrink-0">${b.priority} Prio</span>
+                <div class="text-xs font-bold text-theme-primary truncate">${escapeHtml(b.title)}</div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-theme-gold border border-amber-500/10 uppercase shrink-0">${escapeHtml(b.priority)} Prio</span>
               </div>
-              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${b.author || ''}</div>
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || '')}</div>
             </div>
           </div>
         `;
@@ -4851,10 +4865,10 @@ async function renderDashboard() {
             ${getCoverHTML(book, 'w-10 h-14 shrink-0 shadow-sm')}
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2">
-                <div class="text-xs font-bold text-theme-primary truncate">${c.title}</div>
+                <div class="text-xs font-bold text-theme-primary truncate">${escapeHtml(c.title)}</div>
                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 uppercase shrink-0">Finished</span>
               </div>
-              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${book.author || ''}</div>
+              <div class="text-[9px] text-theme-secondary truncate mt-0.5">${escapeHtml(book.author || '')}</div>
               <div class="flex justify-between text-[9px] text-theme-secondary mt-1 border-t border-theme pt-1.5 font-semibold">
                 <span>Date: <b>${fmtDate(c.date)}</b></span>
                 <span>Pages: <b>${c.pages} pg</b></span>
@@ -7038,7 +7052,7 @@ function renderBookshelfContent(container, filtered) {
       const section = el('div', 'flex flex-col gap-2 mb-2');
       const header = el('div', 'bookshelf-section-header flex items-center justify-between text-xs font-black tracking-tight text-theme-primary');
       header.innerHTML = `
-        <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-theme-gold text-xs"></i> ${groupName}</span>
+        <span class="flex items-center gap-2"><i class="fa-solid fa-folder text-theme-gold text-xs"></i> ${escapeHtml(groupName)}</span>
         <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/10 text-theme-secondary">${groupItems.length}</span>
       `;
       section.appendChild(header);
@@ -7083,7 +7097,7 @@ function renderBookCard(b) {
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
 
   const pagesReadAccum = b.pages_read || 0;
-  const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const currentCyclePages = b.total_pages > 0 ? Math.min(pagesReadAccum, b.total_pages) : 0;
   const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
   const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
 
@@ -7101,11 +7115,11 @@ function renderBookCard(b) {
       <div class="flex items-start gap-2.5 min-w-0">
         ${getCoverHTML(b, 'w-12 h-18 shrink-0')}
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-theme-primary leading-tight line-clamp-2">${b.title}</div>
-          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown'}</div>
+          <div class="text-xs font-bold text-theme-primary leading-tight line-clamp-2">${escapeHtml(b.title)}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || 'Unknown')}</div>
           <div class="flex flex-wrap gap-1 mt-1.5">
             <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
-            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${b.priority}</span>
+            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${escapeHtml(b.priority)}</span>
           </div>
         </div>
       </div>
@@ -7388,6 +7402,12 @@ async function saveNewBook() {
   const group = selectVal === 'Other' ? $('ab-group-custom').value.trim() : selectVal;
   
   if (!title) { showToast('Please enter a book title.', 'error'); return; }
+  if (title.length > 300) { showToast('Book title is too long (max 300 characters).', 'error'); return; }
+  const existingDuplicate = booksCache.find(b => b && b.title && b.title.toLowerCase() === title.toLowerCase());
+  if (existingDuplicate) {
+    showToast(`A book titled "${title}" already exists in your library.`, 'error');
+    return;
+  }
   if (selectVal === 'Other' && !group) { showToast('Please type a custom group name.', 'error'); return; }
   
   const pages = parseInt($('ab-pages').value);
@@ -7399,6 +7419,7 @@ async function saveNewBook() {
   const coverUrl = $('ab-cover-url')?.value?.trim() || null;
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
+  if (pages > 99999) { showToast('Page count seems unrealistic (max 99,999).', 'error'); return; }
   if (cost < 0) { showToast('Cost cannot be negative.', 'error'); return; }
 
   isSaveNewBookSubmitting = true;
@@ -8769,11 +8790,18 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 if ('serviceWorker' in navigator) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (window.isMockAuth) return;
-    if (!refreshing) {
+    if (window.isMockAuth || refreshing) return;
+    const updateBanner = document.createElement('div');
+    updateBanner.className = 'fixed bottom-20 left-4 right-4 z-[9999] p-4 rounded-2xl border border-theme-strong bg-theme-elevated shadow-2xl flex items-center justify-between';
+    updateBanner.innerHTML = `
+      <span class="text-sm font-semibold text-theme-primary">A new version is available</span>
+      <button id="sw-reload-btn" class="px-4 py-2 rounded-xl text-xs font-bold" style="background: var(--gold); color: #181412">Reload</button>
+    `;
+    document.body.appendChild(updateBanner);
+    updateBanner.querySelector('#sw-reload-btn').addEventListener('click', () => {
       refreshing = true;
       window.location.reload();
-    }
+    });
   });
 
   window.addEventListener('load', () => {
@@ -8785,12 +8813,8 @@ if ('serviceWorker' in navigator) {
         const newWorker = reg.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'activated') {
-              if (window.isMockAuth) return;
-              if (!refreshing) {
-                refreshing = true;
-                window.location.reload();
-              }
+            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+              console.log('[SW] New version activated — update banner shown via controllerchange.');
             }
           });
         }
@@ -8798,6 +8822,28 @@ if ('serviceWorker' in navigator) {
     }).catch(err => console.warn('SW register ignored error:', err));
   });
 }
+
+// =========================================================================
+// GLOBAL ESCAPE KEY HANDLER (WCAG 2.1.1)
+// =========================================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const modals = [
+    'book-detail-modal', 'goals-modal', 'settings-modal',
+    'add-book-modal', 'edit-book-modal', 'stats-detail-modal',
+    'notes-modal', 'heatmapDayModal', 'contextualDetailModal',
+    'mind-graph-modal', 'cover-search-modal'
+  ];
+  for (const id of modals) {
+    const modal = document.getElementById(id);
+    if (modal && !modal.classList.contains('hidden')) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      e.preventDefault();
+      return;
+    }
+  }
+});
 
 // =========================================================================
 // SECTION 10: OCR PAGE SCANNER INTEGRATION
@@ -11929,8 +11975,68 @@ function deleteStarredStory(storyId) {
 function renderDashboardDailyStory() {
   const card = document.getElementById('dash-starred-story-card');
   if (!card) return;
-  const stories = getStarredStories();
-  if (!stories || stories.length === 0) {
+  const stories = getStarredStories() || [];
+
+  // Find currently reading books (status === 'In Progress')
+  const inProgressBooks = (booksCache || []).filter(b => b.status === 'In Progress');
+  
+  // Sort inProgressBooks by most recent reading log date if available
+  const bookLastLogMap = new Map();
+  (logsCache || []).forEach(l => {
+    if (!l.book_title || !l.date) return;
+    const existing = bookLastLogMap.get(l.book_title);
+    if (!existing || l.date.localeCompare(existing) > 0) {
+      bookLastLogMap.set(l.book_title, l.date);
+    }
+  });
+
+  const sortedInProgress = [...inProgressBooks].sort((a, b) => {
+    const dateA = bookLastLogMap.get(a.title) || '';
+    const dateB = bookLastLogMap.get(b.title) || '';
+    if (dateA && dateB) return dateB.localeCompare(dateA);
+    if (dateA) return -1;
+    if (dateB) return 1;
+    return (a.title || '').localeCompare(b.title || '');
+  });
+
+  const activeBook = sortedInProgress[0] || null;
+
+  let activeBookStories = [];
+  if (activeBook) {
+    activeBookStories = stories.filter(s => {
+      if (s.bookId && activeBook.id && s.bookId === activeBook.id) return true;
+      if (s.bookTitle && activeBook.title && s.bookTitle.trim().toLowerCase() === activeBook.title.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    // If no explicit starred story exists for activeBook, check if there are logged notes/reflections for activeBook
+    if (activeBookStories.length === 0) {
+      const activeLogsWithNotes = (logsCache || []).filter(l => 
+        (l.book_id === activeBook.id || (l.book_title && l.book_title.trim().toLowerCase() === activeBook.title.trim().toLowerCase())) &&
+        l.notes && l.notes.trim().length > 0
+      );
+
+      if (activeLogsWithNotes.length > 0) {
+        // Map recent logs with notes into temporary story objects
+        activeBookStories = activeLogsWithNotes.map(l => ({
+          id: `log_story_${l.id || Math.random()}`,
+          bookId: activeBook.id,
+          bookTitle: activeBook.title,
+          title: `Reading Reflection: ${activeBook.title}`,
+          summary: l.notes.trim(),
+          quote: '',
+          page: l.end_page || l.pages_read || null,
+          paragraph: l.date ? `Logged ${l.date}` : null,
+          isReflection: true
+        }));
+      }
+    }
+  }
+
+  // Final pool of stories: activeBookStories if non-empty, otherwise full stories array
+  const displayPool = (activeBookStories.length > 0) ? activeBookStories : stories;
+
+  if (!displayPool || displayPool.length === 0) {
     card.classList.add('hidden');
     return;
   }
@@ -11938,12 +12044,21 @@ function renderDashboardDailyStory() {
   card.classList.remove('hidden');
 
   const idx = window._currentStorySpotlightIdx || 0;
-  const story = stories[idx % stories.length];
+  const story = displayPool[idx % displayPool.length];
 
+  const badgeEl = document.getElementById('dash-story-badge');
   const titleEl = document.getElementById('dash-story-title');
   const summaryEl = document.getElementById('dash-story-summary');
   const bookEl = document.getElementById('dash-story-book');
   const pageEl = document.getElementById('dash-story-page');
+
+  if (badgeEl) {
+    if (activeBookStories.length > 0 && activeBook) {
+      badgeEl.innerHTML = `<i class="fa-solid fa-book-open-reader text-amber-400"></i> Daily Spotlight • Currently Reading`;
+    } else {
+      badgeEl.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i> Daily Starred Story Spotlight`;
+    }
+  }
 
   if (titleEl) titleEl.textContent = story.title || 'Starred Story';
   if (summaryEl) summaryEl.textContent = story.summary || story.quote || 'No summary available.';
@@ -11951,7 +12066,7 @@ function renderDashboardDailyStory() {
   if (pageEl) {
     let pLabel = story.page ? `Page ${story.page}` : '';
     if (story.paragraph) pLabel += (pLabel ? `, ${story.paragraph}` : story.paragraph);
-    pageEl.textContent = pLabel || 'Anecdote';
+    pageEl.textContent = pLabel || (story.isReflection ? 'Reflection' : 'Anecdote');
   }
 }
 

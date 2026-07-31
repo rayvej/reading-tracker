@@ -117,7 +117,7 @@
           <span class="w-4 h-4 rounded-full border-2 border-theme-strong transition-all duration-200"></span>
           <span class="w-4 h-4 rounded-full border-2 border-theme-strong transition-all duration-200"></span>
         </div>
-        <p class="text-sm font-semibold text-rose-400 h-5 opacity-0 transition-opacity duration-200" id="pin-error">Incorrect PIN — try again</p>
+        <p class="text-sm font-semibold text-rose-400 h-5 hidden transition-opacity duration-200" id="pin-error" aria-live="assertive">Incorrect PIN — try again</p>
         <p class="text-xs font-medium text-theme-secondary -mt-2">Default Security PIN: <span class="font-mono font-bold text-theme-gold">1234</span></p>
         <!-- Number pad -->
         <div class="grid grid-cols-3 gap-4 w-64 justify-items-center" id="pin-pad">
@@ -161,7 +161,7 @@
         <!-- Logo + Title -->
         <div class="flex items-center gap-2.5">
           <img src="icon-192.png" class="w-8 h-8 rounded-xl border border-theme" alt="">
-          <span class="text-base font-bold tracking-tight heading-editorial" style="background: linear-gradient(135deg, var(--gold-light), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text">Reading Tracker</span>
+          <h1 class="text-base font-bold tracking-tight heading-editorial" style="background: linear-gradient(135deg, var(--gold-light), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text">Reading Tracker</h1>
         </div>
         <!-- Right controls -->
         <div class="flex items-center gap-2">
@@ -171,14 +171,14 @@
           </button>
           <!-- Settings -->
           <button id="btn-settings-open"
-            class="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+            class="w-11 h-11 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
             style="background: var(--bg-input); border: 0.5px solid var(--border-strong); color: var(--text-secondary)"
             aria-label="Settings & Data Management" title="Settings">
             <i class="fa-solid fa-gear text-sm"></i>
           </button>
           <!-- Sign out -->
           <button id="btn-signout"
-            class="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            class="w-11 h-11 rounded-full flex items-center justify-center transition-colors"
             style="background: var(--bg-input); border: 0.5px solid var(--border-strong); color: var(--text-secondary)"
             aria-label="Sign out">
             <i class="fa-solid fa-right-from-bracket text-sm"></i>
@@ -227,13 +227,13 @@
 
               <!-- Date -->
               <div class="form-control w-full">
-                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Date</span></label>
+                <label class="label py-1" for="log-date"><span class="label-text text-xs font-bold uppercase tracking-wider">Date</span></label>
                 <input type="date" class="input input-bordered glass-input w-full" id="log-date">
               </div>
 
               <!-- Book -->
               <div class="form-control w-full">
-                <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Book</span></label>
+                <label class="label py-1" for="log-book"><span class="label-text text-xs font-bold uppercase tracking-wider">Book</span></label>
                 <select class="select select-bordered glass-input w-full" id="log-book">
                   <option value="">— Select a book —</option>
                 </select>
@@ -242,12 +242,12 @@
               <!-- Pages -->
               <div class="grid grid-cols-2 gap-3">
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Start Page</span></label>
+                  <label class="label py-1" for="log-start"><span class="label-text text-xs font-bold uppercase tracking-wider">Start Page</span></label>
                   <input type="number" class="input input-bordered glass-input w-full" id="log-start" min="0" placeholder="0">
                   <span class="input-hint" id="log-start-hint"></span>
                 </div>
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">End Page</span></label>
+                  <label class="label py-1" for="log-end"><span class="label-text text-xs font-bold uppercase tracking-wider">End Page</span></label>
                   <input type="number" class="input input-bordered glass-input w-full" id="log-end" min="0" placeholder="e.g. 50">
                 </div>
               </div>
@@ -255,7 +255,7 @@
               <!-- Study Depth & Paragraph Ref (Scholar Suite) -->
               <div class="grid grid-cols-2 gap-3">
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Study Depth</span></label>
+                  <label class="label py-1" for="log-study-depth"><span class="label-text text-xs font-bold uppercase tracking-wider">Study Depth</span></label>
                   <select class="select select-bordered glass-input w-full text-xs font-semibold" id="log-study-depth">
                     <option value="Standard Reading">Standard Reading</option>
                     <option value="Initial Skim">Initial Skim</option>
@@ -265,7 +265,7 @@
                   </select>
                 </div>
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Paragraph (§) Ref</span></label>
+                  <label class="label py-1" for="log-paragraph-ref"><span class="label-text text-xs font-bold uppercase tracking-wider">Paragraph (§) Ref</span></label>
                   <input type="text" class="input input-bordered glass-input w-full" id="log-paragraph-ref" placeholder="e.g. §105">
                 </div>
               </div>
@@ -273,18 +273,18 @@
               <!-- Cycle & Minutes -->
               <div class="grid grid-cols-2 gap-3">
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Read Cycle</span></label>
+                  <label class="label py-1" for="log-cycle"><span class="label-text text-xs font-bold uppercase tracking-wider">Read Cycle</span></label>
                   <input type="number" class="input input-bordered glass-input w-full" id="log-cycle" min="1" value="1">
                 </div>
                 <div class="form-control">
-                  <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Minutes</span></label>
+                  <label class="label py-1" for="log-minutes"><span class="label-text text-xs font-bold uppercase tracking-wider">Minutes</span></label>
                   <input type="number" class="input input-bordered glass-input w-full" id="log-minutes" min="0" placeholder="e.g. 30">
                 </div>
               </div>
 
               <!-- Notes -->
               <div class="form-control">
-                <label class="label py-1 flex items-center justify-between">
+                <label class="label py-1 flex items-center justify-between" for="log-notes">
                   <span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span>
                   <div class="flex items-center gap-2">
                     <button type="button" id="log-btn-dictate" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 flex items-center gap-1 cursor-pointer" title="Voice Dictation">
@@ -314,7 +314,7 @@
                 </div>
 
                 <div class="relative w-full">
-                  <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" placeholder="Reflections, insights…"></textarea>
+                  <textarea class="textarea textarea-bordered glass-input w-full h-20 resize-none" id="log-notes" dir="auto" placeholder="Reflections, insights…"></textarea>
                   <div id="ocr-loading-spinner" class="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center gap-2 hidden z-20">
                     <div class="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
                     <span class="text-xs text-sky-400 font-bold">Scanning Page...</span>
@@ -526,7 +526,7 @@
             <!-- Daily Starred Story Spotlight Card (Scholar Suite) -->
             <div id="dash-starred-story-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 relative overflow-hidden border border-amber-500/30 shadow-lg hidden">
               <div class="flex items-center justify-between z-10">
-                <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span id="dash-story-badge" class="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                   <i class="fa-solid fa-star text-amber-400"></i> Daily Starred Story Spotlight
                 </span>
                 <button id="btn-starred-story-next" class="text-[10px] font-bold text-theme-secondary hover:text-theme-primary flex items-center gap-1 cursor-pointer">
@@ -2088,17 +2088,17 @@
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Title *</span></label>
+      <div class="form-control"><label class="label py-1" for="ab-title"><span class="label-text text-xs font-bold uppercase tracking-wider">Title *</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-title" placeholder="Book title"></div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Author</span></label>
+      <div class="form-control"><label class="label py-1" for="ab-author"><span class="label-text text-xs font-bold uppercase tracking-wider">Author</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-author" placeholder="Author name"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Collection</span></label>
+        <div class="form-control"><label class="label py-1" for="ab-collection"><span class="label-text text-xs font-bold uppercase tracking-wider">Collection</span></label>
           <select class="select select-bordered glass-input w-full" id="ab-collection">
             <option value="Bahai">Bahá'í</option><option value="Non-Bahai">Non-Bahá'í</option>
           </select></div>
         <div class="form-control" id="ab-group-container">
-          <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
+          <label class="label py-1" for="ab-group-select"><span class="label-text text-xs font-bold uppercase tracking-wider">Group</span></label>
           <select id="ab-group-select" class="select select-bordered glass-input w-full" onchange="toggleCustomGroupInput(this.value)">
             <option value="Writings">Writings</option>
             <option value="About the Faith">About the Faith</option>
@@ -2113,15 +2113,15 @@
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Total Pages *</span></label>
+        <div class="form-control"><label class="label py-1" for="ab-pages"><span class="label-text text-xs font-bold uppercase tracking-wider">Total Pages *</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="ab-pages" min="1" placeholder="300"></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Priority</span></label>
+        <div class="form-control"><label class="label py-1" for="ab-priority"><span class="label-text text-xs font-bold uppercase tracking-wider">Priority</span></label>
           <select class="select select-bordered glass-input w-full" id="ab-priority">
             <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
           </select></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Initial Status</span></label>
+        <div class="form-control"><label class="label py-1" for="ab-status"><span class="label-text text-xs font-bold uppercase tracking-wider">Initial Status</span></label>
           <select class="select select-bordered glass-input w-full" id="ab-status">
             <option value="Not Started">Not Started</option>
             <option value="In Progress">In Progress</option>
@@ -2131,13 +2131,13 @@
             <option value="Gifted">Gifted</option>
             <option value="Borrowed">Borrowed</option>
           </select></div>
-        <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Cost ($)</span></label>
+        <div class="form-control"><label class="label py-1" for="ab-cost"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Cost ($)</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="ab-cost" step="0.01" min="0" placeholder="e.g. 19.99"></div>
       </div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
+      <div class="form-control"><label class="label py-1" for="ab-where-to-buy"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-where-to-buy" placeholder="Store name or URL"></div>
-      <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
-        <textarea class="textarea textarea-bordered glass-input w-full h-16 resize-none" id="ab-notes" placeholder="e.g. Gift from friend, special edition..."></textarea></div>
+      <div class="form-control"><label class="label py-1" for="ab-notes"><span class="label-text text-xs font-bold uppercase tracking-wider">Notes</span></label>
+        <textarea class="textarea textarea-bordered glass-input w-full h-16 resize-none" id="ab-notes" dir="auto" placeholder="e.g. Gift from friend, special edition..."></textarea></div>
       
       <div class="form-control">
         <label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Book Cover Artwork</span></label>

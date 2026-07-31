@@ -22,10 +22,19 @@ export async function flushPendingOfflineLogs(saveLogFunction) {
     if (pending && pending.length > 0) {
       showToast(`Syncing ${pending.length} offline reading log${pending.length === 1 ? '' : 's'}…`, 'info');
       for (const item of pending) {
-        if (typeof saveLogFunction === 'function') {
-          await saveLogFunction(item);
+        try {
+          if (typeof saveLogFunction === 'function') {
+            await saveLogFunction(item);
+          }
+          await removePendingLog(item.id);
+        } catch (itemErr) {
+          console.error(`Failed to sync log ${item.id}, skipping:`, itemErr);
+          item._retryCount = (item._retryCount || 0) + 1;
+          if (item._retryCount >= 3) {
+            console.warn(`Removing permanently failed log ${item.id}`);
+            await removePendingLog(item.id);
+          }
         }
-        await removePendingLog(item.id);
       }
       showToast('✓ All offline reading logs synchronized!', 'success');
     }

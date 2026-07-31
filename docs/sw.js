@@ -63,6 +63,21 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
+  // Google Fonts — cache first (versioned/immutable)
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
   // Firebase (Firestore / Auth) — network first, fallback nothing
   if (url.hostname.includes('firebase') ||
       url.hostname.includes('googleapis') ||
@@ -79,8 +94,16 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
+        if (!response.ok) return response;
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, clone);
+          cache.keys().then(keys => {
+            if (keys.length > 100) {
+              cache.delete(keys[0]);
+            }
+          });
+        });
         return response;
       });
     })
@@ -92,9 +115,13 @@ self.addEventListener('sync', event => {
   if (event.tag === 'sync-reading-logs') {
     event.waitUntil(
       self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'SYNC_OFFLINE_LOGS' });
-        });
+        if (clients.length > 0) {
+          clients.forEach(client => {
+            client.postMessage({ type: 'SYNC_OFFLINE_LOGS' });
+          });
+        } else {
+          return Promise.reject(new Error('No active clients to sync'));
+        }
       })
     );
   }

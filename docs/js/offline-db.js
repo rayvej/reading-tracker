@@ -62,7 +62,13 @@ export async function savePendingLog(logData) {
     };
     const req = store.put(record);
     req.onsuccess = () => resolve(record);
-    req.onerror = (e) => reject(e.target.error);
+    req.onerror = (e) => {
+      const error = e.target.error;
+      if (error && error.name === 'QuotaExceededError') {
+        console.error('[OfflineDB] Storage quota exceeded — please clear browser storage.');
+      }
+      reject(error);
+    };
   });
 }
 
@@ -109,7 +115,13 @@ export async function saveOfflineImage(imageId, imageBlob) {
     };
     const req = store.put(record);
     req.onsuccess = () => resolve(record);
-    req.onerror = (e) => reject(e.target.error);
+    req.onerror = (e) => {
+      const error = e.target.error;
+      if (error && error.name === 'QuotaExceededError') {
+        console.error('[OfflineDB] Storage quota exceeded — please clear browser storage.');
+      }
+      reject(error);
+    };
   });
 }
 
