@@ -122,10 +122,10 @@ assert(
   '3D Spine Bookshelf rendering function transforms book spines without clipping'
 );
 
-// 3. Mind Graph canvas
+// 3. Spaced Repetition & Flashcards
 assert(
-  htmlContent.includes('id="mind-graph-canvas"') || jsContent.includes('mind-graph-canvas') || jsContent.includes('renderMindGraph'),
-  'Mind Graph canvas resize listener and node title renderer exist in app.js'
+  htmlContent.includes('id="spaced-repetition-modal"') || jsContent.includes('spaced-repetition-modal'),
+  'Knowledge Vault quote feed and Spaced Repetition flashcards exist in app.js'
 );
 
 // ============================================================================
@@ -175,18 +175,18 @@ assert(
   'Modal dialog containers (Add/Edit Book, Edit Goals, Settings) present in HTML'
 );
 
-// 2. Account View Settings
+// 2. Goals Modal Daily Target Inputs & Settings
 assert(
-  htmlContent.includes('id="setting-target-minutes"') &&
-  htmlContent.includes('id="setting-target-pages"') &&
+  htmlContent.includes('id="goal-daily-pages"') &&
+  htmlContent.includes('id="goal-daily-minutes"') &&
   htmlContent.includes('id="accent-color-picker"'),
-  'Account Settings daily minute/page target inputs and accent color picker exist'
+  'Goals Modal daily minute/page target inputs and accent color picker exist'
 );
 
 assert(
-  jsContent.includes('setting-target-minutes') &&
+  jsContent.includes('goal-daily-pages') &&
   jsContent.includes('accent-color-picker'),
-  'Account Settings event listeners and local storage sync implemented'
+  'Goals Modal event listeners and local storage sync implemented'
 );
 
 console.log('\n===============================================================');

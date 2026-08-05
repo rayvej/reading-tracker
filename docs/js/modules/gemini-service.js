@@ -336,26 +336,12 @@ export function generateScholarlyDigest(book, sessions = [], stories = [], quote
   let md = `# Scholarly Digest: ${title}\n\n`;
   md += `**Author:** ${author}  \n`;
   md += `**Publication:** ${location}: ${publisher}, ${year}  \n`;
-  md += `**Total Sessions:** ${sessions.length}  \n`;
-  md += `**Starred Stories Captured:** ${stories.length}  \n\n`;
+  md += `**Total Sessions:** ${sessions.length}  \n\n`;
 
   md += `## Academic Citations\n`;
   md += `**Chicago:** ${chicago}\n\n`;
   md += `**APA:** ${apa}\n\n`;
   md += `\`\`\`bibtex\n${bibtex}\n\`\`\`\n\n`;
-
-  if (stories.length > 0) {
-    md += `## Starred Stories & Narrative Anecdotes\n\n`;
-    stories.forEach((s, idx) => {
-      md += `### ${idx + 1}. ${s.title || 'Untitled Story'} (Page ${s.page || 'N/A'}${s.paragraph ? `, §${s.paragraph}` : ''})\n`;
-      if (s.summary) md += `*${s.summary}*\n\n`;
-      if (s.quote) md += `> "${s.quote}"\n\n`;
-      if (s.characters && s.characters.length) md += `**Figures:** ${s.characters.join(', ')}  \n`;
-      if (s.themes && s.themes.length) md += `**Themes:** ${s.themes.join(', ')}  \n`;
-      if (s.era) md += `**Era/Period:** ${s.era}  \n`;
-      md += `\n---\n\n`;
-    });
-  }
 
   return { bibtex, chicago, apa, markdown: md };
 }

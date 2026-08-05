@@ -51,7 +51,6 @@ assert.ok(digest.bibtex.includes('@book{'), 'BibTeX should contain @book block')
 assert.ok(digest.bibtex.includes('author = {Nabíl-i-A‘ẓam}'), 'BibTeX should include author');
 assert.ok(digest.chicago.includes('Nabíl-i-A‘ẓam. *The Dawn-Breakers*'), 'Chicago citation should format author and title');
 assert.ok(digest.markdown.includes('# Scholarly Digest: The Dawn-Breakers'), 'Markdown digest header should match title');
-assert.ok(digest.markdown.includes('Mullá Husayn at the Gate of Shiraz'), 'Markdown digest should list starred story title');
 
 console.log('  Chicago Citation:', digest.chicago);
 console.log('  BibTeX:\n' + digest.bibtex);

@@ -352,19 +352,6 @@
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your reflections, highlights &amp; knowledge vault</p>
               </div>
               <div class="flex items-center gap-2 flex-wrap">
-                <!-- Spaced Repetition Review Button -->
-                <button id="btn-spaced-repetition"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-                  style="background: rgba(var(--accent2-rgb),0.15); border-color: rgba(var(--accent2-rgb),0.35); color: var(--gold)"
-                  title="Daily Spaced Repetition Flashcard Review">
-                  <i class="fa-solid fa-brain text-xs"></i> Daily Review
-                </button>
-                <button id="btn-quick-story-open"
-                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
-                  style="background: linear-gradient(135deg, #F5D76E, #D6A85C)"
-                  title="Capture Starred Story / Anecdote">
-                  <i class="fa-solid fa-star text-xs"></i> Star Story
-                </button>
                 <button id="btn-quick-note-open"
                   class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md"
                   style="background: var(--gold)"
@@ -377,18 +364,6 @@
                   title="Generate Scholarly Citations & Digest">
                   <i class="fa-solid fa-graduation-cap text-xs"></i> Scholar Digest
                 </button>
-                <button id="btn-export-bibtex"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-                  style="background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent)"
-                  title="Export BibTeX (.bib) Citations for Scholarly Research">
-                  <i class="fa-solid fa-quote-right text-xs"></i> BibTeX
-                </button>
-                <button id="btn-export-markdown-zip"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
-                  style="background: rgba(var(--gold-rgb),0.12); border-color: rgba(var(--gold-rgb),0.3); color: var(--gold)"
-                  title="Export Obsidian Markdown Vault ZIP">
-                  <i class="fa-solid fa-file-zipper text-xs"></i> Export
-                </button>
               </div>
             </div>
 
@@ -396,20 +371,14 @@
             <div class="flex justify-between items-center gap-2 flex-wrap">
               <div class="seg-control-micro" id="knowledge-view-mode-toggle">
                 <button class="seg-btn-micro active" data-mode="feed"><i class="fa-solid fa-list text-[8px]"></i> Feed View</button>
-                <button class="seg-btn-micro" data-mode="stories"><i class="fa-solid fa-star text-[8px] text-amber-400"></i> Starred Vault</button>
-                <button class="seg-btn-micro" data-mode="graph"><i class="fa-solid fa-diagram-project text-[8px]"></i> Mind Graph</button>
               </div>
             </div>
 
             <!-- Notes Stats Summary Bar -->
-            <div id="knowledge-stats-row" class="grid grid-cols-4 gap-2">
+            <div id="knowledge-stats-row" class="grid grid-cols-3 gap-2">
               <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-theme-secondary">Total Notes</span>
                 <span id="kn-stat-total" class="text-base font-black text-theme-primary tabular-nums">0</span>
-              </div>
-              <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-amber-400">Starred Stories</span>
-                <span id="kn-stat-stories" class="text-base font-black text-amber-400 tabular-nums">0</span>
               </div>
               <div class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center text-center border border-theme">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-theme-gold">Favorites</span>
@@ -458,7 +427,6 @@
             <!-- Tag Filter Pills -->
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="knowledge-tag-bar">
               <button class="quote-tag active" data-tag="all"><i class="fa-solid fa-list-ul"></i> All Notes</button>
-              <button class="quote-tag" data-tag="stories"><i class="fa-solid fa-star text-amber-400"></i> Starred Vault</button>
               <button class="quote-tag" data-tag="quotes"><i class="fa-solid fa-quote-left"></i> Highlights</button>
               <button class="quote-tag" data-tag="reflections"><i class="fa-solid fa-pen-nib"></i> Reflections</button>
               <button class="quote-tag" data-tag="favorites"><i class="fa-solid fa-star text-theme-gold"></i> Favorites</button>
@@ -655,9 +623,18 @@
 
                 <!-- Stats Sub-Row (preserved) -->
                 <div class="grid grid-cols-3 gap-2 text-center text-[9px] border-t border-theme pt-2 font-semibold" style="color: var(--text-tertiary)">
-                  <div>Pages/Active Day: <b style="color: var(--text-primary)" id="stat-pages-active-avg">—</b></div>
-                  <div>% Days (Month): <b style="color: var(--text-primary)" id="stat-days-month-pct">—</b></div>
-                  <div>% Days (YTD): <b style="color: var(--text-primary)" id="stat-days-ytd-pct">—</b></div>
+                  <div class="flex flex-col items-center">
+                    <span>Pages/Active Day</span>
+                    <b style="color: var(--text-primary)" id="stat-pages-active-avg" class="text-xs font-black mt-0.5">—</b>
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <span>% Days (Month)</span>
+                    <b style="color: var(--text-primary)" id="stat-days-month-pct" class="text-xs font-black mt-0.5">—</b>
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <span>% Days (YTD)</span>
+                    <b style="color: var(--text-primary)" id="stat-days-ytd-pct" class="text-xs font-black mt-0.5">—</b>
+                  </div>
                 </div>
 
               </div>
@@ -665,9 +642,9 @@
 
             <!-- Reading Intensity Grid (GitHub-style) -->
             <div class="glass-panel p-3.5 flex flex-col gap-2.5 rounded-xl relative">
-              <div class="flex justify-between items-center gap-2">
+              <div class="flex flex-wrap justify-between items-center gap-2">
                 <span class="section-label whitespace-nowrap" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <div class="seg-control-nano" id="dash-heatmap-tf">
+                <div class="seg-control-nano max-w-full" id="dash-heatmap-tf">
                   <button class="seg-btn-nano active" data-range="pastYear">Past Year</button>
                   <button class="seg-btn-nano" data-range="thisYear">This Year</button>
                   <button class="seg-btn-nano" data-range="allTime">All Time</button>
@@ -803,11 +780,11 @@
 
             <!-- Velocity Burnup SVG Curve -->
             <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 animate-on-scroll">
-              <div class="flex justify-between items-center">
+              <div class="flex justify-between items-center gap-2">
                 <span class="section-label text-[10px]" style="color: var(--text-secondary)">
                   <i class="fa-solid fa-chart-line text-[10px]" style="color: var(--accent)"></i> Velocity Burnup — Actual vs Target Pace
                 </span>
-                <span id="vel-curve-status" class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
+                <span id="vel-curve-status" class="text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
               </div>
               <div class="velocity-curve-container" id="velocity-curve-chart" style="height: 180px;">
                 <!-- Rendered dynamically by renderVelocityAnalytics() -->
@@ -1583,37 +1560,7 @@
                   <span class="text-lg font-black tabular-nums text-emerald-400" id="acct-stat-streak">0d</span>
                 </div>
               </div>
-            </div>
-
-            <!-- Daily Reading Targets Section -->
-            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
-              <div class="text-xs font-black uppercase tracking-wider flex items-center gap-2" style="color: var(--text-tertiary)">
-                <i class="fa-solid fa-bullseye text-emerald-400"></i> Daily Reading Targets
-              </div>
-
-              <div class="flex flex-col gap-3 p-3.5 rounded-2xl" style="background: var(--bg-input); border: 1px solid var(--border)">
-                <div class="text-xs text-theme-secondary font-medium">Set your daily reading goals to customize your streak activity rings:</div>
-                <div class="grid grid-cols-2 gap-3 mt-1">
-                  <div class="flex flex-col gap-1">
-                    <label class="text-[11px] font-extrabold" style="color: var(--text-primary)">Daily Minutes Goal</label>
-                    <div class="relative">
-                      <input type="number" id="setting-target-minutes" min="5" max="300" class="w-full px-3 py-2 text-xs font-bold rounded-xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50" placeholder="40">
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-theme-secondary font-semibold">mins</span>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-1">
-                    <label class="text-[11px] font-extrabold" style="color: var(--text-primary)">Daily Pages Goal</label>
-                    <div class="relative">
-                      <input type="number" id="setting-target-pages" min="1" max="500" class="w-full px-3 py-2 text-xs font-bold rounded-xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50" placeholder="30">
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-theme-secondary font-semibold">pages</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Appearance & Personalization Section -->
+            </div>            <!-- Appearance & Personalization Section -->
             <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4">
               <div class="text-xs font-black uppercase tracking-wider flex items-center gap-2" style="color: var(--text-tertiary)">
                 <i class="fa-solid fa-palette text-theme-gold"></i> Appearance &amp; Personalization
@@ -3405,121 +3352,6 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════
-       MODAL: CAPTURE / EDIT STARRED STORY (SCHOLAR SUITE + GEMINI)
-       ════════════════════════════════════════════════════════════ -->
-  <div id="modal-add-story" class="ios-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="ios-modal-card flex flex-col gap-4 max-h-[90vh] overflow-y-auto no-scrollbar max-w-lg w-full">
-      <div class="flex items-center justify-between pb-3 border-b border-theme">
-        <div>
-          <h3 class="text-lg font-black tracking-tight text-theme-gold flex items-center gap-2">
-            <i class="fa-solid fa-star text-amber-400"></i> Starred Story &amp; Anecdote
-          </h3>
-          <p class="text-xs font-medium text-theme-secondary mt-0.5">Capture memorable historical narratives &amp; passages</p>
-        </div>
-        <button id="modal-add-story-close" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <!-- AI Automation Toolbar -->
-      <div class="glass-panel p-3 rounded-2xl flex items-center justify-between gap-2 border border-amber-500/30 bg-amber-500/5">
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-          </div>
-          <span class="text-xs font-bold text-amber-200">Gemini AI Auto-Fill</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <button type="button" id="btn-story-photo-ai" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
-            <i class="fa-solid fa-camera"></i> Photo OCR
-          </button>
-          <button type="button" id="btn-story-voice-ai" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
-            <i class="fa-solid fa-microphone"></i> Voice Note
-          </button>
-        </div>
-        <input type="file" id="input-story-photo-file" accept="image/*" class="hidden">
-      </div>
-
-      <!-- Form Inputs -->
-      <div class="flex flex-col gap-3">
-        <!-- Book selection -->
-        <div class="form-control">
-          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Book</span></label>
-          <select id="story-book-id" class="select select-bordered glass-input w-full text-xs font-medium">
-            <option value="">— Select Book —</option>
-          </select>
-        </div>
-
-        <!-- Citation: Page & Paragraph -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Page Number</span></label>
-            <input type="number" id="story-page" class="input input-bordered glass-input w-full" placeholder="e.g. 142">
-          </div>
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Paragraph (§)</span></label>
-            <input type="text" id="story-paragraph" class="input input-bordered glass-input w-full" placeholder="e.g. §34">
-          </div>
-        </div>
-
-        <!-- Story Title -->
-        <div class="form-control">
-          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Story Title</span></label>
-          <input type="text" id="story-title" class="input input-bordered glass-input w-full text-xs font-bold" placeholder="e.g. Táhirih at the Conference of Badašt">
-        </div>
-
-        <!-- Summary & Transliteration Quick Bar -->
-        <div class="form-control">
-          <div class="flex items-center justify-between">
-            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Narrative Summary</span></label>
-            <!-- Transliteration accent bar -->
-            <div class="flex items-center gap-1" id="story-translit-bar">
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="á">á</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="í">í</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ú">ú</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ḥ">ḥ</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ṭ">ṭ</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="z">z</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="ṣ">ṣ</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="‘">‘</button>
-              <button type="button" class="btn-translit-chip" data-target="story-summary" data-char="’">’</button>
-            </div>
-          </div>
-          <textarea id="story-summary" class="textarea textarea-bordered glass-input w-full h-20 text-xs resize-none" placeholder="Summarize the anecdote or story..."></textarea>
-        </div>
-
-        <!-- Verbatim Excerpt / Quote -->
-        <div class="form-control">
-          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Verbatim Excerpt / Quote</span></label>
-          <textarea id="story-quote" class="textarea textarea-bordered glass-input w-full h-16 text-xs italic resize-none" placeholder="Exact passage quote (optional)..."></textarea>
-        </div>
-
-        <!-- Historical Characters & Figures -->
-        <div class="form-control">
-          <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Historical Figures / Characters</span></label>
-          <input type="text" id="story-characters" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Táhirih, Mullá Husayn, Quddús (comma separated)">
-        </div>
-
-        <!-- Themes & Era -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Themes / Tags</span></label>
-            <input type="text" id="story-themes" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Heroism, Badašt, Steadfastness">
-          </div>
-          <div class="form-control">
-            <label class="label py-0.5"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Historical Era / Location</span></label>
-            <input type="text" id="story-era" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. Heroic Age / Badašt, 1848">
-          </div>
-        </div>
-
-        <button type="button" id="btn-save-starred-story" class="w-full py-3.5 rounded-2xl font-bold text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all shadow-lg cursor-pointer mt-1">
-          <i class="fa-solid fa-star mr-1"></i> Save Starred Story
-        </button>
-      </div>
     </div>
   </div>
 

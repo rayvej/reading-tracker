@@ -62,48 +62,4 @@ console.log('  Chicago Citation:', digestResult.chicago);
 console.log('  BibTeX:\n' + digestResult.bibtex);
 console.log('  ✅ Citations and Digests generate 100% deterministically without AI!\n');
 
-// 3. Test Manual Starred Story Creation Schema Validation
-console.log('Test 3: Manual Starred Story Schema Validation (Zero AI required)...');
-
-function createManualStarredStory(input) {
-  // Pure local creation matching app.js addStarredStory logic
-  if (!input.title || !input.title.trim()) {
-    throw new Error('Title is required');
-  }
-  return {
-    id: 'story_manual_' + Date.now(),
-    bookId: input.bookId || '',
-    bookTitle: input.bookTitle || 'Manual Entry',
-    title: input.title.trim(),
-    summary: input.summary || '',
-    quote: input.quote || '',
-    page: input.page || null,
-    paragraph: input.paragraph || null,
-    characters: input.characters ? input.characters.split(',').map(s => s.trim()).filter(Boolean) : [],
-    themes: input.themes ? input.themes.split(',').map(s => s.trim()).filter(Boolean) : [],
-    era: input.era || '',
-    createdAt: new Date().toISOString()
-  };
-}
-
-const manualStory = createManualStarredStory({
-  bookTitle: 'Memorials of the Faithful',
-  title: 'Service of ‘Abdu’l-Bahá',
-  summary: 'Manual summary typed by researcher without clicking AI buttons.',
-  quote: 'Service is praise.',
-  page: 45,
-  paragraph: '§12',
-  characters: '‘Abdu’l-Bahá, Early Believers',
-  themes: 'Service, Humility',
-  era: 'Formative Age'
-});
-
-assert.strictEqual(manualStory.title, 'Service of ‘Abdu’l-Bahá');
-assert.strictEqual(manualStory.characters.length, 2);
-assert.strictEqual(manualStory.themes.length, 2);
-assert.strictEqual(manualStory.page, 45);
-assert.strictEqual(manualStory.paragraph, '§12');
-console.log('  Manual Story Object:', JSON.stringify(manualStory, null, 2));
-console.log('  ✅ Manual Starred Story creation works seamlessly with zero AI!\n');
-
 console.log('🎉 ALL NO-AI DEPENDENCY TESTS PASSED! AI is strictly an enhancement, never a requirement.');

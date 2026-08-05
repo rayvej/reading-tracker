@@ -897,8 +897,7 @@ function setupSettingsModal() {
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (backdrop) backdrop.addEventListener('click', closeModal);
 
-  // Daily Reading Targets & Notifications inputs
-  setupDailyTargetsSetting();
+  // Notifications inputs
   setupNotificationSettingsUI();
 
   // Load sample data
@@ -1484,59 +1483,7 @@ async function saveStarterBook(batchContinue) {
   }
 }
 
-function setupDailyTargetsSetting() {
-  const minInput = $('setting-target-minutes');
-  const pagInput = $('setting-target-pages');
-  const prefMins = $('pref-daily-minutes');
-  const prefPag = $('pref-daily-pages');
 
-  const getSavedMin = () => localStorage.getItem('rt_target_minutes') || localStorage.getItem('rt_pref_mins') || '40';
-  const getSavedPag = () => localStorage.getItem('rt_target_pages') || localStorage.getItem('rt_pref_pages') || '30';
-
-  const updateMin = (val, showToastMsg = false) => {
-    const num = Math.max(1, parseInt(val || '40', 10));
-    localStorage.setItem('rt_target_minutes', num);
-    localStorage.setItem('rt_pref_mins', num);
-    if (minInput && minInput.value !== String(num)) minInput.value = num;
-    if (prefMins && prefMins.value !== String(num)) prefMins.value = num;
-    if (showToastMsg) showToast(`✓ Daily minutes target set to ${num} mins`, 'success');
-    if (currentView === 'dashboard') renderDashboard();
-  };
-
-  const updatePag = (val, showToastMsg = false) => {
-    const num = Math.max(1, parseInt(val || '30', 10));
-    localStorage.setItem('rt_target_pages', num);
-    localStorage.setItem('rt_pref_pages', num);
-    if (pagInput && pagInput.value !== String(num)) pagInput.value = num;
-    if (prefPag && prefPag.value !== String(num)) prefPag.value = num;
-    if (showToastMsg) showToast(`✓ Daily pages target set to ${num} pages`, 'success');
-    if (currentView === 'dashboard') renderDashboard();
-  };
-
-  const currentMin = getSavedMin();
-  const currentPag = getSavedPag();
-
-  // Persist canonical values immediately
-  localStorage.setItem('rt_target_minutes', currentMin);
-  localStorage.setItem('rt_pref_mins', currentMin);
-  localStorage.setItem('rt_target_pages', currentPag);
-  localStorage.setItem('rt_pref_pages', currentPag);
-
-  if (minInput) minInput.value = currentMin;
-  if (prefMins) prefMins.value = currentMin;
-  if (pagInput) pagInput.value = currentPag;
-  if (prefPag) prefPag.value = currentPag;
-
-  [minInput, prefMins].filter(Boolean).forEach(el => {
-    el.addEventListener('input', () => updateMin(el.value, false));
-    el.addEventListener('change', () => updateMin(el.value, true));
-  });
-
-  [pagInput, prefPag].filter(Boolean).forEach(el => {
-    el.addEventListener('input', () => updatePag(el.value, false));
-    el.addEventListener('change', () => updatePag(el.value, true));
-  });
-}
 
 // ── Daily Morning Reminders & Notifications ───────────────────────────────
 let reminderTimerId = null;
@@ -1799,8 +1746,7 @@ async function renderAccountView() {
   if ($('pref-daily-pages')) $('pref-daily-pages').value = prefPages;
   if ($('pref-daily-minutes')) $('pref-daily-minutes').value = prefMins;
 
-  // Re-sync all targets
-  setupDailyTargetsSetting();
+
 
   // Load saved Gemini API Key
   const savedGeminiKey = getGeminiApiKey();
@@ -4007,10 +3953,10 @@ function renderVelocityCurve(activeLogs, selectedYear) {
   const statusEl = $('vel-curve-status');
   if (statusEl) {
     if (diff >= 0) {
-      statusEl.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      statusEl.className = 'text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
       statusEl.textContent = `+${fmtNum(diff)} pgs Ahead`;
     } else {
-      statusEl.className = 'text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      statusEl.className = 'text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-rose-500/10 text-rose-400 border border-rose-500/20';
       statusEl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
     }
   }
@@ -5091,10 +5037,10 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
   if (statusLbl) {
     const diff = currentActual - currentTargetReq;
     if (diff >= 0) {
-      statusLbl.className = "text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      statusLbl.className = "text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
       statusLbl.textContent = `+${fmtNum(diff)} pgs Ahead`;
     } else {
-      statusLbl.className = "text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+      statusLbl.className = "text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-rose-500/10 text-rose-400 border border-rose-500/20";
       statusLbl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
     }
   }
@@ -6014,10 +5960,15 @@ async function saveGoals() {
   goalsCache = data;
   try {
     localStorage.setItem('goals_cache', JSON.stringify(goalsCache));
+    localStorage.setItem('rt_target_pages', data.daily_pages_target);
+    localStorage.setItem('rt_target_minutes', data.daily_minutes_target);
+    localStorage.setItem('rt_pref_pages', data.daily_pages_target);
+    localStorage.setItem('rt_pref_mins', data.daily_minutes_target);
   } catch(e){}
 
   closeGoalsModal();
   showToast('Goals updated ✓', 'success');
+  if (currentView === 'dashboard') renderDashboard();
   renderGoals();
 }
 
@@ -8841,7 +8792,7 @@ document.addEventListener('keydown', (e) => {
     'book-detail-modal', 'goals-modal', 'settings-modal',
     'add-book-modal', 'edit-book-modal', 'stats-detail-modal',
     'notes-modal', 'heatmapDayModal', 'contextualDetailModal',
-    'mind-graph-modal', 'cover-search-modal'
+    'cover-search-modal'
   ];
   for (const id of modals) {
     const modal = document.getElementById(id);
@@ -11323,28 +11274,13 @@ let mindGraphState = null;
 function initKnowledgeModeToggle() {
   const toggleBtns = document.querySelectorAll('#knowledge-view-mode-toggle .seg-btn');
   const feedEl = document.getElementById('knowledge-quote-feed');
-  const graphContainer = document.getElementById('knowledge-mind-graph-container');
 
   toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       toggleBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      const mode = btn.dataset.mode;
-      if (mode === 'graph') {
-        if (feedEl) feedEl.classList.add('hidden');
-        if (graphContainer) {
-          graphContainer.classList.remove('hidden');
-          renderMindGraph();
-        }
-      } else {
-        if (graphContainer) graphContainer.classList.add('hidden');
-        if (feedEl) feedEl.classList.remove('hidden');
-        if (mindGraphAnimFrameId) {
-          cancelAnimationFrame(mindGraphAnimFrameId);
-          mindGraphAnimFrameId = null;
-        }
-      }
+      if (feedEl) feedEl.classList.remove('hidden');
     });
   });
 
@@ -11879,178 +11815,8 @@ function initKindleImporter() {
   };
 }
 
-// ── STARRED STORIES VAULT STATE & HELPERS ──────────────────────────────────────
-let starredStoriesCache = [];
-
-function getStarredStories() {
-  if (Array.isArray(starredStoriesCache) && starredStoriesCache.length > 0) {
-    return starredStoriesCache;
-  }
-  try {
-    const raw = localStorage.getItem('rt_starred_stories');
-    if (raw) {
-      starredStoriesCache = JSON.parse(raw);
-      return starredStoriesCache;
-    }
-  } catch (e) {
-    console.warn('Failed to parse rt_starred_stories:', e);
-  }
-  // Seed sample Bahá'í starred stories if empty
-  starredStoriesCache = [
-    {
-      id: 'story_sample_1',
-      bookId: 'sample_dawnbreakers',
-      bookTitle: 'The Dawn-Breakers',
-      title: 'Mullá Husayn at the Gate of Shiraz',
-      summary: 'Mullá Husayn arrives in Shiraz in May 1844 after forty days of fasting and prayer, led by intuition to meet the Báb near the city gates.',
-      quote: 'He who was to fulfill the longing of his heart was standing before him at the gate of the city.',
-      page: 52,
-      paragraph: '§14',
-      characters: ['Mullá Husayn', 'The Báb'],
-      themes: ['Heroism', 'Search for Truth', 'Heroic Age'],
-      era: 'Heroic Age (1844)',
-      location: 'Shiraz, Persia',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'story_sample_2',
-      bookId: 'sample_memorials',
-      bookTitle: 'Memorials of the Faithful',
-      title: 'The Hospitality of ‘Abdu’l-Bahá in Haifa',
-      summary: '‘Abdu’l-Bahá welcomed every traveler and pilgrim with deep personal care, serving meals with His own hands and comforting the sick.',
-      quote: 'Service to humanity is service to God.',
-      page: 110,
-      paragraph: '§28',
-      characters: ['‘Abdu’l-Bahá'],
-      themes: ['Hospitality', 'Service', 'Covenant'],
-      era: 'Formative Age',
-      location: 'Haifa, Palestine',
-      createdAt: new Date().toISOString()
-    }
-  ];
-  localStorage.setItem('rt_starred_stories', JSON.stringify(starredStoriesCache));
-  return starredStoriesCache;
-}
-
-function saveStarredStories(stories) {
-  starredStoriesCache = stories;
-  localStorage.setItem('rt_starred_stories', JSON.stringify(stories));
-  if (db && uid && !window.isMockAuth) {
-    const docRef = doc(db, `users/${uid}/scholar_data/starred_stories`);
-    setDoc(docRef, { stories: stories, updatedAt: new Date().toISOString() }, { merge: true }).catch(err => {
-      console.warn('[Sync] Starred stories write error:', err.message);
-    });
-  }
-}
-
-function addStarredStory(storyData) {
-  const stories = getStarredStories();
-  const newStory = {
-    id: generateId(),
-    bookId: storyData.bookId || '',
-    bookTitle: storyData.bookTitle || 'Historical Account',
-    title: storyData.title || 'Starred Story',
-    summary: storyData.summary || '',
-    quote: storyData.quote || '',
-    page: storyData.page || null,
-    paragraph: storyData.paragraph || null,
-    characters: Array.isArray(storyData.characters) ? storyData.characters : (storyData.characters ? storyData.characters.split(',').map(s => s.trim()).filter(Boolean) : []),
-    themes: Array.isArray(storyData.themes) ? storyData.themes : (storyData.themes ? storyData.themes.split(',').map(s => s.trim()).filter(Boolean) : []),
-    era: storyData.era || '',
-    location: storyData.location || '',
-    createdAt: new Date().toISOString()
-  };
-  stories.unshift(newStory);
-  saveStarredStories(stories);
-  return newStory;
-}
-
-function deleteStarredStory(storyId) {
-  let stories = getStarredStories();
-  stories = stories.filter(s => s.id !== storyId);
-  saveStarredStories(stories);
-  if (typeof renderKnowledgeView === 'function') renderKnowledgeView();
-}
-
-function openAddStoryModal() {
-  const modal = document.getElementById('modal-add-story');
-  if (!modal) return;
-  const bookSelect = document.getElementById('story-book-id');
-  if (bookSelect) {
-    bookSelect.innerHTML = '<option value="">— Select Book —</option>';
-    (booksCache || []).forEach(b => {
-      bookSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.title)} (${escapeHtml(b.author || 'Unknown')})</option>`;
-    });
-  }
-  // Clear fields
-  ['story-page', 'story-paragraph', 'story-title', 'story-summary', 'story-quote', 'story-characters', 'story-themes', 'story-era'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  modal.classList.add('open');
-}
-
+// ── SCHOLAR SUITE HELPERS ──────────────────────────────────────
 function initScholarSuite() {
-  getStarredStories();
-
-  // Quick Star Story open button
-  const btnQuickStoryOpen = document.getElementById('btn-quick-story-open');
-  if (btnQuickStoryOpen) {
-    btnQuickStoryOpen.addEventListener('click', () => openAddStoryModal());
-  }
-
-  // Close story modal
-  const btnStoryClose = document.getElementById('modal-add-story-close');
-  if (btnStoryClose) {
-    btnStoryClose.addEventListener('click', () => {
-      document.getElementById('modal-add-story').classList.remove('open');
-    });
-  }
-
-  // Save Starred Story
-  const btnSaveStory = document.getElementById('btn-save-starred-story');
-  if (btnSaveStory) {
-    btnSaveStory.addEventListener('click', () => {
-      const bookSelect = document.getElementById('story-book-id');
-      const pageVal = parseInt(document.getElementById('story-page')?.value || '0', 10);
-      const paraVal = document.getElementById('story-paragraph')?.value || '';
-      const titleVal = document.getElementById('story-title')?.value || '';
-      const summaryVal = document.getElementById('story-summary')?.value || '';
-      const quoteVal = document.getElementById('story-quote')?.value || '';
-      const charsVal = document.getElementById('story-characters')?.value || '';
-      const themesVal = document.getElementById('story-themes')?.value || '';
-      const eraVal = document.getElementById('story-era')?.value || '';
-
-      if (!titleVal.trim()) {
-        showToast('Please enter a Story Title', 'error');
-        return;
-      }
-
-      let bookTitle = 'Historical Work';
-      if (bookSelect && bookSelect.selectedIndex >= 0) {
-        bookTitle = bookSelect.options[bookSelect.selectedIndex].text || bookTitle;
-      }
-
-      addStarredStory({
-        bookId: bookSelect?.value || '',
-        bookTitle: bookTitle,
-        title: titleVal.trim(),
-        summary: summaryVal.trim(),
-        quote: quoteVal.trim(),
-        page: pageVal > 0 ? pageVal : null,
-        paragraph: paraVal.trim() || null,
-        characters: charsVal,
-        themes: themesVal,
-        era: eraVal.trim()
-      });
-
-      document.getElementById('modal-add-story').classList.remove('open');
-      showToast('Starred Story saved to Knowledge Vault!', 'success');
-
-      if (typeof renderKnowledgeView === 'function') renderKnowledgeView();
-    });
-  }
-
   // Transliteration Chips Click Listener
   document.querySelectorAll('.btn-translit-chip').forEach(chip => {
     chip.addEventListener('click', (e) => {
@@ -12252,7 +12018,7 @@ function initScholarSuite() {
   function updateScholarlyExportPreview() {
     const selectedBookId = exportBookSelect?.value || 'all';
     let targetBook = null;
-    let stories = getStarredStories();
+    let stories = [];
 
     if (selectedBookId !== 'all') {
       targetBook = (booksCache || []).find(b => b.id === selectedBookId || String(b.id) === String(selectedBookId));
@@ -12289,10 +12055,6 @@ if (typeof window !== 'undefined') {
   window.saveNewBook = saveNewBook;
   window.submitLog = submitLog;
   window.initApp = initApp;
-  window.getStarredStories = getStarredStories;
-  window.addStarredStory = addStarredStory;
-  window.deleteStarredStory = deleteStarredStory;
-  window.openAddStoryModal = openAddStoryModal;
 }
 
 
