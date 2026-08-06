@@ -1,10 +1,10 @@
-const CACHE_NAME = 'reading-tracker-v103';
+const CACHE_NAME = 'reading-tracker-v104';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=103',
-  BASE + 'app.js?v=103',
+  BASE + 'style.css?v=104',
+  BASE + 'app.js?v=104',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
   BASE + 'js/seed10YearData.js',

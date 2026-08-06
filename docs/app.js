@@ -1739,9 +1739,10 @@ async function renderAccountView() {
   syncAccountThemeSwitch();
 
   // Load saved preferences
+  const userGoals = getUserDailyGoals();
   const prefFormat = localStorage.getItem('rt_pref_format') || 'Physical';
-  const prefPages = localStorage.getItem('rt_target_pages') || localStorage.getItem('rt_pref_pages') || '30';
-  const prefMins = localStorage.getItem('rt_target_minutes') || localStorage.getItem('rt_pref_mins') || '40';
+  const prefPages = userGoals.pagesTarget;
+  const prefMins = userGoals.minutesTarget;
 
   if ($('pref-default-format')) $('pref-default-format').value = prefFormat;
   if ($('pref-daily-pages')) $('pref-daily-pages').value = prefPages;
@@ -4005,6 +4006,32 @@ function renderVelocityCurve(activeLogs, selectedYear, velocityChange = 0) {
   `;
 }
 
+function getUserDailyGoals() {
+  let goals = typeof goalsCache !== 'undefined' ? goalsCache : null;
+  if (!goals || !goals.daily_pages_target) {
+    try {
+      const rawLocal = localStorage.getItem('goals_cache');
+      if (rawLocal) goals = JSON.parse(rawLocal);
+    } catch(e){}
+  }
+  const pagesTarget = parseInt(
+    (goals && goals.daily_pages_target) || 
+    localStorage.getItem('rt_target_pages') || 
+    localStorage.getItem('rt_pref_pages') || 
+    '20', 10
+  );
+  const minutesTarget = parseInt(
+    (goals && goals.daily_minutes_target) || 
+    localStorage.getItem('rt_target_minutes') || 
+    localStorage.getItem('rt_pref_mins') || 
+    '20', 10
+  );
+  return {
+    pagesTarget: Math.max(1, pagesTarget),
+    minutesTarget: Math.max(1, minutesTarget)
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // FEATURE 4: STREAK RINGS — Dashboard Section
 // ═══════════════════════════════════════════════════════════════
@@ -4017,8 +4044,7 @@ function renderStreakRings(streaks, activeLogs) {
   const todayMinutes = todayLogs.reduce((s, l) => s + (l.minutes_spent || l.duration_minutes || l.durationMinutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
   const hasSessionToday = todayLogs.length > 0;
   
-  const dailyMinutesTarget = Math.max(1, parseInt(localStorage.getItem('rt_target_minutes') || '40', 10));
-  const dailyPagesTarget = Math.max(1, parseInt(localStorage.getItem('rt_target_pages') || '30', 10));
+  const { pagesTarget: dailyPagesTarget, minutesTarget: dailyMinutesTarget } = getUserDailyGoals();
   
   const minutesPct = Math.min(100, (todayMinutes / dailyMinutesTarget) * 100);
   const minutesRing = $('streak-ring-minutes');
