@@ -8741,7 +8741,14 @@ function handleBookSelection(selectedBookTitle, books, logs) {
   let startPage = 0;
   
   if (bookLogs.length > 0) {
-    bookLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+    bookLogs.sort((a, b) => {
+      const cycleA = parseInt(a.read_cycle || 1, 10);
+      const cycleB = parseInt(b.read_cycle || 1, 10);
+      if (cycleA !== cycleB) return cycleA - cycleB;
+      const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : (a.created_at?.seconds ? a.created_at.seconds * 1000 : new Date(a.date || 0).getTime());
+      const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : (b.created_at?.seconds ? b.created_at.seconds * 1000 : new Date(b.date || 0).getTime());
+      return timeA - timeB;
+    });
     
     const lastLog = bookLogs[bookLogs.length - 1];
     currentCycle = parseInt(lastLog.read_cycle || 1, 10);
@@ -8749,6 +8756,13 @@ function handleBookSelection(selectedBookTitle, books, logs) {
     
     if (startPage >= parseInt(book.total_pages || 0, 10)) {
       currentCycle += 1;
+      startPage = 0;
+    }
+  } else {
+    const tot = parseInt(book.total_pages || 0, 10);
+    const raw = parseInt(book.pages_read || book.current_page || 0, 10);
+    startPage = (tot > 0 && raw > tot) ? (raw % tot) : raw;
+    if (tot > 0 && startPage >= tot) {
       startPage = 0;
     }
   }
@@ -10065,14 +10079,31 @@ window.openFullTimerSession = function(book) {
   const floatBar = document.getElementById('timer-floating-bar');
   if (!overlay) return;
 
-  // 1. Calculate Start Page: Max end_page from logsCache for this book
+  // 1. Calculate Start Page: Last end_page from logsCache for this book
   let startPage = 0;
   if (book) {
+    const tot = parseInt(book.total_pages || 0, 10);
     const bookLogs = (window.logsCache || []).filter(l => l.book_title === book.title);
     if (bookLogs.length > 0) {
-      startPage = Math.max(...bookLogs.map(l => parseInt(l.end_page || 0, 10)));
+      bookLogs.sort((a, b) => {
+        const cycleA = parseInt(a.read_cycle || 1, 10);
+        const cycleB = parseInt(b.read_cycle || 1, 10);
+        if (cycleA !== cycleB) return cycleA - cycleB;
+        const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : (a.created_at?.seconds ? a.created_at.seconds * 1000 : new Date(a.date || 0).getTime());
+        const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : (b.created_at?.seconds ? b.created_at.seconds * 1000 : new Date(b.date || 0).getTime());
+        return timeA - timeB;
+      });
+      const lastLog = bookLogs[bookLogs.length - 1];
+      startPage = parseInt(lastLog.end_page || 0, 10);
+      if (tot > 0 && startPage >= tot) {
+        startPage = 0;
+      }
     } else {
-      startPage = parseInt(book.pages_read || book.current_page || 0, 10);
+      const raw = parseInt(book.pages_read || book.current_page || 0, 10);
+      startPage = (tot > 0 && raw > tot) ? (raw % tot) : raw;
+      if (tot > 0 && startPage >= tot) {
+        startPage = 0;
+      }
     }
   }
 
