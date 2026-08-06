@@ -1,10 +1,10 @@
-const CACHE_NAME = 'reading-tracker-v98';
+const CACHE_NAME = 'reading-tracker-v99';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=98',
-  BASE + 'app.js?v=98',
+  BASE + 'style.css?v=99',
+  BASE + 'app.js?v=99',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
   BASE + 'js/seed10YearData.js',
@@ -55,13 +55,29 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ── Fetch: cache-first for static, network-first for Firebase ────────────────
+// ── Fetch: network-first for HTML & Firebase, cache-first for assets ──────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Skip Chrome extension requests and non-GET
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
+
+  // HTML navigation & root document — Network First, falling back to cache
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname === BASE) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   // Google Fonts — cache first (versioned/immutable)
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
