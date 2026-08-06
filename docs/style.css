@@ -2823,3 +2823,44 @@ body.light-mode .fab-log-btn {
   outline: none !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   GPU ACCELERATION & TACTILE MICRO-INTERACTION STYLES
+   ══════════════════════════════════════════════════════════════════════════ */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.tactile-press, button, .seg-btn, .glass-panel, .book-card, .velocity-stat-card {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.12s ease;
+}
+
+.tactile-press:active, button:active, .seg-btn:active {
+  transform: scale(0.97) translateZ(0);
+}
+
+.interactive-ring-container {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.interactive-ring-container:hover {
+  transform: scale(1.02);
+}
+
+.interactive-ring-container:active {
+  transform: scale(0.97);
+}
+
+/* Interactive Heatmap Cell Hover & Active State */
+.heatmap-cell, .heatmap-grid rect, .heatmap-grid div {
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.heatmap-cell:hover, .heatmap-grid rect:hover {
+  transform: scale(1.2);
+  filter: brightness(1.3);
+}
+

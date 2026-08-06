@@ -627,109 +627,8 @@
               </div>
             </div>
 
-            <!-- Reading Intensity Grid (GitHub-style) -->
-            <div class="glass-panel p-3.5 flex flex-col gap-2.5 rounded-xl relative">
-              <div class="flex flex-wrap justify-between items-center gap-2">
-                <span class="section-label whitespace-nowrap" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
-                <div class="seg-control-nano max-w-full" id="dash-heatmap-tf">
-                  <button class="seg-btn-nano active" data-range="pastYear">Past Year</button>
-                  <button class="seg-btn-nano" data-range="thisYear">This Year</button>
-                  <button class="seg-btn-nano" data-range="allTime">All Time</button>
-                </div>
-              </div>
-              <div id="heatmap-container" class="heatmap-grid no-scrollbar">
-                <!-- Rendered dynamically by JS -->
-              </div>
-              <!-- Bottom Metric Selector Footer -->
-              <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border)">
-                <span class="text-[10px] font-medium" style="color: var(--text-secondary)">Display Metric</span>
-                <div class="seg-control-nano" id="dash-heatmap-metric">
-                  <button class="seg-btn-nano active" data-metric="pages">Pages</button>
-                  <button class="seg-btn-nano" data-metric="duration">Mins</button>
-                  <button class="seg-btn-nano" data-metric="sessions">Logs</button>
-                  <button class="seg-btn-nano" data-metric="notes">Notes</button>
-                </div>
-              </div>
-              <!-- Tooltip element -->
-              <div id="heatmap-tooltip" class="absolute hidden z-20 pointer-events-none glass-panel p-2 text-[9px] shadow-xl font-bold leading-normal" style="color: var(--text-primary)"></div>
-            </div>
-
-            <!-- Contextual Reading Productivity Heatmap (24x7 Matrix) -->
-            <div id="contextual-heatmap-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <div class="flex justify-between items-center">
-                <span class="section-label" style="color: var(--text-secondary)">
-                  <i class="fa-solid fa-clock text-[10px]" style="color: var(--accent)"></i> Contextual Productivity Matrix (Hour x Day)
-                </span>
-                <span class="text-[9px] font-mono text-theme-secondary">24 HOUR × 7 DAY FOCUS INTENSITY</span>
-              </div>
-              <div id="contextual-matrix-container" class="overflow-x-auto no-scrollbar py-1">
-                <!-- Rendered dynamically by JS -->
-              </div>
-              <p id="contextual-peak-insight" class="text-[11px] font-semibold text-theme-secondary italic border-t border-theme pt-2 mt-1">Peak focus reading hour: —</p>
-            </div>
-
-            <!-- YTD vs Same Date Last Year (YOY card) -->
-            <div id="dash-yoy-card" class="glass-panel p-4 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
-              <div class="flex items-center justify-between mb-3">
-                <div class="section-label" style="color: var(--text-secondary)">
-                  <i class="fa-solid fa-arrows-left-right text-[10px]" style="color: var(--accent)"></i> YTD vs Same Date Last Year
-                </div>
-                <span id="yoy-date-range-badge" class="text-[9px] font-semibold px-2 py-0.5 rounded-md" style="background: var(--bg-input); color: var(--text-secondary)">Jan 1 – Today</span>
-              </div>
-
-              <div class="flex flex-col gap-3" id="yoy-graphic-container">
-                <!-- Books Comparison Block -->
-                <div class="flex flex-col gap-2 p-3 rounded-xl border" style="background: var(--bg-input); border-color: var(--border)">
-                  <div class="flex justify-between items-center text-xs">
-                    <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
-                      <i class="fa-solid fa-book text-[10px]" style="color: var(--accent)"></i> Books Completed
-                    </span>
-                    <span id="yoy-books-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">—</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-books-curr-label">2026 (This Year)</div>
-                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
-                      <div id="yoy-books-curr-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--accent)"></div>
-                    </div>
-                    <div id="yoy-books-curr" class="w-8 text-xs font-black text-right tabular-nums" style="color: var(--text-primary)">0</div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-books-prev-label">2025 (Same Date)</div>
-                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
-                      <div id="yoy-books-prev-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--text-secondary); opacity: 0.5"></div>
-                    </div>
-                    <div id="yoy-books-prev" class="w-8 text-xs font-black text-right tabular-nums opacity-75" style="color: var(--text-secondary)">0</div>
-                  </div>
-                </div>
-
-                <!-- Pages Comparison Block -->
-                <div class="flex flex-col gap-2 p-3 rounded-xl border" style="background: var(--bg-input); border-color: var(--border)">
-                  <div class="flex justify-between items-center text-xs">
-                    <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
-                      <i class="fa-solid fa-file-lines text-[10px]" style="color: var(--emerald)"></i> Pages Logged
-                    </span>
-                    <span id="yoy-pages-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">—</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-pages-curr-label">2026 (This Year)</div>
-                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
-                      <div id="yoy-pages-curr-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--emerald)"></div>
-                    </div>
-                    <div id="yoy-pages-curr" class="w-8 text-xs font-black text-right tabular-nums" style="color: var(--text-primary)">0</div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-pages-prev-label">2025 (Same Date)</div>
-                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
-                      <div id="yoy-pages-prev-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--text-secondary); opacity: 0.5"></div>
-                    </div>
-                    <div id="yoy-pages-prev" class="w-8 text-xs font-black text-right tabular-nums opacity-75" style="color: var(--text-secondary)">0</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- ══════════════════════════════════════════════════════
-                 PACING ANALYTICS (Feature 2) — Additive Section
+                 PACING ANALYTICS — Elevated Pace & Momentum Section
                  ══════════════════════════════════════════════════════ -->
             <div class="text-[10px] font-black tracking-widest uppercase mt-4 border-b pb-2 flex items-center justify-between" style="color: var(--text-tertiary); border-color: var(--border)">
               <span><i class="fa-solid fa-gauge-high mr-1" style="color: var(--accent2)"></i> Reading Pace & Momentum</span>
@@ -796,6 +695,93 @@
 
             <!-- Weekly Velocity -->
             <div class="glass-panel p-4 rounded-2xl" id="dash-week-stats"></div>
+
+            <!-- Reading Intensity Grid (GitHub-style) -->
+            <div class="glass-panel p-3.5 flex flex-col gap-2.5 rounded-xl relative">
+              <div class="flex flex-wrap justify-between items-center gap-2">
+                <span class="section-label whitespace-nowrap" style="color: var(--text-secondary)"><i class="fa-solid fa-table-cells text-[10px]" style="color: var(--accent2)"></i> Reading Intensity Grid</span>
+                <div class="seg-control-nano max-w-full" id="dash-heatmap-tf">
+                  <button class="seg-btn-nano active" data-range="pastYear">Past Year</button>
+                  <button class="seg-btn-nano" data-range="thisYear">This Year</button>
+                  <button class="seg-btn-nano" data-range="allTime">All Time</button>
+                </div>
+              </div>
+              <div id="heatmap-container" class="heatmap-grid no-scrollbar">
+                <!-- Rendered dynamically by JS -->
+              </div>
+              <!-- Bottom Metric Selector Footer -->
+              <div class="flex items-center justify-between pt-2 border-t" style="border-color: var(--border)">
+                <span class="text-[10px] font-medium" style="color: var(--text-secondary)">Display Metric</span>
+                <div class="seg-control-nano" id="dash-heatmap-metric">
+                  <button class="seg-btn-nano active" data-metric="pages">Pages</button>
+                  <button class="seg-btn-nano" data-metric="duration">Mins</button>
+                  <button class="seg-btn-nano" data-metric="sessions">Logs</button>
+                  <button class="seg-btn-nano" data-metric="notes">Notes</button>
+                </div>
+              </div>
+              <!-- Tooltip element -->
+              <div id="heatmap-tooltip" class="absolute hidden z-20 pointer-events-none glass-panel p-2 text-[9px] shadow-xl font-bold leading-normal" style="color: var(--text-primary)"></div>
+            </div>
+
+            <!-- YTD vs Same Date Last Year (YOY card) -->
+            <div id="dash-yoy-card" class="glass-panel p-4 rounded-2xl" style="border-color: rgba(var(--accent-rgb),0.15)">
+              <div class="flex items-center justify-between mb-3">
+                <div class="section-label" style="color: var(--text-secondary)">
+                  <i class="fa-solid fa-arrows-left-right text-[10px]" style="color: var(--accent)"></i> YTD vs Same Date Last Year
+                </div>
+                <span id="yoy-date-range-badge" class="text-[9px] font-semibold px-2 py-0.5 rounded-md" style="background: var(--bg-input); color: var(--text-secondary)">Jan 1 – Today</span>
+              </div>
+
+              <div class="flex flex-col gap-3" id="yoy-graphic-container">
+                <!-- Books Comparison Block -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl border" style="background: var(--bg-input); border-color: var(--border)">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
+                      <i class="fa-solid fa-book text-[10px]" style="color: var(--accent)"></i> Books Completed
+                    </span>
+                    <span id="yoy-books-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">—</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-books-curr-label">2026 (This Year)</div>
+                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
+                      <div id="yoy-books-curr-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--accent)"></div>
+                    </div>
+                    <div id="yoy-books-curr" class="w-8 text-xs font-black text-right tabular-nums" style="color: var(--text-primary)">0</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-books-prev-label">2025 (Same Date)</div>
+                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
+                      <div id="yoy-books-prev-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--text-secondary); opacity: 0.5"></div>
+                    </div>
+                    <div id="yoy-books-prev" class="w-8 text-xs font-black text-right tabular-nums opacity-75" style="color: var(--text-secondary)">0</div>
+                  </div>
+                </div>
+
+                <!-- Pages Comparison Block -->
+                <div class="flex flex-col gap-2 p-3 rounded-xl border" style="background: var(--bg-input); border-color: var(--border)">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold flex items-center gap-1.5" style="color: var(--text-primary)">
+                      <i class="fa-solid fa-file-lines text-[10px]" style="color: var(--emerald)"></i> Pages Logged
+                    </span>
+                    <span id="yoy-pages-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">—</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-pages-curr-label">2026 (This Year)</div>
+                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
+                      <div id="yoy-pages-curr-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--emerald)"></div>
+                    </div>
+                    <div id="yoy-pages-curr" class="w-8 text-xs font-black text-right tabular-nums" style="color: var(--text-primary)">0</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-24 text-[10px] font-bold text-right truncate" style="color: var(--text-secondary)" id="yoy-pages-prev-label">2025 (Same Date)</div>
+                    <div class="flex-1 bg-black/20 rounded-full h-2 overflow-hidden border border-theme">
+                      <div id="yoy-pages-prev-fill" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: var(--text-secondary); opacity: 0.5"></div>
+                    </div>
+                    <div id="yoy-pages-prev" class="w-8 text-xs font-black text-right tabular-nums opacity-75" style="color: var(--text-secondary)">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
 
             <!-- ══════════════════════════════════════════════════════
@@ -1176,6 +1162,20 @@
                   <tbody id="tbl-yearly-body"></tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- Contextual Reading Productivity Heatmap (24x7 Matrix) -->
+            <div id="contextual-heatmap-card" class="glass-panel p-4 rounded-2xl flex flex-col gap-3">
+              <div class="flex justify-between items-center">
+                <span class="section-label" style="color: var(--text-secondary)">
+                  <i class="fa-solid fa-clock text-[10px]" style="color: var(--accent)"></i> Contextual Productivity Matrix (Hour x Day)
+                </span>
+                <span class="text-[9px] font-mono text-theme-secondary">24 HOUR × 7 DAY FOCUS INTENSITY</span>
+              </div>
+              <div id="contextual-matrix-container" class="overflow-x-auto no-scrollbar py-1">
+                <!-- Rendered dynamically by JS -->
+              </div>
+              <p id="contextual-peak-insight" class="text-[11px] font-semibold text-theme-secondary italic border-t border-theme pt-2 mt-1">Peak focus reading hour: —</p>
             </div>
 
           </div>

@@ -4039,6 +4039,17 @@ function renderStreakRings(streaks, activeLogs) {
   const legendPages = $('streak-legend-pages');
   if (legendPages) legendPages.textContent = `${todayPages}/${dailyPagesTarget}pg`;
   
+  const svgRingContainer = $('streak-rings-svg');
+  if (svgRingContainer && !svgRingContainer._interactiveWired) {
+    svgRingContainer._interactiveWired = true;
+    svgRingContainer.classList.add('interactive-ring-container');
+    svgRingContainer.addEventListener('click', () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      const statusMsg = `🔥 Activity Rings: ${Math.round(todayMinutes)}/${dailyMinutesTarget} mins (${Math.round(minutesPct)}%) • ${todayPages}/${dailyPagesTarget} pages (${Math.round(pagesPct)}%). Keep reading to close your rings!`;
+      if (typeof showToast === 'function') showToast(statusMsg, 'info');
+    });
+  }
+
   const streakRepairKey = 'rt_streak_repair_tokens';
   let tokens = parseInt(localStorage.getItem(streakRepairKey) || '0', 10);
   
@@ -6246,6 +6257,7 @@ function setupStopwatch() {
       clearInterval(timerInterval);
       timerInterval = null;
       timerRunning = false;
+      stopBackgroundTimerSession();
       toggleBtn.textContent = 'Resume';
       toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
       display.classList.remove('timer-running');
@@ -6261,6 +6273,9 @@ function setupStopwatch() {
       resetBtn.classList.add('hidden');
       const startMs = Date.now();
       saveTimerState(true, startMs, timerSeconds);
+      const bookSel = $('log-book');
+      const bookTitle = bookSel && bookSel.options[bookSel.selectedIndex] ? bookSel.options[bookSel.selectedIndex].text : 'Reading Session';
+      startBackgroundTimerSession(bookTitle, 'Reading Log Timer');
       startTick();
     }
   });
@@ -6270,6 +6285,7 @@ function setupStopwatch() {
     timerInterval = null;
     timerSeconds = 0;
     timerRunning = false;
+    stopBackgroundTimerSession();
     display.textContent = '00:00';
     display.classList.remove('timer-running');
     toggleBtn.textContent = 'Start';
@@ -10071,8 +10087,107 @@ let fullTimerState = {
   startPage: 0,
   currentEndPage: 0,
   photoData: null,
-  isMinimized: false
+  isMinimized: false,
+  startMs: 0
 };
+
+// ════════════════════════════════════════════════════════════
+// BACKGROUND TIMER & LOCK SCREEN MEDIASESSION CONTROLS
+// ════════════════════════════════════════════════════════════
+let bgTimerAudio = null;
+let wakeLockObj = null;
+
+function startBackgroundTimerSession(bookTitle, author) {
+  fullTimerState.startMs = Date.now() - (fullTimerState.seconds * 1000);
+
+  // 1. Silent background audio loop to keep timer thread alive on iOS / Android
+  try {
+    if (!bgTimerAudio) {
+      bgTimerAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+      bgTimerAudio.loop = true;
+    }
+    bgTimerAudio.play().catch(e => console.log('Background timer audio initialization:', e));
+  } catch(e) {}
+
+  // 2. Register MediaSession Metadata & Lock Screen Playback Controls
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: bookTitle ? `Reading: ${bookTitle}` : 'Active Reading Session',
+      artist: author ? `${author} • Focus Session` : 'Reading Tracker',
+      album: 'Reading Tracker Mobile',
+      artwork: [
+        { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+      ]
+    });
+    navigator.mediaSession.playbackState = 'playing';
+
+    try {
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (!fullTimerState.intervalId) {
+          startTimerClock();
+          const pauseBtn = document.getElementById('timer-btn-pause');
+          if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Pause';
+        }
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (fullTimerState.intervalId) {
+          clearInterval(fullTimerState.intervalId);
+          fullTimerState.intervalId = null;
+          const pauseBtn = document.getElementById('timer-btn-pause');
+          if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
+        }
+      });
+    } catch(e) {}
+  }
+}
+
+function updateMediaSessionPosition(elapsedSeconds) {
+  if ('mediaSession' in navigator && typeof navigator.mediaSession.setPositionState === 'function') {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: Math.max(elapsedSeconds + 1, 3600),
+        playbackRate: 1,
+        position: elapsedSeconds
+      });
+    } catch(e) {}
+  }
+}
+
+function stopBackgroundTimerSession() {
+  try {
+    if (bgTimerAudio) {
+      bgTimerAudio.pause();
+      bgTimerAudio.currentTime = 0;
+    }
+  } catch(e) {}
+
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.playbackState = 'none';
+  }
+  if (wakeLockObj) {
+    wakeLockObj.release().catch(() => {}).finally(() => { wakeLockObj = null; });
+  }
+}
+
+// Recalculate exact wall-clock time elapsed when phone wakes up or tab is foregrounded
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && fullTimerState.startMs > 0 && fullTimerState.intervalId) {
+    const realElapsedSeconds = Math.floor((Date.now() - fullTimerState.startMs) / 1000);
+    fullTimerState.seconds = Math.max(fullTimerState.seconds, realElapsedSeconds);
+    const mins = Math.floor(fullTimerState.seconds / 60);
+    const secs = fullTimerState.seconds % 60;
+    const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    
+    const clockEl = document.getElementById('timer-clock-display');
+    if (clockEl) clockEl.textContent = timeStr;
+    const miniSub = document.getElementById('timer-mini-subtitle');
+    if (miniSub) miniSub.textContent = `${timeStr} · Active Session`;
+
+    updatePaceAndPages();
+    updateMediaSessionPosition(fullTimerState.seconds);
+  }
+});
 
 window.openFullTimerSession = function(book) {
   const overlay = document.getElementById('timer-fullscreen-overlay');
@@ -10111,6 +10226,7 @@ window.openFullTimerSession = function(book) {
   fullTimerState.startPage = startPage;
   fullTimerState.currentEndPage = startPage;
   fullTimerState.seconds = 0;
+  fullTimerState.startMs = Date.now();
   fullTimerState.photoData = null;
   fullTimerState.isMinimized = false;
 
@@ -10142,12 +10258,15 @@ window.openFullTimerSession = function(book) {
 
   overlay.classList.add('active');
   startTimerClock();
+  startBackgroundTimerSession(book ? book.title : null, book ? book.author : null);
 };
 
 function startTimerClock() {
   if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
+  fullTimerState.startMs = Date.now() - (fullTimerState.seconds * 1000);
+  
   fullTimerState.intervalId = setInterval(() => {
-    fullTimerState.seconds++;
+    fullTimerState.seconds = Math.max(fullTimerState.seconds + 1, Math.floor((Date.now() - fullTimerState.startMs) / 1000));
     const mins = Math.floor(fullTimerState.seconds / 60);
     const secs = fullTimerState.seconds % 60;
     const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -10160,6 +10279,7 @@ function startTimerClock() {
     if (miniSub) miniSub.textContent = `${timeStr} · Active Session`;
 
     updatePaceAndPages();
+    updateMediaSessionPosition(fullTimerState.seconds);
   }, 1000);
 }
 
@@ -10278,6 +10398,7 @@ function setupTimerEvents() {
       if (typeof triggerHaptic === 'function') triggerHaptic();
       if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
       fullTimerState.intervalId = null;
+      stopBackgroundTimerSession();
       if (overlay) overlay.classList.remove('active');
       if (floatBar) floatBar.classList.add('hidden');
       if (typeof showToast === 'function') showToast('Focus session cancelled', 'info');
@@ -10307,6 +10428,7 @@ function setupTimerEvents() {
       if (typeof triggerHaptic === 'function') triggerHaptic();
       if (fullTimerState.intervalId) clearInterval(fullTimerState.intervalId);
       fullTimerState.intervalId = null;
+      stopBackgroundTimerSession();
 
       const book = fullTimerState.book;
       const title = book ? book.title : 'General Session';
