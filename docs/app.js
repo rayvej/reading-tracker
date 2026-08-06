@@ -3892,10 +3892,10 @@ function renderVelocityAnalytics(activeLogs, books, selectedYear) {
   const velConsistencyDetail = $('vel-consistency-detail');
   if (velConsistencyDetail) velConsistencyDetail.textContent = `${last30Days.size} of 30 days active`;
   
-  renderVelocityCurve(activeLogs, selectedYear);
+  renderVelocityCurve(activeLogs, selectedYear, velocityChange);
 }
 
-function renderVelocityCurve(activeLogs, selectedYear) {
+function renderVelocityCurve(activeLogs, selectedYear, velocityChange = 0) {
   const container = $('velocity-curve-chart');
   if (!container) return;
   
@@ -3954,16 +3954,17 @@ function renderVelocityCurve(activeLogs, selectedYear) {
     areaPath = `${actualPath} L ${lastP.x.toFixed(1)} ${padT + graphH} L ${actualPoints[0].x.toFixed(1)} ${padT + graphH} Z`;
   }
   
-  const targetAtMonth = Math.round(((curMonth + 1) / 12) * annualTarget);
-  const diff = currentTotal - targetAtMonth;
   const statusEl = $('vel-curve-status');
   if (statusEl) {
-    if (diff >= 0) {
+    if (velocityChange > 0) {
       statusEl.className = 'text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-      statusEl.textContent = `+${fmtNum(diff)} pgs Ahead`;
-    } else {
+      statusEl.textContent = `📈 +${velocityChange}% Pace Trend`;
+    } else if (velocityChange < 0) {
       statusEl.className = 'text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-rose-500/10 text-rose-400 border border-rose-500/20';
-      statusEl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
+      statusEl.textContent = `📉 ${velocityChange}% Pace Trend`;
+    } else {
+      statusEl.className = 'text-[9px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 leading-none bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      statusEl.textContent = `⚡ Steady Pace`;
     }
   }
   
@@ -4638,7 +4639,7 @@ async function renderDashboard() {
   const weekAvg = (thisWeekPages / 7).toFixed(1);
   
   $('dash-week-stats').innerHTML = `
-    <div class="text-[10px] font-bold uppercase tracking-widest text-theme-secondary">📊 Weekly Velocity (Last 7 Days)</div>
+    <div class="text-[10px] font-bold uppercase tracking-widest text-theme-secondary">📊 Weekly Reading Pace (Last 7 Days)</div>
     <div class="grid grid-cols-3 gap-2.5 mt-2 text-center">
       <div class="bg-theme-card p-2 rounded-xl border border-theme">
         <div class="text-[9px] text-theme-secondary uppercase font-bold tracking-wider">Sessions</div>
@@ -10648,7 +10649,7 @@ function renderYearWrappedSlides(targetYear) {
     },
     {
       title: 'Peak Productivity',
-      badge: 'READING VELOCITY',
+      badge: 'READING PACE',
       icon: 'fa-fire text-rose-400',
       bigVal: topMonthName,
       bigLabel: `Top Month (${fmtNum(topMonthPages)} pages)`,
