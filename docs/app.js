@@ -4039,9 +4039,9 @@ function renderStreakRings(streaks, activeLogs) {
   const today = new Date();
   const todayISO = today.toISOString().slice(0, 10);
   
-  const todayLogs = activeLogs.filter(l => l.date === todayISO);
-  const todayPages = todayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-  const todayMinutes = todayLogs.reduce((s, l) => s + (l.minutes_spent || l.duration_minutes || l.durationMinutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
+  const personalSpeed = getUserPersonalReadingSpeed(activeLogs);
+  const minsPerPageMultiplier = 60 / personalSpeed;
+  const todayMinutes = todayLogs.reduce((s, l) => s + (l.minutes_spent || l.duration_minutes || l.durationMinutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * minsPerPageMultiplier), 0);
   const hasSessionToday = todayLogs.length > 0;
   
   const { pagesTarget: dailyPagesTarget, minutesTarget: dailyMinutesTarget } = getUserDailyGoals();
@@ -12318,14 +12318,38 @@ function setupPacePredictorSlider() {
   });
 }
 
+function getUserPersonalReadingSpeed(logs) {
+  const activeLogs = (logs || (typeof logsCache !== 'undefined' ? logsCache : []) || []).filter(l => l && (!l.notes || !l.notes.startsWith('Historical cycle')));
+  let totalPages = 0;
+  let totalMinutes = 0;
+
+  for (let i = 0; i < activeLogs.length; i++) {
+    const l = activeLogs[i];
+    const p = Math.max(0, (l.end_page || 0) - (l.start_page || 0));
+    const m = typeof l.minutes_spent === 'number' ? l.minutes_spent : parseInt(l.minutes_spent || l.duration_minutes || l.durationMinutes || 0, 10);
+    if (p > 0 && m > 0) {
+      totalPages += p;
+      totalMinutes += m;
+    }
+  }
+
+  if (totalMinutes > 0 && totalPages > 0) {
+    const pgh = (totalPages / totalMinutes) * 60;
+    return Math.max(10, Math.min(180, Math.round(pgh)));
+  }
+
+  return 30; // default fallback if no timed sessions logged yet
+}
+
 function updatePacePrediction(book, dailyMins = 25) {
   if (!book) return;
   const tot = parseInt(book.total_pages || 250, 10);
   const read = parseInt(book.pages_read || book.current_page || 0, 10);
   const remainingPages = Math.max(0, tot - read);
 
-  const estPagesPerHour = 30;
-  const estDailyPages = Math.max(1, Math.round((dailyMins / 60) * estPagesPerHour));
+  // Dynamically calculate user's personal reading speed (pages / hour)
+  const personalPgh = getUserPersonalReadingSpeed();
+  const estDailyPages = Math.max(1, Math.round((dailyMins / 60) * personalPgh));
   const daysRem = Math.ceil(remainingPages / estDailyPages);
 
   const finishDate = new Date();
@@ -12338,7 +12362,10 @@ function updatePacePrediction(book, dailyMins = 25) {
   const finishDateEl = $('bd-calc-finish-date');
 
   if (estBadge) estBadge.textContent = remainingPages === 0 ? 'Completed' : `Est. ${dateStr}`;
-  if (dailyPagesEl) dailyPagesEl.textContent = `${estDailyPages} pg`;
+  if (dailyPagesEl) {
+    dailyPagesEl.textContent = `${estDailyPages} pg (${personalPgh} p/h)`;
+    dailyPagesEl.title = `Based on your actual reading speed of ${personalPgh} pages/hour`;
+  }
   if (daysRemEl) daysRemEl.textContent = `${daysRem} days`;
   if (finishDateEl) finishDateEl.textContent = remainingPages === 0 ? 'Done' : dateStr;
 }
