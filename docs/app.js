@@ -3916,7 +3916,13 @@ function renderVelocityCurve(activeLogs, selectedYear) {
   }
   
   const currentTotal = monthCumPages[curMonth] || 0;
-  const annualTarget = curMonth > 0 ? Math.round((currentTotal / (curMonth + 1)) * 12 * 1.1) : Math.max(currentTotal * 12, 100);
+  const userAnnualTarget = (typeof goalsCache !== 'undefined' && goalsCache && goalsCache.annual_pages_target) ? goalsCache.annual_pages_target : 0;
+  const annualTarget = userAnnualTarget > 0 ? userAnnualTarget : (curMonth > 0 ? Math.round((currentTotal / (curMonth + 1)) * 12 * 1.1) : Math.max(currentTotal * 12, 100));
+  
+  const targetLabelEl = $('vel-curve-target-label');
+  if (targetLabelEl) {
+    targetLabelEl.textContent = `Goal Pace (${fmtNum(annualTarget)} pgs/yr)`;
+  }
   
   const width = container.clientWidth || 320;
   const height = container.clientHeight || 176;
@@ -3925,6 +3931,7 @@ function renderVelocityCurve(activeLogs, selectedYear) {
   const graphH = height - padT - padB;
   const maxVal = Math.max(annualTarget, ...monthCumPages, 100);
   
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
   const targetPoints = [];
   const actualPoints = [];
@@ -3935,7 +3942,7 @@ function renderVelocityCurve(activeLogs, selectedYear) {
     targetPoints.push({ x, y: targetY });
     if (i <= curMonth) {
       const actY = padT + graphH - (monthCumPages[i] / maxVal) * graphH;
-      actualPoints.push({ x, y: actY });
+      actualPoints.push({ x, y: actY, monthIndex: i, pages: monthCumPages[i] });
     }
   }
   
@@ -3984,7 +3991,12 @@ function renderVelocityCurve(activeLogs, selectedYear) {
       <path d="${targetPath}" fill="none" stroke="rgba(var(--gold-rgb), 0.35)" stroke-width="1.5" stroke-dasharray="4,3" />
       ${areaPath ? `<path d="${areaPath}" fill="url(#velAreaGrad)" />` : ''}
       ${actualPath ? `<path d="${actualPath}" fill="none" stroke="url(#velLineGrad)" stroke-width="2.5" stroke-linecap="round" />` : ''}
-      ${actualPoints.map((p, i) => i === actualPoints.length - 1 ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent)" stroke="var(--bg-solid)" stroke-width="2" />` : '').join('')}
+      ${actualPoints.map((p, i) => {
+        const isLast = i === actualPoints.length - 1;
+        const targetReq = Math.round(((p.monthIndex + 1) / 12) * annualTarget);
+        const hoverTitle = `${monthNames[p.monthIndex]}: ${fmtNum(p.pages)} pgs actual vs ${fmtNum(targetReq)} pgs target pace`;
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isLast ? '4' : '3'}" fill="${isLast ? 'var(--accent)' : '#34d399'}" stroke="var(--bg-solid)" stroke-width="1.5"><title>${hoverTitle}</title></circle>`;
+      }).join('')}
       ${monthLabels}
     </svg>
   `;
