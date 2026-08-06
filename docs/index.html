@@ -44,7 +44,7 @@
   </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=101">
+  <link rel="stylesheet" href="style.css?v=102">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1248,9 +1248,30 @@
               <div class="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-theme-gold text-sm">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
               </div>
-              <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                <div class="text-[10px] font-extrabold uppercase tracking-wider text-theme-gold">Reading Assistant</div>
-                <div class="text-xs font-semibold text-theme-primary leading-snug" id="goals-assistant-msg">Loading reading recommendations…</div>
+            <!-- Interactive Monthly Calendar & Streak Saver Vault -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3.5 goals-sec-daily" id="goals-calendar-card">
+              <div class="flex items-center justify-between">
+                <span class="section-label"><i class="fa-solid fa-calendar-days text-[11px]" style="color: var(--accent2)"></i> Reading Habits &amp; Streak Calendar</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-theme-gold border border-amber-500/20 text-xs font-black" id="streak-saver-vault-badge">
+                  <i class="fa-solid fa-shield-halved"></i> <span id="streak-saver-count">0 Tokens</span>
+                </div>
+              </div>
+              
+              <!-- Month Navigator -->
+              <div class="flex justify-between items-center text-xs font-bold px-1">
+                <button id="cal-month-prev" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-theme-secondary active:scale-95 transition-all"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                <span id="cal-month-label" class="text-theme-primary font-mono uppercase tracking-wider">—</span>
+                <button id="cal-month-next" class="w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-theme-secondary active:scale-95 transition-all"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+              </div>
+
+              <!-- Day Name Headers -->
+              <div class="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-theme-tertiary uppercase">
+                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+              </div>
+
+              <!-- Calendar Grid -->
+              <div id="cal-grid-container" class="grid grid-cols-7 gap-1 text-center text-[10px] font-mono">
+                <!-- Rendered dynamically by JS -->
               </div>
             </div>
 
@@ -2238,30 +2259,36 @@
         </div>
       </div>
 
-      <!-- Book Calculator Info -->
-      <div id="bd-calculator-info" class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5 mt-1">
-        <span class="text-[9px] font-extrabold uppercase tracking-wider text-theme-secondary"><i class="fa-solid fa-calculator"></i> Book Reading Calculator</span>
-        <div class="flex flex-col gap-2 text-xs">
-          <div class="flex justify-between items-center">
-            <span class="text-theme-secondary">Pages per Day (plan):</span>
-            <input type="number" id="bd-calc-pace" value="10" class="w-16 px-2 py-1 rounded bg-theme-card border border-theme text-right text-theme-primary font-bold" min="1">
+      <!-- Interactive Smart Completion Predictor Slider -->
+      <div id="bd-calculator-info" class="glass-panel p-4 rounded-2xl flex flex-col gap-3 mt-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[9px] font-extrabold uppercase tracking-wider text-theme-gold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Smart Completion Predictor</span>
+          <span id="bd-calc-est-date-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">—</span>
+        </div>
+        
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-theme-secondary font-medium">Daily Reading Commitment:</span>
+            <span class="text-theme-gold font-bold font-mono" id="bd-calc-slider-label">25 mins/day</span>
           </div>
-          <div class="flex justify-between mt-1 border-t border-theme pt-2">
-            <span class="text-theme-secondary">Pages Remaining:</span>
-            <span class="text-theme-primary font-bold" id="bd-calc-remaining">—</span>
+          <input type="range" id="bd-calc-slider" min="5" max="120" step="5" value="25" class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-[10px] border-t border-theme pt-2.5 font-semibold">
+          <div class="flex flex-col items-center">
+            <span class="text-theme-tertiary">Est. Daily Pages</span>
+            <b id="bd-calc-daily-pages" class="text-theme-primary font-bold text-xs mt-0.5">—</b>
           </div>
-          <div class="flex justify-between">
-            <span class="text-theme-secondary">Days to Finish:</span>
-            <span class="text-theme-primary font-bold" id="bd-calc-days">—</span>
+          <div class="flex flex-col items-center border-x border-theme px-1">
+            <span class="text-theme-tertiary">Days Remaining</span>
+            <b id="bd-calc-days-rem" class="text-theme-primary font-bold text-xs mt-0.5">—</b>
           </div>
-          <div class="flex justify-between">
-            <span class="text-theme-secondary">Weeks to Finish:</span>
-            <span class="text-theme-primary font-bold" id="bd-calc-weeks">—</span>
+          <div class="flex flex-col items-center">
+            <span class="text-theme-tertiary">Finish Date</span>
+            <b id="bd-calc-finish-date" class="text-theme-gold font-bold text-xs mt-0.5">—</b>
           </div>
-          <div class="flex justify-between">
-            <span class="text-theme-secondary">Projected Finish Date:</span>
-            <span class="text-theme-primary font-bold text-emerald" id="bd-calc-date">—</span>
-          </div>
+        </div>
+      </div>
           <div class="flex justify-between border-t border-theme pt-2">
             <span class="text-theme-secondary">Total Reading Time:</span>
             <span class="text-theme-primary font-bold" id="bd-calc-time">—</span>
@@ -2546,6 +2573,29 @@
           </div>
           <i class="fa-solid fa-chevron-right text-xs text-rose-400 group-hover:translate-x-0.5 transition-transform"></i>
         </button>
+      </div>
+
+      <!-- Dashboard Section Customization -->
+      <div class="flex flex-col gap-3 pt-2 border-t border-theme">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-theme-secondary">Dashboard Layout &amp; Sections</h4>
+        <div class="flex flex-col gap-2.5 p-3.5 rounded-2xl border border-theme bg-white/5 text-xs font-semibold">
+          <label class="flex items-center justify-between cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-gauge-high text-amber-400"></i> Reading Pace &amp; Momentum</span>
+            <input type="checkbox" id="pref-dash-pace" class="toggle toggle-amber toggle-sm" checked>
+          </label>
+          <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-white/5">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-table-cells text-indigo-400"></i> Reading Intensity Grid (Heatmap)</span>
+            <input type="checkbox" id="pref-dash-heatmap" class="toggle toggle-amber toggle-sm" checked>
+          </label>
+          <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-white/5">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-left-right text-emerald-400"></i> YoY Comparison Card</span>
+            <input type="checkbox" id="pref-dash-yoy" class="toggle toggle-amber toggle-sm" checked>
+          </label>
+          <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-white/5">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-clock text-rose-400"></i> Contextual Productivity Matrix (Hour x Day)</span>
+            <input type="checkbox" id="pref-dash-contextual" class="toggle toggle-amber toggle-sm" checked>
+          </label>
+        </div>
       </div>
 
       <!-- Notifications Section -->
@@ -3508,6 +3558,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=101"></script>
+  <script type="module" src="app.js?v=102"></script>
 </body>
 </html>

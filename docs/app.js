@@ -8507,8 +8507,13 @@ function normalizeText(str) {
 }
 
 function openBookDetailModal(b) {
+  window._activeDetailBook = b;
   $('bd-title').textContent = b.title;
   $('bd-author').textContent = b.author ? `by ${b.author}` : 'Unknown Author';
+  
+  if (typeof updatePacePrediction === 'function') {
+    updatePacePrediction(b, 25);
+  }
   
   const bdCover = $('bd-cover-container');
   if (bdCover) {
@@ -12211,6 +12216,247 @@ function initScholarSuite() {
   }
 }
 
+// ════════════════════════════════════════════════════════════
+// DASHBOARD SECTION PREFERENCES & LAYOUT CUSTOMIZATION
+// ════════════════════════════════════════════════════════════
+function getDashboardPreferences() {
+  try {
+    const saved = localStorage.getItem('rt_dash_preferences');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return { pace: true, heatmap: true, yoy: true, contextual: true };
+}
+
+function applyDashboardPreferences() {
+  const prefs = getDashboardPreferences();
+
+  const paceSec = $('dash-velocity-stats') ? $('dash-velocity-stats').parentElement : null;
+  const heatmapSec = $('heatmap-container') ? $('heatmap-container').parentElement : null;
+  const yoySec = $('dash-yoy-card');
+  const contextualSec = $('contextual-heatmap-card');
+
+  if (paceSec) paceSec.style.display = prefs.pace !== false ? 'flex' : 'none';
+  if (heatmapSec) heatmapSec.style.display = prefs.heatmap !== false ? 'flex' : 'none';
+  if (yoySec) yoySec.style.display = prefs.yoy !== false ? 'block' : 'none';
+  if (contextualSec) contextualSec.style.display = prefs.contextual !== false ? 'flex' : 'none';
+
+  const cbPace = $('pref-dash-pace');
+  const cbHeatmap = $('pref-dash-heatmap');
+  const cbYoy = $('pref-dash-yoy');
+  const cbContextual = $('pref-dash-contextual');
+
+  if (cbPace) cbPace.checked = prefs.pace !== false;
+  if (cbHeatmap) cbHeatmap.checked = prefs.heatmap !== false;
+  if (cbYoy) cbYoy.checked = prefs.yoy !== false;
+  if (cbContextual) cbContextual.checked = prefs.contextual !== false;
+}
+
+function setupDashboardPreferencesListeners() {
+  const cbs = [
+    { id: 'pref-dash-pace', key: 'pace' },
+    { id: 'pref-dash-heatmap', key: 'heatmap' },
+    { id: 'pref-dash-yoy', key: 'yoy' },
+    { id: 'pref-dash-contextual', key: 'contextual' }
+  ];
+
+  cbs.forEach(cb => {
+    const el = $(cb.id);
+    if (el) {
+      el.addEventListener('change', () => {
+        const prefs = getDashboardPreferences();
+        prefs[cb.key] = el.checked;
+        try {
+          localStorage.setItem('rt_dash_preferences', JSON.stringify(prefs));
+        } catch(e) {}
+        applyDashboardPreferences();
+      });
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// SMART COMPLETION PREDICTOR SLIDER
+// ════════════════════════════════════════════════════════════
+function setupPacePredictorSlider() {
+  const slider = $('bd-calc-slider');
+  if (!slider) return;
+
+  slider.addEventListener('input', () => {
+    const mins = parseInt(slider.value, 10);
+    const label = $('bd-calc-slider-label');
+    if (label) label.textContent = `${mins} mins/day`;
+
+    if (window._activeDetailBook) {
+      updatePacePrediction(window._activeDetailBook, mins);
+    }
+  });
+}
+
+function updatePacePrediction(book, dailyMins = 25) {
+  if (!book) return;
+  const tot = parseInt(book.total_pages || 250, 10);
+  const read = parseInt(book.pages_read || book.current_page || 0, 10);
+  const remainingPages = Math.max(0, tot - read);
+
+  const estPagesPerHour = 30;
+  const estDailyPages = Math.max(1, Math.round((dailyMins / 60) * estPagesPerHour));
+  const daysRem = Math.ceil(remainingPages / estDailyPages);
+
+  const finishDate = new Date();
+  finishDate.setDate(finishDate.getDate() + daysRem);
+  const dateStr = finishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const estBadge = $('bd-calc-est-date-badge');
+  const dailyPagesEl = $('bd-calc-daily-pages');
+  const daysRemEl = $('bd-calc-days-rem');
+  const finishDateEl = $('bd-calc-finish-date');
+
+  if (estBadge) estBadge.textContent = remainingPages === 0 ? 'Completed' : `Est. ${dateStr}`;
+  if (dailyPagesEl) dailyPagesEl.textContent = `${estDailyPages} pg`;
+  if (daysRemEl) daysRemEl.textContent = `${daysRem} days`;
+  if (finishDateEl) finishDateEl.textContent = remainingPages === 0 ? 'Done' : dateStr;
+}
+
+// ════════════════════════════════════════════════════════════
+// INTERACTIVE MONTHLY CALENDAR & STREAK SAVER VAULT
+// ════════════════════════════════════════════════════════════
+let currentCalDate = new Date();
+
+function renderStreakCalendar() {
+  const container = $('cal-grid-container');
+  const label = $('cal-month-label');
+  const countBadge = $('streak-saver-count');
+  if (!container) return;
+
+  const yr = currentCalDate.getFullYear();
+  const mo = currentCalDate.getMonth();
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  if (label) label.textContent = `${monthNames[mo]} ${yr}`;
+
+  const streakRepairKey = 'rt_streak_repair_tokens';
+  const tokens = parseInt(localStorage.getItem(streakRepairKey) || '0', 10);
+  if (countBadge) countBadge.textContent = `${tokens} Token${tokens === 1 ? '' : 's'}`;
+
+  const activeLogs = (logsCache || []).filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  const logDatesSet = new Set(activeLogs.map(l => l.date));
+
+  const firstDay = new Date(yr, mo, 1).getDay();
+  const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+
+  container.innerHTML = '';
+
+  for (let i = 0; i < firstDay; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.className = 'p-1.5 opacity-0';
+    container.appendChild(emptyCell);
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const hasRead = logDatesSet.has(dateStr);
+    const isToday = dateStr === todayStr;
+
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = `p-1.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+      hasRead 
+        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 font-bold' 
+        : (isToday ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-black' : 'bg-white/5 border-theme text-theme-secondary opacity-60')
+    }`;
+    cell.innerHTML = `<span>${day}</span>${hasRead ? '<span class="w-1 h-1 rounded-full bg-emerald-400 mt-0.5"></span>' : ''}`;
+    cell.onclick = () => {
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      openHeatmapDayDetailDrawer(dateStr);
+    };
+
+    container.appendChild(cell);
+  }
+
+  const prevBtn = $('cal-month-prev');
+  const nextBtn = $('cal-month-next');
+  if (prevBtn && !prevBtn._wired) {
+    prevBtn._wired = true;
+    prevBtn.onclick = () => {
+      currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+      renderStreakCalendar();
+    };
+  }
+  if (nextBtn && !nextBtn._wired) {
+    nextBtn._wired = true;
+    nextBtn.onclick = () => {
+      currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+      renderStreakCalendar();
+    };
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORTABLE GLASSMORPHIC QUOTE CARDS
+// ════════════════════════════════════════════════════════════
+window.exportQuoteCard = function(title, author, text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 1200, 630);
+  grad.addColorStop(0, '#1E1815');
+  grad.addColorStop(0.5, '#2A201A');
+  grad.addColorStop(1, '#14100E');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  const radial = ctx.createRadialGradient(1000, 100, 0, 1000, 100, 500);
+  radial.addColorStop(0, 'rgba(212, 163, 89, 0.25)');
+  radial.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = radial;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  ctx.strokeStyle = 'rgba(212, 163, 89, 0.3)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(40, 40, 1120, 550);
+
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillStyle = '#D4A359';
+  ctx.fillText('READING TRACKER • KNOWLEDGE VAULT', 80, 95);
+
+  ctx.font = 'italic 32px Georgia, serif';
+  ctx.fillStyle = '#F4EBE1';
+  
+  const words = (text || '').replace(/[\n\r]+/g, ' ').split(' ');
+  let line = '';
+  let y = 180;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > 1000 && i > 0) {
+      ctx.fillText(`"${line.trim()}"`, 80, y);
+      line = words[i] + ' ';
+      y += 48;
+      if (y > 450) break;
+    } else {
+      line = testLine;
+    }
+  }
+  if (y <= 450) {
+    ctx.fillText(`"${line.trim()}"`, 80, y);
+  }
+
+  ctx.font = 'bold 24px Georgia, serif';
+  ctx.fillStyle = '#D4A359';
+  ctx.fillText(`— ${title || 'Book Note'}${author ? ' by ' + author : ''}`, 80, y + 70);
+
+  const link = document.createElement('a');
+  link.download = `quote-${(title || 'reading').toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  if (typeof showToast === 'function') showToast('Quote card exported to downloads!', 'success');
+};
+
 // Master init for all extended feature modules
 document.addEventListener('DOMContentLoaded', () => {
   initHeatmapMetricListeners();
@@ -12220,7 +12466,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initKindleImporter();
   initScholarSuite();
 
-  const hdClose = document.getElementById('hd-modal-close');
+  applyDashboardPreferences();
+  setupDashboardPreferencesListeners();
+  setupPacePredictorSlider();
+  renderStreakCalendar();
+
+  const hdClose = document.getElementById('heatmap-day-modal') ? document.getElementById('hd-modal-close') : null;
   if (hdClose) hdClose.onclick = () => document.getElementById('heatmap-day-modal').classList.remove('open');
 });
 

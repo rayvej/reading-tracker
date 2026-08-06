@@ -89,6 +89,36 @@ test('Activity Rings click handler is wired to trigger haptics and progress summ
   assert.ok(appJsContent.includes('Activity Rings:'), 'Activity ring click handler presents ring progress info');
 });
 
+// ── 4. Dashboard Customization & Extended Features Tests ─────────────────────
+console.log('\n4. Dashboard Customization & Extended Features:');
+
+test('Dashboard Layout Preferences controls exist in Settings modal and app.js', () => {
+  assert.ok(htmlContent.includes('id="pref-dash-pace"'), 'pref-dash-pace checkbox exists in Settings modal');
+  assert.ok(htmlContent.includes('id="pref-dash-heatmap"'), 'pref-dash-heatmap checkbox exists in Settings modal');
+  assert.ok(htmlContent.includes('id="pref-dash-yoy"'), 'pref-dash-yoy checkbox exists in Settings modal');
+  assert.ok(htmlContent.includes('id="pref-dash-contextual"'), 'pref-dash-contextual checkbox exists in Settings modal');
+
+  assert.ok(appJsContent.includes('function applyDashboardPreferences()'), 'applyDashboardPreferences function declared in app.js');
+  assert.ok(appJsContent.includes('localStorage.getItem(\'rt_dash_preferences\')'), 'Dashboard preferences saved to localStorage');
+});
+
+test('Smart Completion Predictor Slider exists in Book Detail Modal and app.js', () => {
+  assert.ok(htmlContent.includes('id="bd-calc-slider"'), 'bd-calc-slider range input exists in Book Detail modal');
+  assert.ok(htmlContent.includes('id="bd-calc-est-date-badge"'), 'Est completion date badge exists');
+  assert.ok(appJsContent.includes('function updatePacePrediction('), 'updatePacePrediction function declared in app.js');
+});
+
+test('Interactive Monthly Calendar & Streak Saver Vault exists in Goals tab', () => {
+  assert.ok(htmlContent.includes('id="goals-calendar-card"'), 'goals-calendar-card exists in Goals tab');
+  assert.ok(htmlContent.includes('id="streak-saver-vault-badge"'), 'streak-saver-vault-badge exists');
+  assert.ok(appJsContent.includes('function renderStreakCalendar()'), 'renderStreakCalendar function declared in app.js');
+});
+
+test('Glassmorphic Quote Card exporter is registered globally', () => {
+  assert.ok(appJsContent.includes('window.exportQuoteCard = function('), 'exportQuoteCard function registered on window');
+  assert.ok(appJsContent.includes('READING TRACKER • KNOWLEDGE VAULT'), 'Quote card canvas branding header set');
+});
+
 // Summary
 console.log(`\n══════════════════════════════`);
 console.log(`Results: ${passed} passed, ${failed} failed`);
