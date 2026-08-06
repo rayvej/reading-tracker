@@ -10,20 +10,6 @@
   <meta name="apple-mobile-web-app-title" content="Reading Tracker">
   <title>Reading Tracker</title>
 
-  <!-- OpenGraph & Twitter Social Meta Tags -->
-  <meta property="og:title" content="Reading Tracker — Personal Library & Progress Log">
-  <meta property="og:description" content="Private, fast reading tracker for logging books, tracking streaks, managing quotes & analytical goals.">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="icon-512.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Reading Tracker — Personal Library & Progress Log">
-  <meta name="twitter:description" content="Private, fast reading tracker for logging books, tracking streaks, managing quotes & analytical goals.">
-  <meta name="twitter:image" content="icon-512.png">
-
-  <!-- Performance Asset Preloads -->
-  <link rel="preload" href="style.css?v=109" as="style">
-  <link rel="preload" href="app.js?v=109" as="script">
-
   <!-- PWA manifest & icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -37,11 +23,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- DaisyUI -->
+  <!-- DaisyUI + Tailwind (for utility classes & form components) -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:      '#D6A85C',
+            goldlight: '#F5D76E',
+            accent:    '#38BDF8',
+            accent2:   '#818CF8',
+            accent3:   '#F472B6',
+          }
+        }
+      }
+    }
+  </script>
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=109">
+  <link rel="stylesheet" href="style.css?v=108">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">

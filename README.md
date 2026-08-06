@@ -68,7 +68,7 @@ const firebaseConfig = {
 };
 ```
 
-4. Open `docs/firebase-config.js` and paste your values in.
+4. Open `public/firebase-config.js` and paste your values in.
 
 ---
 
@@ -95,7 +95,7 @@ git push -u origin main
 1. In your GitHub repo, go to **Settings** → **Pages**
 2. Under **Source**, select:
    - Branch: `main`
-   - Folder: `/docs`
+   - Folder: `/public`
 3. Click **Save**
 4. Wait 1–2 minutes — your app will be live at:
    `https://YOUR_USERNAME.github.io/reading-tracker/`
@@ -152,7 +152,7 @@ The app works fully offline after the first visit. Any sessions you log while of
 ```
 Reading Tracker/
   generate_seed.py         ← Run once to rebuild seed-data.json from Excel
-  docs/
+  public/
     index.html             ← App shell
     app.js                 ← All app logic
     style.css              ← Design system
