@@ -3755,18 +3755,34 @@ function renderLiveSessionBanner(books, logs) {
   const recentLogs = (logs || []).filter(l => l.date >= sevenDayISO);
   const recentDays = new Set(recentLogs.map(l => l.date));
   const recentPages = recentLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-  const velocity = recentDays.size > 0 ? (recentPages / recentDays.size) : 15;
+  // Calculate live time remaining based on personal reading speed
+  const personalPgh = getUserPersonalReadingSpeed(logs);
+  const estTotalMins = (remaining / personalPgh) * 60;
+  const estHrs = Math.floor(estTotalMins / 60);
+  const estMinsRem = Math.round(estTotalMins % 60);
   
-  if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} pgs/day`;
+  let timeRemStr = '';
+  if (remaining === 0) {
+    timeRemStr = 'Complete';
+  } else if (estHrs > 0 && estMinsRem > 0) {
+    timeRemStr = `${estHrs}h ${estMinsRem}m left`;
+  } else if (estHrs > 0) {
+    timeRemStr = `${estHrs}h left`;
+  } else {
+    timeRemStr = `${Math.max(1, estMinsRem)}m left`;
+  }
 
   const estDays = velocity > 0 ? Math.max(1, Math.ceil(remaining / velocity)) : 99;
   const estDate = new Date(today);
   estDate.setDate(today.getDate() + estDays);
   const estDateStr = estDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   
+  if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} p/d · Speed: ${personalPgh} p/h`;
+
   if (etaBadgeEl) {
-    etaBadgeEl.textContent = `~${estDays}d (${estDateStr})`;
+    etaBadgeEl.textContent = remaining === 0 ? 'Completed ✓' : `${timeRemStr} (${personalPgh} p/h)`;
     etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    etaBadgeEl.title = `Estimated ${timeRemStr} remaining based on your personal speed of ${personalPgh} pages/hour`;
   }
 
   // Show & Wire Action Buttons
