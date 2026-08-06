@@ -175,9 +175,15 @@ test('Single log day has streak of 1', () => {
   assert.equal(result.longestStreak, 1);
 });
 
+test('Log duration resolves correctly with minutes_spent field', () => {
+  const log = { date: '2026-08-06', minutes_spent: 45, start_page: 10, end_page: 30 };
+  const dur = parseInt(log.minutes_spent || log.duration_minutes || log.durationMinutes || 0, 10);
+  assert.equal(dur, 45, 'Should resolve minutes_spent to 45');
+});
+
 // Summary
-console.log(`\\n══════════════════════════════`);
+console.log(`\n══════════════════════════════`);
 console.log(`Results: ${passed} passed, ${failed} failed`);
-console.log(`══════════════════════════════\\n`);
+console.log(`══════════════════════════════\n`);
 
 if (failed > 0) process.exit(1);

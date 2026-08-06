@@ -3999,7 +3999,7 @@ function renderStreakRings(streaks, activeLogs) {
   
   const todayLogs = activeLogs.filter(l => l.date === todayISO);
   const todayPages = todayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
-  const todayMinutes = todayLogs.reduce((s, l) => s + (l.duration_minutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
+  const todayMinutes = todayLogs.reduce((s, l) => s + (l.minutes_spent || l.duration_minutes || l.durationMinutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * 1.5), 0);
   const hasSessionToday = todayLogs.length > 0;
   
   const dailyMinutesTarget = Math.max(1, parseInt(localStorage.getItem('rt_target_minutes') || '40', 10));
@@ -10812,7 +10812,7 @@ function openHeatmapDayDetailDrawer(dateStr) {
   logs.forEach(l => {
     const p = parseInt(l.pages_read_today, 10) || parseInt(l.pagesRead, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10)) || 0;
     totalPages += p;
-    totalDur += parseInt(l.duration_minutes || l.durationMinutes || 0, 10);
+    totalDur += parseInt(l.minutes_spent || l.duration_minutes || l.durationMinutes || 0, 10);
     if (l.notes && l.notes.trim()) notesCount++;
   });
 
@@ -10825,15 +10825,19 @@ function openHeatmapDayDetailDrawer(dateStr) {
     if (logs.length === 0) {
       listContainer.innerHTML = '<div class="text-xs text-theme-secondary italic text-center py-4">No reading sessions recorded on this date.</div>';
     } else {
-      listContainer.innerHTML = logs.map(l => `
+      listContainer.innerHTML = logs.map(l => {
+        const p = parseInt(l.pages_read_today, 10) || parseInt(l.pagesRead, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10)) || 0;
+        const dur = parseInt(l.minutes_spent || l.duration_minutes || l.durationMinutes || 0, 10);
+        return `
         <div class="p-3 rounded-xl bg-white/5 border border-theme text-xs flex flex-col gap-1">
           <div class="flex justify-between items-center font-bold text-theme-gold">
             <span>${l.book_title || 'Session'}</span>
-            <span>+${l.pages_read_today || l.pagesRead || 0} pgs (${l.duration_minutes || l.durationMinutes || 0}m)</span>
+            <span>+${p} pgs (${dur > 0 ? `${dur}m` : 'Unspecified'})</span>
           </div>
           ${l.notes ? `<p class="text-[11px] text-theme-secondary italic mt-1 line-clamp-2">"${l.notes}"</p>` : ''}
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
   }
 
