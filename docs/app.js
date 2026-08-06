@@ -3755,6 +3755,8 @@ function renderLiveSessionBanner(books, logs) {
   const recentLogs = (logs || []).filter(l => l.date >= sevenDayISO);
   const recentDays = new Set(recentLogs.map(l => l.date));
   const recentPages = recentLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+  const velocity = recentDays.size > 0 ? (recentPages / recentDays.size) : 15;
+  
   // Calculate live time remaining based on personal reading speed
   const personalPgh = getUserPersonalReadingSpeed(logs);
   const estTotalMins = (remaining / personalPgh) * 60;
