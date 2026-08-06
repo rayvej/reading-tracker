@@ -189,6 +189,7 @@ function debounce(fn, delay = 150) {
 let viewDirtyFlags = {
   dashboard: true,
   bookshelf: true,
+  knowledge: true,
   goals: true,
   wishlist: true,
   log: true,
@@ -2548,28 +2549,30 @@ function setupNav() {
 function showView(name) {
   currentView = name;
 
-  // Update tab bar active state
+  // 1. Instantaneous tab bar active state update
   document.querySelectorAll('#tab-bar .tab-item').forEach(b => {
     b.classList.toggle('active', b.dataset.view === name);
   });
 
-  // Show/hide view sections
+  // 2. Instantaneous view panel visibility toggle
   document.querySelectorAll('.view').forEach(v => {
     const isActive = v.id === `view-${name}`;
     v.classList.toggle('active', isActive);
     v.classList.toggle('hidden', !isActive);
   });
 
-  // Refresh content on tab open only if dirty or first render
+  // 3. Defer non-blocking rendering to next animation frame for silky smooth 60fps transitions
   const key = name === 'wishlist' ? 'bookshelf' : name;
-  if (viewDirtyFlags[key] !== false || name === 'knowledge') {
-    if (name === 'dashboard') safeRender('view-dashboard', () => renderDashboard());
-    if (name === 'knowledge') safeRender('view-knowledge', () => renderKnowledgeView());
-    if (name === 'goals')     safeRender('view-goals', () => renderGoals());
-    if (name === 'wishlist')  safeRender('view-wishlist', () => renderBookshelf());
-    if (name === 'log')       safeRender('view-log', () => typeof renderLogView === 'function' && renderLogView());
-    if (name === 'account')   safeRender('view-account', () => renderAccountView());
-    if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
+  if (viewDirtyFlags[key] !== false) {
+    requestAnimationFrame(() => {
+      if (name === 'dashboard') safeRender('view-dashboard', () => renderDashboard());
+      if (name === 'knowledge') safeRender('view-knowledge', () => renderKnowledgeView());
+      if (name === 'goals')     safeRender('view-goals', () => renderGoals());
+      if (name === 'wishlist')  safeRender('view-wishlist', () => renderBookshelf());
+      if (name === 'log')       safeRender('view-log', () => typeof renderLogView === 'function' && renderLogView());
+      if (name === 'account')   safeRender('view-account', () => renderAccountView());
+      if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
+    });
   }
 
   // Hide wishlist fab if present
