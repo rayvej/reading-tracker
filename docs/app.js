@@ -4055,6 +4055,9 @@ function renderStreakRings(streaks, activeLogs) {
   const today = new Date();
   const todayISO = today.toISOString().slice(0, 10);
   
+  const todayLogs = (activeLogs || []).filter(l => l.date === todayISO);
+  const todayPages = todayLogs.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
+
   const personalSpeed = getUserPersonalReadingSpeed(activeLogs);
   const minsPerPageMultiplier = 60 / personalSpeed;
   const todayMinutes = todayLogs.reduce((s, l) => s + (l.minutes_spent || l.duration_minutes || l.durationMinutes || Math.max(0, (l.end_page || 0) - (l.start_page || 0)) * minsPerPageMultiplier), 0);
