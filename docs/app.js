@@ -4020,7 +4020,7 @@ function renderStreakRings(streaks, activeLogs) {
   const minutesPct = Math.min(100, (todayMinutes / dailyMinutesTarget) * 100);
   const minutesRing = $('streak-ring-minutes');
   if (minutesRing) {
-    const circumference = 477.5;
+    const circumference = 439.8;
     minutesRing.style.strokeDasharray = `${circumference}`;
     minutesRing.style.strokeDashoffset = circumference - (circumference * minutesPct / 100);
   }
@@ -4028,17 +4028,9 @@ function renderStreakRings(streaks, activeLogs) {
   const pagesPct = Math.min(100, (todayPages / dailyPagesTarget) * 100);
   const pagesRing = $('streak-ring-pages');
   if (pagesRing) {
-    const circumference = 364.4;
+    const circumference = 314.2;
     pagesRing.style.strokeDasharray = `${circumference}`;
     pagesRing.style.strokeDashoffset = circumference - (circumference * pagesPct / 100);
-  }
-  
-  const consistencyPct = hasSessionToday ? 100 : 0;
-  const consistencyRing = $('streak-ring-consistency');
-  if (consistencyRing) {
-    const circumference = 251.3;
-    consistencyRing.style.strokeDasharray = `${circumference}`;
-    consistencyRing.style.strokeDashoffset = circumference - (circumference * consistencyPct / 100);
   }
   
   const legendMinutes = $('streak-legend-minutes');
@@ -4046,9 +4038,6 @@ function renderStreakRings(streaks, activeLogs) {
   
   const legendPages = $('streak-legend-pages');
   if (legendPages) legendPages.textContent = `${todayPages}/${dailyPagesTarget}pg`;
-  
-  const legendConsistency = $('streak-legend-consistency');
-  if (legendConsistency) legendConsistency.textContent = hasSessionToday ? '✓ Active' : '—';
   
   const streakRepairKey = 'rt_streak_repair_tokens';
   let tokens = parseInt(localStorage.getItem(streakRepairKey) || '0', 10);
@@ -4299,9 +4288,10 @@ async function renderDashboard() {
   const avgPagesPerBook = finishedCount > 0 ? Math.round(finishedPagesSum / finishedCount) : 0;
   
   $('stat-reads').textContent = totalReads;
-  $('detail-reads').textContent = `Avg pages/book: ${avgPagesPerBook}`;
+  $('detail-reads').textContent = `Avg: ${avgPagesPerBook} pages/book`;
   $('stat-titles').textContent = titlesCount;
-  $('detail-titles').textContent = `Finished: ${totalReads} · Active: ${progressCount}`;
+  const unreadCount = Math.max(0, titlesCount - finishedCount - progressCount);
+  $('detail-titles').textContent = `${progressCount} Active · ${unreadCount} Unread`;
   $('stat-pages').textContent = fmtNum(pagesRead);
   $('detail-pages').textContent = `Logged in ${selectedYear === 'all' ? 'total' : selectedYear}`;
   
