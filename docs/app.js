@@ -350,13 +350,27 @@ $('btn-signout').addEventListener('click', async () => {
   showScreen('auth-screen');
 });
 
-// Handle redirect result (mobile auth)
-getRedirectResult(auth).catch(() => {});
+// Instant 0ms pre-warming for returning authenticated users
+const cachedUid = localStorage.getItem('rt_user_cached_uid');
+if (cachedUid && !window.isMockAuth) {
+  uid = cachedUid;
+  const hasSession = sessionStorage.getItem(SESSION_KEY) === uid;
+  if (hasSession) {
+    initApp();
+  } else {
+    showScreen('pin-screen');
+  }
+}
 
 onAuthStateChanged(auth, async user => {
   if (window.isMockAuth) return;
-  if (!user) { showScreen('auth-screen'); return; }
+  if (!user) {
+    localStorage.removeItem('rt_user_cached_uid');
+    showScreen('auth-screen');
+    return;
+  }
   uid = user.uid;
+  localStorage.setItem('rt_user_cached_uid', uid);
   const hasSession = sessionStorage.getItem(SESSION_KEY) === uid;
   if (hasSession) {
     await initApp();
