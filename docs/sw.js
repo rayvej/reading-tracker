@@ -1,10 +1,10 @@
-const CACHE_NAME = 'reading-tracker-v108';
+const CACHE_NAME = 'reading-tracker-v109';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=108',
-  BASE + 'app.js?v=108',
+  BASE + 'style.css?v=109',
+  BASE + 'app.js?v=109',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
   BASE + 'js/seed10YearData.js',
@@ -19,8 +19,7 @@ const STATIC_ASSETS = [
   BASE + 'icon-512.png',
   BASE + 'seed-data.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css',
-  'https://cdn.tailwindcss.com'
+  'https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css'
 ];
 
 // ── Install: cache static assets gracefully ──────────────────────────────────
@@ -55,7 +54,7 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ── Fetch: network-first for HTML & Firebase, cache-first for assets ──────────
+// ── Fetch: Stale-While-Revalidate for HTML, cache-first for assets ──────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -63,18 +62,22 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
-  // HTML navigation & root document — Network First, falling back to cache
+  // HTML navigation & root document — Stale-While-Revalidate for instant zero-latency paint
   if (event.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname === BASE) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
+      caches.match(event.request).then(cached => {
+        const fetchPromise = fetch(event.request)
+          .then(networkResponse => {
+            if (networkResponse && networkResponse.ok) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => null);
+
+        return cached || fetchPromise;
+      })
     );
     return;
   }
