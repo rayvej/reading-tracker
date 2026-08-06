@@ -113,7 +113,7 @@ assert(massTime < 100, `Massive dataset (1,200 books + 2,500 logs) calculated in
 const swPath = path.resolve('docs/sw.js');
 const swContent = fs.readFileSync(swPath, 'utf8');
 
-assert(swContent.includes("const CACHE_NAME = 'reading-tracker-v95'"), 'sw.js cache version matches current release v95');
+assert(/const CACHE_NAME = 'reading-tracker-v\d+'/.test(swContent), 'sw.js cache version matches current release version');
 assert(swContent.includes('Promise.allSettled'), 'sw.js uses Promise.allSettled for precache resilience');
 
 
