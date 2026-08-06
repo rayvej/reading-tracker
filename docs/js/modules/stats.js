@@ -4,21 +4,16 @@
  */
 
 export function calculateReconciledMetrics(books, logs) {
-  const activeLogs = logs.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
+  const activeLogs = (logs || []).filter(l => l && (!l.notes || !l.notes.startsWith('Historical cycle')));
 
-  // Pre-index active logs by key `${book_title}___${read_cycle}` for O(1) lookup
-  const logsByTitleAndCycle = new Map();
+  // Pre-index max end_page per book title for fast O(1) active cycle lookup
+  const maxEndPageMap = new Map();
   for (let i = 0; i < activeLogs.length; i++) {
     const l = activeLogs[i];
-    if (!l.book_title) continue;
-    const cycleNum = parseInt(l.read_cycle || 1, 10);
-    const key = `${l.book_title}___${cycleNum}`;
-    let list = logsByTitleAndCycle.get(key);
-    if (!list) {
-      list = [];
-      logsByTitleAndCycle.set(key, list);
-    }
-    list.push(l);
+    if (!l || !l.book_title) continue;
+    const ep = typeof l.end_page === 'number' ? l.end_page : parseInt(l.end_page || 0, 10) || 0;
+    const cur = maxEndPageMap.get(l.book_title) || 0;
+    if (ep > cur) maxEndPageMap.set(l.book_title, ep);
   }
 
   // 1. Finished Titles & Books Read (Completed Cycles)
@@ -29,17 +24,20 @@ export function calculateReconciledMetrics(books, logs) {
   let finishedCyclesPages = 0;
   let activeCyclesPages = 0;
 
-  for (let i = 0; i < books.length; i++) {
+  const totalCatalogTitles = (books || []).length;
+
+  for (let i = 0; i < totalCatalogTitles; i++) {
     const b = books[i];
-    const rc = parseInt(b.read_count || 0, 10);
-    const totalPages = parseInt(b.total_pages || 0, 10);
+    if (!b) continue;
+    const rc = typeof b.read_count === 'number' ? b.read_count : parseInt(b.read_count || 0, 10) || 0;
+    const totalPages = typeof b.total_pages === 'number' ? b.total_pages : parseInt(b.total_pages || 0, 10) || 0;
     const status = b.status || 'Unread';
-    const isFinishedStatus = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(status);
+    const isFinishedStatus = status === 'Finished' || status === 'Owned and Read' || status === 'Borrowed and Read';
     const isFinished = isFinishedStatus || rc > 0;
 
     if (isFinished) {
       finishedTitles++;
-      const completedCycles = Math.max(rc, isFinishedStatus ? 1 : 0);
+      const completedCycles = rc > 0 ? rc : (isFinishedStatus ? 1 : 0);
       totalCompletedReads += completedCycles;
       finishedCyclesPages += completedCycles * totalPages;
     } else if (status === 'In Progress') {
@@ -50,27 +48,16 @@ export function calculateReconciledMetrics(books, logs) {
 
     // Active cycle progress calculation for In-Progress books
     if (status === 'In Progress' || rc > 0) {
-      const currentCycle = rc + (isFinishedStatus ? 1 : 1);
-      const key = `${b.title}___${currentCycle}`;
-      const bookLogs = logsByTitleAndCycle.get(key);
-      if (bookLogs && bookLogs.length > 0) {
-        let maxEndPage = 0;
-        for (let j = 0; j < bookLogs.length; j++) {
-          const ep = parseInt(bookLogs[j].end_page || 0, 10);
-          if (ep > maxEndPage) maxEndPage = ep;
-        }
-        if (totalPages > 0) {
-          activeCyclesPages += Math.min(maxEndPage, totalPages);
-        } else {
-          activeCyclesPages += maxEndPage;
-        }
+      const maxEndPage = b.title ? (maxEndPageMap.get(b.title) || 0) : 0;
+      if (maxEndPage > 0) {
+        activeCyclesPages += totalPages > 0 ? Math.min(maxEndPage, totalPages) : maxEndPage;
       } else if (b.current_page && status === 'In Progress') {
-        activeCyclesPages += parseInt(b.current_page || 0, 10);
+        const cp = typeof b.current_page === 'number' ? b.current_page : parseInt(b.current_page || 0, 10) || 0;
+        activeCyclesPages += cp;
       }
     }
   }
 
-  const totalCatalogTitles = books.length;
   const grandTotalPages = finishedCyclesPages + activeCyclesPages;
 
   return {
