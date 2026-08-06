@@ -5,6 +5,10 @@
   },
   "dependencies": {
     "firebase-tools": "^15.24.0",
+    "puppeteer": "^25.5.0",
     "puppeteer-core": "^25.3.0"
+  },
+  "allowScripts": {
+    "puppeteer@25.5.0": true
   }
 }

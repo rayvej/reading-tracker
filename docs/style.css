@@ -537,29 +537,59 @@ body {
   max-width: 100vw;
 }
 
-/* Touch Target Minimum Dimensions Safeguard (iOS HIG 44px / Material 36px Minimum) */
-button:not(.seg-btn):not(.seg-btn-micro):not(.seg-btn-nano):not(.btn-stepper-chip),
-input[type="button"], a.btn, .btn-circle, .w-8 {
-  touch-action: manipulation;
-  min-width: 36px !important;
-  min-height: 36px !important;
+/* Mobile Horizontal Overflow Safeguards */
+#heatmap-container {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-bottom: 4px;
 }
 
+#dash-live-glow {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+#bookshelf-filter-status,
+#bookshelf-filter-ownership {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none;
+  padding-right: 16px;
+}
+
+#bookshelf-filter-status::-webkit-scrollbar,
+#bookshelf-filter-ownership::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch Target Minimum Dimensions Safeguard (iOS HIG 44px Minimum for Mobile Touch) */
+button:not(.seg-btn-nano),
+input[type="button"], a.btn, .btn-circle {
+  touch-action: manipulation;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#btn-theme-toggle,
+#btn-settings-open,
+#btn-signout,
 .ios-modal-card button[id$="-close"],
 .ios-modal-card button[id$="-close-btn"],
 .ios-modal-card button[aria-label="Close"],
 .modal-box button[aria-label="Close"],
 #starter-modal-close {
-  min-width: 36px !important;
-  min-height: 36px !important;
-  width: 36px !important;
-  height: 36px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   box-sizing: border-box !important;
 }
 
-button[id^="btn-starter-prec-"] {
-  min-height: 36px !important;
-  box-sizing: border-box !important;
+.seg-btn {
+  min-height: 38px !important;
+  padding: 8px 12px !important;
 }
 
 /* Tactile Active feedback loops & Micro-Interactions */
@@ -1406,11 +1436,14 @@ body.light-mode .heatmap-tier-4 { background-color: #0a361c !important; box-shad
   background: var(--bg-elevated);
   border-radius: var(--radius-lg);
   border: 0.5px solid var(--border-strong);
-  padding: 24px;
-  width: calc(100% - 40px);
-  max-width: 360px;
-  max-height: 90vh;
+  padding: 20px;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   transform: scale(0.94) translateY(10px);
   opacity: 0;
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease, background 0.35s ease;

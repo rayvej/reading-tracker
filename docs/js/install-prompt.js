@@ -34,7 +34,7 @@ function showInstallBanner(type) {
 
   const banner = document.createElement('div');
   banner.id = 'pwa-install-banner';
-  banner.className = 'fixed bottom-4 left-4 right-4 z-50 bg-theme-elevated text-theme-primary p-4 rounded-2xl shadow-2xl border border-theme-strong backdrop-blur-md flex items-center justify-between animate-fade-in';
+  banner.className = 'fixed bottom-20 md:bottom-6 left-4 right-4 z-50 bg-theme-elevated text-theme-primary p-4 rounded-2xl shadow-2xl border border-theme-strong backdrop-blur-md flex items-center justify-between animate-fade-in';
 
   if (type === 'chrome') {
     banner.innerHTML = `
