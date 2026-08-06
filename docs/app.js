@@ -3916,12 +3916,11 @@ function renderVelocityCurve(activeLogs, selectedYear) {
   }
   
   const currentTotal = monthCumPages[curMonth] || 0;
-  const userAnnualTarget = (typeof goalsCache !== 'undefined' && goalsCache && goalsCache.annual_pages_target) ? goalsCache.annual_pages_target : 0;
-  const annualTarget = userAnnualTarget > 0 ? userAnnualTarget : (curMonth > 0 ? Math.round((currentTotal / (curMonth + 1)) * 12 * 1.1) : Math.max(currentTotal * 12, 100));
+  const annualTarget = curMonth > 0 ? Math.round((currentTotal / (curMonth + 1)) * 12) : (currentTotal > 0 ? currentTotal * 12 : 3000);
   
   const targetLabelEl = $('vel-curve-target-label');
   if (targetLabelEl) {
-    targetLabelEl.textContent = `Goal Pace (${fmtNum(annualTarget)} pgs/yr)`;
+    targetLabelEl.textContent = `Projected Pace (~${fmtNum(annualTarget)} pgs/yr)`;
   }
   
   const width = container.clientWidth || 320;
@@ -5042,6 +5041,11 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
     areaPathStr = `${actualPathStr} L ${lastP.x.toFixed(1)} ${padT + graphH} L ${actualPoints[0].x.toFixed(1)} ${padT + graphH} Z`;
   }
 
+  const trajTargetLbl = $('goals-trajectory-target-lbl');
+  if (trajTargetLbl) {
+    trajTargetLbl.textContent = `Annual Page Goal (${fmtNum(aPT)} pgs)`;
+  }
+
   // Update status badge
   const currentActual = monthCumPages[curMonthIndex] || yearPages;
   const currentTargetReq = Math.round(((curMonthIndex + 1) / 12) * aPT);
@@ -5056,6 +5060,8 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
       statusLbl.textContent = `${fmtNum(Math.abs(diff))} pgs Behind`;
     }
   }
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   container.innerHTML = `
     <svg class="w-full h-full" viewBox="0 0 ${width} ${height}">
@@ -5080,7 +5086,11 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
       ${actualPathStr ? `<path d="${actualPathStr}" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" />` : ''}
 
       <!-- Data Dots -->
-      ${actualPoints.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#10b981" stroke="#064e3b" stroke-width="1.5"/>`).join('')}
+      ${actualPoints.map((p, i) => {
+        const targetReq = Math.round(((i + 1) / 12) * aPT);
+        const hoverTitle = `${monthNames[i]}: ${fmtNum(monthCumPages[i])} pgs actual vs ${fmtNum(targetReq)} pgs goal trajectory`;
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#10b981" stroke="#064e3b" stroke-width="1.5"><title>${hoverTitle}</title></circle>`;
+      }).join('')}
 
       <!-- Month Labels -->
       ${months.map((m, i) => {
