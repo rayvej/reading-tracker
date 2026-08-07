@@ -3714,22 +3714,31 @@ function renderLiveSessionBanner(books, logs) {
     return;
   }
 
-  // Find the In Progress book that was last logged
-  const bookLastLogMap = new Map();
-  (logs || []).forEach(l => {
-    if (!l.book_title || !l.date) return;
-    const existing = bookLastLogMap.get(l.book_title);
-    if (!existing || l.date.localeCompare(existing) > 0) {
-      bookLastLogMap.set(l.book_title, l.date);
+  // Find the In Progress book that was last logged (with exact log recency tie-breaking for same-day logs)
+  const bookLastLogScore = new Map();
+  (logs || []).forEach((l, index) => {
+    const titleKey = (l.book_title || l.title || '').trim().toLowerCase();
+    if (!titleKey) return;
+    if (!bookLastLogScore.has(titleKey)) {
+      bookLastLogScore.set(titleKey, { date: l.date || '', index });
     }
   });
 
   const sortedInProgress = [...inProgress].sort((a, b) => {
-    const dateA = bookLastLogMap.get(a.title) || '';
-    const dateB = bookLastLogMap.get(b.title) || '';
-    if (dateA && dateB) return dateB.localeCompare(dateA);
-    if (dateA) return -1;
-    if (dateB) return 1;
+    const keyA = (a.title || '').trim().toLowerCase();
+    const keyB = (b.title || '').trim().toLowerCase();
+    const infoA = bookLastLogScore.get(keyA);
+    const infoB = bookLastLogScore.get(keyB);
+
+    if (infoA && infoB) {
+      if (infoA.date !== infoB.date) {
+        return infoB.date.localeCompare(infoA.date);
+      }
+      // Same day log tie-breaker: smaller array index = logged more recently
+      return infoA.index - infoB.index;
+    }
+    if (infoA) return -1;
+    if (infoB) return 1;
     return a.title.localeCompare(b.title);
   });
 
