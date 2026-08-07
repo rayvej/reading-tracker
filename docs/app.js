@@ -2527,14 +2527,19 @@ async function loadLogsCache() {
 async function getMergedBooks() {
   await loadBooksCache();
   if (wishlistCache.length === 0) {
-    try {
-      if (db && uid) {
+    const cachedWishlist = localStorage.getItem('rt_wishlist_cache');
+    if (cachedWishlist) {
+      try { wishlistCache = JSON.parse(cachedWishlist); } catch (e) {}
+    }
+    if (wishlistCache.length === 0 && db && uid) {
+      try {
         const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
         wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+        localStorage.setItem('rt_wishlist_cache', JSON.stringify(wishlistCache));
         markViewsDirty();
+      } catch (e) {
+        console.warn('[Cache] Using cached wishlist array:', e.message);
       }
-    } catch (e) {
-      console.warn('[Cache] Using cached wishlist array:', e.message);
     }
   }
   
@@ -4411,6 +4416,12 @@ function renderAnnualChallengeWidget(books, logs) {
 
 async function renderDashboard() {
   await loadLogsCache();
+  await loadBooksCache();
+
+  // Fast path: Render Live Session Banner immediately from local cache (0ms latency, no async waterfall)
+  const initialBooks = dashFilter === 'all' ? booksCache : booksCache.filter(b => b.collection === dashFilter);
+  renderLiveSessionBanner(initialBooks, logsCache);
+
   populateYearDropdown(logsCache);
   
   const selectedYear = $('dash-year-select').value;
@@ -4427,7 +4438,7 @@ async function renderDashboard() {
   const mergedBooks = await getMergedBooks();
   const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
-  // Render Live Banner
+  // Re-verify Live Banner with full merged books set
   renderLiveSessionBanner(books, logsCache);
 
   const stats = getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter);
