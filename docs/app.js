@@ -7131,7 +7131,7 @@ window.handleCoverFileUpload = function(fileInput, targetInputId, previewId) {
       if (targetInput) targetInput.value = compressedDataUrl;
       
       const preview = $(previewId);
-      if (preview) preview.innerHTML = `<img src="${compressedDataUrl}" class="w-full h-full object-cover rounded-lg">`;
+      if (preview) preview.innerHTML = `<img src="${compressedDataUrl}" class="w-full h-full object-cover rounded-lg" loading="lazy" decoding="async">`;
     };
     img.src = e.target.result;
   };
@@ -7154,7 +7154,7 @@ window.autoFindSingleCover = async function(titleId, authorId, targetInputId, pr
     const coverUrl = candidates[0].url;
     const targetInput = $(targetInputId);
     if (targetInput) targetInput.value = coverUrl;
-    if (preview) preview.innerHTML = `<img src="${coverUrl}" class="w-full h-full object-cover rounded-lg">`;
+    if (preview) preview.innerHTML = `<img src="${coverUrl}" class="w-full h-full object-cover rounded-lg" loading="lazy" decoding="async">`;
     showToast('Found candidate cover artwork!', 'success');
   } else {
     if (preview) preview.innerHTML = `<i class="fa-solid fa-image text-xs"></i>`;
@@ -7663,7 +7663,7 @@ function openEditBookModal(b) {
   $('eb-notes').value = b.notes || '';
   if ($('eb-cover-url')) $('eb-cover-url').value = b.cover_url || '';
   if ($('eb-cover-preview')) {
-    $('eb-cover-preview').innerHTML = b.cover_url ? `<img src="${b.cover_url}" class="w-full h-full object-cover rounded-lg">` : `<i class="fa-solid fa-image"></i>`;
+    $('eb-cover-preview').innerHTML = b.cover_url ? `<img src="${b.cover_url}" class="w-full h-full object-cover rounded-lg" loading="lazy" decoding="async">` : `<i class="fa-solid fa-image"></i>`;
   }
   const searchBtn = $('eb-btn-search-cover');
   if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('eb-title', 'eb-author', 'eb-cover-url', 'eb-cover-preview');
@@ -9812,7 +9812,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     
     let photoHTML = '';
     if (n.photoUrl) {
-      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-theme"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" /></div>`;
+      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-theme"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" loading="lazy" decoding="async" /></div>`;
     }
 
     let pageHTML = '';
