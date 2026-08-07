@@ -36,5 +36,21 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["books", "lifestyle", "productivity"]
+  "categories": ["books", "lifestyle", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Log Session",
+      "short_name": "Log Session",
+      "description": "Log a new reading session",
+      "url": "./?action=log",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Add Book",
+      "short_name": "Add Book",
+      "description": "Add a new book to your library",
+      "url": "./?action=add-book",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

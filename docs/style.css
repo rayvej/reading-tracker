@@ -21,7 +21,8 @@
   --radius-xs:       6px;
   --radius-sm:       10px;
   --radius-md:       14px;
-  --radius-lg:       18px;
+  --radius:          16px;
+  --radius-lg:       20px;
   --radius-xl:       24px;
   --radius-pill:     9999px;
 
@@ -57,9 +58,6 @@
   --border-color:    rgba(212, 178, 140, 0.1);
   --shadow-card:     0 12px 32px -10px rgba(0, 0, 0, 0.6);
   --blur:            blur(20px) saturate(190%);
-  --radius:          16px;
-  --radius-lg:       20px;
-  --radius-xl:       24px;
 
   /* ── Typography & Figure Tokens ── */
   --font-header:     'Playfair Display', 'Cinzel', Georgia, serif;
@@ -2728,6 +2726,10 @@ body.light-mode .fab-log-btn {
 [data-theme="glass-studio"] .glass-panel,
 [data-theme="glass-studio"] .ios-modal-card,
 [data-theme="obsidian"] .glass-panel,
+[data-theme="obsidian"] .ios-modal-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), var(--shadow-card);
+}
+
 /* Performance rendering optimizations for off-screen cards */
 .bookshelf-card-item, .log-entry-card {
   content-visibility: auto;
