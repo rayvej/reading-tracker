@@ -2862,3 +2862,12 @@ body.light-mode .fab-log-btn {
   filter: brightness(1.3);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   OFF-SCREEN CONTENT CONTAINMENT & RENDERING OPTIMIZATION
+   ══════════════════════════════════════════════════════════════════════════ */
+.bookshelf-card-item, .recent-log-card, .cover-manager-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 110px;
+}
+
+

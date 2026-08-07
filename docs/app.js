@@ -6811,7 +6811,7 @@ function getCoverHTML(b, extraClasses = 'w-12 h-18') {
   if (b.cover_url) {
     return `
       <div class="book-cover-wrapper ${extraClasses}">
-        <img src="${b.cover_url}" alt="${safeTitle}" class="book-cover-img w-full h-full object-cover rounded-lg shadow-sm" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.innerHTML=\`<div class='book-spine-fallback'><div class='book-spine-fallback-title'>${safeTitle}</div><div class='book-spine-fallback-author'>${safeAuthor}</div></div>\`"/>
+        <img src="${b.cover_url}" alt="${safeTitle}" class="book-cover-img w-full h-full object-cover rounded-lg shadow-sm" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.innerHTML=\`<div class='book-spine-fallback'><div class='book-spine-fallback-title'>${safeTitle}</div><div class='book-spine-fallback-author'>${safeAuthor}</div></div>\`"/>
       </div>
     `;
   }
