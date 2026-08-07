@@ -12437,8 +12437,27 @@ function renderStreakCalendar() {
   const tokens = parseInt(localStorage.getItem(streakRepairKey) || '0', 10);
   if (countBadge) countBadge.textContent = `${tokens} Token${tokens === 1 ? '' : 's'}`;
 
+  const repairedSet = new Set(JSON.parse(localStorage.getItem('rt_repaired_dates') || '[]'));
+
+  // Build map of normalized YYYY-MM-DD -> total pages read
+  const pagesPerDay = {};
   const activeLogs = (logsCache || []).filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
-  const logDatesSet = new Set(activeLogs.map(l => l.date));
+
+  activeLogs.forEach(l => {
+    if (!l.date) return;
+    let dStr = String(l.date).split('T')[0].trim();
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = String(parseInt(parts[1], 10)).padStart(2, '0');
+      const d = String(parseInt(parts[2], 10)).padStart(2, '0');
+      dStr = `${y}-${m}-${d}`;
+    }
+    const p = parseInt(l.pages_read_today, 10) || parseInt(l.pagesRead, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10)) || 0;
+    const dur = parseInt(l.minutes_spent || l.duration_minutes || 0, 10) || 0;
+    
+    pagesPerDay[dStr] = (pagesPerDay[dStr] || 0) + (p > 0 ? p : (dur > 0 ? 1 : 1));
+  });
 
   const firstDay = new Date(yr, mo, 1).getDay();
   const daysInMonth = new Date(yr, mo + 1, 0).getDate();
@@ -12455,17 +12474,37 @@ function renderStreakCalendar() {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const hasRead = logDatesSet.has(dateStr);
+    const pagesRead = pagesPerDay[dateStr] || 0;
+    const hasRead = pagesRead > 0;
+    const isRepaired = repairedSet.has(dateStr);
     const isToday = dateStr === todayStr;
 
     const cell = document.createElement('button');
     cell.type = 'button';
-    cell.className = `aspect-square p-1 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
-      hasRead 
-        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 font-bold' 
-        : (isToday ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-black' : 'bg-white/5 border-theme text-theme-secondary opacity-60')
-    }`;
-    cell.innerHTML = `<span>${day}</span>${hasRead ? '<span class="w-1 h-1 rounded-full bg-emerald-400 mt-0.5"></span>' : ''}`;
+    
+    let bgClasses = 'bg-white/5 border-white/5 text-theme-tertiary opacity-45 hover:opacity-100 hover:border-white/20';
+    let badgeHTML = '';
+
+    if (hasRead) {
+      bgClasses = 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 font-bold shadow-[0_0_10px_rgba(16,185,129,0.2)] hover:bg-emerald-500/30';
+      badgeHTML = `<span class="flex items-center gap-0.5 mt-0.5 text-[8px] font-black text-emerald-400"><i class="fa-solid fa-fire text-[7px]"></i>${pagesRead}p</span>`;
+    } else if (isRepaired) {
+      bgClasses = 'bg-blue-500/20 border-blue-400/40 text-blue-200 font-bold hover:bg-blue-500/30';
+      badgeHTML = `<span class="mt-0.5 text-[8px] text-blue-400"><i class="fa-solid fa-shield-halved text-[7px]"></i></span>`;
+    } else if (isToday) {
+      bgClasses = 'bg-amber-500/20 border-amber-500/60 text-amber-300 font-black ring-1 ring-amber-400/50 hover:bg-amber-500/30';
+      badgeHTML = `<span class="mt-0.5 text-[7px] font-extrabold uppercase tracking-wider text-amber-400">Today</span>`;
+    }
+
+    if (isToday && hasRead) {
+      bgClasses = 'bg-gradient-to-b from-amber-500/25 to-emerald-500/30 border-emerald-400/60 text-emerald-200 font-black ring-1 ring-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.25)]';
+      badgeHTML = `<span class="flex items-center gap-0.5 mt-0.5 text-[8px] font-black text-emerald-300"><i class="fa-solid fa-fire text-[7px] text-amber-400"></i>${pagesRead}p</span>`;
+    }
+
+    cell.className = `aspect-square p-0.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${bgClasses}`;
+    cell.title = hasRead ? `Read ${pagesRead} page${pagesRead === 1 ? '' : 's'} on ${dateStr}` : (isToday ? 'Today' : dateStr);
+    cell.innerHTML = `<span class="text-[11px] leading-none">${day}</span>${badgeHTML}`;
+
     cell.onclick = () => {
       if (typeof triggerHaptic === 'function') triggerHaptic();
       openHeatmapDayDetailDrawer(dateStr);
