@@ -176,4 +176,39 @@ export function createVirtualListObserver(sentinelEl, onIntersectCallback) {
   return observer;
 }
 
+export function initModalSwipeToDismiss() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.ios-modal-card, .modal-box').forEach(card => {
+    let startY = 0;
+    let currentY = 0;
+    
+    card.addEventListener('touchstart', e => {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+      if (deltaY > 0 && card.scrollTop === 0) {
+        card.style.transform = `translateY(${deltaY * 0.5}px)`;
+      }
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+      const deltaY = currentY - startY;
+      if (deltaY > 100 && card.scrollTop === 0) {
+        const modal = card.closest('.ios-modal-backdrop, .modal');
+        if (modal) {
+          modal.classList.remove('open');
+          modal.classList.add('hidden');
+        }
+      }
+      card.style.transform = '';
+      startY = 0;
+      currentY = 0;
+    }, { passive: true });
+  });
+}
+
+
 

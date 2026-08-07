@@ -2872,4 +2872,49 @@ body.light-mode .fab-log-btn {
   contain-intrinsic-size: 110px;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   DESKTOP RESPONSIVE CONTAINER & MODAL DRAG HANDLE STYLES
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  #app-shell, .app-container {
+    max-width: 960px !important;
+    margin: 0 auto;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+  }
+  
+  .grid-desktop-2col {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+  }
+}
+
+.modal-drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  margin: 6px auto 12px auto;
+  cursor: grab;
+  transition: background 0.15s ease;
+}
+
+.modal-drag-handle:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.input-inline-error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+}
+
+.input-error-msg {
+  color: #F87171;
+  font-size: 11px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+
 
