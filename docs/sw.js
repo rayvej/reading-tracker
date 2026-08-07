@@ -183,3 +183,11 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
+// ── Message listener: Skip waiting on command ───────────────────────────────
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+

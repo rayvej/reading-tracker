@@ -455,6 +455,20 @@ $('pin-pad').addEventListener('click', async e => {
   }
 });
 
+async function proceedAfterPinVerification() {
+  const waitingWorker = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
+  if (waitingWorker) {
+    window.swWaitingWorker = waitingWorker;
+    showUpdateModal(async () => {
+      showScreen('app');
+      await initApp();
+    });
+  } else {
+    showScreen('app');
+    await initApp();
+  }
+}
+
 async function verifyPin(pin) {
   let storedHash = localStorage.getItem('rt_pin_hash');
   const inputHash = await hashPin(pin);
@@ -462,8 +476,7 @@ async function verifyPin(pin) {
   // Fast path: Check local storage hash first (<5ms, non-blocking)
   if (storedHash && inputHash === storedHash) {
     sessionStorage.setItem(SESSION_KEY, uid);
-    showScreen('app');
-    await initApp();
+    await proceedAfterPinVerification();
     return;
   }
 
@@ -483,8 +496,7 @@ async function verifyPin(pin) {
 
   if (storedHash && inputHash === storedHash) {
     sessionStorage.setItem(SESSION_KEY, uid);
-    showScreen('app');
-    await initApp();
+    await proceedAfterPinVerification();
   } else {
     pinBuffer = '';
     const dots = $('pin-dots').querySelectorAll('span');
@@ -921,6 +933,9 @@ function setupSettingsModal() {
 
   // Notifications inputs
   setupNotificationSettingsUI();
+
+  // App Update Inspector
+  setupSettingsUpdateInspector();
 
   // Load sample data
   const btnSample = $('btn-load-sample-data');
@@ -8868,36 +8883,86 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 }
 
 // =========================================================================
-// SERVICE WORKER AUTO-UPDATE RELOAD
+// SERVICE WORKER & PWA UPDATE MANAGEMENT SYSTEM
 // =========================================================================
-if ('serviceWorker' in navigator) {
+window.swRegistration = null;
+window.swWaitingWorker = null;
+
+function showUpdateModal(onDismissCallback = null) {
+  const modal = document.getElementById('pwa-update-modal');
+  if (!modal) {
+    if (onDismissCallback) onDismissCallback();
+    return;
+  }
+
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+
+  const btnUpdate = document.getElementById('btn-pwa-update-now');
+  const btnDismiss = document.getElementById('btn-pwa-update-dismiss');
+
+  const handleUpdate = () => {
+    if (btnUpdate) {
+      btnUpdate.disabled = true;
+      btnUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Updating...';
+    }
+    const waitingWorker = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
+    if (waitingWorker) {
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
+
+  const handleDismiss = () => {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+    if (onDismissCallback) onDismissCallback();
+  };
+
+  if (btnUpdate) {
+    const newBtnUpdate = btnUpdate.cloneNode(true);
+    btnUpdate.parentNode.replaceChild(newBtnUpdate, btnUpdate);
+    newBtnUpdate.addEventListener('click', handleUpdate);
+  }
+  if (btnDismiss) {
+    const newBtnDismiss = btnDismiss.cloneNode(true);
+    btnDismiss.parentNode.replaceChild(newBtnDismiss, btnDismiss);
+    newBtnDismiss.addEventListener('click', handleDismiss);
+  }
+}
+
+function setupServiceWorkerUpdateSystem() {
+  if (!('serviceWorker' in navigator)) return;
+
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (window.isMockAuth || refreshing) return;
-    const updateBanner = document.createElement('div');
-    updateBanner.className = 'fixed bottom-20 left-4 right-4 z-[9999] p-4 rounded-2xl border border-theme-strong bg-theme-elevated shadow-2xl flex items-center justify-between';
-    updateBanner.innerHTML = `
-      <span class="text-sm font-semibold text-theme-primary">A new version is available</span>
-      <button id="sw-reload-btn" class="px-4 py-2 rounded-xl text-xs font-bold" style="background: var(--gold); color: #181412">Reload</button>
-    `;
-    document.body.appendChild(updateBanner);
-    updateBanner.querySelector('#sw-reload-btn').addEventListener('click', () => {
-      refreshing = true;
-      window.location.reload();
-    });
+    refreshing = true;
+    showUpdateModal();
   });
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
+      window.swRegistration = reg;
+
+      if (reg.waiting) {
+        window.swWaitingWorker = reg.waiting;
+      }
+
       if (reg && reg.update) {
         reg.update().catch(err => console.warn('SW update ignored error:', err));
       }
+
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-              console.log('[SW] New version activated — update banner shown via controllerchange.');
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.swWaitingWorker = newWorker;
+              console.log('[SW] New version installed and waiting.');
+              showUpdateModal();
             }
           });
         }
@@ -8905,6 +8970,45 @@ if ('serviceWorker' in navigator) {
     }).catch(err => console.warn('SW register ignored error:', err));
   });
 }
+
+function setupSettingsUpdateInspector() {
+  const btnCheck = document.getElementById('btn-check-sw-update');
+  if (!btnCheck) return;
+
+  btnCheck.addEventListener('click', async () => {
+    btnCheck.disabled = true;
+    const originalText = btnCheck.innerHTML;
+    btnCheck.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
+
+    if ('serviceWorker' in navigator && window.swRegistration) {
+      try {
+        await window.swRegistration.update();
+      } catch (e) {
+        console.warn('SW manual update check error:', e);
+      }
+    }
+
+    setTimeout(() => {
+      btnCheck.disabled = false;
+      btnCheck.innerHTML = originalText;
+
+      const waiting = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
+      if (waiting) {
+        window.swWaitingWorker = waiting;
+        showUpdateModal();
+      } else {
+        if (typeof showToast === 'function') {
+          showToast('You are running the latest version (v109)', 'success');
+        }
+      }
+    }, 800);
+  });
+}
+
+setupServiceWorkerUpdateSystem();
+window.showUpdateModal = showUpdateModal;
+window.setupSettingsUpdateInspector = setupSettingsUpdateInspector;
+
 
 // =========================================================================
 // GLOBAL ESCAPE KEY HANDLER (WCAG 2.1.1)
