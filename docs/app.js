@@ -138,6 +138,13 @@ let timerRunning = false;
 // Chart.js state
 let activeChart = null;
 
+// Global Setup & Submission State Flags (declared early to prevent TDZ ReferenceErrors)
+let isDashboardSetup = false;
+let isBookshelfSetup = false;
+let isSettingsModalSetup = false;
+let isStarterImportSetup = false;
+let isAccountViewSetup = false;
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; };
@@ -893,7 +900,6 @@ function runDiagnosticAudit() {
 }
 
 // ── Settings & Data Management ────────────────────────────────────────────────
-let isSettingsModalSetup = false;
 function setupSettingsModal() {
   if (isSettingsModalSetup) return;
   isSettingsModalSetup = true;
@@ -1075,7 +1081,6 @@ let starterSelectedPrecision = 'year'; // 'year' | 'finish' | 'range' | 'detaile
 let starterSelectedRating = 0;
 let starterSessionBatchCount = 0;
 
-let isStarterImportSetup = false;
 function setupStarterImportModal() {
   if (isStarterImportSetup) return;
   isStarterImportSetup = true;
@@ -1778,7 +1783,6 @@ async function renderAccountView() {
   }
 }
 
-let isAccountViewSetup = false;
 function setupAccountView() {
   if (isAccountViewSetup) return;
   isAccountViewSetup = true;
@@ -2881,7 +2885,6 @@ function calculateStreaks(logs) {
   return { current, longest };
 }
 
-let isDashboardSetup = false;
 function setupDashboard() {
   if (isDashboardSetup) return;
   isDashboardSetup = true;
@@ -6516,7 +6519,6 @@ function openAddBookModal() {
   $('add-book-modal').classList.add('open');
 }
 
-let isBookshelfSetup = false;
 function setupBookshelf() {
   if (isBookshelfSetup) return;
   isBookshelfSetup = true;

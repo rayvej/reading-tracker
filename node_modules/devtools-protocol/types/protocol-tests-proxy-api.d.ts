@@ -3946,6 +3946,11 @@ export namespace ProtocolTestsProxyApi {
         setShowHinge(params: Protocol.Overlay.SetShowHingeRequest): Promise<{id: number, result: void, sessionId: string}>;
 
         /**
+         * Add a display cutout overlay.
+         */
+        setShowDisplayCutout(params: Protocol.Overlay.SetShowDisplayCutoutRequest): Promise<{id: number, result: void, sessionId: string}>;
+
+        /**
          * Show elements in isolation mode with overlays.
          */
         setShowIsolatedElements(params: Protocol.Overlay.SetShowIsolatedElementsRequest): Promise<{id: number, result: void, sessionId: string}>;

@@ -3682,6 +3682,11 @@ export namespace ProtocolProxyApi {
         setShowHinge(params: Protocol.Overlay.SetShowHingeRequest): Promise<void>;
 
         /**
+         * Add a display cutout overlay.
+         */
+        setShowDisplayCutout(params: Protocol.Overlay.SetShowDisplayCutoutRequest): Promise<void>;
+
+        /**
          * Show elements in isolation mode with overlays.
          */
         setShowIsolatedElements(params: Protocol.Overlay.SetShowIsolatedElementsRequest): Promise<void>;
