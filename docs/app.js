@@ -12447,7 +12447,7 @@ function renderStreakCalendar() {
 
   for (let i = 0; i < firstDay; i++) {
     const emptyCell = document.createElement('div');
-    emptyCell.className = 'p-1.5 opacity-0';
+    emptyCell.className = 'aspect-square p-1 opacity-0';
     container.appendChild(emptyCell);
   }
 
@@ -12460,7 +12460,7 @@ function renderStreakCalendar() {
 
     const cell = document.createElement('button');
     cell.type = 'button';
-    cell.className = `p-1.5 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+    cell.className = `aspect-square p-1 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
       hasRead 
         ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 font-bold' 
         : (isToday ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-black' : 'bg-white/5 border-theme text-theme-secondary opacity-60')
