@@ -83,6 +83,7 @@ async function optimisticSaveDoc(collectionSubpath, data) {
     });
   }
 
+  if (typeof markViewsDirty === 'function') markViewsDirty();
   return { id: docId, ...data };
 }
 
@@ -2503,6 +2504,7 @@ async function loadBooksCache() {
       }
 
       booksCache.sort((a, b) => a.title.localeCompare(b.title));
+      markViewsDirty();
     }
   } catch (e) {
     console.warn('[Cache] Using cached books array:', e.message);
@@ -2515,6 +2517,7 @@ async function loadLogsCache() {
     if (db && uid) {
       const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
       logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      markViewsDirty();
     }
   } catch (e) {
     console.warn('[Cache] Using cached logs array:', e.message);
@@ -2528,6 +2531,7 @@ async function getMergedBooks() {
       if (db && uid) {
         const snap = await getDocs(collection(db, `users/${uid}/wishlist`));
         wishlistCache = snap.docs.map(d => ({ id: d.id, ...d.data(), _isWishlist: true }));
+        markViewsDirty();
       }
     } catch (e) {
       console.warn('[Cache] Using cached wishlist array:', e.message);
@@ -2650,17 +2654,15 @@ function showView(name) {
 
   // 3. Defer non-blocking rendering to next animation frame for silky smooth 60fps transitions
   const key = name === 'wishlist' ? 'bookshelf' : name;
-  if (viewDirtyFlags[key] !== false) {
-    requestAnimationFrame(() => {
-      if (name === 'dashboard') safeRender('view-dashboard', () => renderDashboard());
-      if (name === 'knowledge') safeRender('view-knowledge', () => renderKnowledgeView());
-      if (name === 'goals')     safeRender('view-goals', () => renderGoals());
-      if (name === 'wishlist')  safeRender('view-wishlist', () => renderBookshelf());
-      if (name === 'log')       safeRender('view-log', () => typeof renderLogView === 'function' && renderLogView());
-      if (name === 'account')   safeRender('view-account', () => renderAccountView());
-      if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
-    });
-  }
+  requestAnimationFrame(() => {
+    if (name === 'dashboard') safeRender('view-dashboard', () => renderDashboard());
+    if (name === 'knowledge') safeRender('view-knowledge', () => renderKnowledgeView());
+    if (name === 'goals')     safeRender('view-goals', () => renderGoals());
+    if (name === 'wishlist')  safeRender('view-wishlist', () => renderBookshelf());
+    if (name === 'log')       safeRender('view-log', () => typeof renderLogView === 'function' && renderLogView());
+    if (name === 'account')   safeRender('view-account', () => renderAccountView());
+    if (key in viewDirtyFlags) viewDirtyFlags[key] = false;
+  });
 
   // Hide wishlist fab if present
   const fab = $('wishlist-fab');
