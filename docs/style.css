@@ -605,9 +605,24 @@ button:active,
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15), var(--shadow-card) !important;
 }
 
-/* Scroll lock & Pull-to-refresh defense */
+/* Scroll lock, Rendering Containment & GPU Layer Hints */
 .view {
   overscroll-behavior-y: contain;
+}
+
+.view.hidden {
+  display: none !important;
+  content-visibility: hidden;
+}
+
+.view:not(.hidden) {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 800px;
+}
+
+.ios-modal-card {
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 /* ═══════════════════════════════════════════════════════════════
