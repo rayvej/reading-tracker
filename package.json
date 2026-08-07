@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node tests/calculation_rules.test.js && node tests/production_integrity.test.js && node tests/feature_sweep.test.js && node tests/scholarly_suite.test.js && node tests/no_ai_dependency.test.js && node tests/xss_sanitization.test.js && node tests/input_validation.test.js && node tests/calculation_regression.test.js && node tests/phase2_refinements.test.js && node tests/background_timer_and_hierarchy.test.js && node tests/performance_and_visual_integrity.test.js && node tests/pwa_update_flow.test.js && node tests/verify_git_push.js"
+    "build:css": "node node_modules/tailwindcss/lib/cli.js -i ./src/input.css -o ./docs/tailwind.min.css --minify",
+    "test": "node tests/business_logic.test.js && node tests/calculation_rules.test.js && node tests/production_integrity.test.js && node tests/feature_sweep.test.js && node tests/scholarly_suite.test.js && node tests/no_ai_dependency.test.js && node tests/xss_sanitization.test.js && node tests/input_validation.test.js && node tests/calculation_regression.test.js && node tests/phase2_refinements.test.js && node tests/background_timer_and_hierarchy.test.js && node tests/performance_and_visual_integrity.test.js && node tests/pwa_update_flow.test.js && node tests/verify_git_push.js"
   },
   "dependencies": {
     "firebase-tools": "^15.24.0",
@@ -10,5 +11,9 @@
   },
   "allowScripts": {
     "puppeteer@25.5.0": true
+  },
+  "devDependencies": {
+    "daisyui": "^4.12.24",
+    "tailwindcss": "^3.4.19"
   }
 }

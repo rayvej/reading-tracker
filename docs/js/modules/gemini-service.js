@@ -65,12 +65,16 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
 
   for (const modelName of candidatesToTry) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyObj)
+        body: JSON.stringify(bodyObj),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         if (typeof localStorage !== 'undefined') {
@@ -109,8 +113,11 @@ export async function callGeminiApiWithFallback(apiKey, bodyObj) {
         throw new Error(`Invalid Gemini API key. Please check your key in Settings.`);
       }
 
-      primaryError = errMsg;
     } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        throw new Error('Gemini API request timed out (15s limit). Please check your connection.');
+      }
       if (e.message && e.message.includes('Invalid Gemini API key')) throw e;
       if (e.message && (e.message.includes('Quota exceeded') || e.message.includes('rate-limit') || e.message.includes('RESOURCE_EXHAUSTED'))) {
         rateLimitError = `Free tier rate limit reached. Please retry in a few seconds.`;

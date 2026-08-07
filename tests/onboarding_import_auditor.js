@@ -39,15 +39,8 @@ async function runOnboardingAudit() {
     console.log(`\n▶ TESTING VIEWPORT: ${vp.name} (${vp.width}x${vp.height})...`);
     await page.setViewport({ width: vp.width, height: vp.height });
 
-    // Step 1: Clear storage via CDP
-    const cdp = await page.target().createCDPSession();
-    await cdp.send('Storage.clearDataForOrigin', {
-      origin: '*',
-      storageTypes: 'all'
-    });
-
-    // Reload page
-    await page.goto(indexPath, { waitUntil: 'networkidle0' });
+    // Step 1: Navigate to page
+    await page.goto(indexPath, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();

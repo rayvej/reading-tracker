@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Private reading tracker — log sessions, track progress, manage your library.">
   <meta name="theme-color" id="theme-color-meta" content="#FAF8F5">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,27 +32,11 @@
   <!-- Editorial Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
-  <!-- DaisyUI + Tailwind (for utility classes & form components) -->
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            gold:      '#D6A85C',
-            goldlight: '#F5D76E',
-            accent:    '#38BDF8',
-            accent2:   '#818CF8',
-            accent3:   '#F472B6',
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Compiled Tailwind CSS & DaisyUI -->
+  <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
   <link rel="stylesheet" href="style.css?v=109">
@@ -119,7 +103,7 @@
       <div class="w-full max-w-xs flex flex-col items-center gap-8 text-center">
         <div class="flex flex-col items-center gap-3">
           <img src="icon-192.png" class="w-16 h-16 rounded-2xl shadow-xl border border-theme" alt="">
-          <h2 class="text-xl font-bold" style="color: var(--text-primary)">Enter Security PIN</h2>
+          <h2 id="pin-screen-title" class="text-xl font-bold" style="color: var(--text-primary)">Enter Security PIN</h2>
         </div>
         <!-- PIN dots -->
         <div class="flex gap-5 my-1" id="pin-dots">
@@ -129,21 +113,21 @@
           <span class="w-4 h-4 rounded-full border-2 border-theme-strong transition-all duration-200"></span>
         </div>
         <p class="text-sm font-semibold text-rose-400 h-5 hidden transition-opacity duration-200" id="pin-error" aria-live="assertive">Incorrect PIN — try again</p>
-        <p class="text-xs font-medium text-theme-secondary -mt-2">Default Security PIN: <span class="font-mono font-bold text-theme-gold">1234</span></p>
+        <p id="pin-screen-subtitle" class="text-xs font-medium text-theme-secondary -mt-2">Default Security PIN: <span class="font-mono font-bold text-theme-gold">1234</span></p>
         <!-- Number pad -->
         <div class="grid grid-cols-3 gap-4 w-64 justify-items-center" id="pin-pad">
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="1">1</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="2">2</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="3">3</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="4">4</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="5">5</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="6">6</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="7">7</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="8">8</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="9">9</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="1" aria-label="Digit 1">1</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="2" aria-label="Digit 2">2</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="3" aria-label="Digit 3">3</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="4" aria-label="Digit 4">4</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="5" aria-label="Digit 5">5</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="6" aria-label="Digit 6">6</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="7" aria-label="Digit 7">7</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="8" aria-label="Digit 8">8</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="9" aria-label="Digit 9">9</button>
           <button class="btn btn-circle btn-lg invisible" disabled></button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="0">0</button>
-          <button class="btn btn-circle btn-lg glass-panel-light text-xl font-medium hover:bg-white/10 active:scale-90" style="color: var(--text-secondary)" id="pin-backspace">⌫</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-2xl font-medium hover:bg-white/10 active:scale-90 text-white" data-key="0" aria-label="Digit 0">0</button>
+          <button class="btn btn-circle btn-lg glass-panel-light text-xl font-medium hover:bg-white/10 active:scale-90" style="color: var(--text-secondary)" id="pin-backspace" aria-label="Backspace">⌫</button>
         </div>
       </div>
     </div>
@@ -462,7 +446,7 @@
             </div>
 
             <!-- Quote Feed Container -->
-            <div class="flex flex-col gap-3" id="knowledge-quote-feed"></div>
+            <div class="flex flex-col gap-3" id="knowledge-quote-feed" aria-live="polite"></div>
 
           </div>
         </section>
@@ -1491,7 +1475,7 @@
                 <span><i class="fa-solid fa-cubes text-theme-gold"></i> 3D Spine Bookshelf</span>
                 <span class="text-[10px] font-mono text-theme-secondary">PHYSICAL SPINES</span>
               </div>
-              <div id="bookshelf-3d-shelf" class="bookshelf-3d-container"></div>
+              <div id="bookshelf-3d-shelf" class="bookshelf-3d-container" aria-live="polite"></div>
             </div>
 
             <!-- Header Controls & Toggles -->
@@ -2484,7 +2468,7 @@
           <h3 id="drilldown-modal-title" class="text-base font-black tracking-tight text-theme-primary">Category Books</h3>
           <p id="drilldown-modal-subtitle" class="text-[10px] font-medium text-theme-secondary mt-0.5">Showing filtered library titles</p>
         </div>
-        <button onclick="document.getElementById('modal-chart-drilldown').classList.add('hidden')" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all" aria-label="Close">
+        <button id="drilldown-close-btn" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all" aria-label="Close">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>

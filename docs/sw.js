@@ -94,13 +94,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Firebase (Firestore / Auth) — network first, fallback nothing
+  // Firebase (Firestore / Auth) — network first, fallback to cache then synthetic 503
   if (url.hostname.includes('firebase') ||
       url.hostname.includes('googleapis') ||
       url.hostname.includes('gstatic') ||
       url.hostname.includes('google.com')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match(event.request);
+        return cached || new Response(JSON.stringify({ error: 'offline' }), {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
     );
     return;
   }

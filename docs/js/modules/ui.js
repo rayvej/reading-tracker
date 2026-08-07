@@ -162,3 +162,18 @@ export function releaseFocus() {
   }
 }
 
+export function createVirtualListObserver(sentinelEl, onIntersectCallback) {
+  if (!sentinelEl || typeof IntersectionObserver === 'undefined') return null;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && typeof onIntersectCallback === 'function') {
+        onIntersectCallback();
+      }
+    });
+  }, { rootMargin: '200px' });
+
+  observer.observe(sentinelEl);
+  return observer;
+}
+
+

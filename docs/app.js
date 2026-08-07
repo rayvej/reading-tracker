@@ -1,10 +1,15 @@
 // ─── Reading Tracker — app.js ────────────────────────────────────────────────
-// Global Error Handler for debugging
+// Global Error Handler — shows visual debug banners in dev only
+const _isDevMode = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '');
 window.addEventListener('error', e => {
-  const errDiv = document.createElement('div');
-  errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
-  errDiv.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`;
-  document.body.appendChild(errDiv);
+  if (_isDevMode) {
+    const errDiv = document.createElement('div');
+    errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
+    errDiv.textContent = `JS Error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`;
+    document.body.appendChild(errDiv);
+  } else {
+    console.error('[RT Error]', e.message, e.filename, e.lineno);
+  }
 });
 window.addEventListener('unhandledrejection', e => {
   const reasonStr = String(e.reason || '');
@@ -12,10 +17,14 @@ window.addEventListener('unhandledrejection', e => {
     console.warn('Suppressed ServiceWorker update rejection:', e.reason);
     return;
   }
-  const errDiv = document.createElement('div');
-  errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
-  errDiv.textContent = `Promise Reject: ${e.reason}`;
-  document.body.appendChild(errDiv);
+  if (_isDevMode) {
+    const errDiv = document.createElement('div');
+    errDiv.className = 'fixed top-0 inset-x-0 bg-red-600 text-white text-xs p-4 z-[9999] overflow-auto max-h-40';
+    errDiv.textContent = `Promise Reject: ${e.reason}`;
+    document.body.appendChild(errDiv);
+  } else {
+    console.error('[RT Unhandled Rejection]', e.reason);
+  }
 });
 
 // Firebase v10 modular SDK via CDN
@@ -632,7 +641,9 @@ async function runSeedImport() {
   $('seed-status').textContent = 'Loading your reading history…';
   $('seed-bar').style.width = '5%';
 
+  try {
   const resp = await fetch('./seed-data.json');
+  if (!resp.ok) throw new Error('Seed data load failed: HTTP ' + resp.status);
   const seed = await resp.json();
   const total = seed.books.length + seed.reading_logs.length + seed.wishlist.length;
   let done = 0;
@@ -686,6 +697,11 @@ async function runSeedImport() {
   $('seed-status').textContent = 'All done! Welcome to your Reading Tracker.';
   await new Promise(r => setTimeout(r, 800));
   showScreen('app');
+  } catch (e) {
+    console.error('Seed import failed:', e);
+    showToast('Import failed: ' + (e.message || 'Unknown error') + '. Please try again when online.', 'error');
+    showScreen('app');
+  }
 }
 
 /** Auto-Backup Snapshot of Live Data */
@@ -717,14 +733,23 @@ async function restoreLiveUserBackup() {
     showToast('Restoring original account data…', 'info');
     const backup = JSON.parse(raw);
 
-    // Clear current collections
+    // RES-03: Use writeBatch for atomic deletion and restoration in 400-item chunks
     if (db && uid) {
       const bSnap = await getDocs(collection(db, `users/${uid}/books`));
-      for (const d of bSnap.docs) await deleteDoc(doc(db, `users/${uid}/books/${d.id}`));
       const lSnap = await getDocs(collection(db, `users/${uid}/reading_logs`));
-      for (const d of lSnap.docs) await deleteDoc(doc(db, `users/${uid}/reading_logs/${d.id}`));
       const wSnap = await getDocs(collection(db, `users/${uid}/wishlist`));
-      for (const d of wSnap.docs) await deleteDoc(doc(db, `users/${uid}/wishlist/${d.id}`));
+
+      const allDeletes = [
+        ...bSnap.docs.map(d => doc(db, `users/${uid}/books/${d.id}`)),
+        ...lSnap.docs.map(d => doc(db, `users/${uid}/reading_logs/${d.id}`)),
+        ...wSnap.docs.map(d => doc(db, `users/${uid}/wishlist/${d.id}`))
+      ];
+
+      for (let i = 0; i < allDeletes.length; i += 400) {
+        const batch = writeBatch(db);
+        allDeletes.slice(i, i + 400).forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
 
       // Re-inject backup books
       const booksRef = collection(db, `users/${uid}/books`);
@@ -1157,9 +1182,14 @@ function setupStarterImportModal() {
       const preview = $('starter-cover-preview');
       if (!preview) return;
       if (val) {
-        preview.innerHTML = `<img src="${val}" class="w-full h-full object-cover rounded-lg" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'fa-solid fa-image\\'></i>'">`;
+        const img = document.createElement('img');
+        img.src = val;
+        img.className = 'w-full h-full object-cover rounded-lg';
+        img.onerror = function() { this.onerror = null; preview.innerHTML = '<i class="fa-solid fa-image"></i>'; };
+        preview.innerHTML = '';
+        preview.appendChild(img);
       } else {
-        preview.innerHTML = `<i class="fa-solid fa-image"></i>`;
+        preview.innerHTML = '<i class="fa-solid fa-image"></i>';
       }
     });
   }
@@ -1564,7 +1594,7 @@ function generateDailyReminderPayload(overrideBooks, overrideLogs) {
 
   const title = `📖 ${book.title} (${progressPct}% • Est. Finish: ${finishDateStr})`;
 
-  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const savedSettings = (() => { try { return JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}'); } catch { return {}; } })();
   const customText = (savedSettings.customText || '').trim();
 
   let body = "";
@@ -1609,7 +1639,7 @@ function getMillisecondsUntilNextReminder(timeStr = "07:00") {
 function scheduleDailyReminderAlarm() {
   if (reminderTimerId) clearTimeout(reminderTimerId);
 
-  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const savedSettings = (() => { try { return JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}'); } catch { return {}; } })();
   const isEnabled = savedSettings.enabled !== false;
   const reminderTime = savedSettings.time || "07:00";
 
@@ -1662,7 +1692,7 @@ function setupNotificationSettingsUI() {
   const btnPush = $('btn-request-notification-permission');
   const btnTest = $('btn-test-notification');
 
-  const savedSettings = JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}');
+  const savedSettings = (() => { try { return JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}'); } catch { return {}; } })();
   const isEnabled = savedSettings.enabled !== false;
   const timeVal = savedSettings.time || "07:00";
   const includeQuote = savedSettings.includeQuote !== false;
@@ -1894,7 +1924,11 @@ function setupAccountView() {
           }
         }
       } catch (err) {
-        localStorage.setItem('rt_gemini_api_key', keyVal); // save anyway
+        // SEC-03: Only save key if it passes a rate-limit check (key itself is valid)
+        const isRateLimitError = (err.message.includes('Quota exceeded') || err.message.includes('rate limit') || err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED'));
+        if (isRateLimitError) {
+          localStorage.setItem('rt_gemini_api_key', keyVal); // Rate-limited but key is valid
+        }
         if (statusGeminiKey) {
           statusGeminiKey.textContent = 'Key Saved';
           statusGeminiKey.className = 'font-bold text-amber-400';
@@ -2141,7 +2175,12 @@ function setupAccountView() {
   const btnClearCache = $('acct-btn-clear-cache');
   if (btnClearCache) {
     btnClearCache.addEventListener('click', () => {
+      // RES-04: Preserve critical keys during cache clear
+      const keysToPreserve = ['rt_pin_hash', 'rt_user_cached_uid', 'rt_gemini_api_key'];
+      const preserved = {};
+      keysToPreserve.forEach(k => { preserved[k] = localStorage.getItem(k); });
       localStorage.clear();
+      Object.entries(preserved).forEach(([k, v]) => { if (v !== null) localStorage.setItem(k, v); });
       showToast('Cache cleared successfully! Reloading...', 'success');
       setTimeout(() => location.reload(), 1000);
     });
@@ -2157,7 +2196,18 @@ function setupAccountView() {
   }
 }
 
+const ALLOWED_SCRIPT_ORIGINS = ['https://cdn.sheetjs.com', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'];
 function ensureScript(url) {
+  // SEC-07: Validate URL origin before dynamic script injection
+  try {
+    const u = new URL(url);
+    if (!ALLOWED_SCRIPT_ORIGINS.includes(u.origin)) {
+      console.error('[Security] Blocked script from disallowed origin:', u.origin);
+      return Promise.reject(new Error('Blocked script origin: ' + u.origin));
+    }
+  } catch (e) {
+    return Promise.reject(new Error('Invalid script URL'));
+  }
   if (document.querySelector(`script[src="${url}"]`)) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');

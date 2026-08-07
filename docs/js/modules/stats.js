@@ -3,7 +3,15 @@
  * Enforces exact rules from READING_TRACKER_CALCULATION_RULES.md
  */
 
+let _cachedMetrics = null;
+let _lastBooks = null;
+let _lastLogs = null;
+
 export function calculateReconciledMetrics(books, logs) {
+  if (_cachedMetrics && _lastBooks === books && _lastLogs === logs) {
+    return _cachedMetrics;
+  }
+
   const activeLogs = (logs || []).filter(l => l && (!l.notes || !l.notes.startsWith('Historical cycle')));
 
   // Pre-index max end_page per book title for fast O(1) active cycle lookup
@@ -60,7 +68,9 @@ export function calculateReconciledMetrics(books, logs) {
 
   const grandTotalPages = finishedCyclesPages + activeCyclesPages;
 
-  return {
+  _lastBooks = books;
+  _lastLogs = logs;
+  _cachedMetrics = {
     totalCatalogTitles,
     finishedTitles,
     activeTitles,
@@ -70,6 +80,7 @@ export function calculateReconciledMetrics(books, logs) {
     activeCyclesPages,
     grandTotalPages
   };
+  return _cachedMetrics;
 }
 
 export function calculateReadingStreaks(logs) {

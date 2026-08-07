@@ -33,6 +33,8 @@ export async function flushPendingOfflineLogs(saveLogFunction) {
           if (item._retryCount >= 3) {
             console.warn(`Removing permanently failed log ${item.id}`);
             await removePendingLog(item.id);
+          } else {
+            await savePendingLog(item);
           }
         }
       }
