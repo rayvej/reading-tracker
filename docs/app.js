@@ -144,6 +144,7 @@ let isBookshelfSetup = false;
 let isSettingsModalSetup = false;
 let isStarterImportSetup = false;
 let isAccountViewSetup = false;
+let reminderTimerId = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -1506,7 +1507,6 @@ async function saveStarterBook(batchContinue) {
 
 
 // ── Daily Morning Reminders & Notifications ───────────────────────────────
-let reminderTimerId = null;
 
 function generateDailyReminderPayload(overrideBooks, overrideLogs) {
   const booksToSearch = overrideBooks || booksCache || [];
