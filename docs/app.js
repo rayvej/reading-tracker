@@ -222,7 +222,10 @@ function fmtDate(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function fmtNum(n) { return (n ?? 0).toLocaleString(); }
-function todayISO() { return new Date().toISOString().slice(0, 10); }
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 function startOfYear()  { return `${new Date().getFullYear()}-01-01`; }
 function startOfMonth() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; }
 
@@ -5833,8 +5836,9 @@ async function renderGoals() {
     });
   }
 
-  // Render Milestone Badges Vault
+  // Render Milestone Badges Vault & Streak Calendar
   renderAchievementsVault();
+  renderStreakCalendar();
 }
 
 /** Reading Achievements & Milestone Badges Vault */
@@ -12599,14 +12603,29 @@ function renderStreakCalendar() {
 
   activeLogs.forEach(l => {
     if (!l.date) return;
-    let dStr = String(l.date).split('T')[0].trim();
-    const parts = dStr.split('-');
-    if (parts.length === 3) {
-      const y = parts[0];
-      const m = String(parseInt(parts[1], 10)).padStart(2, '0');
-      const d = String(parseInt(parts[2], 10)).padStart(2, '0');
-      dStr = `${y}-${m}-${d}`;
+    let dStr = '';
+    if (typeof l.date === 'string') {
+      dStr = l.date.split('T')[0].trim();
+      if (dStr.includes('/')) {
+        const p = dStr.split('/');
+        if (p[0].length === 4) dStr = `${p[0]}-${String(parseInt(p[1], 10)).padStart(2, '0')}-${String(parseInt(p[2], 10)).padStart(2, '0')}`;
+        else if (p[2] && p[2].length === 4) dStr = `${p[2]}-${String(parseInt(p[0], 10)).padStart(2, '0')}-${String(parseInt(p[1], 10)).padStart(2, '0')}`;
+      } else if (dStr.includes('-')) {
+        const p = dStr.split('-');
+        if (p.length === 3) dStr = `${p[0]}-${String(parseInt(p[1], 10)).padStart(2, '0')}-${String(parseInt(p[2], 10)).padStart(2, '0')}`;
+      }
+    } else if (typeof l.date === 'number') {
+      const dt = new Date(l.date);
+      dStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    } else if (l.date && typeof l.date.toDate === 'function') {
+      const dt = l.date.toDate();
+      dStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    } else if (l.date instanceof Date) {
+      const dt = l.date;
+      dStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     }
+
+    if (!dStr) return;
     const p = parseInt(l.pages_read_today, 10) || parseInt(l.pagesRead, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10)) || 0;
     const dur = parseInt(l.minutes_spent || l.duration_minutes || 0, 10) || 0;
     
@@ -12624,7 +12643,7 @@ function renderStreakCalendar() {
     container.appendChild(emptyCell);
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayISO();
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
