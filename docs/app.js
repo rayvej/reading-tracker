@@ -1210,13 +1210,78 @@ let starterSelectedPrecision = 'year'; // 'year' | 'finish' | 'range' | 'detaile
 let starterSelectedRating = 0;
 let starterSessionBatchCount = 0;
 
+function applyCatalogBookToStarterForm(book) {
+  if (!book) return;
+  if ($('starter-book-title')) $('starter-book-title').value = book.title || '';
+  if ($('starter-book-author')) $('starter-book-author').value = book.author || '';
+  
+  if ($('starter-book-collection')) {
+    const collVal = book.collection === 'Non-Bahai' ? 'Non-Bahai' : 'Bahai';
+    $('starter-book-collection').value = collVal;
+  }
+
+  if ($('starter-book-group')) {
+    const stdGroups = ['Writings', 'About the Faith', 'Compilations', 'Fiction', 'Non-Fiction'];
+    const g = book.group || book.group_name || 'Non-Fiction';
+    if (stdGroups.includes(g)) {
+      $('starter-book-group').value = g;
+      if ($('starter-group-custom-container')) $('starter-group-custom-container').classList.add('hidden');
+    } else {
+      $('starter-book-group').value = 'Other';
+      if ($('starter-group-custom-container')) $('starter-group-custom-container').classList.remove('hidden');
+      if ($('starter-book-group-custom')) $('starter-book-group-custom').value = g;
+    }
+  }
+
+  if ($('starter-book-pages')) $('starter-book-pages').value = book.total_pages || 300;
+  if ($('starter-book-cover-url')) $('starter-book-cover-url').value = book.cover_url || '';
+
+  if ($('starter-cover-preview')) {
+    if (book.cover_url) {
+      $('starter-cover-preview').innerHTML = `<img src="${book.cover_url}" class="w-full h-full object-cover rounded-lg" alt="" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-image\\'></i>'">`;
+    } else {
+      $('starter-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
+    }
+  }
+}
+
+async function populateStarterCatalogDropdown() {
+  const sel = $('starter-catalog-select');
+  const datalist = $('starter-catalog-datalist');
+  if (!sel && !datalist) return;
+
+  const catalog = await loadMasterCatalog();
+
+  if (sel) {
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- Select a pre-existing book to autofill --</option>';
+    catalog.forEach((b, index) => {
+      const opt = document.createElement('option');
+      opt.value = index.toString();
+      const meta = [b.author, b.total_pages ? `${b.total_pages} p.` : ''].filter(Boolean).join(' • ');
+      opt.textContent = meta ? `${b.title} (${meta})` : b.title;
+      sel.appendChild(opt);
+    });
+    sel.value = currentVal;
+  }
+
+  if (datalist) {
+    datalist.innerHTML = '';
+    catalog.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.title;
+      datalist.appendChild(opt);
+    });
+  }
+}
+
 function setupStarterImportModal() {
   if (isStarterImportSetup) return;
   isStarterImportSetup = true;
   const modal = $('starter-import-modal');
   if (!modal) return;
 
-  // Open button in Settings modal & Account View
+  // Open button in Settings modal, Account View & Dashboard
   const btnSettingsOpen = $('btn-open-starter-importer');
   if (btnSettingsOpen) {
     btnSettingsOpen.addEventListener('click', () => {
@@ -1231,6 +1296,38 @@ function setupStarterImportModal() {
     btnAcctQuickAdd.addEventListener('click', () => {
       openStarterImportModal();
     });
+  }
+
+  const btnDashQuickAdd = $('dash-btn-quick-add-completed');
+  if (btnDashQuickAdd) {
+    btnDashQuickAdd.addEventListener('click', () => {
+      openStarterImportModal();
+    });
+  }
+
+  // Catalog select listener for starter importer
+  const starterCatSel = $('starter-catalog-select');
+  if (starterCatSel) {
+    starterCatSel.addEventListener('change', e => {
+      const idx = parseInt(e.target.value);
+      if (!isNaN(idx) && masterCatalog[idx]) {
+        applyCatalogBookToStarterForm(masterCatalog[idx]);
+      }
+    });
+  }
+
+  const starterTitleInput = $('starter-book-title');
+  if (starterTitleInput) {
+    const handleStarterTitleAutofill = () => {
+      const val = starterTitleInput.value.trim().toLowerCase();
+      if (!val) return;
+      const matched = masterCatalog.find(b => b.title.toLowerCase() === val);
+      if (matched) {
+        applyCatalogBookToStarterForm(matched);
+      }
+    };
+    starterTitleInput.addEventListener('change', handleStarterTitleAutofill);
+    starterTitleInput.addEventListener('input', handleStarterTitleAutofill);
   }
 
   // Group selection toggle for custom group text box
@@ -1353,6 +1450,7 @@ function openStarterImportModal() {
   starterSessionBatchCount = 0;
   updateStarterBatchBadge();
   resetStarterForm();
+  populateStarterCatalogDropdown();
 }
 window.openStarterImportModal = openStarterImportModal;
 
