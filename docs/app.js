@@ -7071,13 +7071,70 @@ function setupAddBookCatalogEvents() {
   }
 }
 
+function toggleAddBookProgressField() {
+  const statusEl = $('ab-status');
+  const container = $('ab-progress-container');
+  if (!statusEl || !container) return;
+  const status = statusEl.value;
+  if (status === 'In Progress') {
+    container.classList.remove('hidden');
+  } else {
+    const progVal = parseInt($('ab-progress')?.value) || 0;
+    if (progVal <= 0) {
+      container.classList.add('hidden');
+    }
+  }
+  updateAddBookProgressHint();
+}
+if (typeof window !== 'undefined') window.toggleAddBookProgressField = toggleAddBookProgressField;
+
+function updateAddBookProgressHint() {
+  const hintEl = $('ab-progress-hint');
+  const progEl = $('ab-progress');
+  const pagesEl = $('ab-pages');
+  const statusEl = $('ab-status');
+  if (!hintEl || !progEl) return;
+  
+  const prog = parseInt(progEl.value) || 0;
+  const total = parseInt(pagesEl?.value) || 0;
+
+  if (prog > 0 && statusEl && statusEl.value === 'Not Started') {
+    statusEl.value = 'In Progress';
+    toggleAddBookProgressField();
+    return;
+  }
+
+  if (prog <= 0) {
+    hintEl.textContent = '';
+    return;
+  }
+
+  if (total > 0) {
+    if (prog > total) {
+      hintEl.textContent = `⚠ Exceeds total pages (${total})`;
+      hintEl.className = 'text-[11px] font-semibold text-rose-400';
+    } else {
+      const pct = ((prog / total) * 100).toFixed(1);
+      hintEl.textContent = `${pct}% complete (${prog}/${total} pages)`;
+      hintEl.className = 'text-[11px] font-semibold text-amber-400';
+    }
+  } else {
+    hintEl.textContent = `${prog} pages read so far`;
+    hintEl.className = 'text-[11px] font-semibold text-amber-400';
+  }
+}
+if (typeof window !== 'undefined') window.updateAddBookProgressHint = updateAddBookProgressHint;
+
 function openAddBookModal() {
   if ($('ab-catalog-select')) $('ab-catalog-select').value = '';
   if ($('ab-title')) $('ab-title').value = '';
   if ($('ab-author')) $('ab-author').value = '';
   if ($('ab-pages')) $('ab-pages').value = '';
+  if ($('ab-progress')) $('ab-progress').value = '';
+  if ($('ab-status')) $('ab-status').value = 'Not Started';
   if ($('ab-cover-url')) $('ab-cover-url').value = '';
   if ($('ab-cover-preview')) $('ab-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
+  toggleAddBookProgressField();
   const searchBtn = $('ab-btn-search-cover');
   if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('ab-title', 'ab-author', 'ab-cover-url', 'ab-cover-preview');
   
@@ -8005,7 +8062,8 @@ async function saveNewBook() {
   
   const pages = parseInt($('ab-pages').value);
   const prio = $('ab-priority').value;
-  const status = $('ab-status').value;
+  let status = $('ab-status').value;
+  const initialProgInput = parseInt($('ab-progress')?.value) || 0;
   const cost = parseFloat($('ab-cost').value) || 0;
   const buyLink = $('ab-where-to-buy').value.trim() || '';
   const notes = $('ab-notes').value.trim() || '';
@@ -8013,7 +8071,16 @@ async function saveNewBook() {
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   if (pages > 99999) { showToast('Page count seems unrealistic (max 99,999).', 'error'); return; }
+  if (initialProgInput < 0) { showToast('Initial pages read cannot be negative.', 'error'); return; }
+  if (initialProgInput > pages) { showToast(`Initial pages read (${initialProgInput}) cannot exceed total pages (${pages}).`, 'error'); return; }
   if (cost < 0) { showToast('Cost cannot be negative.', 'error'); return; }
+
+  if (initialProgInput > 0 && status === 'Not Started') {
+    status = 'In Progress';
+  }
+  if (initialProgInput === pages && status === 'In Progress') {
+    status = 'Finished';
+  }
 
   isSaveNewBookSubmitting = true;
   const saveBtn = $('add-book-save');
@@ -8022,6 +8089,7 @@ async function saveNewBook() {
   try {
     const isFinished = status === 'Finished';
     const isWishlistStatus = ['Want to Buy', 'Gifted', 'Borrowed', 'Owned'].includes(status);
+    const initialPagesRead = isFinished ? pages : (status === 'In Progress' ? initialProgInput : 0);
     
     const newBook = {
       title,
@@ -8033,8 +8101,8 @@ async function saveNewBook() {
       total_pages: pages,
       priority: prio,
       status: status,
-      pages_read: isFinished ? pages : 0,
-      current_page: isFinished ? pages : 0,
+      pages_read: initialPagesRead,
+      current_page: initialPagesRead,
       read_count: isFinished ? 1 : 0,
       finish_date: isFinished ? todayISO() : null,
       est_cost: cost,
@@ -8075,6 +8143,21 @@ async function saveNewBook() {
       if (!logsCache.some(l => l.id === savedHistLog.id)) {
         logsCache.unshift(savedHistLog);
       }
+    } else if (status === 'In Progress' && initialProgInput > 0) {
+      const initialLog = {
+        date: todayISO(),
+        book_title: title,
+        read_cycle: 1,
+        start_page: 0,
+        end_page: initialProgInput,
+        minutes_spent: null,
+        notes: "Initial reading progress",
+        created_at: serverTimestamp()
+      };
+      const savedInitialLog = await optimisticSaveDoc('reading_logs', initialLog);
+      if (!logsCache.some(l => l.id === savedInitialLog.id)) {
+        logsCache.unshift(savedInitialLog);
+      }
     }
     
     // Reset form fields
@@ -8084,8 +8167,10 @@ async function saveNewBook() {
     $('ab-group-custom').value = '';
     $('custom-group-container').classList.add('hidden');
     $('ab-pages').value = '';
+    if ($('ab-progress')) $('ab-progress').value = '';
     $('ab-priority').value = 'Low';
     $('ab-status').value = 'Not Started';
+    toggleAddBookProgressField();
     $('ab-cost').value = '';
     $('ab-where-to-buy').value = '';
     $('ab-notes').value = '';

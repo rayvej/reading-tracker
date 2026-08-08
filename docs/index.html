@@ -1620,7 +1620,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v120</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v121</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2140,7 +2140,7 @@
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div class="form-control"><label class="label py-1" for="ab-status"><span class="label-text text-xs font-bold uppercase tracking-wider">Initial Status</span></label>
-          <select class="select select-bordered glass-input w-full" id="ab-status">
+          <select class="select select-bordered glass-input w-full" id="ab-status" onchange="toggleAddBookProgressField()">
             <option value="Not Started">Not Started</option>
             <option value="In Progress">In Progress</option>
             <option value="Finished">Finished (Direct Complete)</option>
@@ -2151,6 +2151,18 @@
           </select></div>
         <div class="form-control"><label class="label py-1" for="ab-cost"><span class="label-text text-xs font-bold uppercase tracking-wider">Est. Cost ($)</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="ab-cost" step="0.01" min="0" placeholder="e.g. 19.99"></div>
+      </div>
+      <div class="form-control hidden" id="ab-progress-container">
+        <label class="label py-1 flex items-center justify-between" for="ab-progress">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-amber-400 dark:text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-bookmark text-amber-400"></i> Pages Already Read / Current Page
+          </span>
+          <span id="ab-progress-hint" class="text-[11px] font-semibold text-amber-400"></span>
+        </label>
+        <div class="relative">
+          <input type="number" class="input input-bordered glass-input w-full pr-16" id="ab-progress" min="0" placeholder="e.g. 150 (halfway read)" oninput="updateAddBookProgressHint()">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none font-medium">pages</span>
+        </div>
       </div>
       <div class="form-control"><label class="label py-1" for="ab-where-to-buy"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-where-to-buy" placeholder="Store name or URL"></div>
@@ -2606,7 +2618,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v120</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v121</span>
               </div>
               <div class="text-[11px] text-purple-300/80" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -2766,7 +2778,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v120</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v121</span>
               </div>
               <div class="text-[11px] text-theme-secondary" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
