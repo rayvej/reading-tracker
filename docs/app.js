@@ -8057,7 +8057,9 @@ async function saveNewBook() {
       priority: prio,
       status: status,
       pages_read: isFinished ? pages : 0,
+      current_page: isFinished ? pages : 0,
       read_count: isFinished ? 1 : 0,
+      finish_date: isFinished ? todayISO() : null,
       est_cost: cost,
       where_to_buy: buyLink,
       notes: notes,
@@ -8183,6 +8185,8 @@ async function saveEditBook() {
   if (saveBtn) saveBtn.disabled = true;
 
   try {
+    const isFinished = status === 'Finished';
+    const effectiveRc = isFinished && rc === 0 ? 1 : rc;
     const updates = {
       title: title,
       author: author,
@@ -8191,15 +8195,20 @@ async function saveEditBook() {
       group_name: groupVal,
       reading_group: groupVal,
       total_pages: pages,
-      read_count: rc,
+      read_count: effectiveRc,
       status: status,
-      pages_read: status === 'Finished' ? (pages * (rc || 1)) : status === 'In Progress' ? prog : 0,
+      pages_read: isFinished ? (pages * (effectiveRc || 1)) : status === 'In Progress' ? prog : 0,
+      current_page: isFinished ? pages : prog,
       priority: prio,
       est_cost: cost,
       where_to_buy: buyLink,
       notes: notes,
       cover_url: coverUrl
     };
+
+    if (isFinished && (!activeBookObjectForEdit || !activeBookObjectForEdit.finish_date)) {
+      updates.finish_date = todayISO();
+    }
 
     if (activeBookObjectForEdit && activeBookObjectForEdit._isWishlist) {
       await updateDoc(doc(db, `users/${uid}/wishlist/${id}`), {
