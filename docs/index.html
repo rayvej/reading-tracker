@@ -2055,8 +2055,21 @@
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
+      <div class="form-control bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20 mb-1">
+        <label class="label py-0 mb-1 flex items-center justify-between" for="ab-catalog-select">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-book-bookmark text-amber-400"></i> Select from Master Catalog
+          </span>
+          <span class="text-[10px] text-amber-200/70 font-medium">Autofills details</span>
+        </label>
+        <select id="ab-catalog-select" class="select select-bordered glass-input w-full text-xs font-medium">
+          <option value="">-- Select a pre-existing book to autofill --</option>
+        </select>
+      </div>
       <div class="form-control"><label class="label py-1" for="ab-title"><span class="label-text text-xs font-bold uppercase tracking-wider">Title *</span></label>
-        <input type="text" class="input input-bordered glass-input w-full" id="ab-title" placeholder="Book title"></div>
+        <input type="text" class="input input-bordered glass-input w-full" id="ab-title" list="ab-catalog-datalist" placeholder="Book title">
+        <datalist id="ab-catalog-datalist"></datalist>
+      </div>
       <div class="form-control"><label class="label py-1" for="ab-author"><span class="label-text text-xs font-bold uppercase tracking-wider">Author</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-author" placeholder="Author name"></div>
       <div class="grid grid-cols-2 gap-3">

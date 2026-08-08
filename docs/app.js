@@ -401,7 +401,13 @@ onAuthStateChanged(auth, async user => {
 });
 
 // ── PIN ───────────────────────────────────────────────────────────────────────
+// ── PIN ───────────────────────────────────────────────────────────────────────
+let pinFlowMode = 'VERIFY'; // 'VERIFY' | 'CREATE_NEW' | 'CONFIRM_NEW'
+let pendingNewPin = '';
+
 async function checkAndShowPin() {
+  pinFlowMode = 'VERIFY';
+  pendingNewPin = '';
   let storedHash = localStorage.getItem('rt_pin_hash');
   if (!storedHash) {
     if (db && uid) {
@@ -426,9 +432,56 @@ async function checkAndShowPin() {
       localStorage.setItem('rt_pin_hash', storedHash);
     }
   }
+  
+  await updatePinScreenUI();
   showScreen('pin-screen');
   pinBuffer = '';
   renderPinDots();
+}
+
+async function updatePinScreenUI() {
+  const titleEl = $('pin-screen-title');
+  const subEl = $('pin-screen-subtitle');
+  const defaultHash = await hashPin('1234');
+  const storedHash = localStorage.getItem('rt_pin_hash');
+  const isDefault = storedHash === defaultHash;
+
+  if (pinFlowMode === 'CREATE_NEW') {
+    if (titleEl) titleEl.textContent = 'Create New Security PIN';
+    if (subEl) subEl.innerHTML = 'Default PIN 1234 used. <span class="text-amber-400 font-semibold">Please create your personal 4-digit PIN.</span>';
+  } else if (pinFlowMode === 'CONFIRM_NEW') {
+    if (titleEl) titleEl.textContent = 'Confirm Security PIN';
+    if (subEl) subEl.innerHTML = 'Re-enter your new 4-digit PIN to confirm.';
+  } else {
+    if (titleEl) titleEl.textContent = 'Enter Security PIN';
+    if (subEl) {
+      if (isDefault) {
+        subEl.innerHTML = 'Default Security PIN: <span class="font-mono font-bold text-theme-gold">1234</span> (Requires change)';
+      } else {
+        subEl.innerHTML = 'Enter your 4-digit Security PIN';
+      }
+    }
+  }
+}
+
+function showPinError(msg) {
+  pinBuffer = '';
+  const dots = $('pin-dots')?.querySelectorAll('span');
+  if (dots) {
+    dots.forEach(d => {
+      d.classList.remove('bg-gold', 'border-gold', 'scale-110', 'shadow-lg', 'shadow-gold/20');
+      d.classList.add('bg-rose-500', 'border-rose-500', 'animate-shake');
+    });
+  }
+  const err = $('pin-error');
+  if (err) {
+    err.textContent = msg;
+    err.classList.remove('opacity-0', 'hidden');
+    setTimeout(() => {
+      renderPinDots();
+      err.classList.add('opacity-0');
+    }, 1400);
+  }
 }
 
 function renderPinDots() {
@@ -464,9 +517,49 @@ $('pin-pad').addEventListener('click', async e => {
       performance.clearMeasures('PIN-to-Dashboard Interactive Latency');
       performance.mark('pin-submitted');
     }
-    await verifyPin(pinBuffer);
+    await processPinSubmission(pinBuffer);
   }
 });
+
+async function processPinSubmission(pin) {
+  if (pinFlowMode === 'CREATE_NEW') {
+    if (pin === '1234') {
+      showPinError('Please select a PIN other than 1234');
+      return;
+    }
+    pendingNewPin = pin;
+    pinFlowMode = 'CONFIRM_NEW';
+    pinBuffer = '';
+    await updatePinScreenUI();
+    renderPinDots();
+    return;
+  }
+
+  if (pinFlowMode === 'CONFIRM_NEW') {
+    if (pin !== pendingNewPin) {
+      showPinError('PINs do not match — try again');
+      pendingNewPin = '';
+      pinFlowMode = 'CREATE_NEW';
+      await updatePinScreenUI();
+      return;
+    }
+    // PIN successfully set & confirmed!
+    const newHash = await hashPin(pendingNewPin);
+    localStorage.setItem('rt_pin_hash', newHash);
+    if (db && uid) {
+      setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash }, { merge: true }).catch(err => console.warn('PIN update sync error:', err));
+    }
+    showToast('✓ Security PIN updated successfully!', 'success');
+    pinFlowMode = 'VERIFY';
+    pendingNewPin = '';
+    sessionStorage.setItem(SESSION_KEY, uid);
+    await proceedAfterPinVerification();
+    return;
+  }
+
+  // Normal verification mode
+  await verifyPin(pin);
+}
 
 async function proceedAfterPinVerification() {
   const waitingWorker = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
@@ -485,15 +578,9 @@ async function proceedAfterPinVerification() {
 async function verifyPin(pin) {
   let storedHash = localStorage.getItem('rt_pin_hash');
   const inputHash = await hashPin(pin);
+  const defaultHash = await hashPin('1234');
 
-  // Fast path: Check local storage hash first (<5ms, non-blocking)
-  if (storedHash && inputHash === storedHash) {
-    sessionStorage.setItem(SESSION_KEY, uid);
-    await proceedAfterPinVerification();
-    return;
-  }
-
-  // Fallback path: If local hash is missing or fails, attempt Firestore fetch without locking out user
+  // Fallback path: If local hash is missing or fails, attempt Firestore fetch
   if (!storedHash && db && uid) {
     try {
       const settingsRef = doc(db, `users/${uid}/settings/app`);
@@ -508,21 +595,18 @@ async function verifyPin(pin) {
   }
 
   if (storedHash && inputHash === storedHash) {
+    // If entered PIN matches default PIN '1234', require changing PIN first!
+    if (inputHash === defaultHash) {
+      pinFlowMode = 'CREATE_NEW';
+      pinBuffer = '';
+      await updatePinScreenUI();
+      renderPinDots();
+      return;
+    }
     sessionStorage.setItem(SESSION_KEY, uid);
     await proceedAfterPinVerification();
   } else {
-    pinBuffer = '';
-    const dots = $('pin-dots').querySelectorAll('span');
-    dots.forEach(d => {
-      d.classList.remove('bg-gold', 'border-gold', 'scale-110', 'shadow-lg', 'shadow-gold/20');
-      d.classList.add('bg-rose-500', 'border-rose-500', 'animate-shake');
-    });
-    const err = $('pin-error');
-    err.classList.remove('opacity-0');
-    setTimeout(() => {
-      renderPinDots();
-      err.classList.add('opacity-0');
-    }, 1200);
+    showPinError('Incorrect PIN — try again');
   }
 }
 
@@ -6602,11 +6686,168 @@ function renderRecentLogs() {
   }
 }
 
+// ── Master Catalog & Add Book Selection ─────────────────────────────────────
+let masterCatalog = [];
+let isCatalogEventsSetup = false;
+
+async function loadMasterCatalog() {
+  const catalogMap = new Map();
+
+  // 1. Fetch seed-data.json books (100+ master books added by owner)
+  try {
+    const resp = await fetch('./seed-data.json');
+    if (resp.ok) {
+      const seed = await resp.json();
+      if (seed && seed.books) {
+        seed.books.forEach(b => {
+          if (b && b.title) {
+            const key = b.title.trim().toLowerCase();
+            if (!catalogMap.has(key)) {
+              catalogMap.set(key, {
+                title: b.title.trim(),
+                author: b.author || '',
+                collection: b.collection || 'Bahai',
+                group: b.group_name || b.group || 'Writings',
+                total_pages: b.total_pages || 0,
+                cover_url: b.cover_url || ''
+              });
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load seed-data.json for master catalog:', e);
+  }
+
+  // 2. Include user's booksCache
+  (booksCache || []).forEach(b => {
+    if (b && b.title) {
+      const key = b.title.trim().toLowerCase();
+      if (!catalogMap.has(key)) {
+        catalogMap.set(key, {
+          title: b.title.trim(),
+          author: b.author || '',
+          collection: b.collection || 'Bahai',
+          group: b.group_name || b.group || b.reading_group || 'Writings',
+          total_pages: b.total_pages || 0,
+          cover_url: b.cover_url || ''
+        });
+      }
+    }
+  });
+
+  masterCatalog = Array.from(catalogMap.values()).sort((a, b) => a.title.localeCompare(b.title));
+  return masterCatalog;
+}
+
+async function populateAddBookCatalogDropdown() {
+  const sel = $('ab-catalog-select');
+  const datalist = $('ab-catalog-datalist');
+  if (!sel && !datalist) return;
+
+  const catalog = await loadMasterCatalog();
+
+  if (sel) {
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- Select a pre-existing book to autofill --</option>';
+    catalog.forEach((b, index) => {
+      const opt = document.createElement('option');
+      opt.value = index.toString();
+      const meta = [b.author, b.total_pages ? `${b.total_pages} p.` : ''].filter(Boolean).join(' • ');
+      opt.textContent = meta ? `${b.title} (${meta})` : b.title;
+      sel.appendChild(opt);
+    });
+    sel.value = currentVal;
+  }
+
+  if (datalist) {
+    datalist.innerHTML = '';
+    catalog.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.title;
+      datalist.appendChild(opt);
+    });
+  }
+
+  setupAddBookCatalogEvents();
+}
+
+function applyCatalogBookToForm(book) {
+  if (!book) return;
+  if ($('ab-title')) $('ab-title').value = book.title || '';
+  if ($('ab-author')) $('ab-author').value = book.author || '';
+  
+  if ($('ab-collection')) {
+    const collVal = book.collection === 'Non-Bahai' ? 'Non-Bahai' : 'Bahai';
+    $('ab-collection').value = collVal;
+  }
+
+  if ($('ab-group-select')) {
+    const stdGroups = ['Writings', 'About the Faith', 'Compilations', 'Fiction', 'Non-Fiction'];
+    const g = book.group || book.group_name || 'Writings';
+    if (stdGroups.includes(g)) {
+      $('ab-group-select').value = g;
+      if ($('custom-group-container')) $('custom-group-container').classList.add('hidden');
+    } else {
+      $('ab-group-select').value = 'Other';
+      if ($('custom-group-container')) $('custom-group-container').classList.remove('hidden');
+      if ($('ab-group-custom')) $('ab-group-custom').value = g;
+    }
+  }
+
+  if ($('ab-pages')) $('ab-pages').value = book.total_pages || '';
+  if ($('ab-cover-url')) $('ab-cover-url').value = book.cover_url || '';
+
+  if ($('ab-cover-preview')) {
+    if (book.cover_url) {
+      $('ab-cover-preview').innerHTML = `<img src="${book.cover_url}" class="w-full h-full object-cover rounded-lg" alt="" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-image\\'></i>'">`;
+    } else {
+      $('ab-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
+    }
+  }
+}
+
+function setupAddBookCatalogEvents() {
+  if (isCatalogEventsSetup) return;
+  isCatalogEventsSetup = true;
+
+  const sel = $('ab-catalog-select');
+  if (sel) {
+    sel.addEventListener('change', e => {
+      const idx = parseInt(e.target.value);
+      if (!isNaN(idx) && masterCatalog[idx]) {
+        applyCatalogBookToForm(masterCatalog[idx]);
+      }
+    });
+  }
+
+  const titleInput = $('ab-title');
+  if (titleInput) {
+    const handleTitleAutofill = () => {
+      const val = titleInput.value.trim().toLowerCase();
+      if (!val) return;
+      const matched = masterCatalog.find(b => b.title.toLowerCase() === val);
+      if (matched) {
+        applyCatalogBookToForm(matched);
+      }
+    };
+    titleInput.addEventListener('change', handleTitleAutofill);
+    titleInput.addEventListener('input', handleTitleAutofill);
+  }
+}
+
 function openAddBookModal() {
+  if ($('ab-catalog-select')) $('ab-catalog-select').value = '';
+  if ($('ab-title')) $('ab-title').value = '';
+  if ($('ab-author')) $('ab-author').value = '';
+  if ($('ab-pages')) $('ab-pages').value = '';
   if ($('ab-cover-url')) $('ab-cover-url').value = '';
   if ($('ab-cover-preview')) $('ab-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
   const searchBtn = $('ab-btn-search-cover');
   if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('ab-title', 'ab-author', 'ab-cover-url', 'ab-cover-preview');
+  
+  populateAddBookCatalogDropdown();
   $('add-book-modal').classList.add('open');
 }
 
