@@ -496,9 +496,12 @@
               <div id="dash-live-glow" class="dash-live-glow"></div>
               
               <div class="dash-live-content">
-                <div class="flex justify-between items-center gap-2">
-                  <span class="section-label text-[10px] truncate shrink min-w-0" style="color: var(--accent)"><i class="fa-solid fa-circle-play text-[9px] animate-pulse"></i> Active Reading Live Banner</span>
-                  <span id="dash-live-eta-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0 max-w-full">—</span>
+                <div class="flex justify-between items-start gap-2">
+                  <span class="section-label text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5" style="color: var(--accent)"><i class="fa-solid fa-circle-play text-[9px] animate-pulse"></i> Active Reading Live Banner</span>
+                  <div id="dash-live-eta-badge" class="flex flex-col items-end text-right shrink-0">
+                    <span id="dash-live-eta-line1" class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">—</span>
+                    <span id="dash-live-eta-line2" class="text-[9px] font-bold text-amber-400/90 mt-0.5 whitespace-nowrap"></span>
+                  </div>
                 </div>
                 <div class="flex items-start gap-4 mt-1.5">
                   <!-- Enlarged Cover with Glow Ring -->

@@ -4083,6 +4083,8 @@ function renderLiveSessionBanner(books, logs) {
   const authorEl = $('dash-live-author');
   const barEl = $('dash-live-bar');
   const etaBadgeEl = $('dash-live-eta-badge');
+  const etaLine1El = $('dash-live-eta-line1') || etaBadgeEl;
+  const etaLine2El = $('dash-live-eta-line2');
   const coverContainerEl = $('dash-live-cover-container');
   const glowEl = $('dash-live-glow');
   const pagesLabel = $('dash-live-pages-label');
@@ -4099,10 +4101,11 @@ function renderLiveSessionBanner(books, logs) {
     if (coverContainerEl) {
       coverContainerEl.innerHTML = `<div class="w-16 h-24 rounded-xl bg-theme-card border border-theme flex items-center justify-center shadow-lg overflow-hidden"><i class="fa-solid fa-book text-theme-tertiary text-xl"></i></div>`;
     }
-    if (etaBadgeEl) {
-      etaBadgeEl.textContent = 'Standby';
-      etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-theme-card text-theme-secondary border border-theme';
+    if (etaLine1El) {
+      etaLine1El.textContent = 'Standby';
+      etaLine1El.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-theme-card text-theme-secondary border border-theme whitespace-nowrap';
     }
+    if (etaLine2El) etaLine2El.textContent = '';
     return;
   }
 
@@ -4199,10 +4202,23 @@ function renderLiveSessionBanner(books, logs) {
   
   if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} p/d · Speed: ${personalPgh} p/h`;
 
-  if (etaBadgeEl) {
-    etaBadgeEl.textContent = remaining === 0 ? 'Completed ✓' : `${timeRemStr} · ${personalPgh} p/h`;
-    etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0 max-w-full';
-    etaBadgeEl.title = `Estimated ${timeRemStr} remaining based on your personal speed of ${personalPgh} pages/hour`;
+  if (remaining === 0) {
+    if (etaLine1El) {
+      etaLine1El.textContent = 'Completed ✓';
+      etaLine1El.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap';
+    }
+    if (etaLine2El) etaLine2El.textContent = '';
+  } else {
+    if (etaLine1El) {
+      etaLine1El.textContent = `${timeRemStr} (${personalPgh} p/h)`;
+      etaLine1El.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap';
+      etaLine1El.title = `Estimated ${timeRemStr} remaining based on your personal speed of ${personalPgh} pages/hour`;
+    }
+    if (etaLine2El) {
+      etaLine2El.textContent = `~${estDays} day${estDays === 1 ? '' : 's'} left (${velocity.toFixed(1)} p/d)`;
+      etaLine2El.className = 'text-[9px] font-bold text-amber-400/90 mt-0.5 whitespace-nowrap';
+      etaLine2El.title = `Estimated ~${estDays} days left based on your current pace of ${velocity.toFixed(1)} pages/day`;
+    }
   }
 
   // Show & Wire Action Buttons
