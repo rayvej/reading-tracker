@@ -2759,10 +2759,20 @@ function showView(name) {
 }
 
 // ── Log Form ──────────────────────────────────────────────────────────────────
+let isLogAddBtnSetup = false;
+
 function setupLogForm() {
   $('log-date').value = todayISO();
 
-  $('log-book').addEventListener('change', () => {
+  const addBtn = $('btn-log-add-new-book');
+  if (addBtn && !isLogAddBtnSetup) {
+    isLogAddBtnSetup = true;
+    addBtn.addEventListener('click', () => {
+      openAddBookModal();
+    });
+  }
+
+  $('log-book').addEventListener('change', async () => {
     const title = $('log-book').value;
     if (!title) {
       $('log-start').value = '';
@@ -2771,6 +2781,39 @@ function setupLogForm() {
       return;
     }
     
+    // Check if the selected book is from master catalog and not in booksCache yet
+    let existingBook = booksCache.find(b => b.title === title);
+    if (!existingBook && masterCatalog.length > 0) {
+      const catBook = masterCatalog.find(b => b.title === title);
+      if (catBook) {
+        try {
+          const newBook = {
+            title: catBook.title,
+            author: catBook.author || null,
+            collection: catBook.collection || 'Bahai',
+            group: catBook.group || 'Writings',
+            group_name: catBook.group || 'Writings',
+            total_pages: catBook.total_pages || 300,
+            priority: 'Medium',
+            status: 'In Progress',
+            pages_read: 0,
+            read_count: 0,
+            cover_url: catBook.cover_url || null,
+            date_added: todayISO()
+          };
+          const saved = await optimisticSaveDoc('books', newBook);
+          if (!booksCache.some(b => b.id === saved.id || b.title === saved.title)) {
+            booksCache.push(saved);
+          }
+          showToast(`✓ "${catBook.title}" added to your library!`, 'success');
+          populateBookDropdown();
+          $('log-book').value = catBook.title;
+        } catch (e) {
+          console.warn('Auto-add catalog book error:', e);
+        }
+      }
+    }
+
     handleBookSelection(title, booksCache, logsCache);
     
     const startPage = parseInt($('log-start').value) || 0;
@@ -2788,13 +2831,13 @@ function setupLogForm() {
   setupStopwatch();
 }
 
-function populateBookDropdown() {
+async function populateBookDropdown() {
   const sel = $('log-book');
   if (!sel) return;
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Select a book —</option>';
 
-  // Sort: In Progress first, then Finished, then Not Started
+  // 1. User's library books
   const sorted = [...booksCache].sort((a, b) => {
     const order = { 'In Progress': 0, 'Finished': 1, 'Not Started': 2 };
     return (order[a.status] ?? 2) - (order[b.status] ?? 2) || a.title.localeCompare(b.title);
@@ -2813,16 +2856,29 @@ function populateBookDropdown() {
     sel.appendChild(opt);
   });
 
-  // If a selection exists, preserve it. Otherwise, default to the most recent entry from reading_logs.
+  // 2. Master Catalog books (for books not yet in booksCache)
+  const catalog = await loadMasterCatalog();
+  const unaddedMasterBooks = catalog.filter(mb => !booksCache.some(b => b.title?.toLowerCase() === mb.title?.toLowerCase()));
+  if (unaddedMasterBooks.length > 0) {
+    const masterOg = document.createElement('optgroup');
+    masterOg.label = '✨ Master Catalog (Auto-adds to library)';
+    unaddedMasterBooks.forEach(mb => {
+      const opt = document.createElement('option');
+      opt.value = mb.title;
+      opt.textContent = `${mb.title} — ${mb.author || 'Catalog'}`;
+      masterOg.appendChild(opt);
+    });
+    sel.appendChild(masterOg);
+  }
+
+  // Preserve selection or default
   if (cur) {
     sel.value = cur;
   } else if (logsCache && logsCache.length > 0) {
-    // Sort logs descending by date/time to find the absolute latest log
     const sortedLogs = [...logsCache].sort((a, b) => new Date(b.date) - new Date(a.date));
     const latestBookTitle = sortedLogs[0].book_title;
     if (latestBookTitle && booksCache.some(b => b.title === latestBookTitle)) {
       sel.value = latestBookTitle;
-      // Trigger the page/cycle calculations and pre-population for the form
       handleBookSelection(latestBookTitle, booksCache, logsCache);
       
       const startPage = parseInt($('log-start').value) || 0;

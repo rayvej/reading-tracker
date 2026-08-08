@@ -228,7 +228,12 @@
 
               <!-- Book -->
               <div class="form-control w-full">
-                <label class="label py-1" for="log-book"><span class="label-text text-xs font-bold uppercase tracking-wider">Book</span></label>
+                <div class="flex items-center justify-between py-1">
+                  <label class="label py-0" for="log-book"><span class="label-text text-xs font-bold uppercase tracking-wider">Book *</span></label>
+                  <button type="button" id="btn-log-add-new-book" class="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-theme-gold border border-amber-500/30 text-[11px] font-bold transition-all active:scale-95 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-plus text-[9px]"></i> Add New Book
+                  </button>
+                </div>
                 <select class="select select-bordered glass-input w-full" id="log-book">
                   <option value="">— Select a book —</option>
                 </select>
@@ -1609,7 +1614,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v110</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v111</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2595,7 +2600,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v110</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v111</span>
               </div>
               <div class="text-[11px] text-purple-300/80" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -2755,7 +2760,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v110</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v111</span>
               </div>
               <div class="text-[11px] text-theme-secondary" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
