@@ -1699,6 +1699,8 @@ async function saveStarterBook(batchContinue) {
         book_id: savedBook.id,
         book_title: title,
         date: l.date,
+        start_page: 0,
+        end_page: l.pages_read || totalPages,
         pages_read: l.pages_read,
         read_cycle: 1,
         note: l.note || '',
@@ -2726,6 +2728,17 @@ async function loadLogsCache() {
     if (db && uid) {
       const snap = await getDocs(query(collection(db, `users/${uid}/reading_logs`), orderBy('date', 'desc')));
       logsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Auto-heal missing end_page on completion logs
+      logsCache.forEach(l => {
+        if ((!l.end_page || l.end_page === 0) && l.pages_read > 0) {
+          l.end_page = l.pages_read;
+          if (db && uid && l.id) {
+            updateDoc(doc(db, `users/${uid}/reading_logs/${l.id}`), { end_page: l.pages_read }).catch(err => console.warn('Log end_page auto-heal persist:', err));
+          }
+        }
+      });
+
       markViewsDirty();
     }
   } catch (e) {
@@ -3813,7 +3826,7 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     if (book) {
       const tot = parseInt(book.total_pages || 0, 10);
       const cycleLogs = logsByBookCycle[key];
-      const compLogs = cycleLogs.filter(l => (l.end_page || 0) >= tot);
+      const compLogs = cycleLogs.filter(l => (l.end_page || l.pages_read || 0) >= tot || (l.note && (l.note.includes('Finished') || l.note.includes('Completed'))));
       if (compLogs.length > 0 && tot > 0) {
         compLogs.sort((a,b) => a.date.localeCompare(b.date));
         completions.push({
@@ -3837,11 +3850,17 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
     if (isFinished) {
       const existingCount = completionCountsMap.get(b.title) || 0;
       const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
+
+      let bookFinishDate = String(b.finish_date || b.date_added || b.start_date || todayISO()).trim();
+      if (bookFinishDate.length === 4) bookFinishDate = `${bookFinishDate}-12-31`;
+      else if (bookFinishDate.length > 10) bookFinishDate = bookFinishDate.slice(0, 10);
+      if (!bookFinishDate || bookFinishDate.length < 10) bookFinishDate = todayISO();
+
       for (let i = 0; i < neededCount; i++) {
         completions.push({
           title: b.title,
           cycle: existingCount + i + 1,
-          date: '2020-01-01', // placeholder for missing logs
+          date: bookFinishDate,
           pages: b.total_pages || 0,
           collection: b.collection || 'Non-Bahai',
           category: b.group || b.group_name || b.reading_group || b.category || 'Other',
