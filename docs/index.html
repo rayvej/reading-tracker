@@ -39,7 +39,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=118">
+  <link rel="stylesheet" href="style.css?v=119">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1442,26 +1442,27 @@
           <div class="p-5 flex flex-col gap-5 animate-fade-in">
 
             <!-- Header -->
-            <div class="flex justify-between items-center pt-1">
+            <div class="flex flex-col gap-3 pt-1">
               <div>
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Bookshelf</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your library, wishlist &amp; everything in between</p>
               </div>
-              <div class="flex items-center gap-2 flex-wrap justify-end">
+              <!-- Side-by-side action buttons -->
+              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5">
                 <button id="bookshelf-btn-quick-add-completed"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
                   style="background: rgba(var(--gold-rgb),0.15); border-color: rgba(var(--gold-rgb),0.35); color: var(--gold)"
                   title="Quick-add finished books from master catalog">
                   <i class="fa-solid fa-wand-magic-sparkles"></i> Quick-Add Finished
                 </button>
                 <button id="btn-scan-isbn"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
                   style="background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent)"
                   title="Scan ISBN Barcode with Camera">
                   <i class="fa-solid fa-barcode"></i> Scan ISBN
                 </button>
                 <button id="btn-add-book-trigger"
-                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
                   style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
                   <i class="fa-solid fa-plus"></i> Add Book
                 </button>
@@ -3720,6 +3721,6 @@
       initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
-  <script type="module" src="app.js?v=118"></script>
+  <script type="module" src="app.js?v=119"></script>
 </body>
 </html>

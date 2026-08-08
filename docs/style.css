@@ -942,6 +942,8 @@ body.light-mode #tab-bar {
 }
 
 .seg-control.seg-control-scrollable {
+  display: flex;
+  flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -951,13 +953,15 @@ body.light-mode #tab-bar {
   display: none;
 }
 .seg-control.seg-control-scrollable .seg-btn {
-  flex: 1 1 0%;
-  padding: 4px 8px;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  padding: 5px 12px;
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .seg-btn {
-  flex: 1 1 0%;
+  flex: 0 0 auto;
   min-width: max-content;
   min-height: 0 !important;
   border: 1px solid transparent;
@@ -967,7 +971,7 @@ body.light-mode #tab-bar {
   font-weight: 600;
   letter-spacing: 0.015em;
   border-radius: 7px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease-in-out;
