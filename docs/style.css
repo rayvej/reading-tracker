@@ -960,8 +960,8 @@ body.light-mode #tab-bar {
 }
 
 .seg-btn {
-  flex: 0 0 auto;
-  min-width: max-content;
+  flex: 1 1 0%;
+  min-width: 0;
   min-height: 0 !important;
   border: 1px solid transparent;
   background: transparent;
@@ -970,12 +970,11 @@ body.light-mode #tab-bar {
   font-weight: 600;
   letter-spacing: 0.015em;
   border-radius: 7px;
-  padding: 5px 10px;
+  padding: 6px 10px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease-in-out;
   -webkit-tap-highlight-color: transparent;
-  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;

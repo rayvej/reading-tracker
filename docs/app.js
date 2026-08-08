@@ -4200,8 +4200,8 @@ function renderLiveSessionBanner(books, logs) {
   if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} p/d · Speed: ${personalPgh} p/h`;
 
   if (etaBadgeEl) {
-    etaBadgeEl.textContent = remaining === 0 ? 'Completed ✓' : `${timeRemStr} (${personalPgh} p/h)`;
-    etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    etaBadgeEl.textContent = remaining === 0 ? 'Completed ✓' : `${timeRemStr} · ${personalPgh} p/h`;
+    etaBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap shrink-0 max-w-full';
     etaBadgeEl.title = `Estimated ${timeRemStr} remaining based on your personal speed of ${personalPgh} pages/hour`;
   }
 
