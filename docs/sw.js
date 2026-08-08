@@ -7,20 +7,11 @@ const STATIC_ASSETS = [
   BASE + 'app.js?v=118',
   BASE + 'js/install-prompt.js',
   BASE + 'js/offline-db.js',
-  BASE + 'js/seed10YearData.js',
-  BASE + 'js/modules/ui.js',
-  BASE + 'js/modules/stats.js',
-  BASE + 'js/modules/export.js',
-  BASE + 'js/modules/image.js',
-  BASE + 'js/modules/offline.js',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',
   BASE + 'icon-512.png',
-  BASE + 'seed-data.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.css',
-  'https://cdn.tailwindcss.com'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
 ];
 
 // ── Install: cache static assets gracefully ──────────────────────────────────

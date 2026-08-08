@@ -2867,6 +2867,12 @@ function setupNav() {
 function showView(name) {
   currentView = name;
 
+  // Stop Mind Graph animation loop when leaving knowledge view
+  if (name !== 'knowledge' && mindGraphAnimFrameId) {
+    cancelAnimationFrame(mindGraphAnimFrameId);
+    mindGraphAnimFrameId = null;
+  }
+
   // 1. Instantaneous tab bar active state update
   document.querySelectorAll('#tab-bar .tab-item').forEach(b => {
     b.classList.toggle('active', b.dataset.view === name);
@@ -4644,14 +4650,14 @@ function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
         const card = el('div', 'p-3.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col gap-1.5');
         card.innerHTML = `
           <div class="flex justify-between items-start">
-            <span class="text-xs font-bold text-theme-primary truncate flex-1 pr-2">${l.book_title}</span>
+            <span class="text-xs font-bold text-theme-primary truncate flex-1 pr-2">${escapeHtml(l.book_title)}</span>
             <span class="text-xs font-black text-emerald-400 tabular-nums">+${pagesRead} pg</span>
           </div>
           <div class="flex justify-between text-[10px] text-theme-secondary font-semibold">
             <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
             <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified duration'}</span>
           </div>
-          ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-white/5 p-2 rounded-xl mt-1 border border-theme">${l.notes}</div>` : ''}
+          ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-white/5 p-2 rounded-xl mt-1 border border-theme">${escapeHtml(l.notes)}</div>` : ''}
         `;
         contentEl.appendChild(card);
       });
@@ -6625,7 +6631,7 @@ function renderSparklineChart() {
     return !book || dashFilter === 'all' || book.collection === dashFilter;
   });
 
-  renderChronologicalSparkline(filteredLogs, 'chart-sparkline-wrap');
+  // renderChronologicalSparkline removed (deprecated)
 }
 
 function renderBarChart() {
@@ -6871,7 +6877,7 @@ function renderRecentLogs() {
     card.innerHTML = `
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-theme-primary truncate">${l.book_title}</span>
+          <span class="text-xs font-bold text-theme-primary truncate">${escapeHtml(l.book_title)}</span>
           <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-gold/15 text-gold border border-gold/20 shrink-0">+${pages} pg</span>
         </div>
         <div class="text-[9px] text-theme-secondary mt-0.5 flex items-center gap-2">
@@ -7771,7 +7777,7 @@ function renderBookCard(b) {
       <div class="text-[11px] text-theme-secondary flex items-center gap-1.5 mt-0.5">
         <i class="fa-solid fa-shopping-cart text-[10px] text-theme-gold"></i>
         <span>Where to Buy:</span>
-        ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold" onclick="event.stopPropagation()">${b.where_to_buy}</a>` : `<span class="text-theme-primary truncate font-semibold">${b.where_to_buy}</span>`}
+        ${isUrl ? `<a href="${escapeHtml(b.where_to_buy)}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold" onclick="event.stopPropagation()">${escapeHtml(b.where_to_buy)}</a>` : `<span class="text-theme-primary truncate font-semibold">${escapeHtml(b.where_to_buy)}</span>`}
       </div>
     `;
   }
@@ -7780,7 +7786,7 @@ function renderBookCard(b) {
   if (b.notes) {
     notesHTML = `
       <div class="text-[11px] text-theme-secondary italic px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] mt-0.5 whitespace-pre-wrap leading-relaxed">
-        <i class="fa-solid fa-quote-left text-[9px] text-theme-tertiary mr-1 align-top"></i>${b.notes}
+        <i class="fa-solid fa-quote-left text-[9px] text-theme-tertiary mr-1 align-top"></i>${escapeHtml(b.notes)}
       </div>
     `;
   }
@@ -7865,35 +7871,7 @@ function renderBookCard(b) {
   return card;
 }
 
-function enableSwipeActions(card) {
-  let startX = 0;
-  let currentX = 0;
-  let isSwiping = false;
-
-  card.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    isSwiping = true;
-  }, { passive: true });
-
-  card.addEventListener('touchmove', e => {
-    if (!isSwiping) return;
-    const diff = e.touches[0].clientX - startX;
-    if (diff < 0) {
-      currentX = Math.max(-140, diff);
-      card.style.transform = `translateX(${currentX}px)`;
-    }
-  }, { passive: true });
-
-  card.addEventListener('touchend', () => {
-    isSwiping = false;
-    if (currentX < -60) {
-      card.style.transform = 'translateX(-120px)';
-    } else {
-      card.style.transform = 'translateX(0px)';
-    }
-    currentX = 0;
-  });
-}
+// enableSwipeActions — removed (dead code, never called)
 
 async function batchUpdateStatus(newStatus) {
   if (bookshelfSelectedIds.size === 0) return;
@@ -7981,7 +7959,7 @@ async function markBookComplete(b) {
   try {
     const date = todayISO();
     const cycle = (b.read_count || 0) + 1;
-    const start = b.pages_read || 0;
+    const start = b.current_page || 0;
     const end = b.total_pages;
     
     await addDoc(collection(db, `users/${uid}/reading_logs`), {
@@ -8460,8 +8438,6 @@ async function deleteLogEntry() {
 
 // Legacy stubs to prevent ReferenceErrors after consolidation
 function setupLibrary() {}
-function setupWishlist() {}
-function renderLibrary() {}
 function renderWishlist() { renderBookshelf(); }
 
 
@@ -8503,9 +8479,7 @@ function setupHaptics() {
 // =========================================================================
 // 12-WEEK CHRONOLOGICAL GRAPH OVERHAUL (TimeZone & Gap Fixed)
 // =========================================================================
-function renderChronologicalSparkline(logs, containerId) {
-  // Deprecated/removed from Dashboard layout
-}
+// renderChronologicalSparkline — removed (deprecated empty stub)
 
 // =========================================================================
 // BOOKS READ PER YEAR BAR CHART RENDERER (Goals View)
@@ -8891,45 +8865,7 @@ async function healBookStatuses() {
   }
 }
 
-function evaluateBookReadingProgress(book, logs) {
-  const activeCycle = (book.read_count || 0) + 1;
-  const bookLogs = logs.filter(l => l.book_title === book.title);
-  
-  if (book.status === 'In Progress') {
-    const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeCycle);
-    if (cycleLogs.length > 0) {
-      cycleLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const latestLog = cycleLogs[cycleLogs.length - 1];
-      const endPage = parseInt(latestLog.end_page || 0, 10);
-      const totalPages = parseInt(book.total_pages || 0, 10);
-      if (endPage >= totalPages) {
-        return 'Finished';
-      }
-    }
-    return 'In Progress';
-  }
-
-  if (bookLogs.length === 0) {
-    return 'Not Started';
-  }
-
-  bookLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const activeLogsCycle = Math.max(...bookLogs.map(l => parseInt(l.read_cycle || 1, 10)));
-  const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === activeLogsCycle);
-
-  const latestLog = cycleLogs[cycleLogs.length - 1];
-  const endPage = parseInt(latestLog.end_page || 0, 10);
-  const totalPages = parseInt(book.total_pages || 0, 10);
-
-  if (endPage >= totalPages) {
-    return 'Finished';
-  } else if (endPage > 0) {
-    return 'In Progress';
-  }
-  
-  return 'Not Started';
-}
+// evaluateBookReadingProgress — removed (dead code, never called)
 
 // =========================================================================
 // SECTION 5: CONDITIONAL DROPDOWN IN ADD BOOK (Form Markup Helper)
@@ -9181,14 +9117,13 @@ function openBookDetailModal(b) {
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
   
   $('bd-badges').innerHTML = `
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${escapeHtml(b.status)}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.group || 'Other'}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${escapeHtml(b.group || 'Other')}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${escapeHtml(b.priority)}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${escapeHtml(b.ownership)}</span>
   `;
   
-  // Progress
   const pagesReadAccum = b.pages_read || 0;
   const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
   const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
@@ -9197,16 +9132,14 @@ function openBookDetailModal(b) {
   $('bd-progress-text').textContent = `${isFin ? b.total_pages : currentCyclePages} / ${b.total_pages} pg`;
   $('bd-cycles-text').textContent = `Cycle: ${readCycle} · Reads: ${b.read_count || 0}`;
   
-  // Circular progress ring
   const circle = $('bd-progress-ring');
   const pctText = $('bd-progress-pct');
   const dispPct = isFin ? 100 : progressPct;
   pctText.textContent = `${dispPct}%`;
-  const circumference = 2 * Math.PI * 20; // 125.66
+  const circumference = 2 * Math.PI * 20; 
   const offset = circumference - (dispPct / 100) * circumference;
   circle.style.strokeDashoffset = offset;
   
-  // Book Reading Calculator calculations
   const paceInput = $('bd-calc-pace');
   function updateCalculator() {
     const pace = parseInt(paceInput.value, 10) || 10;
@@ -9238,14 +9171,12 @@ function openBookDetailModal(b) {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     $('bd-calc-date').textContent = `${projDate.getDate()}-${months[projDate.getMonth()]}-${projDate.getFullYear()}`;
     
-    // Average reading speed in pages per minute (avgPPM)
     const totalLoggedPages = logsCache.reduce((s, l) => s + Math.max(0, (l.end_page || 0) - (l.start_page || 0)), 0);
     const totalMins = logsCache.reduce((s, l) => s + (l.minutes_spent || 0), 0);
     const avgPPM = totalMins > 0 ? (totalLoggedPages / totalMins) : 0.5;
     const totalReadingMins = Math.round(pagesRemaining / avgPPM);
     $('bd-calc-time').textContent = `${totalReadingMins} min`;
     
-    // Days to Finish (historical YTD average pace)
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const dayOfYear = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
@@ -9265,7 +9196,6 @@ function openBookDetailModal(b) {
     updateCalculator();
   }
 
-  // Wishlist details
   const wlInfo = $('bd-wishlist-info');
   if (b._fromWishlist || isWl) {
     wlInfo.classList.remove('hidden');
@@ -9280,7 +9210,7 @@ function openBookDetailModal(b) {
         <div class="text-[11px] text-theme-secondary flex items-center gap-1.5 mt-0.5">
           <i class="fa-solid fa-shopping-cart text-[10px] text-theme-gold"></i>
           <span>Where to Buy:</span>
-          ${isUrl ? `<a href="${b.where_to_buy}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold">${b.where_to_buy}</a>` : `<span class="text-theme-primary truncate font-semibold">${b.where_to_buy}</span>`}
+          ${isUrl ? `<a href="${escapeHtml(b.where_to_buy)}" target="_blank" class="text-theme-gold underline truncate hover:text-theme-gold font-semibold">${escapeHtml(b.where_to_buy)}</a>` : `<span class="text-theme-primary truncate font-semibold">${escapeHtml(b.where_to_buy)}</span>`}
         </div>
       `;
     }
@@ -9288,7 +9218,6 @@ function openBookDetailModal(b) {
     wlInfo.classList.add('hidden');
   }
   
-  // Render timeline of logs
   const timeline = $('bd-timeline');
   timeline.innerHTML = '';
   
@@ -9296,14 +9225,12 @@ function openBookDetailModal(b) {
   if (bookLogs.length === 0) {
     timeline.innerHTML = `<div class="text-xs text-theme-tertiary italic py-2">No read sessions logged yet.</div>`;
   } else {
-    // Sort chronologically ASCENDING
     const sortedLogs = [...bookLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
     sortedLogs.forEach(l => {
       const addedPages = parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10);
       const minutes = l.minutes_spent ? ` · ⏱ ${l.minutes_spent} min` : '';
       
       const item = el('div', 'flex flex-col gap-1 relative pl-4');
-      // Timeline bullet indicator
       const bullet = el('div', 'absolute left-[-16px] top-[4px] w-2 h-2 rounded-full border bg-theme-card border-white/20');
       if (l.notes && l.notes.includes('Historical')) bullet.classList.add('bg-emerald-500', 'border-emerald-500/20');
       else bullet.classList.add('bg-blue-500', 'border-blue-500/20');
@@ -9312,7 +9239,7 @@ function openBookDetailModal(b) {
       if (l.notes) {
         notesHTML = `
           <div class="text-[11px] text-slate-350 italic px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] mt-1 whitespace-pre-wrap leading-relaxed">
-            <i class="fa-solid fa-quote-left text-[8px] text-theme-tertiary mr-1 align-top"></i>${l.notes}
+            <i class="fa-solid fa-quote-left text-[8px] text-theme-tertiary mr-1 align-top"></i>${escapeHtml(l.notes)}
           </div>
         `;
       }
@@ -9332,12 +9259,10 @@ function openBookDetailModal(b) {
     });
   }
   
-  // Wire action buttons
   const rereadBtn = $('bd-action-reread');
   if (rereadBtn) {
     if (isFin) {
       rereadBtn.classList.remove('hidden');
-      // recreate listener
       const newBtn = rereadBtn.cloneNode(true);
       rereadBtn.parentNode.replaceChild(newBtn, rereadBtn);
       newBtn.addEventListener('click', async () => {
@@ -9376,19 +9301,14 @@ function openBookDetailModal(b) {
     });
   }
 
-  // Open modal
   $('book-detail-modal').classList.add('open');
 }
 
-// Wire detail modal close
 window.addEventListener('DOMContentLoaded', () => {
   const closeBtn = $('book-detail-close');
   if (closeBtn) closeBtn.addEventListener('click', () => $('book-detail-modal').classList.remove('open'));
 });
 
-// =========================================================================
-// SMART FORM CYCLE & PROGRESS CALCULATIONS
-// =========================================================================
 function handleBookSelection(selectedBookTitle, books, logs) {
   const book = books.find(b => b.title === selectedBookTitle);
   if (!book) return;
@@ -9418,19 +9338,14 @@ function handleBookSelection(selectedBookTitle, books, logs) {
   } else {
     const tot = parseInt(book.total_pages || 0, 10);
     const raw = parseInt(book.pages_read || book.current_page || 0, 10);
-    startPage = (tot > 0 && raw > tot) ? (raw % tot) : raw;
-    if (tot > 0 && startPage >= tot) {
-      startPage = 0;
-    }
+    if (tot > 0) startPage = raw % tot;
+    else startPage = raw;
   }
   
   document.getElementById('log-start').value = startPage;
   document.getElementById('log-cycle').value = currentCycle;
 }
 
-// =========================================================================
-// SERVICE WORKER & PWA UPDATE MANAGEMENT SYSTEM
-// =========================================================================
 window.swRegistration = null;
 window.swWaitingWorker = null;
 
@@ -9507,7 +9422,6 @@ function setupServiceWorkerUpdateSystem() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               window.swWaitingWorker = newWorker;
-              console.log('[SW] New version installed and waiting.');
               showUpdateModal();
             }
           });
@@ -9586,9 +9500,6 @@ window.showUpdateModal = showUpdateModal;
 window.setupSettingsUpdateInspector = setupSettingsUpdateInspector;
 
 
-// =========================================================================
-// GLOBAL ESCAPE KEY HANDLER (WCAG 2.1.1)
-// =========================================================================
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   const modals = [
@@ -9608,9 +9519,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// =========================================================================
-// SECTION 10: OCR PAGE SCANNER INTEGRATION
-// =========================================================================
 function getGeminiApiKey() {
   const key = localStorage.getItem('rt_gemini_api_key');
   if (key && key.trim()) {
@@ -9651,7 +9559,6 @@ function initIndexedDB() {
       resolve(dbInstance);
     };
     request.onerror = (event) => {
-      console.error("IndexedDB initialization failure: ", event.target.error);
       reject(event.target.error);
     };
   });
@@ -9734,7 +9641,6 @@ async function handlePageScan(event) {
   const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
   const apiKey = getGeminiApiKey();
 
-  // If online & Gemini API key is configured, perform AI OCR transcription
   if (navigator.onLine && apiKey && notesField) {
     const spinner = document.getElementById('ocr-loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
@@ -9748,7 +9654,6 @@ async function handlePageScan(event) {
       const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
       openVerificationModal(result.text, result.pageNumber);
     } catch (error) {
-      console.warn("AI OCR fallback to photo note: ", error.message);
       saveStandaloneNote({
         id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         title: activeBook || 'Photo Quote',
@@ -9771,7 +9676,6 @@ async function handlePageScan(event) {
     return;
   }
 
-  // Zero-prompt behavior: Save photo note immediately
   saveStandaloneNote({
     id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
     title: activeBook || 'Photo Quote',
@@ -9935,7 +9839,6 @@ async function processOfflineSyncQueue() {
       localStorage.setItem('scanned_shelf', JSON.stringify(localShelf));
       await deletePendingScan(scan.id);
     } catch (err) {
-      console.error(`Syncing failure on record ${scan.id}: `, err);
     }
   }
   Haptics.success();
@@ -9962,7 +9865,7 @@ function renderPendingShelfNotifiers() {
     <div class="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 flex justify-between items-center gap-3">
       <div class="text-left min-w-0 flex-1">
         <span class="text-[9px] font-bold text-sky-400 uppercase tracking-wider block">Background Scan Sync Available</span>
-        <span class="text-xs text-white font-medium block truncate">Draft: ${item.bookTitle}</span>
+        <span class="text-xs text-white font-medium block truncate">Draft: ${escapeHtml(item.bookTitle)}</span>
       </div>
       <div class="flex gap-1.5 shrink-0">
         <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-white/5 border border-theme text-xs"><i class="fa-solid fa-trash"></i></button>
@@ -10019,20 +9922,15 @@ window.setLogsCache = (arr) => { logsCache = arr; markViewsDirty(); };
 window.getWishlistCache = () => wishlistCache;
 window.setWishlistCache = (arr) => { wishlistCache = arr; markViewsDirty(); };
 
-// Run scanner setup
 (function initScannerOnRuntime() {
   if (typeof bindScannerEvents === 'function') bindScannerEvents();
   if (typeof initIndexedDB === 'function') initIndexedDB();
   if (typeof processOfflineSyncQueue === 'function') window.addEventListener('online', processOfflineSyncQueue);
   if (typeof renderPendingShelfNotifiers === 'function') setTimeout(renderPendingShelfNotifiers, 1200);
-  if (typeof initSabbaticalModule === 'function') setTimeout(initSabbaticalModule, 1000);
   if (typeof initQuickNoteModalListeners === 'function') setTimeout(initQuickNoteModalListeners, 1000);
   if (typeof initGeminiKeyModalListeners === 'function') setTimeout(initGeminiKeyModalListeners, 1000);
 })();
 
-/* ═══════════════════════════════════════════════════════════════
-   KNOWLEDGE & NOTES TAB ENGINE (Overhauled)
-   ══════════════════════════════════════════════════════════════ */
 let knowledgeCurrentTag = 'all';
 let knowledgeSelectedBook = 'all';
 let qnModalFavorite = false;
@@ -10077,11 +9975,11 @@ function saveStandaloneNote(noteObj) {
 }
 
 function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
+  if (window.mindGraphCleanup) window.mindGraphCleanup();
   knowledgeCurrentTag = selectedTag;
   const feed = $('knowledge-quote-feed');
   if (!feed) return;
 
-  // Auto-fetch caches if empty so notes render even on direct navigation
   if ((!logsCache || logsCache.length === 0) && typeof loadLogsCache === 'function' && db && uid) {
     loadLogsCache().then(() => renderKnowledgeView(selectedTag));
   }
@@ -10096,13 +9994,11 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   const logsArr = (typeof logsCache !== 'undefined' && Array.isArray(logsCache)) ? logsCache : [];
   const booksArr = (typeof booksCache !== 'undefined' && Array.isArray(booksCache)) ? booksCache : [];
 
-  // Create book title to author map for session log author enrichment
   const bookAuthorMap = {};
   booksArr.forEach(b => {
     if (b.title && b.author) bookAuthorMap[b.title.trim().toLowerCase()] = b.author;
   });
 
-  // 1. Extract non-empty notes from session logs
   logsArr.forEach((log, index) => {
     if (log.notes && log.notes.trim() && !log.notes.startsWith('Historical cycle')) {
       const noteId = log.id ? `log_${log.id}` : `log_${log.date}_${index}_${(log.book_title || '').slice(0, 10)}`;
@@ -10134,7 +10030,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     }
   });
 
-  // 2. Extract notes attached directly to book items
   booksArr.forEach(b => {
     if (b.notes && b.notes.trim()) {
       const noteId = `book_${b.id || b.title}`;
@@ -10154,7 +10049,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     }
   });
 
-  // 3. Extract Standalone / Quick Notes
   standaloneNotes.forEach(sn => {
     const isManualFav = favIds.includes(sn.id);
     notesList.push({
@@ -10171,10 +10065,8 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     });
   });
 
-  // Sort notes by date descending
   notesList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-  // Update Header Stats Summary
   const totalCount = notesList.length;
   const favsCount = notesList.filter(n => n.isFavorite).length;
   const uniqueBooksCount = new Set(notesList.map(n => n.title)).size;
@@ -10183,7 +10075,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   if ($('kn-stat-favs')) $('kn-stat-favs').textContent = favsCount;
   if ($('kn-stat-books')) $('kn-stat-books').textContent = uniqueBooksCount;
 
-  // 4. Currently Reading Spotlight & Daily Resurfacing
   const inProgressBookTitles = new Set(
     booksArr.filter(b => b.status === 'In Progress' || b.status === 'Reading').map(b => b.title)
   );
@@ -10214,7 +10105,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     if ($('daily-quote-book')) $('daily-quote-book').textContent = 'Reading Tracker';
   }
 
-  // 5. Populate Book Filter Select Dropdown
   const bookSelect = $('knowledge-book-select');
   if (bookSelect) {
     const bookTitles = Array.from(new Set(notesList.map(n => n.title))).sort();
@@ -10226,7 +10116,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     });
     bookSelect.innerHTML = optionsHTML;
 
-    // Validate that knowledgeSelectedBook exists in available options
     const validValues = ['all', 'standalone', ...bookTitles];
     if (!validValues.includes(knowledgeSelectedBook)) {
       knowledgeSelectedBook = 'all';
@@ -10239,7 +10128,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     };
   }
 
-  // 6. Search Bar Event Listener
   const searchInput = $('knowledge-search-input');
   const searchClear = $('knowledge-search-clear');
   let searchQuery = searchInput ? searchInput.value.trim() : '';
@@ -10258,17 +10146,14 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     };
   }
 
-  // 7. Apply Filters (Tag, Book, Search)
   let filtered = notesList;
 
-  // Book Filter
   if (knowledgeSelectedBook === 'standalone') {
     filtered = filtered.filter(n => n.type === 'standalone' || n.title === 'Quick Note' || n.title === 'Standalone Note');
   } else if (knowledgeSelectedBook !== 'all') {
     filtered = filtered.filter(n => n.title === knowledgeSelectedBook);
   }
 
-  // Tag Filter
   if (selectedTag === 'quotes') {
     filtered = filtered.filter(n => n.isQuote);
   } else if (selectedTag === 'reflections') {
@@ -10277,7 +10162,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     filtered = filtered.filter(n => n.isFavorite);
   }
 
-  // Diacritic-Insensitive Search Filter
   if (searchQuery) {
     const normQ = normalizeText(searchQuery);
     filtered = filtered.filter(n => {
@@ -10288,7 +10172,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     });
   }
 
-  // Update Active State on Tag Buttons
   document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
     b.classList.toggle('active', b.dataset.tag === selectedTag);
   });
@@ -10323,7 +10206,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     return;
   }
 
-  // 8. Render Quote Cards in Paginated Chunks (25 per batch for 60 FPS performance)
   let limit = window.knowledgeFeedLimit || 25;
   const itemsToRender = filtered.slice(0, limit);
 
@@ -10337,19 +10219,19 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
 
     let pageHTML = '';
     if (n.pageLabel) {
-      pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-theme-gold mr-1"></i>${n.pageLabel}</span>`;
+      pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-theme-gold mr-1"></i>${escapeHtml(n.pageLabel)}</span>`;
     }
 
     card.innerHTML = `
       ${photoHTML}
       <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
-        "${n.notes.replace(/^>\s*/, '')}"
+        "${escapeHtml(n.notes.replace(/^>\s*/, ''))}"
       </blockquote>
       <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-theme">
         <div class="flex flex-col min-w-0 pr-2">
-          <span class="font-bold truncate" style="color: var(--gold)">${n.title}</span>
+          <span class="font-bold truncate" style="color: var(--gold)">${escapeHtml(n.title)}</span>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[10px] text-theme-secondary">${n.author ? n.author + ' • ' : ''}${fmtDate(n.date)}</span>
+            <span class="text-[10px] text-theme-secondary">${n.author ? escapeHtml(n.author) + ' • ' : ''}${fmtDate(n.date)}</span>
             ${pageHTML}
           </div>
         </div>
@@ -10367,7 +10249,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       </div>
     `;
 
-    // Action button listeners
     const shareBtn = card.querySelector('[data-action="share"]');
     if (shareBtn) {
       shareBtn.onclick = (e) => {
@@ -10415,19 +10296,15 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     feed.appendChild(loadMoreBtn);
   }
 
-  // Wire Export Vault ZIP button
   const zipBtn = $('btn-export-markdown-zip');
   if (zipBtn) zipBtn.onclick = exportObsidianMarkdownVault;
 
-  // Wire BibTeX Citation Exporter button
   const bibtexBtn = $('btn-export-bibtex');
   if (bibtexBtn) bibtexBtn.onclick = exportBibTeXCitations;
 
-  // Wire Quick Note Open Button
   const quickNoteBtn = $('btn-quick-note-open');
   if (quickNoteBtn) quickNoteBtn.onclick = openQuickNoteModal;
 
-  // Wire Tag Bar Click Handlers
   document.querySelectorAll('#knowledge-tag-bar .quote-tag').forEach(b => {
     b.onclick = () => {
       if (navigator.vibrate) navigator.vibrate([8]);
@@ -10436,9 +10313,6 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   QUICK NOTE & PHOTO QUOTE MODAL CONTROLLER
-   ══════════════════════════════════════════════════════════════ */
 function openQuickNoteModal() {
   Haptics.click();
   const modal = $('quick-note-modal');
@@ -10463,7 +10337,7 @@ function openQuickNoteModal() {
   if (bookSelect) {
     let html = `<option value="">📝 Standalone / Unlinked Note</option>`;
     booksCache.forEach(b => {
-      html += `<option value="${b.title.replace(/"/g, '&quot;')}">📖 ${b.title}</option>`;
+      html += `<option value="${b.title.replace(/"/g, '&quot;')}">📖 ${escapeHtml(b.title)}</option>`;
     });
     bookSelect.innerHTML = html;
   }
@@ -10529,7 +10403,6 @@ function initQuickNoteModalListeners() {
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
       } catch (err) {
-        console.warn('Image compression fallback:', err);
       }
     };
   }
@@ -10570,7 +10443,6 @@ function initQuickNoteModalListeners() {
           Haptics.success();
         }
       } catch (err) {
-        console.error('Quick Note OCR error:', err);
         showToast('AI transcription unavailable: ' + err.message, 'warning');
       } finally {
         ocrBtn.disabled = false;
@@ -10632,9 +10504,6 @@ function initQuickNoteModalListeners() {
   }
 }
 
-/**
- * Export BibTeX Citations File for Scholarly Research
- */
 function exportBibTeXCitations() {
   if (!booksCache || !booksCache.length) {
     showToast('No books available in library to export citations.', 'error');
@@ -10664,9 +10533,6 @@ function exportBibTeXCitations() {
   showToast('✓ BibTeX (.bib) Citations Exported!', 'success');
 }
 
-/**
- * Export Obsidian-Compatible Markdown Vault ZIP Archive
- */
 async function exportObsidianMarkdownVault() {
   if (typeof JSZip === 'undefined') {
     showToast('Loading ZIP archive exporter...', 'info');
@@ -10682,18 +10548,17 @@ async function exportObsidianMarkdownVault() {
   const booksFolder = zip.folder('Books');
   const sessionsFolder = zip.folder('Sessions');
 
-  // Export finished & active books as Markdown files with YAML frontmatter
   booksCache.forEach(b => {
     const safeTitle = (b.title || 'Untitled').replace(/[\\/:*?"<>|]/g, '_');
     const content = `---
-title: "${b.title || ''}"
-author: "${b.author || ''}"
-category: "${b.collection || b.category || 'General'}"
-status: "${b.status || 'Not Started'}"
+title: "${(b.title || '').replace(/"/g, '\\"')}"
+author: "${(b.author || '').replace(/"/g, '\\"')}"
+category: "${(b.collection || b.category || 'General').replace(/"/g, '\\"')}"
+status: "${(b.status || 'Not Started').replace(/"/g, '\\"')}"
 total_pages: ${b.total_pages || 0}
 read_count: ${b.read_count || 0}
 rating: ${b.rating || 0}
-date_added: "${b.date_added || ''}"
+date_added: "${(b.date_added || '').replace(/"/g, '\\"')}"
 tags: [reading-tracker, ${b.collection === 'Bahai' ? 'bahai' : 'non-bahai'}]
 ---
 
@@ -10707,13 +10572,12 @@ ${b.notes || 'No notes logged for this book.'}
     booksFolder.file(`${safeTitle}.md`, content);
   });
 
-  // Export sessions with quotes as Markdown files
   const activeLogs = logsCache.filter(l => l.notes && l.notes.trim() && !l.notes.startsWith('Historical cycle'));
   activeLogs.forEach(l => {
     const safeTitle = (l.book_title || 'Session').replace(/[\\/:*?"<>|]/g, '_');
     const dateStr = l.date || todayISO();
     const content = `---
-book_title: "${l.book_title || ''}"
+book_title: "${(l.book_title || '').replace(/"/g, '\\"')}"
 date: "${dateStr}"
 read_cycle: ${l.read_cycle || 1}
 pages_read: ${(l.end_page || 0) - (l.start_page || 0)}
@@ -10727,12 +10591,11 @@ tags: [reading-log, highlight]
 **Time Spent:** ${l.minutes_spent || 0} minutes
 
 ## Session Note & Highlights
-> ${l.notes}
+> ${(l.notes || '').replace(/"/g, '\\"')}
 `;
     sessionsFolder.file(`${dateStr}_${safeTitle}.md`, content);
   });
 
-  // Generate ZIP blob and trigger browser download
   const blob = await zip.generateAsync({ type: 'blob' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -10746,22 +10609,10 @@ tags: [reading-log, highlight]
   showToast('📦 Obsidian Markdown Vault ZIP Exported Successfully!');
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SABBATICAL & STREAK FREEZE MODULE (Custom Reasons)
-
-
-/* ═══════════════════════════════════════════════════════════════
-   BESPOKE EDITORIAL APP EXTENSIONS (CSV Export, Timer, Analytics)
-   ══════════════════════════════════════════════════════════════ */
-
-/**
- * Priority Export: Downloads full database (Books, Reading Logs) as structured CSV files.
- */
 window.exportAllDataToCSV = function() {
   const bCache = window.booksCache || [];
   const lCache = window.logsCache || [];
 
-  // 1. Export Books CSV
   let booksCSV = "Book ID,Title,Author,Category,Status,Total Pages,Current Page,Read Count,Rating,Date Added,Notes\n";
   bCache.forEach(b => {
     const title = `"${(b.title || '').replace(/"/g, '""')}"`;
@@ -10771,7 +10622,6 @@ window.exportAllDataToCSV = function() {
   });
   triggerCSVDownload(booksCSV, `reading_tracker_books_${todayISO()}.csv`);
 
-  // 2. Export Reading Logs CSV
   let logsCSV = "Log ID,Book ID,Book Title,Date,Start Page,End Page,Pages Read,Minutes Spent,Notes\n";
   lCache.forEach(l => {
     const title = `"${(l.book_title || '').replace(/"/g, '""')}"`;
@@ -10799,7 +10649,6 @@ function triggerCSVDownload(content, filename) {
   URL.revokeObjectURL(url);
 }
 
-/** Client-Side Canvas Image Compression (Prevents Firestore 1MB document errors) */
 function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -10839,7 +10688,6 @@ function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
   });
 }
 
-/* Full-Screen Reading Timer Overlay State & Logic */
 let fullTimerState = {
   seconds: 0,
   intervalId: null,
@@ -10851,25 +10699,20 @@ let fullTimerState = {
   startMs: 0
 };
 
-// ════════════════════════════════════════════════════════════
-// BACKGROUND TIMER & LOCK SCREEN MEDIASESSION CONTROLS
-// ════════════════════════════════════════════════════════════
 let bgTimerAudio = null;
 let wakeLockObj = null;
 
 function startBackgroundTimerSession(bookTitle, author) {
   fullTimerState.startMs = Date.now() - (fullTimerState.seconds * 1000);
 
-  // 1. Silent background audio loop to keep timer thread alive on iOS / Android
   try {
     if (!bgTimerAudio) {
       bgTimerAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
       bgTimerAudio.loop = true;
     }
-    bgTimerAudio.play().catch(e => console.log('Background timer audio initialization:', e));
+    bgTimerAudio.play().catch(e => {});
   } catch(e) {}
 
-  // 2. Register MediaSession Metadata & Lock Screen Playback Controls
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: bookTitle ? `Reading: ${bookTitle}` : 'Active Reading Session',
@@ -10930,7 +10773,6 @@ function stopBackgroundTimerSession() {
   }
 }
 
-// Recalculate exact wall-clock time elapsed when phone wakes up or tab is foregrounded
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && fullTimerState.startMs > 0 && fullTimerState.intervalId) {
     const realElapsedSeconds = Math.floor((Date.now() - fullTimerState.startMs) / 1000);
@@ -10954,7 +10796,6 @@ window.openFullTimerSession = function(book) {
   const floatBar = document.getElementById('timer-floating-bar');
   if (!overlay) return;
 
-  // 1. Calculate Start Page: Last end_page from logsCache for this book
   let startPage = 0;
   if (book) {
     const tot = parseInt(book.total_pages || 0, 10);
@@ -10970,15 +10811,11 @@ window.openFullTimerSession = function(book) {
       });
       const lastLog = bookLogs[bookLogs.length - 1];
       startPage = parseInt(lastLog.end_page || 0, 10);
-      if (tot > 0 && startPage >= tot) {
-        startPage = 0;
-      }
+      if (tot > 0 && startPage >= tot) startPage = 0;
     } else {
       const raw = parseInt(book.pages_read || book.current_page || 0, 10);
-      startPage = (tot > 0 && raw > tot) ? (raw % tot) : raw;
-      if (tot > 0 && startPage >= tot) {
-        startPage = 0;
-      }
+      if (tot > 0) startPage = raw % tot;
+      else startPage = raw;
     }
   }
 
@@ -10990,7 +10827,6 @@ window.openFullTimerSession = function(book) {
   fullTimerState.photoData = null;
   fullTimerState.isMinimized = false;
 
-  // 2. Populate UI Elements
   const titleEl = document.getElementById('timer-book-title');
   const startEl = document.getElementById('timer-start-page');
   const endInput = document.getElementById('timer-input-end-page');
@@ -11011,7 +10847,6 @@ window.openFullTimerSession = function(book) {
   if (photoPreview) photoPreview.classList.add('hidden');
   if (photoFileInput) photoFileInput.value = '';
 
-  // 3. Mini bar update
   if (floatBar) floatBar.classList.add('hidden');
   const miniTitle = document.getElementById('timer-mini-title');
   if (miniTitle) miniTitle.textContent = book ? book.title : 'Active Focus Session';
@@ -11034,7 +10869,6 @@ function startTimerClock() {
     const clockEl = document.getElementById('timer-clock-display');
     if (clockEl) clockEl.textContent = timeStr;
 
-    // Mini bar subtitle
     const miniSub = document.getElementById('timer-mini-subtitle');
     if (miniSub) miniSub.textContent = `${timeStr} · Active Session`;
 
@@ -11076,12 +10910,10 @@ function setupTimerEvents() {
   const photoFile = document.getElementById('timer-photo-file-input');
   const photoRemove = document.getElementById('timer-photo-remove');
 
-  // Interactive end page calculation
   if (endInput) {
     endInput.addEventListener('input', updatePaceAndPages);
   }
 
-  // Compressed photo attachment logic
   if (addPhotoBtn && photoFile) {
     addPhotoBtn.onclick = () => photoFile.click();
     photoFile.onchange = async (e) => {
@@ -11096,7 +10928,6 @@ function setupTimerEvents() {
         if (previewBox) previewBox.classList.remove('hidden');
         if (typeof triggerHaptic === 'function') triggerHaptic();
       } catch (err) {
-        console.warn('Image compression error:', err);
       }
     };
   }
@@ -11110,7 +10941,6 @@ function setupTimerEvents() {
     };
   }
 
-  // 1. Minimize (Down Arrow) -> Moves to bottom floating bar, timer CONTINUES running!
   if (minBtn) {
     minBtn.onclick = () => {
       if (typeof triggerHaptic === 'function') triggerHaptic();
@@ -11120,7 +10950,6 @@ function setupTimerEvents() {
     };
   }
 
-  // Mini Floating Bar Expand
   const miniExpand = document.getElementById('timer-mini-expand');
   const miniExpandBtn = document.getElementById('timer-mini-btn-expand');
   const expandFunc = () => {
@@ -11132,7 +10961,6 @@ function setupTimerEvents() {
   if (miniExpand) miniExpand.onclick = expandFunc;
   if (miniExpandBtn) miniExpandBtn.onclick = (e) => { e.stopPropagation(); expandFunc(); };
 
-  // Mini Floating Bar Pause
   const miniPauseBtn = document.getElementById('timer-mini-btn-pause');
   if (miniPauseBtn) {
     miniPauseBtn.onclick = (e) => {
@@ -11151,7 +10979,6 @@ function setupTimerEvents() {
     };
   }
 
-  // 2. Cancel Focus Session
   if (cancelBtn) {
     cancelBtn.onclick = () => {
       if (!confirm('Cancel this focus session? Timer progress and notes will be discarded.')) return;
@@ -11165,7 +10992,6 @@ function setupTimerEvents() {
     };
   }
 
-  // 3. Pause / Resume Button
   if (pauseBtn) {
     pauseBtn.onclick = () => {
       if (typeof triggerHaptic === 'function') triggerHaptic();
@@ -11182,7 +11008,6 @@ function setupTimerEvents() {
     };
   }
 
-  // 4. Finish & Log Button
   if (completeBtn) {
     completeBtn.onclick = async () => {
       if (typeof triggerHaptic === 'function') triggerHaptic();
@@ -11235,7 +11060,6 @@ function setupTimerEvents() {
           }
         }
       } catch (err) {
-        console.error('Error logging focus session:', err);
         if (typeof showToast === 'function') showToast('Session ended', 'info');
       }
     };
@@ -11263,11 +11087,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-(function restoreEditorialTheme() {
-  const savedTheme = localStorage.getItem('rt_editorial_theme') || (localStorage.getItem('rt_theme') === 'light' ? 'parched-paper' : 'espresso');
-  if (typeof setEditorialTheme === 'function') setEditorialTheme(savedTheme);
-})();
-
 window.render3DSpineBookshelf = async function(items) {
   const shelfContainer = document.getElementById('bookshelf-3d-shelf');
   if (!shelfContainer) return;
@@ -11293,13 +11112,13 @@ window.render3DSpineBookshelf = async function(items) {
   }
 
   const gradients = [
-    'linear-gradient(90deg, #4d1b14 0%, #7a2b20 40%, #4d1b14 100%)', // Ruby Crimson Leather
-    'linear-gradient(90deg, #123322 0%, #1e5237 40%, #123322 100%)', // Emerald Oxford
-    'linear-gradient(90deg, #182233 0%, #263854 40%, #182233 100%)', // Deep Navy Cloth
-    'linear-gradient(90deg, #3d2618 0%, #593924 40%, #3d2618 100%)', // Roasted Espresso
-    'linear-gradient(90deg, #281a38 0%, #412b5c 40%, #281a38 100%)', // Imperial Violet
-    'linear-gradient(90deg, #2b3318 0%, #435226 40%, #2b3318 100%)', // Forest Moss
-    'linear-gradient(90deg, #382d1a 0%, #544427 40%, #382d1a 100%)'  // Antique Amber
+    'linear-gradient(90deg, #4d1b14 0%, #7a2b20 40%, #4d1b14 100%)',
+    'linear-gradient(90deg, #123322 0%, #1e5237 40%, #123322 100%)',
+    'linear-gradient(90deg, #182233 0%, #263854 40%, #182233 100%)',
+    'linear-gradient(90deg, #3d2618 0%, #593924 40%, #3d2618 100%)',
+    'linear-gradient(90deg, #281a38 0%, #412b5c 40%, #281a38 100%)',
+    'linear-gradient(90deg, #2b3318 0%, #435226 40%, #2b3318 100%)',
+    'linear-gradient(90deg, #382d1a 0%, #544427 40%, #382d1a 100%)'
   ];
 
   shelfContainer.innerHTML = '';
@@ -11312,7 +11131,6 @@ window.render3DSpineBookshelf = async function(items) {
     const safeAuthor = (b.author || '').replace(/"/g, '&quot;');
     const fontSize = width < 26 ? '0.68rem' : '0.78rem';
     
-    // Calculate progress percentage
     let pct = 0;
     if (['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status)) {
       pct = 100;
@@ -11348,9 +11166,6 @@ setTimeout(() => {
   if (typeof window.render3DSpineBookshelf === 'function') window.render3DSpineBookshelf();
 }, 1000);
 
-/* ═══════════════════════════════════════════════════════════════
-   HANDS-FREE VOICE DICTATION LOGIC (Web Speech API)
-   ══════════════════════════════════════════════════════════════ */
 function setupVoiceDictation(targetInputId, micBtnId) {
   const micBtn = document.getElementById(micBtnId);
   const targetInput = document.getElementById(targetInputId);
@@ -11403,7 +11218,6 @@ function setupVoiceDictation(targetInputId, micBtnId) {
       };
 
       recognition.onerror = (err) => {
-        console.warn('Speech recognition error:', err.error);
         if (typeof showToast === 'function') showToast('Dictation info: ' + err.error, 'warning');
       };
 
@@ -11415,14 +11229,10 @@ function setupVoiceDictation(targetInputId, micBtnId) {
 
       recognition.start();
     } catch (err) {
-      console.error('Dictation setup error:', err);
     }
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DYNAMIC "YEAR IN READING" WRAPPED STORY CAROUSEL
-   ══════════════════════════════════════════════════════════════ */
 let currentWrappedSlideIndex = 0;
 
 window.openYearWrappedModal = function(selectedYear) {
@@ -11432,7 +11242,6 @@ window.openYearWrappedModal = function(selectedYear) {
 
   const currentYear = new Date().getFullYear();
 
-  // Dynamically populate available years from earliest log year up to currentYear (never future years!)
   if (yearSelect) {
     let earliestYear = currentYear;
     (window.logsCache || []).forEach(l => {
@@ -11757,10 +11566,10 @@ function openHeatmapDayDetailDrawer(dateStr) {
         return `
         <div class="p-3 rounded-xl bg-white/5 border border-theme text-xs flex flex-col gap-1">
           <div class="flex justify-between items-center font-bold text-theme-gold">
-            <span>${l.book_title || 'Session'}</span>
+            <span>${escapeHtml(l.book_title || 'Session')}</span>
             <span>+${p} pgs (${dur > 0 ? `${dur}m` : 'Unspecified'})</span>
           </div>
-          ${l.notes ? `<p class="text-[11px] text-theme-secondary italic mt-1 line-clamp-2">"${l.notes}"</p>` : ''}
+          ${l.notes ? `<p class="text-[11px] text-theme-secondary italic mt-1 line-clamp-2">"${escapeHtml(l.notes)}"</p>` : ''}
         </div>
       `;
       }).join('');
@@ -12036,7 +11845,7 @@ function openContextualDetailModal(dayIdx, hour, targetCell) {
         html += `
           <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-theme flex flex-col gap-2 transition-all hover:bg-white/[0.07]">
             <div class="flex justify-between items-start gap-2">
-              <span class="text-xs font-black text-theme-primary truncate flex-1">${l.book_title || 'Untitled Book'}</span>
+              <span class="text-xs font-black text-theme-primary truncate flex-1">${escapeHtml(l.book_title || 'Untitled Book')}</span>
               <span class="text-xs font-black text-emerald-400 tabular-nums whitespace-nowrap">+${pagesRead} pgs</span>
             </div>
             <div class="flex justify-between items-center text-[10px] text-theme-secondary font-medium">
@@ -12044,7 +11853,7 @@ function openContextualDetailModal(dayIdx, hour, targetCell) {
               <span class="flex items-center gap-1"><i class="fa-solid fa-book-open text-[9px]"></i> Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
               <span class="flex items-center gap-1 font-bold text-amber-300"><i class="fa-regular fa-clock text-[9px]"></i> ${duration} mins</span>
             </div>
-            ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-black/20 p-2 rounded-xl border border-theme">${l.notes}</div>` : ''}
+            ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-black/20 p-2 rounded-xl border border-theme">${escapeHtml(l.notes)}</div>` : ''}
           </div>
         `;
       });

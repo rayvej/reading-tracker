@@ -9,7 +9,13 @@ service cloud.firestore {
         && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 500))
         && (!('author' in request.resource.data) || (request.resource.data.author is string && request.resource.data.author.size() <= 500))
         && (!('cover_url' in request.resource.data) || (request.resource.data.cover_url is string && request.resource.data.cover_url.size() <= 2000))
-        && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000));
+        && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000))
+        && (!('total_pages' in request.resource.data) || request.resource.data.total_pages is int)
+        && (!('pages_read' in request.resource.data) || request.resource.data.pages_read is int)
+        && (!('current_page' in request.resource.data) || request.resource.data.current_page is int)
+        && (!('read_count' in request.resource.data) || request.resource.data.read_count is int)
+        && (!('minutes_spent' in request.resource.data) || request.resource.data.minutes_spent is int || request.resource.data.minutes_spent == null)
+        && (!('status' in request.resource.data) || (request.resource.data.status is string && request.resource.data.status.size() <= 50));
     }
   }
 }
