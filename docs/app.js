@@ -4200,7 +4200,7 @@ function renderLiveSessionBanner(books, logs) {
   estDate.setDate(today.getDate() + estDays);
   const estDateStr = estDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   
-  if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} p/d · Speed: ${personalPgh} p/h`;
+  if (velocityLabel) velocityLabel.textContent = `Pace: ${velocity.toFixed(1)} p/d`;
 
   if (remaining === 0) {
     if (etaLine1El) {
@@ -4279,6 +4279,7 @@ function renderLiveSessionBanner(books, logs) {
     };
   }
 }
+if (typeof window !== 'undefined') window.renderLiveSessionBanner = renderLiveSessionBanner;
 
 // ═══════════════════════════════════════════════════════════════
 // FEATURE 2: VELOCITY ANALYTICS — Dashboard Section
