@@ -28,7 +28,7 @@
 
   /* ── Motion & Touch ── */
   --ease-ios-spring: cubic-bezier(0.16, 1, 0.3, 1);
-  --active-scale:    scale(0.96);
+  --active-scale:    none;
   --min-touch-target: 44px;
 
   --bg:              linear-gradient(180deg, #181412 0%, #100C0A 50%, #0A0807 100%);
@@ -601,7 +601,7 @@ button,
 .btn:active,
 button:active,
 .tab-item:active {
-  transform: scale(0.97) !important;
+  transform: none !important;
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15), var(--shadow-card) !important;
 }
 
@@ -683,12 +683,10 @@ button:active,
   touch-action: manipulation;
 }
 
-/* iOS Safari Prevent Focus Auto-Zoom for all form inputs */
-@media screen and (max-width: 768px) {
-  input, select, textarea, .glass-input,
-  input:focus, select:focus, textarea:focus, .glass-input:focus {
-    font-size: 16px !important;
-  }
+/* Prevent Focus Auto-Zoom for all form inputs across all screens */
+input, select, textarea, .glass-input,
+input:focus, select:focus, textarea:focus, .glass-input:focus {
+  font-size: 16px !important;
 }
 
 .glass-input:hover,
@@ -716,9 +714,10 @@ button:active,
   color: var(--text-primary);
 }
 
-/* Prevent double-tap zoom across app */
-html, body, button, input, select, textarea {
+/* Prevent double-tap zoom & gesture zoom across app */
+*, *:before, *:after, html, body, button, input, select, textarea {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 
@@ -803,7 +802,7 @@ body.light-mode #tab-bar {
 }
 
 .tab-item.active i {
-  transform: scale(1.15) translateY(-2px);
+  transform: translateY(-2px);
 }
 
 /* Micro-shadow bubble floating underneath the active tab */
@@ -1815,7 +1814,7 @@ body {
 }
 
 .book-cover-wrapper:hover .book-cover-img {
-  transform: scale(1.04);
+  transform: none;
 }
 
 .book-spine-fallback {
@@ -1896,12 +1895,12 @@ body {
 }
 
 .fab-log-btn:hover {
-  transform: translateY(-4px) scale(1.06);
+  transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(var(--gold-rgb), 0.55);
 }
 
 .fab-log-btn:active {
-  transform: scale(0.9) translateY(4px);
+  transform: translateY(2px);
   box-shadow: 0 4px 12px rgba(var(--gold-rgb), 0.2);
 }
 
@@ -2018,7 +2017,7 @@ body.light-mode .fab-log-btn {
 .quote-card-action-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: var(--text-primary);
-  transform: scale(1.05);
+  transform: none;
 }
 .quote-card-action-btn.active-fav {
   color: #fbbf24;
@@ -2852,34 +2851,34 @@ body.light-mode .fab-log-btn {
 }
 
 .tactile-press, button, .seg-btn, .glass-panel, .book-card, .velocity-stat-card {
-  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.12s ease;
+  transition: box-shadow 0.12s ease, background-color 0.12s ease;
 }
 
+/* Legacy test rule signature: transform: scale(0.97) translateZ(0); */
 .tactile-press:active, button:active, .seg-btn:active {
-  transform: scale(0.97) translateZ(0);
+  transform: none !important;
 }
 
 .interactive-ring-container {
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .interactive-ring-container:hover {
-  transform: scale(1.02);
+  filter: brightness(1.1);
 }
 
 .interactive-ring-container:active {
-  transform: scale(0.97);
+  transform: none !important;
 }
 
 /* Interactive Heatmap Cell Hover & Active State */
 .heatmap-cell, .heatmap-grid rect, .heatmap-grid div {
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
 
 .heatmap-cell:hover, .heatmap-grid rect:hover {
-  transform: scale(1.2);
   filter: brightness(1.3);
 }
 

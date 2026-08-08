@@ -469,7 +469,7 @@ function showPinError(msg) {
   const dots = $('pin-dots')?.querySelectorAll('span');
   if (dots) {
     dots.forEach(d => {
-      d.classList.remove('bg-gold', 'border-gold', 'scale-110', 'shadow-lg', 'shadow-gold/20');
+      d.classList.remove('bg-gold', 'border-gold', 'shadow-lg', 'shadow-gold/20');
       d.classList.add('bg-rose-500', 'border-rose-500', 'animate-shake');
     });
   }
@@ -490,7 +490,6 @@ function renderPinDots() {
     const isFilled = i < pinBuffer.length;
     d.classList.toggle('bg-gold', isFilled);
     d.classList.toggle('border-gold', isFilled);
-    d.classList.toggle('scale-110', isFilled);
     d.classList.toggle('shadow-lg', isFilled);
     d.classList.toggle('shadow-gold/20', isFilled);
     
@@ -4605,7 +4604,7 @@ function openChartDrilldownModal(categoryOrCollectionName, categoryBooksList) {
     categoryBooksList.forEach(b => {
       const isFinished = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status) || b.read_count > 0;
       const statusColor = isFinished ? 'emerald' : b.status === 'In Progress' ? 'blue' : 'amber';
-      const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-theme flex justify-between items-center gap-3 active:scale-[0.99] cursor-pointer hover:bg-white/[0.06] transition-all');
+      const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-theme flex justify-between items-center gap-3 cursor-pointer hover:bg-white/[0.06] transition-all');
       row.innerHTML = `
         <div class="min-w-0 flex-1">
           <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
@@ -5234,7 +5233,7 @@ async function renderDashboard() {
         const estDays = Math.ceil(left / 10);
         const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
         
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
@@ -5270,7 +5269,7 @@ async function renderDashboard() {
       upNextEl.innerHTML = '<p class="text-xs text-theme-tertiary text-center py-2 font-medium">No upcoming books</p>';
     } else {
       upNext.forEach(b => {
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(b, 'w-10 h-14 shrink-0 shadow-sm')}
@@ -5303,7 +5302,7 @@ async function renderDashboard() {
     } else {
       recentCompletions.forEach(c => {
         const book = mergedBooks.find(b => b.title === c.title) || { title: c.title, author: '' };
-        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme active:scale-[0.99] transition-all cursor-pointer carousel-card');
+        const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme transition-all cursor-pointer carousel-card');
         card.innerHTML = `
           <div class="flex items-start gap-3 min-w-0">
             ${getCoverHTML(book, 'w-10 h-14 shrink-0 shadow-sm')}
@@ -6890,7 +6889,7 @@ function renderRecentLogs() {
       </div>
       <div class="flex items-center gap-2">
         <div class="text-xs font-bold text-theme-primary">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
-        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-theme-secondary border border-theme flex items-center justify-center transition-all shrink-0 active:scale-95" title="Edit Log">
+        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-theme-secondary border border-theme flex items-center justify-center transition-all shrink-0" title="Edit Log">
           <i class="fa-solid fa-pen text-[10px]"></i>
         </button>
       </div>
@@ -6911,7 +6910,7 @@ function renderRecentLogs() {
   if (activeLogs.length > recentLogsLimit) {
     const remaining = activeLogs.length - recentLogsLimit;
     const loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all active:scale-95 cursor-pointer mt-2';
+    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
     loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Logs (${remaining} remaining)`;
     loadMoreBtn.onclick = () => {
       recentLogsLimit += 35;
@@ -7342,7 +7341,7 @@ function renderActiveFilterChips() {
   chipContainer.classList.remove('hidden');
   chipContainer.innerHTML = `
     ${chips.map(c => `<span class="filter-chip">${c}</span>`).join('')}
-    <button id="btn-clear-filters" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95">
+    <button id="btn-clear-filters" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all">
       <i class="fa-solid fa-xmark text-[9px]"></i> Clear Filters
     </button>
   `;
@@ -7727,7 +7726,7 @@ function renderBookCard(b) {
 
   if (bookshelfViewMode === 'grid') {
     // 2-Column Compact Grid Card
-    const card = el('div', `bookshelf-card-item glass-panel p-3 rounded-2xl border border-theme flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] active:scale-[0.98] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+    const card = el('div', `bookshelf-card-item glass-panel p-3 rounded-2xl border border-theme flex flex-col justify-between gap-2.5 relative hover:bg-white/[0.01] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
     card.dataset.id = b.id;
 
     card.innerHTML = `
@@ -7766,7 +7765,7 @@ function renderBookCard(b) {
     return card;
   }
 
-  const card = el('div', `bookshelf-card-item glass-panel p-4 rounded-3xl border border-theme flex flex-col gap-3 relative hover:bg-white/[0.01] active:scale-[0.99] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
+  const card = el('div', `bookshelf-card-item glass-panel p-4 rounded-3xl border border-theme flex flex-col gap-3 relative hover:bg-white/[0.01] transition-all cursor-pointer ${isChecked ? 'border-gold/50 bg-gold/5' : ''}`);
 
   const costText = b.est_cost > 0 ? ` · $${b.est_cost.toFixed(2)}` : '';
 
@@ -8601,7 +8600,7 @@ function showYearBooksPopup(year, completedBooksInYear) {
   modal.appendChild(backdrop);
   
   // Content Card
-  const card = el('div', 'w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl translate-y-10 sm:translate-y-0 sm:scale-95 transition-all duration-300 overflow-y-auto max-h-[80vh] relative z-[110]');
+  const card = el('div', 'w-full sm:max-w-md p-6 rounded-t-[30px] sm:rounded-[30px] flex flex-col gap-4 shadow-2xl translate-y-10 sm:translate-y-0 transition-all duration-300 overflow-y-auto max-h-[80vh] relative z-[110]');
   card.style.cssText = 'background: var(--bg-elevated); border: 0.5px solid var(--border-strong)';
   
   // Header
@@ -8626,7 +8625,7 @@ function showYearBooksPopup(year, completedBooksInYear) {
     const sorted = [...completedBooksInYear].sort((a, b) => a.date.localeCompare(b.date));
     sorted.forEach((c, idx) => {
       const book = booksCache.find(b => b.title === c.title);
-      const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-theme active:scale-[0.98] transition-all cursor-pointer');
+      const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-theme transition-all cursor-pointer');
       row.innerHTML = `
         <div class="min-w-0 pr-3 flex-1">
           <div class="text-xs font-bold text-theme-primary truncate">${idx + 1}. ${c.title}</div>
@@ -9282,7 +9281,7 @@ function openBookDetailModal(b) {
     if (!focusBtn && editBtn.parentNode) {
       focusBtn = document.createElement('button');
       focusBtn.id = 'bd-action-focus';
-      focusBtn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 hover:bg-amber-500/30 text-theme-gold border border-amber-500/30 transition-all active:scale-[0.98]';
+      focusBtn.className = 'flex-1 py-3 rounded-xl font-bold text-xs bg-amber-500/20 hover:bg-amber-500/30 text-theme-gold border border-amber-500/30 transition-all';
       focusBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Focus Session';
       editBtn.parentNode.insertBefore(focusBtn, editBtn);
     }
@@ -10186,7 +10185,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         <p class="text-sm font-bold text-theme-primary">${isFiltered ? 'No notes match your active filter or search' : 'No notes recorded yet'}</p>
         <p class="text-xs text-theme-secondary mb-2">${isFiltered ? 'Try clearing your search query, changing the book filter, or switching tags.' : 'Log a session with notes or click Quick Note to capture your thoughts.'}</p>
         ${isFiltered ? `
-          <button id="kn-btn-clear-filters" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-900 shadow-md cursor-pointer transition-all active:scale-95" style="background: var(--gold)">
+          <button id="kn-btn-clear-filters" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-900 shadow-md cursor-pointer transition-all" style="background: var(--gold)">
             <i class="fa-solid fa-rotate-left mr-1"></i> Clear All Filters
           </button>
         ` : ''}
@@ -10287,7 +10286,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   if (filtered.length > limit) {
     const remaining = filtered.length - limit;
     const loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'w-full py-3.5 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all active:scale-95 cursor-pointer mt-2';
+    loadMoreBtn.className = 'w-full py-3.5 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
     loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Notes (${remaining} remaining)`;
     loadMoreBtn.onclick = () => {
       window.knowledgeFeedLimit = (window.knowledgeFeedLimit || 25) + 30;
