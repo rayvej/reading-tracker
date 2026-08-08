@@ -9281,36 +9281,61 @@ function setupServiceWorkerUpdateSystem() {
 
 function setupSettingsUpdateInspector() {
   const btnCheck = document.getElementById('btn-check-sw-update');
-  if (!btnCheck) return;
+  const btnForce = document.getElementById('btn-force-reload-app');
 
-  btnCheck.addEventListener('click', async () => {
-    btnCheck.disabled = true;
-    const originalText = btnCheck.innerHTML;
-    btnCheck.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
+  if (btnCheck) {
+    btnCheck.addEventListener('click', async () => {
+      btnCheck.disabled = true;
+      const originalText = btnCheck.innerHTML;
+      btnCheck.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
 
-    if ('serviceWorker' in navigator && window.swRegistration) {
-      try {
-        await window.swRegistration.update();
-      } catch (e) {
-        console.warn('SW manual update check error:', e);
-      }
-    }
-
-    setTimeout(() => {
-      btnCheck.disabled = false;
-      btnCheck.innerHTML = originalText;
-
-      const waiting = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
-      if (waiting) {
-        window.swWaitingWorker = waiting;
-        showUpdateModal();
-      } else {
-        if (typeof showToast === 'function') {
-          showToast('You are running the latest version (v109)', 'success');
+      if ('serviceWorker' in navigator && window.swRegistration) {
+        try {
+          await window.swRegistration.update();
+        } catch (e) {
+          console.warn('SW manual update check error:', e);
         }
       }
-    }, 800);
-  });
+
+      setTimeout(() => {
+        btnCheck.disabled = false;
+        btnCheck.innerHTML = originalText;
+
+        const waiting = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
+        if (waiting) {
+          window.swWaitingWorker = waiting;
+          showUpdateModal();
+        } else {
+          const badge = document.getElementById('app-version-badge');
+          const ver = badge ? badge.textContent : 'v110';
+          if (typeof showToast === 'function') {
+            showToast(`You are running the latest version (${ver})`, 'success');
+          }
+        }
+      }, 800);
+    });
+  }
+
+  if (btnForce) {
+    btnForce.addEventListener('click', async () => {
+      if (confirm('Force refresh app to download the latest updates directly from the server?')) {
+        btnForce.disabled = true;
+        btnForce.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Refreshing...';
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          } catch (e) {}
+        }
+        if ('serviceWorker' in navigator && window.swRegistration) {
+          try {
+            await window.swRegistration.unregister();
+          } catch (e) {}
+        }
+        window.location.reload(true);
+      }
+    });
+  }
 }
 
 setupServiceWorkerUpdateSystem();

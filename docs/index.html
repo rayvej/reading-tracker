@@ -2700,14 +2700,19 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v109</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v110</span>
               </div>
               <div class="text-[11px] text-theme-secondary" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
           </div>
-          <button id="btn-check-sw-update" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 active:scale-95 text-purple-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
-            <i class="fa-solid fa-rotate text-[11px]"></i> Check Updates
-          </button>
+          <div class="flex items-center gap-2">
+            <button id="btn-check-sw-update" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 active:scale-95 text-purple-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-rotate text-[11px]"></i> Check Updates
+            </button>
+            <button id="btn-force-reload-app" class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer" title="Force clear cache and reload latest version">
+              <i class="fa-solid fa-arrows-rotate text-[11px]"></i> Force Refresh
+            </button>
+          </div>
         </div>
       </div>
     </div>
