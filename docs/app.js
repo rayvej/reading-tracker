@@ -1281,7 +1281,7 @@ function setupStarterImportModal() {
   const modal = $('starter-import-modal');
   if (!modal) return;
 
-  // Open button in Settings modal, Account View & Dashboard
+  // Open button in Settings modal, Account View & Bookshelf tab
   const btnSettingsOpen = $('btn-open-starter-importer');
   if (btnSettingsOpen) {
     btnSettingsOpen.addEventListener('click', () => {
@@ -1298,9 +1298,16 @@ function setupStarterImportModal() {
     });
   }
 
-  const btnDashQuickAdd = $('dash-btn-quick-add-completed');
-  if (btnDashQuickAdd) {
-    btnDashQuickAdd.addEventListener('click', () => {
+  const btnBookshelfQuickAdd = $('bookshelf-btn-quick-add-completed');
+  if (btnBookshelfQuickAdd) {
+    btnBookshelfQuickAdd.addEventListener('click', () => {
+      openStarterImportModal();
+    });
+  }
+
+  const bannerBookshelfQuickAdd = $('bookshelf-banner-quick-add-completed');
+  if (bannerBookshelfQuickAdd) {
+    bannerBookshelfQuickAdd.addEventListener('click', () => {
       openStarterImportModal();
     });
   }

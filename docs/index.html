@@ -480,22 +480,7 @@
               <button class="seg-btn active" data-col="all"       role="tab">All</button>
               <button class="seg-btn"        data-col="Bahai"     role="tab">Bahá'í</button>
               <button class="seg-btn"        data-col="Non-Bahai" role="tab">Non-Bahá'í</button>
-            <!-- Quick-Add Finished Book Action Banner -->
-            <button id="dash-btn-quick-add-completed" class="w-full p-3.5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent hover:bg-amber-500/20 active:scale-[0.99] transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-theme-gold flex items-center justify-center font-bold text-sm border border-amber-500/30 shrink-0">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i>
-                </div>
-                <div>
-                  <div class="text-xs font-extrabold text-theme-gold flex items-center gap-2">
-                    <span>Quick-Add Finished Book</span>
-                    <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">Select from Master Catalog</span>
-                  </div>
-                  <div class="text-[11px] text-amber-200/80 font-medium mt-0.5">Autofill &amp; record completed reads with custom dates</div>
-                </div>
-              </div>
-              <i class="fa-solid fa-chevron-right text-xs text-theme-gold group-hover:translate-x-0.5 transition-transform shrink-0 ml-2"></i>
-            </button>
+            </div>
 
             <!-- ══════════════════════════════════════════════════════
                  CHAPTER 1: ACTIVE READING & HABIT MOMENTUM
@@ -1462,7 +1447,13 @@
                 <h2 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Bookshelf</h2>
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your library, wishlist &amp; everything in between</p>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap justify-end">
+                <button id="bookshelf-btn-quick-add-completed"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
+                  style="background: rgba(var(--gold-rgb),0.15); border-color: rgba(var(--gold-rgb),0.35); color: var(--gold)"
+                  title="Quick-add finished books from master catalog">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Quick-Add Finished
+                </button>
                 <button id="btn-scan-isbn"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
                   style="background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent)"
@@ -1470,7 +1461,7 @@
                   <i class="fa-solid fa-barcode"></i> Scan ISBN
                 </button>
                 <button id="btn-add-book-trigger"
-                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
                   style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
                   <i class="fa-solid fa-plus"></i> Add Book
                 </button>
@@ -1487,6 +1478,23 @@
                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-tag text-emerald-400 text-xs"></i> <span id="st-total-val">$0</span> est</span>
               </div>
             </div>
+
+            <!-- Quick-Add Finished Book Action Banner on Bookshelf Tab -->
+            <button id="bookshelf-banner-quick-add-completed" class="w-full p-3.5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent hover:bg-amber-500/20 active:scale-[0.99] transition-all text-left flex items-center justify-between group shadow-sm cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-theme-gold flex items-center justify-center font-bold text-sm border border-amber-500/30 shrink-0">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-extrabold text-theme-gold flex items-center gap-2">
+                    <span>Quick-Add Finished Books</span>
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">Master Catalog</span>
+                  </div>
+                  <div class="text-[11px] text-amber-200/80 font-medium mt-0.5">Autofill details &amp; record completed reads from pre-existing list</div>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-theme-gold group-hover:translate-x-0.5 transition-transform shrink-0 ml-2"></i>
+            </button>
 
             <!-- 3D Spine Bookshelf Component -->
             <div class="glass-panel p-4 rounded-3xl flex flex-col gap-2 border border-theme">
@@ -1628,7 +1636,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v112</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v113</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2614,7 +2622,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v112</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v113</span>
               </div>
               <div class="text-[11px] text-purple-300/80" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -2774,7 +2782,7 @@
             <div>
               <div class="text-sm font-bold flex items-center gap-2">
                 <span>Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v112</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30">v113</span>
               </div>
               <div class="text-[11px] text-theme-secondary" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
