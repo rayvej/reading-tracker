@@ -9280,14 +9280,15 @@ function setupServiceWorkerUpdateSystem() {
 }
 
 function setupSettingsUpdateInspector() {
-  const btnCheck = document.getElementById('btn-check-sw-update');
-  const btnForce = document.getElementById('btn-force-reload-app');
+  const checkBtns = document.querySelectorAll('#btn-check-sw-update, #btn-acct-check-sw-update');
+  const forceBtns = document.querySelectorAll('#btn-force-reload-app, #btn-acct-force-reload-app');
 
-  if (btnCheck) {
+  checkBtns.forEach(btnCheck => {
     btnCheck.addEventListener('click', async () => {
-      btnCheck.disabled = true;
-      const originalText = btnCheck.innerHTML;
-      btnCheck.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
+      checkBtns.forEach(b => {
+        b.disabled = true;
+        b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
+      });
 
       if ('serviceWorker' in navigator && window.swRegistration) {
         try {
@@ -9298,15 +9299,17 @@ function setupSettingsUpdateInspector() {
       }
 
       setTimeout(() => {
-        btnCheck.disabled = false;
-        btnCheck.innerHTML = originalText;
+        checkBtns.forEach(b => {
+          b.disabled = false;
+          b.innerHTML = '<i class="fa-solid fa-rotate text-[11px]"></i> Check Updates';
+        });
 
         const waiting = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
         if (waiting) {
           window.swWaitingWorker = waiting;
           showUpdateModal();
         } else {
-          const badge = document.getElementById('app-version-badge');
+          const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
           const ver = badge ? badge.textContent : 'v110';
           if (typeof showToast === 'function') {
             showToast(`You are running the latest version (${ver})`, 'success');
@@ -9314,13 +9317,15 @@ function setupSettingsUpdateInspector() {
         }
       }, 800);
     });
-  }
+  });
 
-  if (btnForce) {
+  forceBtns.forEach(btnForce => {
     btnForce.addEventListener('click', async () => {
       if (confirm('Force refresh app to download the latest updates directly from the server?')) {
-        btnForce.disabled = true;
-        btnForce.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Refreshing...';
+        forceBtns.forEach(b => {
+          b.disabled = true;
+          b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Refreshing...';
+        });
         if ('caches' in window) {
           try {
             const keys = await caches.keys();
@@ -9335,7 +9340,7 @@ function setupSettingsUpdateInspector() {
         window.location.reload(true);
       }
     });
-  }
+  });
 }
 
 setupServiceWorkerUpdateSystem();
