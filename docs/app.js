@@ -3178,7 +3178,21 @@ async function recalculateBook(title, cycle) {
 function populateYearDropdown(logs) {
   const sel = $('dash-year-select');
   if (!sel) return;
-  const years = [...new Set(logs.map(l => l.date.slice(0, 4)))].filter(y => y && y.length === 4).sort((a,b) => b - a);
+
+  const yearSet = new Set();
+  (logs || []).forEach(l => {
+    const y = l.date ? l.date.slice(0, 4) : '';
+    if (y && y.length === 4) yearSet.add(y);
+  });
+  (booksCache || []).forEach(b => {
+    const y = b.finish_date ? b.finish_date.slice(0, 4) : (b.date_added ? b.date_added.slice(0, 4) : '');
+    if (y && y.length === 4) yearSet.add(y);
+  });
+
+  const currentYearStr = String(new Date().getFullYear());
+  yearSet.add(currentYearStr);
+
+  const years = Array.from(yearSet).sort((a, b) => b - a);
   const currentSelected = sel.value || dashYearFilter || 'all';
   sel.innerHTML = '<option value="all">All Time</option>';
   years.forEach(y => {
@@ -3442,7 +3456,7 @@ function renderMilestones(completions, ytdDaysElapsed) {
   bookThresholds.forEach(t => {
     if (completions.length >= t) {
       const date = completions[t - 1].date;
-      passedBooks.push({ target: t, date: date === '2020-01-01' ? 'Completed' : fmtDate(date) });
+      passedBooks.push({ target: t, date: (!date || date === '2020-01-01' || isNaN(Date.parse(date))) ? 'Completed' : fmtDate(date) });
     } else if (!nextBookGoal) {
       const needed = t - completions.length;
       const eta = calculateETA(needed, bookRate > 0 ? bookRate : 0.05);
@@ -3541,7 +3555,7 @@ function renderMilestones(completions, ytdDaysElapsed) {
   pageThresholds.forEach(t => {
     const completedDate = milestoneReachedDates[t];
     if (completedDate) {
-      passedPages.push({ target: t, date: completedDate === '2020-01-01' ? 'Completed' : fmtDate(completedDate) });
+      passedPages.push({ target: t, date: (!completedDate || completedDate === '2020-01-01' || isNaN(Date.parse(completedDate))) ? 'Completed' : fmtDate(completedDate) });
     } else if (!nextPageGoal) {
       const needed = t - runningPages;
       const eta = calculateETA(needed, pageRate > 0 ? pageRate : 10);
@@ -3683,17 +3697,31 @@ function renderTimeBasedTables(logs, completions) {
     });
   }
 
-  const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+  const allYearsSet = new Set();
+  const currentYearNum = new Date().getFullYear();
+  allYearsSet.add(currentYearNum);
+
+  completions.forEach(c => {
+    const y = parseInt(c.date ? c.date.slice(0, 4) : '', 10);
+    if (!isNaN(y) && y > 1900 && y < 2100) allYearsSet.add(y);
+  });
+
+  logs.forEach(l => {
+    const y = parseInt(l.date ? l.date.slice(0, 4) : '', 10);
+    if (!isNaN(y) && y > 1900 && y < 2100) allYearsSet.add(y);
+  });
+
+  const years = Array.from(allYearsSet).sort((a, b) => a - b);
   const yearlyData = {};
   years.forEach(y => yearlyData[y] = { books: 0, pages: 0 });
   
   completions.forEach(c => {
-    const y = parseInt(c.date.slice(0, 4));
+    const y = parseInt(c.date ? c.date.slice(0, 4) : '', 10);
     if (yearlyData[y]) yearlyData[y].books++;
   });
   
   logs.forEach(l => {
-    const y = parseInt(l.date.slice(0, 4));
+    const y = parseInt(l.date ? l.date.slice(0, 4) : '', 10);
     if (yearlyData[y]) {
       yearlyData[y].pages += Math.max(0, (l.end_page || 0) - (l.start_page || 0));
     }
@@ -4807,8 +4835,9 @@ async function renderDashboard() {
 
   // ── Year Tracking ──
   const yearsWithCompletions = [...new Set(completions.map(c => c.date.slice(0, 4)))].filter(y => y);
-  const firstYear = yearsWithCompletions.length > 0 ? Math.min(...yearsWithCompletions.map(y => parseInt(y))) : 2018;
-  const recentYear = yearsWithCompletions.length > 0 ? Math.max(...yearsWithCompletions.map(y => parseInt(y))) : 2026;
+  const currentYearNow = new Date().getFullYear();
+  const firstYear = yearsWithCompletions.length > 0 ? Math.min(...yearsWithCompletions.map(y => parseInt(y))) : currentYearNow;
+  const recentYear = yearsWithCompletions.length > 0 ? Math.max(...yearsWithCompletions.map(y => parseInt(y))) : currentYearNow;
   const yearsSince = recentYear - firstYear + 1;
   const activeYearsCount = yearsWithCompletions.length;
   
@@ -10606,7 +10635,7 @@ function exportBibTeXCitations() {
   booksCache.forEach((b, idx) => {
     const authorLast = (b.author || 'author').split(' ').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
     const titleFirst = (b.title || 'title').split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    const key = `${authorLast || 'ref'}${b.year || '2026'}_${titleFirst || idx+1}`;
+    const key = `${authorLast || 'ref'}${b.year || String(new Date().getFullYear())}_${titleFirst || idx+1}`;
     bibtex += `@book{${key},\n`;
     bibtex += `  title     = {${(b.title || 'Untitled').replace(/[{}]/g, '')}},\n`;
     if (b.author) bibtex += `  author    = {${b.author.replace(/[{}]/g, '')}},\n`;
