@@ -1671,8 +1671,10 @@ async function saveStarterBook(batchContinue) {
       group,
       format,
       total_pages: totalPages,
+      pages_read: totalPages,
       current_page: totalPages,
-      status: 'completed',
+      read_count: 1,
+      status: 'Finished',
       category,
       priority,
       cost,
@@ -2691,6 +2693,24 @@ async function loadBooksCache() {
           console.warn('Seed cover heal error:', err);
         }
       }
+
+      // Auto-heal books saved with status 'completed' or 'Completed'
+      booksCache.forEach(b => {
+        if (b.status === 'completed' || b.status === 'Completed') {
+          b.status = 'Finished';
+          b.read_count = b.read_count || 1;
+          b.pages_read = b.pages_read || b.total_pages || 0;
+          b.current_page = b.current_page || b.total_pages || 0;
+          if (db && uid && b.id) {
+            updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+              status: 'Finished',
+              read_count: b.read_count,
+              pages_read: b.pages_read,
+              current_page: b.current_page
+            }).catch(err => console.warn('Status auto-heal persist error:', err));
+          }
+        }
+      });
 
       booksCache.sort((a, b) => a.title.localeCompare(b.title));
       markViewsDirty();
