@@ -9615,7 +9615,16 @@ async function handlePageScan(event) {
   const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
   const apiKey = getGeminiApiKey();
 
-  if (navigator.onLine && apiKey && notesField) {
+  if (!apiKey) {
+    if (typeof openGeminiKeyModal === 'function') openGeminiKeyModal();
+    if (typeof showToast === 'function') {
+      showToast('Gemini API Key required for AI text scanning. Please enter your free key in Account Settings.', 'info');
+    }
+    event.target.value = '';
+    return;
+  }
+
+  if (navigator.onLine && notesField) {
     const spinner = isTimerContext ? document.getElementById('timer-ocr-loading-spinner') : document.getElementById('ocr-loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
     notesField.disabled = true;
@@ -9626,20 +9635,16 @@ async function handlePageScan(event) {
 
     try {
       const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
+      if (result && result.text && notesField) {
+        const existing = notesField.value.trim();
+        const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+        notesField.value = formattedQuote;
+        notesField.dispatchEvent(new Event('input', { bubbles: true }));
+        notesField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       openVerificationModal(result.text, result.pageNumber, isTimerContext ? 'timer' : 'log');
     } catch (error) {
-      saveStandaloneNote({
-        id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        title: activeBook || 'Photo Quote',
-        author: '',
-        date: todayISO(),
-        notes: 'Photo Quote',
-        photoUrl: dataUrl,
-        isFavorite: false,
-        isQuote: true
-      });
-      showToast("Photo quote saved to Notes tab!", "success");
-      renderKnowledgeView();
+      if (typeof showToast === 'function') showToast("AI Scan Error: " + error.message, "warning");
     } finally {
       notesField.disabled = false;
       notesField.placeholder = originalPlaceholder;
@@ -9786,10 +9791,16 @@ function commitVerifiedScan() {
   const endPageField = isTimerContext ? document.getElementById('timer-input-end-page') : document.getElementById('log-end');
   
   if (textVal && notesField) {
+    const newQuoteSnippet = `[Scanned Page Quote]:\n"${textVal}"`;
     const existing = notesField.value;
-    const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${textVal}"` : `[Scanned Page Quote]:\n"${textVal}"`;
-    notesField.value = formattedQuote;
+    if (existing.includes('[Scanned Page Quote]:')) {
+      const lastQuoteIndex = existing.lastIndexOf('[Scanned Page Quote]:');
+      notesField.value = existing.substring(0, lastQuoteIndex) + newQuoteSnippet;
+    } else {
+      notesField.value = existing ? `${existing}\n\n${newQuoteSnippet}` : newQuoteSnippet;
+    }
     notesField.dispatchEvent(new Event('input', { bubbles: true }));
+    notesField.dispatchEvent(new Event('change', { bubbles: true }));
   }
   if (pageVal && endPageField) {
     endPageField.value = pageVal;

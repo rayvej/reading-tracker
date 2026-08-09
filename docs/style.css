@@ -1445,6 +1445,10 @@ body.light-mode .heatmap-tier-4 { background-color: #0a361c !important; box-shad
   pointer-events: auto;
 }
 
+#ocr-verify-modal {
+  z-index: 10000 !important;
+}
+
 .ios-modal-card {
   background: var(--bg-elevated);
   border-radius: var(--radius-lg);

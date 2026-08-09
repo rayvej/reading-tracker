@@ -77,8 +77,8 @@ assert(
 );
 
 assert(
-  jsContent.includes('formattedQuote = existing ? `${existing}\\n\\n[Scanned Page Quote]:\\n"${textVal}"` : `[Scanned Page Quote]:\\n"${textVal}"`'),
-  'commitVerifiedScan appends sequential page quote transcriptions cleanly to notes'
+  jsContent.includes('newQuoteSnippet = `[Scanned Page Quote]:\\n"${textVal}"`'),
+  'commitVerifiedScan formats page quote transcriptions cleanly'
 );
 
 assert(
