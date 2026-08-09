@@ -2969,19 +2969,29 @@
         <div class="flex flex-col gap-1.5 mt-1">
           <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-theme-secondary">
             <span>Notes &amp; Reflections</span>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <button id="timer-btn-dictate" type="button" class="text-[10px] font-bold text-rose-300 hover:text-rose-200 flex items-center gap-1 active:scale-95 transition-all cursor-pointer px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/20" title="Voice Dictation">
                 <i class="fa-solid fa-microphone"></i> Dictate
               </button>
-              <button id="timer-btn-add-photo" type="button" class="text-[10px] font-bold text-theme-gold hover:text-theme-gold flex items-center gap-1 active:scale-95 transition-all cursor-pointer">
-                <i class="fa-solid fa-camera"></i> Add Photo
+              <button id="timer-btn-scan-ocr" type="button" class="text-[10px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 active:scale-95 transition-all cursor-pointer px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20" title="Scan Page layout with OCR AI">
+                <i class="fa-solid fa-camera"></i> Scan Page
+              </button>
+              <button id="timer-btn-add-photo" type="button" class="text-[10px] font-bold text-theme-gold hover:text-theme-gold flex items-center gap-1 active:scale-95 transition-all cursor-pointer px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <i class="fa-solid fa-paperclip"></i> Photo
               </button>
             </div>
           </div>
-          <textarea id="timer-input-notes" rows="2" class="w-full px-3 py-2 text-xs font-medium rounded-xl glass-input border border-theme text-theme-primary placeholder:text-theme-tertiary focus:outline-none focus:border-amber-400/50" placeholder="Capture quick notes, reflections, or memorable quotes..."></textarea>
-          
+          <div class="relative w-full">
+            <textarea id="timer-input-notes" rows="2" class="w-full px-3 py-2 text-xs font-medium rounded-xl glass-input border border-theme text-theme-primary placeholder:text-theme-tertiary focus:outline-none focus:border-amber-400/50" placeholder="Capture quick notes, reflections, or memorable quotes..."></textarea>
+            <div id="timer-ocr-loading-spinner" class="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 hidden z-20">
+              <div class="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-xs text-sky-400 font-bold">Scanning Page with AI...</span>
+            </div>
+          </div>
+
           <input type="file" id="timer-photo-file-input" accept="image/*" class="hidden">
-          
+          <input type="file" id="timer-scan-page-file" accept="image/*" capture="environment" class="hidden">
+
           <!-- Photo Preview Container -->
           <div id="timer-photo-preview-box" class="hidden relative rounded-xl border border-theme bg-theme-card p-2 flex items-center gap-3">
             <img id="timer-photo-img" src="" class="w-10 h-10 object-cover rounded-lg shadow-md shrink-0" loading="lazy" decoding="async">
@@ -2989,9 +2999,14 @@
               <div class="text-xs font-bold text-theme-primary truncate">Photo Attached</div>
               <div class="text-[9px] text-theme-secondary">Saved to session note &amp; knowledge vault</div>
             </div>
-            <button id="timer-photo-remove" type="button" class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs hover:bg-rose-500/30 shrink-0">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button id="timer-btn-photo-ocr" type="button" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 active:scale-95 transition-all flex items-center gap-1 cursor-pointer" title="Transcribe Attached Photo with Gemini AI">
+                <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR
+              </button>
+              <button id="timer-photo-remove" type="button" class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs hover:bg-rose-500/30 shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>

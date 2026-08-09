@@ -9603,15 +9603,20 @@ async function handlePageScan(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const notesField = document.getElementById('log-notes');
-  const activeBook = document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book';
+  const isTimerContext = (event.target && event.target.id === 'timer-scan-page-file') ||
+    (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'));
+
+  const notesField = isTimerContext ? document.getElementById('timer-input-notes') : document.getElementById('log-notes');
+  const activeBook = isTimerContext 
+    ? (document.getElementById('timer-book-title') ? document.getElementById('timer-book-title').textContent.trim() : 'Active Focus Session')
+    : (document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book');
 
   const base64Data = await fileToBase64(file);
   const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
   const apiKey = getGeminiApiKey();
 
   if (navigator.onLine && apiKey && notesField) {
-    const spinner = document.getElementById('ocr-loading-spinner');
+    const spinner = isTimerContext ? document.getElementById('timer-ocr-loading-spinner') : document.getElementById('ocr-loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
     notesField.disabled = true;
     const originalPlaceholder = notesField.placeholder;
@@ -9621,7 +9626,7 @@ async function handlePageScan(event) {
 
     try {
       const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
-      openVerificationModal(result.text, result.pageNumber);
+      openVerificationModal(result.text, result.pageNumber, isTimerContext ? 'timer' : 'log');
     } catch (error) {
       saveStandaloneNote({
         id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -9748,13 +9753,17 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
   }
 }
 
-function openVerificationModal(text, pageNumber) {
+function openVerificationModal(text, pageNumber, targetContext) {
   const modal = document.getElementById('ocr-verify-modal');
   const textField = document.getElementById('ocr-verify-text');
   const pageField = document.getElementById('ocr-verify-page');
   if (!modal || !textField || !pageField) return;
   textField.value = text || "";
   pageField.value = pageNumber || "";
+
+  const isTimer = targetContext === 'timer' || (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'));
+  modal.dataset.targetContext = isTimer ? 'timer' : (targetContext || 'log');
+
   modal.classList.add('open');
   Haptics.success();
 }
@@ -9767,15 +9776,20 @@ function closeVerificationModal() {
 }
 
 function commitVerifiedScan() {
+  const modal = document.getElementById('ocr-verify-modal');
+  const targetContext = modal ? modal.dataset.targetContext : null;
   const textVal = document.getElementById('ocr-verify-text').value.trim();
   const pageVal = document.getElementById('ocr-verify-page').value.trim();
-  const notesField = document.getElementById('log-notes');
-  const endPageField = document.getElementById('log-end');
+  
+  const isTimerContext = targetContext === 'timer' || (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'));
+  const notesField = isTimerContext ? document.getElementById('timer-input-notes') : document.getElementById('log-notes');
+  const endPageField = isTimerContext ? document.getElementById('timer-input-end-page') : document.getElementById('log-end');
   
   if (textVal && notesField) {
     const existing = notesField.value;
     const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${textVal}"` : `[Scanned Page Quote]:\n"${textVal}"`;
     notesField.value = formattedQuote;
+    notesField.dispatchEvent(new Event('input', { bubbles: true }));
   }
   if (pageVal && endPageField) {
     endPageField.value = pageVal;
@@ -9786,7 +9800,7 @@ function commitVerifiedScan() {
   }
   closeVerificationModal();
   Haptics.success();
-  showToastNotification("Transcription successfully added to your active log draft!");
+  showToastNotification(isTimerContext ? "Transcription successfully added to your focus session notes!" : "Transcription successfully added to your active log draft!");
 }
 
 async function processOfflineSyncQueue() {
@@ -9873,6 +9887,16 @@ function bindScannerEvents() {
   if (trigger) trigger.onclick = triggerPageScan;
   const fileInput = document.getElementById('scan-page-file');
   if (fileInput) fileInput.onchange = handlePageScan;
+
+  const timerScanTrigger = document.getElementById('timer-btn-scan-ocr');
+  const timerScanFile = document.getElementById('timer-scan-page-file');
+  if (timerScanTrigger && timerScanFile) {
+    timerScanTrigger.onclick = () => {
+      if (typeof Haptics !== 'undefined' && Haptics.click) Haptics.click();
+      timerScanFile.click();
+    };
+    timerScanFile.onchange = handlePageScan;
+  }
 }
 
 window.renderDashboard = renderDashboard;
@@ -10907,6 +10931,34 @@ function setupTimerEvents() {
       const previewBox = document.getElementById('timer-photo-preview-box');
       if (previewBox) previewBox.classList.add('hidden');
       if (photoFile) photoFile.value = '';
+    };
+  }
+
+  const photoOcrBtn = document.getElementById('timer-btn-photo-ocr');
+  if (photoOcrBtn) {
+    photoOcrBtn.onclick = async () => {
+      if (!fullTimerState.photoData) {
+        showToast('No photo attached to transcribe', 'warning');
+        return;
+      }
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        openGeminiKeyModal();
+        return;
+      }
+      photoOcrBtn.disabled = true;
+      photoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Scanning...`;
+      try {
+        const base64Data = fullTimerState.photoData.split(',')[1];
+        const mimeType = 'image/jpeg';
+        const result = await requestTranscriptionFromGemini(base64Data, mimeType);
+        openVerificationModal(result.text, result.pageNumber, 'timer');
+      } catch (err) {
+        showToast('AI transcription error: ' + err.message, 'warning');
+      } finally {
+        photoOcrBtn.disabled = false;
+        photoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
+      }
     };
   }
 
