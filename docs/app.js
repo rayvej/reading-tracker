@@ -3806,6 +3806,12 @@ function renderTimeBasedTables(logs, completions) {
 
 function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startDate, endDate, dashFilter) {
   let pagesRead = 0;
+  
+  const startD = new Date(startDate + 'T00:00:00');
+  const endD = new Date(endDate + 'T23:59:59');
+  const daysDiff = (endD - startD) / (1000 * 60 * 60 * 24);
+  const isShortPeriod = daysDiff <= 35; // Short period queries (e.g., monthly)
+
   const completionsInPeriod = completions.filter(c => c.date >= startDate && c.date <= endDate && (dashFilter === 'all' || c.collection === dashFilter));
   
   const logsByBook = {};
@@ -3829,7 +3835,7 @@ function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startD
 
   const todayStr = todayISO();
   const includesToday = (endDate >= todayStr);
-  if (includesToday) {
+  if (includesToday && !isShortPeriod) {
     mergedBooks.forEach(b => {
       if (b.status === 'In Progress' && (b.pages_read || 0) > 0) {
         if (dashFilter === 'all' || b.collection === dashFilter) {
@@ -3845,7 +3851,7 @@ function getReconciledPagesForPeriod(mergedBooks, logsCache, completions, startD
     const compsCount = completionsInPeriod.filter(c => c.title === title).length;
     let libPages = compsCount * tot;
     
-    if (includesToday && book && book.status === 'In Progress') {
+    if (includesToday && !isShortPeriod && book && book.status === 'In Progress') {
       const activeProg = (tot > 0 && (book.pages_read || 0) > tot) ? ((book.pages_read || 0) % tot) : (book.pages_read || 0);
       libPages += activeProg;
     }
@@ -3939,10 +3945,10 @@ function getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter) {
       const existingCount = completionCountsMap.get(b.title) || 0;
       const neededCount = Math.max(rc, isFinished ? 1 : 0) - existingCount;
 
-      let bookFinishDate = String(b.finish_date || b.date_added || b.start_date || todayISO()).trim();
+      let bookFinishDate = String(b.finish_date || b.date_added || b.start_date || '').trim();
       if (bookFinishDate.length === 4) bookFinishDate = `${bookFinishDate}-12-31`;
       else if (bookFinishDate.length > 10) bookFinishDate = bookFinishDate.slice(0, 10);
-      if (!bookFinishDate || bookFinishDate.length < 10) bookFinishDate = todayISO();
+      if (!bookFinishDate || bookFinishDate.length < 10) bookFinishDate = '1970-01-01';
 
       for (let i = 0; i < neededCount; i++) {
         completions.push({
