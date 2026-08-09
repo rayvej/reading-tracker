@@ -9598,6 +9598,53 @@ function showToastNotification(message) {
   showToast(message, 'success');
 }
 
+async function requestTranscriptionFromTesseract(imageDataUrl) {
+  if (typeof Tesseract !== 'undefined') {
+    const worker = await Tesseract.createWorker('eng');
+    const ret = await worker.recognize(imageDataUrl);
+    await worker.terminate();
+    return {
+      text: ret.data && ret.data.text ? ret.data.text.trim() : '',
+      pageNumber: null
+    };
+  }
+  throw new Error("Client-side OCR engine not loaded");
+}
+
+async function performPageOCR(base64Data, mimeType, dataUrl) {
+  const apiKey = getGeminiApiKey();
+  let geminiError = null;
+
+  if (navigator.onLine && apiKey) {
+    try {
+      const res = await requestTranscriptionFromGemini(base64Data, mimeType);
+      if (res && res.text && res.text.trim()) {
+        return res;
+      }
+    } catch (err) {
+      console.warn("[OCR] Gemini API failed, trying client-side OCR fallback:", err);
+      geminiError = err.message;
+    }
+  }
+
+  if (typeof Tesseract !== 'undefined') {
+    try {
+      const tessResult = await requestTranscriptionFromTesseract(dataUrl);
+      if (tessResult && tessResult.text) {
+        return tessResult;
+      }
+    } catch (tessErr) {
+      console.warn("[OCR] Tesseract fallback failed:", tessErr);
+    }
+  }
+
+  if (geminiError) {
+    throw new Error(geminiError);
+  }
+
+  throw new Error("To enable AI text scanning, please enter your free Gemini API Key in Account Settings.");
+}
+
 async function handlePageScan(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -9630,18 +9677,7 @@ async function handlePageScan(event) {
     if (previewBox) previewBox.classList.remove('hidden');
   }
 
-  const apiKey = getGeminiApiKey();
-
-  if (!apiKey) {
-    if (typeof openGeminiKeyModal === 'function') openGeminiKeyModal();
-    if (typeof showToast === 'function') {
-      showToast('Gemini API Key required for AI text scanning. Please enter your free key in Account Settings.', 'info');
-    }
-    event.target.value = '';
-    return;
-  }
-
-  if (navigator.onLine && notesField) {
+  if (notesField) {
     const spinner = isTimerContext ? document.getElementById('timer-ocr-loading-spinner') : document.getElementById('ocr-loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
     notesField.disabled = true;
@@ -9651,7 +9687,7 @@ async function handlePageScan(event) {
     Haptics.nudge();
 
     try {
-      const result = await requestTranscriptionFromGemini(base64Data, mimeType);
+      const result = await performPageOCR(base64Data, mimeType, dataUrl);
       if (result && result.text && notesField) {
         const existing = notesField.value.trim();
         const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
@@ -9661,8 +9697,11 @@ async function handlePageScan(event) {
       }
       openVerificationModal(result.text, result.pageNumber, isTimerContext ? 'timer' : 'log');
     } catch (error) {
-      console.warn("Gemini OCR Scan Error:", error);
-      if (typeof showToast === 'function') showToast("AI Scan Error: " + error.message, "warning");
+      console.warn("OCR Scan Error:", error);
+      if (error.message.includes("Gemini API Key")) {
+        if (typeof openGeminiKeyModal === 'function') openGeminiKeyModal();
+      }
+      if (typeof showToast === 'function') showToast(error.message, "info");
     } finally {
       notesField.disabled = false;
       notesField.placeholder = originalPlaceholder;
@@ -9672,12 +9711,6 @@ async function handlePageScan(event) {
     }
     return;
   }
-
-  if (isTimerContext && notesField && !notesField.value.trim()) {
-    notesField.value = '[Scanned Page Photo Attached]';
-    notesField.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-  event.target.value = '';
 }
 
 function openGeminiKeyModal() {
@@ -10961,20 +10994,25 @@ function setupTimerEvents() {
         showToast('No photo attached to transcribe', 'warning');
         return;
       }
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) {
-        openGeminiKeyModal();
-        return;
-      }
       photoOcrBtn.disabled = true;
       photoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Scanning...`;
       try {
-        const base64Data = fullTimerState.photoData.split(',')[1];
+        const dataUrl = fullTimerState.photoData;
+        const base64Data = dataUrl.split(',')[1];
         const mimeType = 'image/jpeg';
-        const result = await requestTranscriptionFromGemini(base64Data, mimeType);
+        const result = await performPageOCR(base64Data, mimeType, dataUrl);
+        const notesField = document.getElementById('timer-input-notes');
+        if (notesField && result && result.text) {
+          const existing = notesField.value.trim();
+          const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+          notesField.value = formattedQuote;
+          notesField.dispatchEvent(new Event('input', { bubbles: true }));
+          notesField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         openVerificationModal(result.text, result.pageNumber, 'timer');
       } catch (err) {
-        showToast('AI transcription error: ' + err.message, 'warning');
+        if (err.message.includes("Gemini API Key")) openGeminiKeyModal();
+        showToast("OCR Error: " + err.message, "warning");
       } finally {
         photoOcrBtn.disabled = false;
         photoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
