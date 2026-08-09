@@ -9489,13 +9489,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 function getGeminiApiKey() {
-  const key = localStorage.getItem('rt_gemini_api_key');
-  if (key && key.trim()) {
-    if (typeof firebaseConfig !== 'undefined' && key.trim() === firebaseConfig.apiKey) {
-      localStorage.removeItem('rt_gemini_api_key');
-      return '';
-    }
-    return key.trim();
+  const userKey = localStorage.getItem('rt_gemini_api_key');
+  if (userKey && userKey.trim()) {
+    return userKey.trim();
+  }
+  if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey) {
+    return firebaseConfig.apiKey.trim();
   }
   return '';
 }
@@ -9638,10 +9637,6 @@ async function handlePageScan(event) {
     if (typeof showToast === 'function') {
       showToast('Gemini API Key required for AI text scanning. Please enter your free key in Account Settings.', 'info');
     }
-    if (isTimerContext && notesField && !notesField.value.trim()) {
-      notesField.value = '[Scanned Page Photo Attached]';
-      notesField.dispatchEvent(new Event('input', { bubbles: true }));
-    }
     event.target.value = '';
     return;
   }
@@ -9659,8 +9654,7 @@ async function handlePageScan(event) {
       const result = await requestTranscriptionFromGemini(base64Data, mimeType);
       if (result && result.text && notesField) {
         const existing = notesField.value.trim();
-        const cleanExisting = existing === '[Scanned Page Photo Attached]' ? '' : existing;
-        const formattedQuote = cleanExisting ? `${cleanExisting}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+        const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
         notesField.value = formattedQuote;
         notesField.dispatchEvent(new Event('input', { bubbles: true }));
         notesField.dispatchEvent(new Event('change', { bubbles: true }));
@@ -9669,10 +9663,6 @@ async function handlePageScan(event) {
     } catch (error) {
       console.warn("Gemini OCR Scan Error:", error);
       if (typeof showToast === 'function') showToast("AI Scan Error: " + error.message, "warning");
-      if (isTimerContext && notesField && !notesField.value.trim()) {
-        notesField.value = '[Scanned Page Photo Attached]';
-        notesField.dispatchEvent(new Event('input', { bubbles: true }));
-      }
     } finally {
       notesField.disabled = false;
       notesField.placeholder = originalPlaceholder;
