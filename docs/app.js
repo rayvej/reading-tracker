@@ -9611,14 +9611,36 @@ async function handlePageScan(event) {
     ? (document.getElementById('timer-book-title') ? document.getElementById('timer-book-title').textContent.trim() : 'Active Focus Session')
     : (document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book');
 
-  const base64Data = await fileToBase64(file);
-  const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
+  let base64Data = '';
+  let dataUrl = '';
+  let mimeType = 'image/jpeg';
+  try {
+    dataUrl = await compressImage(file, 1200, 1200, 0.85);
+    base64Data = dataUrl.split(',')[1];
+  } catch (err) {
+    base64Data = await fileToBase64(file);
+    dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64Data}`;
+    mimeType = file.type || 'image/jpeg';
+  }
+
+  if (isTimerContext && typeof fullTimerState !== 'undefined') {
+    fullTimerState.photoData = dataUrl;
+    const previewBox = document.getElementById('timer-photo-preview-box');
+    const imgElem = document.getElementById('timer-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
+  }
+
   const apiKey = getGeminiApiKey();
 
   if (!apiKey) {
     if (typeof openGeminiKeyModal === 'function') openGeminiKeyModal();
     if (typeof showToast === 'function') {
       showToast('Gemini API Key required for AI text scanning. Please enter your free key in Account Settings.', 'info');
+    }
+    if (isTimerContext && notesField && !notesField.value.trim()) {
+      notesField.value = '[Scanned Page Photo Attached]';
+      notesField.dispatchEvent(new Event('input', { bubbles: true }));
     }
     event.target.value = '';
     return;
@@ -9634,17 +9656,23 @@ async function handlePageScan(event) {
     Haptics.nudge();
 
     try {
-      const result = await requestTranscriptionFromGemini(base64Data, file.type || "image/jpeg");
+      const result = await requestTranscriptionFromGemini(base64Data, mimeType);
       if (result && result.text && notesField) {
         const existing = notesField.value.trim();
-        const formattedQuote = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+        const cleanExisting = existing === '[Scanned Page Photo Attached]' ? '' : existing;
+        const formattedQuote = cleanExisting ? `${cleanExisting}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
         notesField.value = formattedQuote;
         notesField.dispatchEvent(new Event('input', { bubbles: true }));
         notesField.dispatchEvent(new Event('change', { bubbles: true }));
       }
       openVerificationModal(result.text, result.pageNumber, isTimerContext ? 'timer' : 'log');
     } catch (error) {
+      console.warn("Gemini OCR Scan Error:", error);
       if (typeof showToast === 'function') showToast("AI Scan Error: " + error.message, "warning");
+      if (isTimerContext && notesField && !notesField.value.trim()) {
+        notesField.value = '[Scanned Page Photo Attached]';
+        notesField.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     } finally {
       notesField.disabled = false;
       notesField.placeholder = originalPlaceholder;
@@ -9655,19 +9683,10 @@ async function handlePageScan(event) {
     return;
   }
 
-  saveStandaloneNote({
-    id: 'sa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-    title: activeBook || 'Photo Quote',
-    author: '',
-    date: todayISO(),
-    notes: 'Photo Quote',
-    photoUrl: dataUrl,
-    isFavorite: false,
-    isQuote: true
-  });
-  showToast("Photo note saved to Notes tab!", "success");
-  Haptics.success();
-  renderKnowledgeView();
+  if (isTimerContext && notesField && !notesField.value.trim()) {
+    notesField.value = '[Scanned Page Photo Attached]';
+    notesField.dispatchEvent(new Event('input', { bubbles: true }));
+  }
   event.target.value = '';
 }
 
@@ -9706,7 +9725,7 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
     throw new Error("Missing Gemini API Key. Please enter your key in Google AI Studio modal.");
   }
 
-  const promptText = "Perform meticulous optical character recognition (OCR) on this page photograph. Transcribe all readable paragraphs verbatim inside chronological correct line breaks. Then, check the page corners to extract the printed page integer, if visible. Return strictly as a formatted JSON object.";
+  const promptText = "Perform meticulous optical character recognition (OCR) on this page photograph. Transcribe all readable text verbatim with paragraph line breaks. Also extract the printed page number if visible in the margins. Return as JSON with format: {\"text\": \"transcription text\", \"pageNumber\": 123}.";
   const payload = {
     contents: [
       {
@@ -9715,30 +9734,13 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
           { text: promptText },
           {
             inlineData: {
-              mimeType: mimeType,
+              mimeType: mimeType || "image/jpeg",
               data: base64Data
             }
           }
         ]
       }
-    ],
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          text: { 
-            type: "STRING", 
-            description: "Verbatim transcribe of all readable passages on the page." 
-          },
-          pageNumber: { 
-            type: "INTEGER", 
-            description: "The printed page number found in the margins, if visible. Null if missing." 
-          }
-        },
-        required: ["text"]
-      }
-    }
+    ]
   };
 
   try {
@@ -9747,7 +9749,24 @@ async function requestTranscriptionFromGemini(base64Data, mimeType) {
     if (!textBody) {
       throw new Error("Transcribing algorithm returned an empty payload.");
     }
-    return JSON.parse(textBody);
+    let cleaned = textBody.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+    }
+    try {
+      const parsed = JSON.parse(cleaned);
+      return {
+        text: parsed.text || cleaned,
+        pageNumber: parsed.pageNumber || null
+      };
+    } catch (e) {
+      const pageMatch = cleaned.match(/(?:page|p\.)\s*(\d+)/i);
+      const pageNum = pageMatch ? parseInt(pageMatch[1], 10) : null;
+      return {
+        text: cleaned,
+        pageNumber: pageNum
+      };
+    }
   } catch (err) {
     if (err.message.includes('403') || err.message.includes('disabled') || err.message.includes('API key not valid')) {
       localStorage.removeItem('rt_gemini_api_key');
