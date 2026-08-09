@@ -1880,6 +1880,52 @@ function triggerDailyReminder(isTest = false) {
   }
 }
 
+const PUBLIC_VAPID_KEY = 'BMjCtcDT82HfHfJcYbFZpyLLSqIBFTIwFDTsVZDJX7oMBEEDpldSXozwj692wx_6St1Yvm5q-WlLnzSgDJBneXs';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function registerWebPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub && PUBLIC_VAPID_KEY) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+      });
+    }
+    if (sub) {
+      const subscriptionJSON = sub.toJSON();
+      localStorage.setItem('rt_push_subscription', JSON.stringify(subscriptionJSON));
+      if (typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid) {
+        const subId = btoa(subscriptionJSON.endpoint).substring(0, 32).replace(/[\/\+=]/g, '_');
+        setDoc(doc(db, `users/${uid}/push_subscriptions/${subId}`), {
+          subscription: subscriptionJSON,
+          updatedAt: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        }, { merge: true }).catch(err => {
+          console.warn('Failed to save push subscription to Firestore:', err);
+        });
+      }
+      return subscriptionJSON;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Web Push subscription error:', err);
+    return null;
+  }
+}
+
 function setupNotificationSettingsUI() {
   const enableToggle = $('setting-reminder-enable');
   const timePicker = $('setting-reminder-time');
@@ -1907,7 +1953,7 @@ function setupNotificationSettingsUI() {
       customText: customTextInput ? customTextInput.value.trim() : ''
     };
     localStorage.setItem('rt_reminder_settings', JSON.stringify(newSettings));
-    if (db && uid) {
+    if (typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid) {
       setDoc(doc(db, `users/${uid}/settings/notifications`), newSettings, { merge: true }).catch(err => {
         console.warn('Failed to sync notification settings to Firestore:', err);
       });
@@ -1931,7 +1977,12 @@ function setupNotificationSettingsUI() {
       }
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
-        showToast('Push Notifications enabled successfully!', 'success');
+        const sub = await registerWebPushSubscription();
+        if (sub) {
+          showToast('Web Push Notifications & background delivery enabled!', 'success');
+        } else {
+          showToast('Push Notifications enabled successfully!', 'success');
+        }
       } else if (perm === 'denied') {
         showToast('Notification permission denied in browser settings.', 'error');
       }
@@ -1942,6 +1993,10 @@ function setupNotificationSettingsUI() {
     btnTest.addEventListener('click', () => {
       triggerDailyReminder(true);
     });
+  }
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    registerWebPushSubscription();
   }
 
   scheduleDailyReminderAlarm();
@@ -5595,84 +5650,6 @@ function renderTrajectoryChart(yearPages, aPT, activeLogs) {
   `;
 }
 
-function renderAchievementBadges(stats, streak, logsCache, yearBooks, aBT) {
-  const container = $('goals-badges-grid');
-  if (!container) return;
-
-  const totalReads = stats.totalReads || 0;
-  const totalPages = stats.totalPages || 0;
-  const maxMonthPages = stats.maxMonthPages || 0;
-
-  const badges = [
-    {
-      id: 'first_step',
-      icon: 'fa-rocket',
-      title: 'First Step',
-      desc: 'Log 1 session',
-      unlocked: logsCache.length > 0,
-      progress: `${Math.min(1, logsCache.length)}/1`
-    },
-    {
-      id: 'streak_master',
-      icon: 'fa-fire',
-      title: '7-Day Streak',
-      desc: '7 days reading',
-      unlocked: streak.currentStreak >= 7,
-      progress: `${Math.min(7, streak.currentStreak)}/7d`
-    },
-    {
-      id: 'bookworm',
-      icon: 'fa-book-open',
-      title: 'Bookworm',
-      desc: 'Read 10 books',
-      unlocked: totalReads >= 10,
-      progress: `${Math.min(10, totalReads)}/10`
-    },
-    {
-      id: 'century',
-      icon: 'fa-award',
-      title: '50+ Club',
-      desc: 'Read 50 books',
-      unlocked: totalReads >= 50,
-      progress: `${Math.min(50, totalReads)}/50`
-    },
-    {
-      id: 'marathoner',
-      icon: 'fa-bolt',
-      title: 'Marathoner',
-      desc: '1,000 pg / mo',
-      unlocked: maxMonthPages >= 1000,
-      progress: `${Math.min(1000, maxMonthPages)}/1k`
-    },
-    {
-      id: 'crusher',
-      icon: 'fa-trophy',
-      title: 'Goal Crusher',
-      desc: 'Hit annual target',
-      unlocked: yearBooks >= aBT,
-      progress: `${Math.min(aBT, yearBooks)}/${aBT}`
-    }
-  ];
-
-  const unlockedCount = badges.filter(b => b.unlocked).length;
-  if ($('badges-unlocked-count')) $('badges-unlocked-count').textContent = `${unlockedCount} / ${badges.length} Unlocked`;
-
-  container.innerHTML = badges.map(b => `
-    <div class="flex flex-col items-center text-center p-2.5 rounded-2xl border transition-all ${
-      b.unlocked 
-        ? 'bg-gradient-to-b from-amber-500/10 to-amber-500/5 border-amber-500/30 text-theme-gold shadow-md shadow-amber-500/5' 
-        : 'bg-black/20 border-theme text-theme-tertiary opacity-60'
-    }">
-      <div class="w-8 h-8 rounded-xl flex items-center justify-center mb-1 text-sm ${
-        b.unlocked ? 'bg-amber-500/20 text-theme-gold border border-amber-500/30' : 'bg-white/5 text-slate-600'
-      }">
-        <i class="fa-solid ${b.icon}"></i>
-      </div>
-      <div class="text-[10px] font-extrabold text-theme-primary truncate w-full leading-tight">${b.title}</div>
-      <div class="text-[8px] font-semibold text-theme-secondary mt-0.5">${b.unlocked ? '✓ Unlocked' : b.progress}</div>
-    </div>
-  `).join('');
-}
 
 function renderReadingAssistant(yearBooks, aBT, mergedBooks, activeLogs) {
   const msgEl = $('goals-assistant-msg');
@@ -5934,9 +5911,6 @@ async function renderGoals() {
   // Render Trajectory SVG Chart
   renderTrajectoryChart(yearPages, aPT, activeLogs);
 
-  // Calculate Streak & Render Badges
-  const streak = calculateStreak(activeLogs);
-  renderAchievementBadges(stats, streak, logsCache, yearBooks, aBT);
 
   // Render Smart Reading Assistant
   renderReadingAssistant(yearBooks, aBT, mergedBooks, activeLogs);
@@ -6184,122 +6158,10 @@ async function renderGoals() {
     });
   }
 
-  // Render Milestone Badges Vault & Streak Calendar
-  renderAchievementsVault();
+  // Render Streak Calendar
   renderStreakCalendar();
 }
 
-/** Reading Achievements & Milestone Badges Vault */
-function renderAchievementsVault() {
-  const container = document.getElementById('goals-milestones-vault');
-  const countEl = document.getElementById('achievements-unlocked-count');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const lifetime = getReconciledStats(booksCache, logsCache, 'all', 'all');
-  const totalPages = lifetime.pagesRead || 0;
-  const totalBooks = lifetime.totalReads || 0;
-
-  let streakDays = 0;
-  if (typeof activeStreakCount !== 'undefined') streakDays = activeStreakCount;
-
-  const categories = new Set((booksCache || []).map(b => b.category || 'General'));
-  const notesCount = (logsCache || []).filter(l => l.notes && l.notes.trim().length > 0).length;
-
-  const trophies = [
-    {
-      id: 'centurion',
-      icon: 'fa-trophy',
-      title: 'Centurion',
-      desc: 'Finish 100+ books',
-      current: totalBooks,
-      target: 100,
-      unlocked: totalBooks >= 100
-    },
-    {
-      id: 'bibliophile',
-      icon: 'fa-book-bookmark',
-      title: 'Bibliophile',
-      desc: '10,000+ lifetime pages',
-      current: totalPages,
-      target: 10000,
-      unlocked: totalPages >= 10000
-    },
-    {
-      id: 'streak',
-      icon: 'fa-fire',
-      title: '30-Day Shield',
-      desc: 'Maintain a 30-day streak',
-      current: streakDays,
-      target: 30,
-      unlocked: streakDays >= 30
-    },
-    {
-      id: 'polymath',
-      icon: 'fa-brain',
-      title: 'Polymath',
-      desc: 'Read 5+ categories',
-      current: categories.size,
-      target: 5,
-      unlocked: categories.size >= 5
-    },
-    {
-      id: 'archivist',
-      icon: 'fa-feather-pointed',
-      title: 'Archivist',
-      desc: 'Log 50+ session notes',
-      current: notesCount,
-      target: 50,
-      unlocked: notesCount >= 50
-    },
-    {
-      id: 'scholar',
-      icon: 'fa-graduation-cap',
-      title: 'Scholar',
-      desc: 'Finish 10+ core books',
-      current: totalBooks,
-      target: 10,
-      unlocked: totalBooks >= 10
-    }
-  ];
-
-  let unlockedCount = 0;
-
-  trophies.forEach(t => {
-    if (t.unlocked) unlockedCount++;
-    const pct = Math.min(100, Math.round((t.current / t.target) * 100));
-
-    const card = document.createElement('div');
-    card.className = `p-3 rounded-2xl flex flex-col gap-2 border transition-all ${
-      t.unlocked 
-        ? 'bg-amber-500/10 border-amber-500/30 text-amber-200 shadow-lg' 
-        : 'bg-white/[0.03] border-theme text-theme-secondary opacity-70'
-    }`;
-
-    card.innerHTML = `
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl ${t.unlocked ? 'bg-amber-500/20 text-theme-gold' : 'bg-white/5 text-theme-tertiary'} flex items-center justify-center text-sm shrink-0">
-          <i class="fa-solid ${t.icon}"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold ${t.unlocked ? 'text-amber-200' : 'text-theme-secondary'} truncate">${t.title}</div>
-          <div class="text-[9px] text-theme-secondary truncate">${t.desc}</div>
-        </div>
-      </div>
-      <div class="w-full bg-black/30 rounded-full h-1.5 overflow-hidden mt-1">
-        <div class="h-full rounded-full transition-all duration-500 ${t.unlocked ? 'bg-amber-400' : 'bg-slate-600'}" style="width: ${pct}%;"></div>
-      </div>
-      <div class="flex justify-between items-center text-[9px] font-mono text-theme-secondary">
-        <span>${t.unlocked ? 'UNLOCKED ✓' : 'LOCKED'}</span>
-        <span>${fmtNum(t.current)} / ${fmtNum(t.target)}</span>
-      </div>
-    `;
-
-    container.appendChild(card);
-  });
-
-  if (countEl) countEl.textContent = `${unlockedCount} / ${trophies.length} Unlocked`;
-}
 
 /** Editorial Quote Card Generator Modal & Download */
 window.openQuoteCardModal = function(quoteText, author, bookTitle) {

@@ -74,6 +74,34 @@ export function generateDailyReminderPayload(books, logs, userSettings = {}) {
   };
 }
 
+export const VAPID_KEYS = {
+  publicKey: "BMjCtcDT82HfHfJcYbFZpyLLSqIBFTIwFDTsVZDJX7oMBEEDpldSXozwj692wx_6St1Yvm5q-WlLnzSgDJBneXs",
+  privateKey: "aE8wozaoO4ShoQ6ijupteoI68ildszLh1OprKfXHfUw",
+  subject: "mailto:support@readingtracker.app"
+};
+
+export function formatWebPushNotificationPayload(reminderPayload) {
+  if (!reminderPayload) return null;
+  return {
+    title: reminderPayload.title,
+    body: reminderPayload.body,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: 'daily-reading-reminder',
+    data: {
+      url: `/#book-${reminderPayload.bookId || ''}`,
+      timestamp: Date.now()
+    }
+  };
+}
+
+export function validatePushSubscription(subscription) {
+  if (!subscription || typeof subscription !== 'object') return false;
+  if (typeof subscription.endpoint !== 'string' || !subscription.endpoint.startsWith('http')) return false;
+  if (!subscription.keys || typeof subscription.keys.p256dh !== 'string' || typeof subscription.keys.auth !== 'string') return false;
+  return true;
+}
+
 export function getMillisecondsUntilNextReminder(timeStr = "07:00", referenceDate = new Date()) {
   const parts = (timeStr || "07:00").split(':').map(Number);
   const targetHours = isNaN(parts[0]) ? 7 : parts[0];
@@ -88,3 +116,4 @@ export function getMillisecondsUntilNextReminder(timeStr = "07:00", referenceDat
 
   return target.getTime() - referenceDate.getTime();
 }
+

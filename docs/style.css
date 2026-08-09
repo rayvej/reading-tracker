@@ -1729,10 +1729,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-#goals-badges-grid > div:hover {
-  transform: translateY(-2px);
-}
-
 /* ── Deferred Offscreen Rendering for Heavy Tables ── */
 .heavy-section-deferred {
   content-visibility: auto;

@@ -1,4 +1,4 @@
-import { generateDailyReminderPayload, getMillisecondsUntilNextReminder } from './send_daily_reminders.mjs';
+import { generateDailyReminderPayload, getMillisecondsUntilNextReminder, VAPID_KEYS, formatWebPushNotificationPayload, validatePushSubscription } from './send_daily_reminders.mjs';
 import assert from 'assert';
 
 console.log("=== Testing Daily Reminder Notification System ===");
@@ -63,4 +63,28 @@ const payloadNoQuote = generateDailyReminderPayload(sampleBooks, sampleLogs, { i
 assert.ok(!payloadNoQuote.body.includes("Recent Note:"), "Body should exclude quote when includeQuote is false");
 console.log("✓ Test 3 Passed!");
 
+// Test 4: Web Push Payload Formatting & Subscription Validation
+console.log("\n[Test 4] Testing Web Push Payload & Subscription Validation...");
+assert.ok(VAPID_KEYS.publicKey && VAPID_KEYS.privateKey, "VAPID keys must be configured");
+
+const webPushPayload = formatWebPushNotificationPayload(payload);
+assert.ok(webPushPayload, "Web Push payload must be generated");
+assert.strictEqual(webPushPayload.title, payload.title);
+assert.strictEqual(webPushPayload.body, payload.body);
+assert.strictEqual(webPushPayload.tag, 'daily-reading-reminder');
+assert.strictEqual(webPushPayload.data.url, '/#book-book-101');
+
+const validSub = {
+  endpoint: 'https://fcm.googleapis.com/fcm/send/sample-token-xyz',
+  keys: {
+    p256dh: 'BNcZ...sample...',
+    auth: 'authSecret123'
+  }
+};
+assert.ok(validatePushSubscription(validSub), "Valid push subscription must pass validation");
+assert.ok(!validatePushSubscription(null), "Null subscription must fail validation");
+assert.ok(!validatePushSubscription({ endpoint: 'invalid' }), "Invalid subscription must fail validation");
+console.log("✓ Test 4 Passed! Web Push payload formatting and validation verified.");
+
 console.log("\n=== ALL TESTS PASSED SUCCESSFULLY! ===");
+
