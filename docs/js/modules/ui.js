@@ -34,6 +34,7 @@ export function showToast(msg, type = '') {
     inner.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5)';
   }
 
+  t.style.display = '';
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2800);

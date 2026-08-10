@@ -738,6 +738,10 @@ input:focus, select:focus, textarea:focus, .glass-input:focus {
   padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
 }
 
+#toast, .toast.toast-top {
+  top: max(20px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    iOS TAB BAR — 2026 Floating Translucent Tab Bar Capsule
    ══════════════════════════════════════════════════════════════ */

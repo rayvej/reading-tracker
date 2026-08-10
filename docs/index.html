@@ -1680,21 +1680,21 @@
 
 
               <!-- Accent Theme Colors -->
-              <div class="flex items-center justify-between p-3 rounded-2xl border border-theme bg-white/5">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm">
+              <div class="flex items-center justify-between gap-2 p-3 rounded-2xl border border-theme bg-white/5">
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm shrink-0">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                   </div>
-                  <div>
-                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">Accent Theme</div>
-                    <div class="text-[10.5px] text-theme-secondary">Personalize highlight colors</div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-extrabold truncate" style="color: var(--text-primary)">Accent Theme</div>
+                    <div class="text-[10.5px] text-theme-secondary truncate">Personalize highlight colors</div>
                   </div>
                 </div>
-                <div class="flex items-center gap-2" id="accent-color-picker">
-                  <button data-accent="gold" class="w-6 h-6 rounded-full bg-amber-400 border-2 border-white/80 shadow-md active:scale-90 transition-transform" title="Gold Amber"></button>
-                  <button data-accent="emerald" class="w-6 h-6 rounded-full bg-emerald-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Emerald Green"></button>
-                  <button data-accent="sky" class="w-6 h-6 rounded-full bg-sky-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Sky Blue"></button>
-                  <button data-accent="rose" class="w-6 h-6 rounded-full bg-rose-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform" title="Rose Pink"></button>
+                <div class="flex items-center gap-1.5 shrink-0" id="accent-color-picker">
+                  <button data-accent="gold" class="w-6 h-6 rounded-full bg-amber-400 border-2 border-white/80 shadow-md active:scale-90 transition-transform shrink-0" title="Gold Amber"></button>
+                  <button data-accent="emerald" class="w-6 h-6 rounded-full bg-emerald-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform shrink-0" title="Emerald Green"></button>
+                  <button data-accent="sky" class="w-6 h-6 rounded-full bg-sky-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform shrink-0" title="Sky Blue"></button>
+                  <button data-accent="rose" class="w-6 h-6 rounded-full bg-rose-400 border-2 border-transparent hover:border-white/50 active:scale-90 transition-transform shrink-0" title="Rose Pink"></button>
                 </div>
               </div>
             </div>
@@ -1839,7 +1839,7 @@
                 To transcribe scanned book pages into quotes automatically, enter your free <strong class="text-theme-gold">Gemini API Key</strong> from Google AI Studio.
               </p>
               <div class="flex items-center gap-2">
-                <input type="password" id="acct-gemini-api-key" placeholder="Paste AI Studio API Key (AIzaSy...)" class="input input-bordered glass-input flex-1 text-xs h-9 font-mono">
+                <input type="password" id="acct-gemini-api-key" placeholder="Paste AI Studio API Key (AIzaSy...)" class="input input-bordered glass-input flex-1 min-w-0 text-xs h-9 font-mono">
                 <button id="btn-save-gemini-key" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all cursor-pointer shrink-0">
                   Save Key
                 </button>

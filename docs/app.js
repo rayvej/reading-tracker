@@ -252,10 +252,12 @@ function showToast(msg, type = '') {
     inner.style.color = 'var(--text-primary)';
     inner.style.borderColor = 'var(--border-strong)';
   }
+  t.style.display = '';
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2800);
 }
+window.showToast = showToast;
 
 // ── Dark / Light Mode ────────────────────────────────────────────────────────
 function updateMetaThemeColor(isLight) {
