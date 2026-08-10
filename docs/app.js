@@ -6963,7 +6963,7 @@ function toggleAddBookProgressField() {
   const container = $('ab-progress-container');
   if (!statusEl || !container) return;
   const status = statusEl.value;
-  if (status === 'In Progress') {
+  if (status === 'In Progress' || status === 'Not Started') {
     container.classList.remove('hidden');
   } else {
     const progVal = parseInt($('ab-progress')?.value) || 0;
@@ -6987,8 +6987,6 @@ function updateAddBookProgressHint() {
 
   if (prog > 0 && statusEl && statusEl.value === 'Not Started') {
     statusEl.value = 'In Progress';
-    toggleAddBookProgressField();
-    return;
   }
 
   if (prog <= 0) {
@@ -8799,32 +8797,43 @@ async function healBookStatuses() {
     const maxActiveEnd = activeLogs.length > 0 ? Math.max(...activeLogs.map(l => parseInt(l.end_page || 0, 10))) : 0;
     
     let correctStatus = b.status;
-    let currentPagesRead = 0;
+    let currentPagesRead = b.pages_read || b.current_page || 0;
     let correctReadCount = effectiveRc;
     
     if (maxActiveEnd > 0) {
       correctStatus = 'In Progress';
       currentPagesRead = (tot > 0 && maxActiveEnd > tot) ? (maxActiveEnd % tot) : maxActiveEnd;
+    } else if (b.status === 'In Progress') {
+      correctStatus = 'In Progress';
+      currentPagesRead = Math.min(tot, b.pages_read || b.current_page || 0);
     } else {
       if (effectiveRc > 0) {
         correctStatus = 'Finished';
         currentPagesRead = tot;
       } else {
-        const isWishlist = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status);
-        correctStatus = isWishlist ? b.status : 'Not Started';
-        currentPagesRead = 0;
+        if (currentPagesRead > 0) {
+          correctStatus = 'In Progress';
+        } else {
+          const isWishlist = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status);
+          correctStatus = isWishlist ? b.status : 'Not Started';
+          currentPagesRead = 0;
+        }
       }
     }
     
     if (b.status !== correctStatus || b.pages_read !== currentPagesRead || b.read_count !== correctReadCount) {
       console.log(`[Self-Healing] Book "${b.title}": ${b.status} -> ${correctStatus}, pages_read ${b.pages_read} -> ${currentPagesRead}, read_count ${b.read_count} -> ${correctReadCount}`);
-      await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
-        status: correctStatus,
-        pages_read: currentPagesRead,
-        read_count: correctReadCount
-      });
+      if (db && uid && b.id) {
+        await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+          status: correctStatus,
+          pages_read: currentPagesRead,
+          current_page: currentPagesRead,
+          read_count: correctReadCount
+        }).catch(err => console.warn('Status self-healing persist error:', err));
+      }
       b.status = correctStatus;
       b.pages_read = currentPagesRead;
+      b.current_page = currentPagesRead;
       b.read_count = correctReadCount;
       updatedAny = true;
     }

@@ -49,6 +49,10 @@ assert(computeProgressPercentage(150, 300) === 50, '150 of 300 pages yields 50%'
 assert(computeProgressPercentage(100, 400) === 25, '100 of 400 pages yields 25%');
 assert(computeProgressPercentage(300, 300) === 100, '300 of 300 pages yields 100%');
 
+// 4. Verify ab-progress-container is visible by default in index.html and healBookStatuses preserves In Progress status
+assert(!indexHtmlContent.includes('class="form-control hidden" id="ab-progress-container"'), 'index.html unhides ab-progress-container by default for high visibility');
+assert(appJsContent.includes("correctStatus = 'In Progress'") && appJsContent.includes("b.status === 'In Progress'"), 'app.js healBookStatuses preserves In Progress book statuses without logs');
+
 console.log('\n══════════════════════════════');
 console.log(`Results: ${passed} passed, ${failed} failed`);
 console.log('══════════════════════════════\n');
