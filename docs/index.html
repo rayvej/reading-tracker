@@ -1454,23 +1454,23 @@
                 <p class="text-xs font-medium mt-0.5" style="color: var(--text-secondary)">Your library, wishlist &amp; everything in between</p>
               </div>
               <!-- Side-by-side action buttons -->
-              <div class="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5">
+              <div class="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-2 pb-0.5">
                 <button id="bookshelf-btn-quick-add-completed"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
+                  class="flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] sm:text-xs font-bold border transition-all active:scale-95 cursor-pointer text-center"
                   style="background: rgba(var(--gold-rgb),0.15); border-color: rgba(var(--gold-rgb),0.35); color: var(--gold)"
-                  title="Quick-add finished books from master catalog">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> Quick-Add Finished
+                  title="Quick-add finished books from master catalog" aria-label="Quick-add finished books">
+                  <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> <span class="truncate">Quick-Add</span>
                 </button>
                 <button id="btn-scan-isbn"
-                  class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
+                  class="flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] sm:text-xs font-bold border transition-all active:scale-95 cursor-pointer text-center"
                   style="background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent)"
-                  title="Scan ISBN Barcode with Camera">
-                  <i class="fa-solid fa-barcode"></i> Scan ISBN
+                  title="Scan ISBN Barcode with Camera" aria-label="Scan ISBN Barcode">
+                  <i class="fa-solid fa-barcode text-[10px]"></i> <span class="truncate">Scan ISBN</span>
                 </button>
                 <button id="btn-add-book-trigger"
-                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shrink-0"
-                  style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)">
-                  <i class="fa-solid fa-plus"></i> Add Book
+                  class="flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] sm:text-xs font-bold border transition-all active:scale-95 cursor-pointer text-center"
+                  style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)" aria-label="Add Book to Library">
+                  <i class="fa-solid fa-plus text-[10px]"></i> <span class="truncate">Add Book</span>
                 </button>
               </div>
             </div>
