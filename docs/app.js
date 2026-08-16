@@ -289,14 +289,14 @@ function setEditorialMode(mode) {
 
   const icon = document.getElementById('theme-icon');
   if (icon) {
-    icon.classList.toggle('fa-sun', isLight);
-    icon.classList.toggle('fa-moon', !isLight);
+    icon.className = isLight ? 'fa-solid fa-sun text-sm text-amber-500' : 'fa-solid fa-moon text-sm text-theme-secondary';
+    icon.style.color = isLight ? '#f59e0b' : '';
   }
 
   const acctIcon = document.getElementById('acct-mode-icon');
   if (acctIcon) {
-    acctIcon.classList.toggle('fa-sun', isLight);
-    acctIcon.classList.toggle('fa-moon', !isLight);
+    acctIcon.className = isLight ? 'fa-solid fa-sun text-sm text-amber-500' : 'fa-solid fa-moon text-sm text-theme-secondary';
+    acctIcon.style.color = isLight ? '#f59e0b' : '';
   }
 
   document.querySelectorAll('.mode-select-btn').forEach(btn => {

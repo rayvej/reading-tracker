@@ -162,8 +162,11 @@
         <!-- Right controls -->
         <div class="flex items-center gap-2">
           <!-- Dark/Light mode toggle -->
-          <button id="btn-theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
-            <i class="fa-solid fa-moon" id="theme-icon"></i>
+          <button id="btn-theme-toggle"
+            class="w-11 h-11 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+            style="background: var(--bg-input); border: 0.5px solid var(--border-strong); color: var(--text-secondary)"
+            aria-label="Toggle dark/light mode" title="Toggle theme">
+            <i class="fa-solid fa-moon text-sm" id="theme-icon"></i>
           </button>
           <!-- Settings -->
           <button id="btn-settings-open"
@@ -2678,22 +2681,22 @@
         
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-purple-500/30 bg-purple-500/10">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold shrink-0">
               <i class="fa-solid fa-cloud-arrow-down"></i>
             </div>
             <div class="min-w-0">
               <div class="text-sm font-bold flex items-center gap-2">
-                <span class="truncate">Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40 shrink-0">v121</span>
+                <span class="truncate text-theme-primary">Reading Tracker</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v121</span>
               </div>
-              <div class="text-[11px] text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
+              <div class="text-[11px] text-purple-700/80 dark:text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <button id="btn-check-sw-update" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 active:scale-95 text-purple-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-purple-500/30" aria-label="Check for updates">
+            <button id="btn-check-sw-update" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 active:scale-95 text-purple-700 dark:text-purple-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-purple-500/30" aria-label="Check for updates">
               <i class="fa-solid fa-rotate text-[11px]"></i> Check Updates
             </button>
-            <button id="btn-force-reload-app" class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-amber-500/30" title="Force clear cache and reload latest version" aria-label="Force Refresh Cache">
+            <button id="btn-force-reload-app" class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-amber-500/30" title="Force clear cache and reload latest version" aria-label="Force Refresh Cache">
               <i class="fa-solid fa-arrows-rotate text-[11px]"></i> Force Refresh
             </button>
           </div>
