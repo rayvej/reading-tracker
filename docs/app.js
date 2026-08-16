@@ -3094,6 +3094,7 @@ async function populateBookDropdown() {
   }
 }
 
+let quickLogPhotoData = null;
 let isSubmitLogSubmitting = false;
 
 async function submitLog() {
@@ -3130,6 +3131,7 @@ async function submitLog() {
       date, book_title: title, read_cycle: cycle,
       start_page: start, end_page: end,
       minutes_spent: mins, notes,
+      photo_url: quickLogPhotoData || null,
       created_at: serverTimestamp()
     };
 
@@ -3142,11 +3144,17 @@ async function submitLog() {
     // Recalculate book status
     await recalculateBook(title, cycle);
 
-    // Reset form
+    // Reset form & photo preview
     $('log-date').value = todayISO();
     $('log-end').value = '';
     $('log-minutes').value = '';
     $('log-notes').value = '';
+
+    quickLogPhotoData = null;
+    const logPhotoPreview = $('log-photo-preview-box');
+    const logPhotoInput = $('log-photo-file');
+    if (logPhotoPreview) logPhotoPreview.classList.add('hidden');
+    if (logPhotoInput) logPhotoInput.value = '';
 
     const pages = end - start;
     showToast(`✓ Logged ${pages} page${pages === 1 ? '' : 's'} in "${title.slice(0, 30)}${title.length > 30 ? '…' : ''}"`, 'success');
@@ -8276,6 +8284,7 @@ function setupLogDetailSheet() {
 
 // ── Historical Reading Log CRUD Modal Functions ──────────────────────────────
 let currentEditingLog = null;
+let editLogPhotoData = null;
 
 function openEditLogModal(l) {
   if (!l) return;
@@ -8289,6 +8298,18 @@ function openEditLogModal(l) {
   $('edit-log-minutes').value = l.minutes_spent ? parseInt(l.minutes_spent, 10) : '';
   $('edit-log-notes').value = l.notes || '';
 
+  editLogPhotoData = l.photo_url || null;
+  const previewBox = $('edit-log-photo-preview-box');
+  const imgElem = $('edit-log-photo-img');
+  if (editLogPhotoData && imgElem && previewBox) {
+    imgElem.src = editLogPhotoData;
+    previewBox.classList.remove('hidden');
+  } else if (previewBox) {
+    previewBox.classList.add('hidden');
+  }
+  const photoFileInput = $('edit-log-photo-file');
+  if (photoFileInput) photoFileInput.value = '';
+
   $('edit-log-modal').classList.add('open');
   Haptics.click();
 }
@@ -8296,6 +8317,7 @@ function openEditLogModal(l) {
 function closeEditLogModal() {
   $('edit-log-modal').classList.remove('open');
   currentEditingLog = null;
+  editLogPhotoData = null;
 }
 
 let isSaveLogEditSubmitting = false;
@@ -8337,6 +8359,7 @@ async function saveLogEdit() {
       read_cycle: cycle,
       minutes_spent: mins,
       notes,
+      photo_url: editLogPhotoData || null,
       updated_at: serverTimestamp()
     });
 
@@ -9660,13 +9683,50 @@ async function handlePageScan(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  const isTimerContext = (event.target && event.target.id === 'timer-scan-page-file') ||
-    (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'));
+  const targetId = (event.target && event.target.id) || '';
+  let context = 'log';
+  if (targetId === 'timer-scan-page-file' || (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'))) {
+    context = 'timer';
+  } else if (targetId === 'edit-log-scan-page-file' || (document.getElementById('edit-log-modal') && document.getElementById('edit-log-modal').classList.contains('open'))) {
+    context = 'edit-log';
+  } else if (targetId === 'qn-scan-page-file' || (document.getElementById('quick-note-modal') && document.getElementById('quick-note-modal').classList.contains('open'))) {
+    context = 'qn';
+  } else if (targetId === 'reflection-scan-page-file' || (document.getElementById('post-session-reflection-modal') && document.getElementById('post-session-reflection-modal').classList.contains('open'))) {
+    context = 'reflection';
+  } else if (targetId === 'edit-note-scan-page-file' || (document.getElementById('edit-note-modal') && document.getElementById('edit-note-modal').classList.contains('open'))) {
+    context = 'edit-note';
+  } else if (targetId === 'ab-scan-page-file') {
+    context = 'ab';
+  } else if (targetId === 'eb-scan-page-file') {
+    context = 'eb';
+  }
 
-  const notesField = isTimerContext ? document.getElementById('timer-input-notes') : document.getElementById('log-notes');
-  const activeBook = isTimerContext 
-    ? (document.getElementById('timer-book-title') ? document.getElementById('timer-book-title').textContent.trim() : 'Active Focus Session')
-    : (document.getElementById('log-book') ? document.getElementById('log-book').value : 'Active Book');
+  let notesField = document.getElementById('log-notes');
+  let spinner = document.getElementById('ocr-loading-spinner');
+  const isTimerContext = (context === 'timer');
+
+  if (isTimerContext) {
+    notesField = document.getElementById('timer-input-notes');
+    spinner = document.getElementById('timer-ocr-loading-spinner');
+  } else if (context === 'edit-log') {
+    notesField = document.getElementById('edit-log-notes');
+    spinner = document.getElementById('edit-log-ocr-loading-spinner');
+  } else if (context === 'qn') {
+    notesField = document.getElementById('qn-text-input');
+    spinner = null;
+  } else if (context === 'reflection') {
+    notesField = document.getElementById('reflection-note-text');
+    spinner = document.getElementById('reflection-ocr-loading-spinner');
+  } else if (context === 'edit-note') {
+    notesField = document.getElementById('edit-note-text');
+    spinner = document.getElementById('edit-note-ocr-loading-spinner');
+  } else if (context === 'ab') {
+    notesField = document.getElementById('ab-notes');
+    spinner = null;
+  } else if (context === 'eb') {
+    notesField = document.getElementById('eb-notes');
+    spinner = null;
+  }
 
   let base64Data = '';
   let dataUrl = '';
@@ -9680,16 +9740,46 @@ async function handlePageScan(event) {
     mimeType = file.type || 'image/jpeg';
   }
 
-  if (isTimerContext && typeof fullTimerState !== 'undefined') {
+  // Update photo state for context
+  if (context === 'timer' && typeof fullTimerState !== 'undefined') {
     fullTimerState.photoData = dataUrl;
     const previewBox = document.getElementById('timer-photo-preview-box');
     const imgElem = document.getElementById('timer-photo-img');
     if (imgElem) imgElem.src = dataUrl;
     if (previewBox) previewBox.classList.remove('hidden');
+  } else if (context === 'log') {
+    quickLogPhotoData = dataUrl;
+    const previewBox = document.getElementById('log-photo-preview-box');
+    const imgElem = document.getElementById('log-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
+  } else if (context === 'edit-log') {
+    editLogPhotoData = dataUrl;
+    const previewBox = document.getElementById('edit-log-photo-preview-box');
+    const imgElem = document.getElementById('edit-log-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
+  } else if (context === 'qn') {
+    qnUploadedPhotoData = { dataUrl, file };
+    const previewBox = document.getElementById('qn-photo-preview-box');
+    const imgElem = document.getElementById('qn-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
+  } else if (context === 'reflection') {
+    reflectionPhotoData = dataUrl;
+    const previewBox = document.getElementById('reflection-photo-preview-box');
+    const imgElem = document.getElementById('reflection-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
+  } else if (context === 'edit-note') {
+    editNotePhotoData = dataUrl;
+    const previewBox = document.getElementById('edit-note-photo-preview-box');
+    const imgElem = document.getElementById('edit-note-photo-img');
+    if (imgElem) imgElem.src = dataUrl;
+    if (previewBox) previewBox.classList.remove('hidden');
   }
 
   if (notesField) {
-    const spinner = isTimerContext ? document.getElementById('timer-ocr-loading-spinner') : document.getElementById('ocr-loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
     notesField.disabled = true;
     const originalPlaceholder = notesField.placeholder;
@@ -9706,10 +9796,10 @@ async function handlePageScan(event) {
         notesField.dispatchEvent(new Event('input', { bubbles: true }));
         notesField.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      openVerificationModal(result.text, result.pageNumber, isTimerContext ? 'timer' : 'log');
+      openVerificationModal(result ? result.text : '', result ? result.pageNumber : null, context);
     } catch (error) {
       console.warn("OCR Scan Error:", error);
-      if (error.message.includes("Gemini API Key")) {
+      if (error.message && error.message.includes("Gemini API Key")) {
         if (typeof openGeminiKeyModal === 'function') openGeminiKeyModal();
       }
       if (typeof showToast === 'function') showToast(error.message, "info");
@@ -9835,13 +9925,35 @@ function closeVerificationModal() {
 
 function commitVerifiedScan() {
   const modal = document.getElementById('ocr-verify-modal');
-  const targetContext = modal ? modal.dataset.targetContext : null;
+  const targetContext = modal ? modal.dataset.targetContext : 'log';
   const textVal = document.getElementById('ocr-verify-text').value.trim();
   const pageVal = document.getElementById('ocr-verify-page').value.trim();
   
-  const isTimerContext = targetContext === 'timer' || (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'));
-  const notesField = isTimerContext ? document.getElementById('timer-input-notes') : document.getElementById('log-notes');
-  const endPageField = isTimerContext ? document.getElementById('timer-input-end-page') : document.getElementById('log-end');
+  let notesField = document.getElementById('log-notes');
+  let endPageField = document.getElementById('log-end');
+
+  if (targetContext === 'timer' || (document.getElementById('timer-fullscreen-overlay') && document.getElementById('timer-fullscreen-overlay').classList.contains('active'))) {
+    notesField = document.getElementById('timer-input-notes');
+    endPageField = document.getElementById('timer-input-end-page');
+  } else if (targetContext === 'edit-log' || (document.getElementById('edit-log-modal') && document.getElementById('edit-log-modal').classList.contains('open'))) {
+    notesField = document.getElementById('edit-log-notes');
+    endPageField = document.getElementById('edit-log-end');
+  } else if (targetContext === 'qn' || (document.getElementById('quick-note-modal') && document.getElementById('quick-note-modal').classList.contains('open'))) {
+    notesField = document.getElementById('qn-text-input');
+    endPageField = null;
+  } else if (targetContext === 'reflection' || (document.getElementById('post-session-reflection-modal') && document.getElementById('post-session-reflection-modal').classList.contains('open'))) {
+    notesField = document.getElementById('reflection-note-text');
+    endPageField = null;
+  } else if (targetContext === 'edit-note' || (document.getElementById('edit-note-modal') && document.getElementById('edit-note-modal').classList.contains('open'))) {
+    notesField = document.getElementById('edit-note-text');
+    endPageField = null;
+  } else if (targetContext === 'ab') {
+    notesField = document.getElementById('ab-notes');
+    endPageField = null;
+  } else if (targetContext === 'eb') {
+    notesField = document.getElementById('eb-notes');
+    endPageField = null;
+  }
   
   if (textVal && notesField) {
     const newQuoteSnippet = `[Scanned Page Quote]:\n"${textVal}"`;
@@ -9864,7 +9976,7 @@ function commitVerifiedScan() {
   }
   closeVerificationModal();
   Haptics.success();
-  showToastNotification(isTimerContext ? "Transcription successfully added to your focus session notes!" : "Transcription successfully added to your active log draft!");
+  showToastNotification("Transcription successfully added to notes!");
 }
 
 async function processOfflineSyncQueue() {
@@ -9947,11 +10059,74 @@ window.saveLogEdit = saveLogEdit;
 window.deleteLogEntry = deleteLogEntry;
 
 function bindScannerEvents() {
+  // Quick Log Scan & Photo
   const trigger = document.getElementById('scan-page-trigger');
   if (trigger) trigger.onclick = triggerPageScan;
   const fileInput = document.getElementById('scan-page-file');
   if (fileInput) fileInput.onchange = handlePageScan;
 
+  const logPhotoBtn = document.getElementById('log-btn-add-photo');
+  const logPhotoFile = document.getElementById('log-photo-file');
+  const logPhotoRemove = document.getElementById('log-photo-remove');
+  const logPhotoOcrBtn = document.getElementById('log-btn-photo-ocr');
+
+  if (logPhotoBtn && logPhotoFile) {
+    logPhotoBtn.onclick = () => logPhotoFile.click();
+    logPhotoFile.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+        quickLogPhotoData = compressedDataUrl;
+        const previewBox = document.getElementById('log-photo-preview-box');
+        const imgElem = document.getElementById('log-photo-img');
+        if (imgElem) imgElem.src = compressedDataUrl;
+        if (previewBox) previewBox.classList.remove('hidden');
+        Haptics.success();
+      } catch (err) {}
+    };
+  }
+
+  if (logPhotoRemove) {
+    logPhotoRemove.onclick = () => {
+      quickLogPhotoData = null;
+      const previewBox = document.getElementById('log-photo-preview-box');
+      const photoFile = document.getElementById('log-photo-file');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  if (logPhotoOcrBtn) {
+    logPhotoOcrBtn.onclick = async () => {
+      if (!quickLogPhotoData) {
+        showToast('No photo attached to transcribe', 'warning');
+        return;
+      }
+      logPhotoOcrBtn.disabled = true;
+      logPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Scanning...`;
+      try {
+        const base64Data = quickLogPhotoData.split(',')[1];
+        const mimeType = 'image/jpeg';
+        const result = await performPageOCR(base64Data, mimeType, quickLogPhotoData);
+        const notesField = document.getElementById('log-notes');
+        if (notesField && result && result.text) {
+          const existing = notesField.value.trim();
+          notesField.value = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+          notesField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        openVerificationModal(result ? result.text : '', result ? result.pageNumber : null, 'log');
+      } catch (err) {
+        if (err.message && err.message.includes("Gemini API Key")) openGeminiKeyModal();
+        showToast('OCR Error: ' + err.message, 'warning');
+      } finally {
+        logPhotoOcrBtn.disabled = false;
+        logPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
+      }
+    };
+  }
+
+  // Focus Timer Scan
   const timerScanTrigger = document.getElementById('timer-btn-scan-ocr');
   const timerScanFile = document.getElementById('timer-scan-page-file');
   if (timerScanTrigger && timerScanFile) {
@@ -9960,6 +10135,180 @@ function bindScannerEvents() {
       timerScanFile.click();
     };
     timerScanFile.onchange = handlePageScan;
+  }
+
+  // Edit Log Scan & Photo
+  const editLogScanTrigger = document.getElementById('edit-log-btn-scan-page');
+  const editLogScanFile = document.getElementById('edit-log-scan-page-file');
+  if (editLogScanTrigger && editLogScanFile) {
+    editLogScanTrigger.onclick = () => {
+      Haptics.click();
+      editLogScanFile.click();
+    };
+    editLogScanFile.onchange = handlePageScan;
+  }
+
+  const editLogPhotoBtn = document.getElementById('edit-log-btn-add-photo');
+  const editLogPhotoFile = document.getElementById('edit-log-photo-file');
+  const editLogPhotoRemove = document.getElementById('edit-log-photo-remove');
+  const editLogPhotoOcrBtn = document.getElementById('edit-log-btn-photo-ocr');
+
+  if (editLogPhotoBtn && editLogPhotoFile) {
+    editLogPhotoBtn.onclick = () => editLogPhotoFile.click();
+    editLogPhotoFile.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+        editLogPhotoData = compressedDataUrl;
+        const previewBox = document.getElementById('edit-log-photo-preview-box');
+        const imgElem = document.getElementById('edit-log-photo-img');
+        if (imgElem) imgElem.src = compressedDataUrl;
+        if (previewBox) previewBox.classList.remove('hidden');
+        Haptics.success();
+      } catch (err) {}
+    };
+  }
+
+  if (editLogPhotoRemove) {
+    editLogPhotoRemove.onclick = () => {
+      editLogPhotoData = null;
+      const previewBox = document.getElementById('edit-log-photo-preview-box');
+      const photoFile = document.getElementById('edit-log-photo-file');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  if (editLogPhotoOcrBtn) {
+    editLogPhotoOcrBtn.onclick = async () => {
+      if (!editLogPhotoData) {
+        showToast('No photo attached to transcribe', 'warning');
+        return;
+      }
+      editLogPhotoOcrBtn.disabled = true;
+      editLogPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Scanning...`;
+      try {
+        const base64Data = editLogPhotoData.split(',')[1];
+        const mimeType = 'image/jpeg';
+        const result = await performPageOCR(base64Data, mimeType, editLogPhotoData);
+        const notesField = document.getElementById('edit-log-notes');
+        if (notesField && result && result.text) {
+          const existing = notesField.value.trim();
+          notesField.value = existing ? `${existing}\n\n[Scanned Page Quote]:\n"${result.text}"` : `[Scanned Page Quote]:\n"${result.text}"`;
+          notesField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        openVerificationModal(result ? result.text : '', result ? result.pageNumber : null, 'edit-log');
+      } catch (err) {
+        if (err.message && err.message.includes("Gemini API Key")) openGeminiKeyModal();
+        showToast('OCR Error: ' + err.message, 'warning');
+      } finally {
+        editLogPhotoOcrBtn.disabled = false;
+        editLogPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
+      }
+    };
+  }
+
+  // Quick Note Scan
+  const qnScanTrigger = document.getElementById('qn-btn-scan-page');
+  const qnScanFile = document.getElementById('qn-scan-page-file');
+  if (qnScanTrigger && qnScanFile) {
+    qnScanTrigger.onclick = () => {
+      Haptics.click();
+      qnScanFile.click();
+    };
+    qnScanFile.onchange = handlePageScan;
+  }
+
+  // Reflection Scan & Photo
+  const refScanTrigger = document.getElementById('reflection-btn-scan-page');
+  const refScanFile = document.getElementById('reflection-scan-page-file');
+  if (refScanTrigger && refScanFile) {
+    refScanTrigger.onclick = () => {
+      Haptics.click();
+      refScanFile.click();
+    };
+    refScanFile.onchange = handlePageScan;
+  }
+
+  const refPhotoBtn = document.getElementById('reflection-btn-add-photo');
+  const refPhotoFile = document.getElementById('reflection-photo-file');
+  const refPhotoRemove = document.getElementById('reflection-photo-remove');
+  const refPhotoOcrBtn = document.getElementById('reflection-btn-photo-ocr');
+
+  if (refPhotoBtn && refPhotoFile) {
+    refPhotoBtn.onclick = () => refPhotoFile.click();
+    refPhotoFile.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+        reflectionPhotoData = compressedDataUrl;
+        const previewBox = document.getElementById('reflection-photo-preview-box');
+        const imgElem = document.getElementById('reflection-photo-img');
+        if (imgElem) imgElem.src = compressedDataUrl;
+        if (previewBox) previewBox.classList.remove('hidden');
+        Haptics.success();
+      } catch (err) {}
+    };
+  }
+
+  if (refPhotoRemove) {
+    refPhotoRemove.onclick = () => {
+      reflectionPhotoData = null;
+      const previewBox = document.getElementById('reflection-photo-preview-box');
+      const photoFile = document.getElementById('reflection-photo-file');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  if (refPhotoOcrBtn) {
+    refPhotoOcrBtn.onclick = async () => {
+      if (!reflectionPhotoData) {
+        showToast('No photo attached to transcribe', 'warning');
+        return;
+      }
+      refPhotoOcrBtn.disabled = true;
+      refPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Scanning...`;
+      try {
+        const base64Data = reflectionPhotoData.split(',')[1];
+        const mimeType = 'image/jpeg';
+        const result = await performPageOCR(base64Data, mimeType, reflectionPhotoData);
+        const textEl = document.getElementById('reflection-note-text');
+        if (textEl && result && result.text) {
+          textEl.value = (textEl.value ? textEl.value + '\n\n' : '') + result.text;
+          showToast('AI transcription complete!', 'success');
+        }
+      } catch (err) {
+        if (err.message && err.message.includes("Gemini API Key")) openGeminiKeyModal();
+        showToast('OCR Error: ' + err.message, 'warning');
+      } finally {
+        refPhotoOcrBtn.disabled = false;
+        refPhotoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
+      }
+    };
+  }
+
+  // Add Book & Edit Book Scans
+  const abScanTrigger = document.getElementById('ab-btn-scan-page');
+  const abScanFile = document.getElementById('ab-scan-page-file');
+  if (abScanTrigger && abScanFile) {
+    abScanTrigger.onclick = () => {
+      Haptics.click();
+      abScanFile.click();
+    };
+    abScanFile.onchange = handlePageScan;
+  }
+
+  const ebScanTrigger = document.getElementById('eb-btn-scan-page');
+  const ebScanFile = document.getElementById('eb-scan-page-file');
+  if (ebScanTrigger && ebScanFile) {
+    ebScanTrigger.onclick = () => {
+      Haptics.click();
+      ebScanFile.click();
+    };
+    ebScanFile.onchange = handlePageScan;
   }
 }
 
@@ -9985,6 +10334,7 @@ window.setWishlistCache = (arr) => { wishlistCache = arr; markViewsDirty(); };
   if (typeof processOfflineSyncQueue === 'function') window.addEventListener('online', processOfflineSyncQueue);
   if (typeof renderPendingShelfNotifiers === 'function') setTimeout(renderPendingShelfNotifiers, 1200);
   if (typeof initQuickNoteModalListeners === 'function') setTimeout(initQuickNoteModalListeners, 1000);
+  if (typeof initEditNoteModalListeners === 'function') setTimeout(initEditNoteModalListeners, 1000);
   if (typeof initGeminiKeyModalListeners === 'function') setTimeout(initGeminiKeyModalListeners, 1000);
 })();
 
@@ -10074,12 +10424,14 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
 
       notesList.push({
         id: noteId,
+        rawId: log.id || null,
         type: 'log',
         title: log.book_title || 'Reading Session',
         author: matchedAuthor,
         date: log.date,
         cycle: log.read_cycle || 1,
         notes: log.notes,
+        photoUrl: log.photo_url || null,
         pageLabel: pageLabel,
         isQuote: hasQuoteMarks,
         isFavorite: isManualFav
@@ -10093,12 +10445,14 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       const isManualFav = favIds.includes(noteId);
       notesList.push({
         id: noteId,
+        rawId: b.id || null,
         type: 'book',
         title: b.title,
         author: b.author || '',
         date: b.date_added || todayISO(),
         cycle: b.read_count || 1,
         notes: b.notes,
+        photoUrl: null,
         pageLabel: null,
         isQuote: /["“"»«>]/.test(b.notes),
         isFavorite: isManualFav
@@ -10110,6 +10464,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     const isManualFav = favIds.includes(sn.id);
     notesList.push({
       id: sn.id,
+      rawId: sn.id,
       type: 'standalone',
       title: sn.title || 'Quick Note',
       author: sn.author || '',
@@ -10293,6 +10648,12 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
+          <button class="quote-card-action-btn action-edit hover:text-sky-400" data-action="edit" title="Edit Note">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="quote-card-action-btn action-delete hover:text-rose-400" data-action="delete" title="Delete Note">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
           <button class="quote-card-action-btn hover:text-theme-gold" data-action="share" title="Share Quote Card PNG">
             <i class="fa-solid fa-camera-retro"></i>
           </button>
@@ -10305,6 +10666,24 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         </div>
       </div>
     `;
+
+    const editBtn = card.querySelector('[data-action="edit"]');
+    if (editBtn) {
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        Haptics.click();
+        openEditNoteModal(n);
+      };
+    }
+
+    const deleteBtn = card.querySelector('[data-action="delete"]');
+    if (deleteBtn) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        Haptics.click();
+        deleteNoteFromKnowledgeView(n);
+      };
+    }
 
     const shareBtn = card.querySelector('[data-action="share"]');
     if (shareBtn) {
@@ -10369,6 +10748,372 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     };
   });
 }
+
+// ── Edit & Delete Note Controller for Notes Tab ──────────────────────────────
+let currentEditingNoteObj = null;
+let editNotePhotoData = null;
+let editNoteModalFavorite = false;
+
+function openEditNoteModal(note) {
+  if (!note) return;
+  currentEditingNoteObj = note;
+  editNotePhotoData = note.photoUrl || null;
+  editNoteModalFavorite = !!note.isFavorite;
+
+  const modal = $('edit-note-modal');
+  if (!modal) return;
+
+  const idInput = $('edit-note-id');
+  const typeInput = $('edit-note-type');
+  const titleInput = $('edit-note-title-input');
+  const authorInput = $('edit-note-author-input');
+  const dateInput = $('edit-note-date-input');
+  const textInput = $('edit-note-text');
+  const previewBox = $('edit-note-photo-preview-box');
+  const imgElem = $('edit-note-photo-img');
+  const subtitle = $('edit-note-modal-subtitle');
+
+  if (idInput) idInput.value = note.id || '';
+  if (typeInput) typeInput.value = note.type || 'standalone';
+  if (titleInput) titleInput.value = note.title || '';
+  if (authorInput) authorInput.value = note.author || '';
+  if (dateInput) dateInput.value = note.date || todayISO();
+  if (textInput) textInput.value = note.notes ? note.notes.replace(/^>\s*/, '') : '';
+
+  if (subtitle) {
+    if (note.type === 'log') subtitle.textContent = 'Editing Reading Session Note';
+    else if (note.type === 'book') subtitle.textContent = 'Editing Book Note';
+    else subtitle.textContent = 'Editing Standalone Note';
+  }
+
+  if (editNotePhotoData && imgElem && previewBox) {
+    imgElem.src = editNotePhotoData;
+    previewBox.classList.remove('hidden');
+  } else if (previewBox) {
+    previewBox.classList.add('hidden');
+  }
+
+  const photoFileInput = $('edit-note-photo-file');
+  if (photoFileInput) photoFileInput.value = '';
+
+  updateEditNoteFavUI();
+  modal.classList.add('open');
+  Haptics.click();
+}
+
+function closeEditNoteModal() {
+  const modal = $('edit-note-modal');
+  if (modal) modal.classList.remove('open');
+  currentEditingNoteObj = null;
+  editNotePhotoData = null;
+}
+
+function updateEditNoteFavUI() {
+  const favIcon = $('edit-note-fav-icon');
+  const favLabel = $('edit-note-fav-label');
+  if (favIcon) {
+    favIcon.className = editNoteModalFavorite ? 'fa-solid fa-star text-theme-gold' : 'fa-regular fa-star';
+  }
+  if (favLabel) {
+    favLabel.textContent = editNoteModalFavorite ? 'Favorited' : 'Mark Favorite';
+    favLabel.className = editNoteModalFavorite ? 'text-theme-gold font-bold' : 'text-theme-secondary';
+  }
+}
+
+async function saveEditedNote() {
+  if (!currentEditingNoteObj) return;
+
+  const note = currentEditingNoteObj;
+  const newTitle = $('edit-note-title-input') ? $('edit-note-title-input').value.trim() : note.title;
+  const newAuthor = $('edit-note-author-input') ? $('edit-note-author-input').value.trim() : note.author;
+  const newDate = $('edit-note-date-input') ? $('edit-note-date-input').value : note.date;
+  const newText = $('edit-note-text') ? $('edit-note-text').value.trim() : '';
+
+  if (!newText && !editNotePhotoData) {
+    showToast('Note cannot be empty. Please enter text or keep photo attached.', 'warning');
+    return;
+  }
+
+  const saveBtn = $('edit-note-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+
+  try {
+    if (note.type === 'standalone' || note.id?.startsWith('sa_') || note.id?.startsWith('reflection_')) {
+      let standaloneNotes = getStandaloneNotes();
+      const idx = standaloneNotes.findIndex(sn => sn.id === note.id);
+      const updatedObj = {
+        id: note.id,
+        title: newTitle || 'Quick Note',
+        author: newAuthor || '',
+        date: newDate || todayISO(),
+        notes: newText || 'Photo Quote',
+        photoUrl: editNotePhotoData || null,
+        isFavorite: editNoteModalFavorite,
+        isQuote: true
+      };
+
+      if (idx >= 0) {
+        standaloneNotes[idx] = updatedObj;
+      } else {
+        standaloneNotes.unshift(updatedObj);
+      }
+      localStorage.setItem('rt_standalone_notes', JSON.stringify(standaloneNotes));
+
+      let favs = getFavoriteNoteIds();
+      if (editNoteModalFavorite && !favs.includes(note.id)) {
+        favs.push(note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      } else if (!editNoteModalFavorite && favs.includes(note.id)) {
+        favs = favs.filter(id => id !== note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      }
+      showToast('✓ Note updated successfully!', 'success');
+
+    } else if (note.type === 'log') {
+      const rawLogId = note.rawId || (note.id?.startsWith('log_') ? note.id.replace(/^log_/, '') : null);
+      let matchedLog = (logsCache || []).find(l => l.id === rawLogId || (l.date === note.date && l.book_title === note.title));
+
+      if (matchedLog && uid && typeof db !== 'undefined') {
+        const logDocId = matchedLog.id || rawLogId;
+        if (logDocId) {
+          const logRef = doc(db, `users/${uid}/reading_logs/${logDocId}`);
+          await updateDoc(logRef, {
+            notes: newText,
+            photo_url: editNotePhotoData || null,
+            updated_at: serverTimestamp()
+          });
+        }
+        matchedLog.notes = newText;
+        matchedLog.photo_url = editNotePhotoData || null;
+      } else if (matchedLog) {
+        matchedLog.notes = newText;
+        matchedLog.photo_url = editNotePhotoData || null;
+      }
+
+      let favs = getFavoriteNoteIds();
+      if (editNoteModalFavorite && !favs.includes(note.id)) {
+        favs.push(note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      } else if (!editNoteModalFavorite && favs.includes(note.id)) {
+        favs = favs.filter(id => id !== note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      }
+      showToast('✓ Session note updated!', 'success');
+
+    } else if (note.type === 'book') {
+      const rawBookId = note.rawId || (note.id?.startsWith('book_') ? note.id.replace(/^book_/, '') : null);
+      let matchedBook = (booksCache || []).find(b => b.id === rawBookId || b.title === note.title);
+
+      if (matchedBook && uid && typeof db !== 'undefined') {
+        const bookDocId = matchedBook.id || rawBookId;
+        if (bookDocId) {
+          const bookRef = doc(db, `users/${uid}/books/${bookDocId}`);
+          await updateDoc(bookRef, {
+            notes: newText,
+            updated_at: serverTimestamp()
+          });
+        }
+        matchedBook.notes = newText;
+      } else if (matchedBook) {
+        matchedBook.notes = newText;
+      }
+
+      let favs = getFavoriteNoteIds();
+      if (editNoteModalFavorite && !favs.includes(note.id)) {
+        favs.push(note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      } else if (!editNoteModalFavorite && favs.includes(note.id)) {
+        favs = favs.filter(id => id !== note.id);
+        localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      }
+      showToast('✓ Book note updated!', 'success');
+    }
+
+    closeEditNoteModal();
+    renderKnowledgeView();
+    Haptics.success();
+  } catch (err) {
+    showToast('Error saving note: ' + err.message, 'error');
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+async function deleteNoteFromKnowledgeView(note) {
+  if (!note) return;
+  if (!confirm(`Delete this note "${(note.notes || '').slice(0, 30)}..."?`)) return;
+
+  try {
+    if (note.type === 'standalone' || note.id?.startsWith('sa_') || note.id?.startsWith('reflection_')) {
+      let standaloneNotes = getStandaloneNotes();
+      standaloneNotes = standaloneNotes.filter(sn => sn.id !== note.id);
+      localStorage.setItem('rt_standalone_notes', JSON.stringify(standaloneNotes));
+
+      let favs = getFavoriteNoteIds().filter(id => id !== note.id);
+      localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      showToast('✓ Note deleted', 'info');
+
+    } else if (note.type === 'log') {
+      const rawLogId = note.rawId || (note.id?.startsWith('log_') ? note.id.replace(/^log_/, '') : null);
+      let matchedLog = (logsCache || []).find(l => l.id === rawLogId || (l.date === note.date && l.book_title === note.title));
+
+      if (matchedLog && uid && typeof db !== 'undefined') {
+        const logDocId = matchedLog.id || rawLogId;
+        if (logDocId) {
+          const logRef = doc(db, `users/${uid}/reading_logs/${logDocId}`);
+          await updateDoc(logRef, {
+            notes: '',
+            photo_url: null,
+            updated_at: serverTimestamp()
+          });
+        }
+        matchedLog.notes = '';
+        matchedLog.photo_url = null;
+      } else if (matchedLog) {
+        matchedLog.notes = '';
+        matchedLog.photo_url = null;
+      }
+
+      let favs = getFavoriteNoteIds().filter(id => id !== note.id);
+      localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      showToast('✓ Session note removed', 'info');
+
+    } else if (note.type === 'book') {
+      const rawBookId = note.rawId || (note.id?.startsWith('book_') ? note.id.replace(/^book_/, '') : null);
+      let matchedBook = (booksCache || []).find(b => b.id === rawBookId || b.title === note.title);
+
+      if (matchedBook && uid && typeof db !== 'undefined') {
+        const bookDocId = matchedBook.id || rawBookId;
+        if (bookDocId) {
+          const bookRef = doc(db, `users/${uid}/books/${bookDocId}`);
+          await updateDoc(bookRef, {
+            notes: '',
+            updated_at: serverTimestamp()
+          });
+        }
+        matchedBook.notes = '';
+      } else if (matchedBook) {
+        matchedBook.notes = '';
+      }
+
+      let favs = getFavoriteNoteIds().filter(id => id !== note.id);
+      localStorage.setItem('rt_favorite_notes', JSON.stringify(favs));
+      showToast('✓ Book note removed', 'info');
+    }
+
+    if (currentEditingNoteObj && currentEditingNoteObj.id === note.id) {
+      closeEditNoteModal();
+    }
+
+    renderKnowledgeView();
+    Haptics.success();
+  } catch (err) {
+    showToast('Error deleting note: ' + err.message, 'error');
+  }
+}
+
+function initEditNoteModalListeners() {
+  const closeBtn = $('edit-note-close');
+  const cancelBtn = $('edit-note-cancel-btn');
+  const backdrop = $('edit-note-backdrop');
+  const favToggle = $('edit-note-favorite-toggle');
+  const deleteBtn = $('edit-note-delete-btn');
+  const saveBtn = $('edit-note-save-btn');
+  const photoTrigger = $('edit-note-btn-add-photo');
+  const photoFile = $('edit-note-photo-file');
+  const photoRemove = $('edit-note-photo-remove');
+  const photoOcrBtn = $('edit-note-btn-photo-ocr');
+  const scanTrigger = $('edit-note-btn-scan-page');
+  const scanFile = $('edit-note-scan-page-file');
+
+  if (closeBtn) closeBtn.onclick = closeEditNoteModal;
+  if (cancelBtn) cancelBtn.onclick = closeEditNoteModal;
+  if (backdrop) backdrop.onclick = closeEditNoteModal;
+
+  if (favToggle) {
+    favToggle.onclick = () => {
+      editNoteModalFavorite = !editNoteModalFavorite;
+      updateEditNoteFavUI();
+      Haptics.click();
+    };
+  }
+
+  if (deleteBtn) {
+    deleteBtn.onclick = () => {
+      if (currentEditingNoteObj) deleteNoteFromKnowledgeView(currentEditingNoteObj);
+    };
+  }
+
+  if (saveBtn) saveBtn.onclick = saveEditedNote;
+
+  if (photoTrigger && photoFile) {
+    photoTrigger.onclick = () => photoFile.click();
+    photoFile.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const compressedDataUrl = await compressImage(file, 800, 800, 0.7);
+        editNotePhotoData = compressedDataUrl;
+        const previewBox = $('edit-note-photo-preview-box');
+        const imgElem = $('edit-note-photo-img');
+        if (imgElem) imgElem.src = compressedDataUrl;
+        if (previewBox) previewBox.classList.remove('hidden');
+        Haptics.success();
+      } catch (err) {}
+    };
+  }
+
+  if (photoRemove) {
+    photoRemove.onclick = () => {
+      editNotePhotoData = null;
+      const previewBox = $('edit-note-photo-preview-box');
+      const photoFile = $('edit-note-photo-file');
+      if (previewBox) previewBox.classList.add('hidden');
+      if (photoFile) photoFile.value = '';
+    };
+  }
+
+  if (photoOcrBtn) {
+    photoOcrBtn.onclick = async () => {
+      if (!editNotePhotoData) {
+        showToast('No photo attached to transcribe', 'warning');
+        return;
+      }
+      photoOcrBtn.disabled = true;
+      photoOcrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Scanning...`;
+      try {
+        const base64Data = editNotePhotoData.split(',')[1];
+        const mimeType = 'image/jpeg';
+        const result = await performPageOCR(base64Data, mimeType, editNotePhotoData);
+        const textInput = $('edit-note-text');
+        if (textInput && result && result.text) {
+          textInput.value = (textInput.value ? textInput.value + '\n\n' : '') + result.text;
+          showToast('AI transcription complete!', 'success');
+          Haptics.success();
+        }
+      } catch (err) {
+        if (err.message && err.message.includes("Gemini API Key")) openGeminiKeyModal();
+        showToast('OCR Error: ' + err.message, 'warning');
+      } finally {
+        photoOcrBtn.disabled = false;
+        photoOcrBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> OCR`;
+      }
+    };
+  }
+
+  if (scanTrigger && scanFile) {
+    scanTrigger.onclick = () => {
+      Haptics.click();
+      scanFile.click();
+    };
+    scanFile.onchange = handlePageScan;
+  }
+}
+
+window.openEditNoteModal = openEditNoteModal;
+window.closeEditNoteModal = closeEditNoteModal;
+window.saveEditedNote = saveEditedNote;
+window.deleteNoteFromKnowledgeView = deleteNoteFromKnowledgeView;
 
 function openQuickNoteModal() {
   Haptics.click();
@@ -11552,6 +12297,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVoiceDictation('qn-text-input', 'qn-btn-dictate');
   setupVoiceDictation('log-notes', 'log-btn-dictate');
   setupVoiceDictation('edit-log-notes', 'edit-log-btn-dictate');
+  setupVoiceDictation('reflection-note-text', 'reflection-btn-dictate');
+  setupVoiceDictation('edit-note-text', 'edit-note-btn-dictate');
+  setupVoiceDictation('ab-notes', 'ab-btn-dictate');
+  setupVoiceDictation('eb-notes', 'eb-btn-dictate');
+
+  if (typeof initEditNoteModalListeners === 'function') {
+    initEditNoteModalListeners();
+  }
 
   const openBtn = document.getElementById('btn-open-wrapped');
   const closeBtn = document.getElementById('wrapped-modal-close');
@@ -12058,12 +12811,22 @@ async function fetchOpenLibraryISBN(isbn) {
 
 // --- 3. Session Log Enhancements ---
 
+let reflectionPhotoData = null;
+
 function openPostSessionReflectionModal(logId, bookTitle) {
   const modal = document.getElementById('post-session-reflection-modal');
   if (!modal) return;
 
   const textEl = document.getElementById('reflection-note-text');
   if (textEl) textEl.value = '';
+  reflectionPhotoData = null;
+
+  const previewBox = document.getElementById('reflection-photo-preview-box');
+  const imgElem = document.getElementById('reflection-photo-img');
+  if (previewBox) previewBox.classList.add('hidden');
+  if (imgElem) imgElem.src = '';
+  const photoFile = document.getElementById('reflection-photo-file');
+  if (photoFile) photoFile.value = '';
 
   const skipBtn = document.getElementById('btn-reflection-skip');
   const saveBtn = document.getElementById('btn-reflection-save');
@@ -12071,23 +12834,27 @@ function openPostSessionReflectionModal(logId, bookTitle) {
 
   modal.classList.add('open');
 
-  const close = () => modal.classList.remove('open');
+  const close = () => {
+    modal.classList.remove('open');
+    reflectionPhotoData = null;
+  };
   if (skipBtn) skipBtn.onclick = close;
   if (closeBtn) closeBtn.onclick = close;
 
   if (saveBtn) {
     saveBtn.onclick = () => {
-      const noteVal = textEl.value.trim();
-      if (noteVal) {
+      const noteVal = textEl ? textEl.value.trim() : '';
+      if (noteVal || reflectionPhotoData) {
         saveStandaloneNote({
           id: `reflection_${Date.now()}`,
           title: bookTitle || 'Reading Session Reflection',
-          notes: noteVal,
+          notes: noteVal || 'Photo Reflection',
+          photoUrl: reflectionPhotoData || null,
           date: new Date().toISOString().split('T')[0],
           isQuote: true,
           isFavorite: false
         });
-        if (typeof showToast === 'function') showToast('Reflection saved to Knowledge Vault!');
+        if (typeof showToast === 'function') showToast('Reflection saved to Knowledge Vault!', 'success');
         if (typeof renderKnowledgeView === 'function') renderKnowledgeView();
       }
       close();
