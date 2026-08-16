@@ -10668,11 +10668,11 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   const itemsToRender = filtered.slice(0, limit);
 
   itemsToRender.forEach(n => {
-    const card = el('div', 'quote-card animate-fade-in flex flex-col gap-2 relative');
+    const card = el('div', 'quote-card animate-fade-in flex flex-col gap-2.5 relative');
     
     let photoHTML = '';
     if (n.photoUrl) {
-      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-48 border border-theme"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" loading="lazy" decoding="async" /></div>`;
+      photoHTML = `<div class="mb-2 rounded-xl overflow-hidden max-h-56 border border-theme shadow-sm"><img src="${n.photoUrl}" class="w-full object-cover" alt="Note Photo Attachment" loading="lazy" decoding="async" /></div>`;
     }
 
     let pageHTML = '';
@@ -10680,33 +10680,50 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
       pageHTML = `<span class="page-badge"><i class="fa-solid fa-bookmark text-[9px] text-theme-gold mr-1"></i>${escapeHtml(n.pageLabel)}</span>`;
     }
 
+    let typeTagHTML = '';
+    if (n.isQuote) {
+      typeTagHTML = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-theme-gold border border-amber-500/20 flex items-center gap-1"><i class="fa-solid fa-quote-left text-[9px]"></i> Quote</span>`;
+    } else {
+      typeTagHTML = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/20 flex items-center gap-1"><i class="fa-solid fa-feather-pointed text-[9px]"></i> Reflection</span>`;
+    }
+
     card.innerHTML = `
       ${photoHTML}
       <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
         "${escapeHtml(n.notes.replace(/^>\s*/, ''))}"
       </blockquote>
-      <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-theme">
-        <div class="flex flex-col min-w-0 pr-2">
-          <span class="font-bold truncate" style="color: var(--gold)">${escapeHtml(n.title)}</span>
-          <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[10px] text-theme-secondary">${n.author ? escapeHtml(n.author) + ' • ' : ''}${fmtDate(n.date)}</span>
-            ${pageHTML}
-          </div>
+
+      <!-- Multi-Line Book & Citation Metadata Tier -->
+      <div class="flex flex-col gap-1 mt-1 pt-2.5 border-t border-theme">
+        <div class="flex items-start justify-between gap-2">
+          <span class="font-bold text-sm tracking-tight leading-snug" style="color: var(--gold)">${escapeHtml(n.title)}</span>
+          ${pageHTML}
+        </div>
+        <div class="flex items-center flex-wrap gap-y-0.5 text-xs text-theme-secondary">
+          ${n.author ? `<span class="font-medium text-theme-primary mr-1.5">${escapeHtml(n.author)}</span><span class="text-theme-tertiary opacity-40 mr-1.5">•</span>` : ''}
+          <span class="text-theme-tertiary">${fmtDate(n.date)}</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons Toolbar (Dedicated Bottom Row) -->
+      <div class="flex items-center justify-between gap-1.5 pt-2.5 mt-1 border-t border-theme/40">
+        <div class="flex items-center gap-1.5 shrink-0">
+          ${typeTagHTML}
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <button class="quote-card-action-btn action-edit hover:text-sky-400" data-action="edit" title="Edit Note">
+          <button class="quote-card-action-btn action-edit hover:text-sky-400" data-action="edit" title="Edit Note" aria-label="Edit Note">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
-          <button class="quote-card-action-btn action-delete hover:text-rose-400" data-action="delete" title="Delete Note">
+          <button class="quote-card-action-btn action-delete hover:text-rose-400" data-action="delete" title="Delete Note" aria-label="Delete Note">
             <i class="fa-solid fa-trash-can"></i>
           </button>
-          <button class="quote-card-action-btn hover:text-theme-gold" data-action="share" title="Share Quote Card PNG">
+          <button class="quote-card-action-btn hover:text-theme-gold" data-action="share" title="Share Quote Card PNG" aria-label="Share Quote Card">
             <i class="fa-solid fa-camera-retro"></i>
           </button>
-          <button class="quote-card-action-btn ${n.isFavorite ? 'active-fav' : ''}" data-action="fav" data-id="${n.id}" title="${n.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}">
+          <button class="quote-card-action-btn ${n.isFavorite ? 'active-fav' : ''}" data-action="fav" data-id="${n.id}" title="${n.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}" aria-label="Favorite Note">
             <i class="${n.isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
           </button>
-          <button class="quote-card-action-btn" data-action="copy" title="Copy Quote with Citation">
+          <button class="quote-card-action-btn" data-action="copy" title="Copy Quote with Citation" aria-label="Copy Quote">
             <i class="fa-regular fa-copy"></i>
           </button>
         </div>
@@ -10794,6 +10811,8 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     };
   });
 }
+window.renderKnowledgeView = renderKnowledgeView;
+window.showView = showView;
 
 // ── Edit & Delete Note Controller for Notes Tab ──────────────────────────────
 let currentEditingNoteObj = null;
