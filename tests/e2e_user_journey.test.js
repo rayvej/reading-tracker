@@ -100,9 +100,12 @@ try {
 
   // ── Test 3: Manifest is accessible ──────────────────────────────────
   await test('PWA manifest is accessible', async () => {
-    const response = await page.goto(`${APP_URL}/manifest.json`);
-    assert.equal(response.status(), 200);
-    const manifest = await response.json();
+    const manifestResult = await page.evaluate(async (url) => {
+      const res = await fetch(url);
+      return { status: res.status, data: await res.json() };
+    }, `${APP_URL}/manifest.json`);
+    assert.equal(manifestResult.status, 200);
+    const manifest = manifestResult.data;
     assert.equal(manifest.name, 'Reading Tracker');
     assert.ok(manifest.icons.length >= 2, 'Should have at least 2 icons');
   });
