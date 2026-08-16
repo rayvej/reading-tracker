@@ -9404,7 +9404,7 @@ function setupServiceWorkerUpdateSystem() {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (window.isMockAuth || refreshing) return;
     refreshing = true;
-    showUpdateModal();
+    window.location.reload();
   });
 
   window.addEventListener('load', () => {
@@ -9413,6 +9413,7 @@ function setupServiceWorkerUpdateSystem() {
 
       if (reg.waiting) {
         window.swWaitingWorker = reg.waiting;
+        showUpdateModal();
       }
 
       if (reg && reg.update) {
@@ -9445,32 +9446,77 @@ function setupSettingsUpdateInspector() {
         b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
       });
 
-      if ('serviceWorker' in navigator && window.swRegistration) {
-        try {
-          await window.swRegistration.update();
-        } catch (e) {
-          console.warn('SW manual update check error:', e);
-        }
-      }
-
-      setTimeout(() => {
+      const resetButton = () => {
         checkBtns.forEach(b => {
           b.disabled = false;
           b.innerHTML = '<i class="fa-solid fa-rotate text-[11px]"></i> Check Updates';
         });
+      };
 
-        const waiting = window.swWaitingWorker || (window.swRegistration && window.swRegistration.waiting);
-        if (waiting) {
-          window.swWaitingWorker = waiting;
-          showUpdateModal();
-        } else {
-          const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-          const ver = badge ? badge.textContent : 'v110';
-          if (typeof showToast === 'function') {
-            showToast(`You are running the latest version (${ver})`, 'success');
-          }
+      if (!('serviceWorker' in navigator)) {
+        resetButton();
+        if (typeof showToast === 'function') showToast('Service worker not supported in this browser', 'info');
+        return;
+      }
+
+      try {
+        const reg = window.swRegistration || await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          resetButton();
+          if (typeof showToast === 'function') showToast('You are running the latest version', 'success');
+          return;
         }
-      }, 800);
+
+        // 1. If a worker is already waiting, show update modal immediately
+        if (reg.waiting) {
+          window.swWaitingWorker = reg.waiting;
+          resetButton();
+          showUpdateModal();
+          return;
+        }
+
+        // 2. Otherwise query network server for new sw.js
+        let updateDiscovered = false;
+        
+        const onUpdateFound = () => {
+          updateDiscovered = true;
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed') {
+                window.swWaitingWorker = installingWorker;
+                resetButton();
+                showUpdateModal();
+              }
+            });
+          }
+        };
+
+        reg.addEventListener('updatefound', onUpdateFound, { once: true });
+        await reg.update();
+
+        // 3. If after 1.2s no update was found or installing, report latest version
+        setTimeout(() => {
+          if (!updateDiscovered && !reg.waiting && !reg.installing) {
+            resetButton();
+            const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
+            const ver = badge ? badge.textContent : 'v121';
+            if (typeof showToast === 'function') {
+              showToast(`You are running the latest version (${ver})`, 'success');
+            }
+          } else if (reg.waiting) {
+            window.swWaitingWorker = reg.waiting;
+            resetButton();
+            showUpdateModal();
+          }
+        }, 1200);
+      } catch (e) {
+        console.warn('SW manual update check error:', e);
+        resetButton();
+        if (typeof showToast === 'function') {
+          showToast('Update check completed. Running latest version.', 'info');
+        }
+      }
     });
   });
 

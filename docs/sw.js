@@ -33,7 +33,6 @@ self.addEventListener('install', event => {
       );
     })
   );
-  self.skipWaiting();
 });
 
 // ── Activate: clean up old caches ────────────────────────────────────────────
