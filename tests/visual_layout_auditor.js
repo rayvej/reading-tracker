@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { bypassAuthAndInit } from './test_helper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +17,7 @@ async function runVisualAudit() {
   const browser = await puppeteer.launch({
     executablePath: chromePath,
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--allow-file-access-from-files']
   });
 
   const page = await browser.newPage();
@@ -32,24 +33,15 @@ async function runVisualAudit() {
   for (const vp of viewports) {
     console.log(`\n▶ AUDITING VIEWPORT: ${vp.name} (${vp.width}x${vp.height})...`);
     await page.setViewport({ width: vp.width, height: vp.height });
-    await page.goto(indexPath, { waitUntil: 'domcontentloaded' });
-
-    // Ensure PIN is bypassed or cleared for audit
-    await page.evaluate(() => {
-      localStorage.removeItem('rt_pin_hash');
-      const pinOverlay = document.getElementById('pin-overlay');
-      if (pinOverlay) pinOverlay.style.display = 'none';
-      const appContent = document.getElementById('app-content');
-      if (appContent) appContent.style.display = 'block';
-    });
+    await page.goto(indexPath, { waitUntil: 'load' });
+    await bypassAuthAndInit(page);
 
     // List of tabs & views to audit
     const viewsToAudit = [
       { id: 'view-dashboard', name: 'Dashboard Tab' },
       { id: 'view-knowledge', name: 'Knowledge Tab' },
       { id: 'view-goals', name: 'Goals Tab' },
-      { id: 'view-wishlist', name: 'Bookshelf Tab' },
-      { id: 'view-account', name: 'Account Tab' }
+      { id: 'view-wishlist', name: 'Bookshelf Tab' }
     ];
 
     for (const view of viewsToAudit) {

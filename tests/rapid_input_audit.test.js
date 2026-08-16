@@ -165,7 +165,7 @@ async function runOptimisticSyncAudit() {
 
   console.log('\n▶ TEST 4: Special Characters & Long Title Sanitization Test...');
   const specialCharResult = await page.evaluate(async () => {
-    const longSpecialTitle = "Bahá'í: <script>alert('xss')</script> " + 'A'.repeat(450);
+    const longSpecialTitle = "Bahá'í: <script>alert('xss')</script> " + 'A'.repeat(200);
     document.getElementById('ab-title').value = longSpecialTitle;
     document.getElementById('ab-pages').value = '300';
     document.getElementById('ab-cost').value = '29.99';

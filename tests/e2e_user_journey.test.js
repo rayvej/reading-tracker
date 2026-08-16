@@ -42,6 +42,7 @@ async function launchBrowser() {
     browser = await puppeteer.default.launch({
       executablePath,
       headless: 'new',
+      protocolTimeout: 60000,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     page = await browser.newPage();
@@ -71,22 +72,28 @@ async function test(name, fn) {
   }
 }
 
-console.log('\\n═══ E2E User Journey Tests ═══\\n');
+console.log('\n═══ E2E User Journey Tests ═══\n');
 
 try {
   await launchBrowser();
   
   // ── Test 1: App loads successfully ──────────────────────────────────
   await test('App loads and shows auth screen', async () => {
-    await page.goto(APP_URL, { waitUntil: 'networkidle2', timeout: 15000 });
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
     const title = await page.title();
     assert.equal(title, 'Reading Tracker');
   });
 
   // ── Test 2: Service Worker registers ────────────────────────────────
   await test('Service Worker registers', async () => {
-    const swRegistered = await page.evaluate(() => {
-      return navigator.serviceWorker ? navigator.serviceWorker.ready.then(() => true) : false;
+    const swRegistered = await page.evaluate(async () => {
+      if (!navigator.serviceWorker) return false;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        return !!reg;
+      } catch (e) {
+        return false;
+      }
     });
     assert.ok(swRegistered, 'Service worker should register');
   });
@@ -102,16 +109,21 @@ try {
 
   // ── Test 4: Offline mode ────────────────────────────────────────────
   await test('App shell loads from cache when offline', async () => {
-    await page.goto(APP_URL, { waitUntil: 'networkidle2' });
-    // Wait for SW to cache
-    await new Promise(r => setTimeout(r, 2000));
+    await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    // Wait for SW ready
+    await page.evaluate(async () => {
+      if (navigator.serviceWorker) {
+        await navigator.serviceWorker.ready;
+      }
+    });
+    await new Promise(r => setTimeout(r, 1000));
     
     // Go offline
     await page.setOfflineMode(true);
     
     // Reload — should serve from cache
     try {
-      await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+      await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
       const title = await page.title();
       assert.equal(title, 'Reading Tracker', 'Should load from SW cache offline');
     } finally {

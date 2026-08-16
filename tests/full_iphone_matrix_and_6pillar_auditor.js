@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer-core';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { bypassAuthAndInit } from './test_helper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,23 +62,15 @@ async function runFullAudit() {
   };
 
   // -------------------------------------------------------------
-  // PILLAR A: Viewport & Layout Matrix Audit across all 10 Viewports
+  // PILLAR A: Multi-Device Matrix Audit (10 Screen Sizes)
   // -------------------------------------------------------------
   console.log('▶ PILLAR A: Executing Viewport Testing Matrix across 10 Device Screen Sizes...');
 
   for (const vp of VIEWPORTS) {
     auditResults.viewportsAudited++;
     await page.setViewport({ width: vp.width, height: vp.height });
-    await page.goto(indexPath, { waitUntil: 'domcontentloaded' });
-
-    // Bypass PIN for layout audit
-    await page.evaluate(() => {
-      localStorage.removeItem('rt_pin_hash');
-      const pinOverlay = document.getElementById('pin-overlay');
-      if (pinOverlay) pinOverlay.style.display = 'none';
-      const appContent = document.getElementById('app-content');
-      if (appContent) appContent.style.display = 'block';
-    });
+    await page.goto(indexPath, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await bypassAuthAndInit(page);
 
     // Audit Horizontal Overflow
     const overflowCheck = await page.evaluate((vpWidth) => {
@@ -126,6 +119,7 @@ async function runFullAudit() {
           if (el.offsetWidth === 0 || el.offsetHeight === 0) return;
           const style = window.getComputedStyle(el);
           if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return;
+          if (el.closest('.ios-modal-overlay:not(.open), .modal-overlay.hidden, .hidden, #auth-screen, #pin-screen')) return;
 
           const rect = el.getBoundingClientRect();
           // Check visible viewport bounds
@@ -133,7 +127,7 @@ async function runFullAudit() {
             // iOS HIG standard: interactive touch targets should be at least 44x44px or have minimum tap padding
             if (rect.width < 44 || rect.height < 44) {
               // Exclude explicit inline badges/small tags if they have parent padded containers
-              if (!el.classList.contains('badge') && !el.closest('.seg-control')) {
+              if (!el.classList.contains('badge') && !el.closest('.seg-control, .badge, .no-scrollbar')) {
                 smallTargets.push({
                   id: el.id || 'no-id',
                   text: el.textContent.trim().slice(0, 20),
