@@ -1,12 +1,14 @@
-const CACHE_NAME = 'reading-tracker-v121';
+const CACHE_NAME = 'reading-tracker-v122';
 const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=120',
-  BASE + 'app.js?v=120',
+  BASE + 'style.css?v=121',
+  BASE + 'app.js?v=121',
+  BASE + 'tailwind.min.css',
   BASE + 'js/install-prompt.js',
-  BASE + 'js/offline-db.js',
+  BASE + 'js/seed10YearData.js',
+  BASE + 'js/modules/gemini-service.js',
   BASE + 'firebase-config.js',
   BASE + 'manifest.json',
   BASE + 'icon-192.png',

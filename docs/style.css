@@ -770,7 +770,7 @@ input:focus, select:focus, textarea:focus, .glass-input:focus {
 }
 
 [data-theme="parched-paper"] #tab-bar,
-[data-theme="light"] #tab-bar,
+[data-mode="light"] #tab-bar,
 body.light-mode #tab-bar {
   background: rgba(255, 255, 255, 0.94) !important;
   border: 1px solid rgba(60, 45, 30, 0.14) !important;
@@ -1908,7 +1908,7 @@ body {
 }
 
 [data-theme="parched-paper"] .fab-log-btn,
-[data-theme="light"] .fab-log-btn,
+[data-mode="light"] .fab-log-btn,
 body.light-mode .fab-log-btn {
   border-color: #FFFFFF !important;
   color: #FFFFFF !important;

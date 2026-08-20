@@ -285,6 +285,7 @@ function setEditorialMode(mode) {
   localStorage.setItem('rt_theme', mode);
 
   const isLight = mode === 'light';
+  document.body.classList.toggle('light-mode', isLight);
   updateMetaThemeColor(isLight);
 
   const icon = document.getElementById('theme-icon');
@@ -297,6 +298,10 @@ function setEditorialMode(mode) {
   if (acctIcon) {
     acctIcon.className = isLight ? 'fa-solid fa-sun text-sm text-amber-500' : 'fa-solid fa-moon text-sm text-theme-secondary';
     acctIcon.style.color = isLight ? '#f59e0b' : '';
+  }
+
+  if (typeof syncAccountThemeSwitch === 'function') {
+    syncAccountThemeSwitch();
   }
 
   document.querySelectorAll('.mode-select-btn').forEach(btn => {
@@ -634,14 +639,19 @@ async function initApp() {
   setupSettingsModal();
   setupStarterImportModal();
   setupAccountView();
-  showView('dashboard'); // Start on Dashboard
-  
-  window.saveNewBook = saveNewBook;
-  window.submitLog = submitLog;
-  window.initApp = initApp;
-  window.optimisticSaveDoc = optimisticSaveDoc;
-  window.importFromJSON = importFromJSON;
-  window.exportToJSON = exportToJSON;
+  // Handle PWA shortcut action param if present
+  const actionParam = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search).get('action') : null;
+  if (actionParam === 'log') {
+    showView('log');
+  } else if (actionParam === 'add-book') {
+    showView('wishlist');
+    setTimeout(() => {
+      const addModal = $('add-book-modal');
+      if (addModal) addModal.classList.add('open');
+    }, 100);
+  } else {
+    showView('dashboard'); // Start on Dashboard
+  }
   
   window.saveNewBook = saveNewBook;
   window.submitLog = submitLog;
@@ -9551,20 +9561,16 @@ window.setupSettingsUpdateInspector = setupSettingsUpdateInspector;
 
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  const modals = [
-    'book-detail-modal', 'goals-modal', 'settings-modal',
-    'add-book-modal', 'edit-book-modal', 'stats-detail-modal',
-    'notes-modal', 'heatmapDayModal', 'contextualDetailModal',
-    'cover-search-modal'
-  ];
-  for (const id of modals) {
-    const modal = document.getElementById(id);
-    if (modal && !modal.classList.contains('hidden')) {
-      modal.classList.add('hidden');
-      document.body.style.overflow = '';
-      e.preventDefault();
-      return;
-    }
+  const openModals = Array.from(document.querySelectorAll(
+    '.ios-modal-overlay.open, .modal-overlay.open, .modal.modal-open, .fixed.open'
+  )).filter(m => !m.classList.contains('hidden') && m.style.display !== 'none');
+  
+  if (openModals.length > 0) {
+    const topModal = openModals[openModals.length - 1];
+    topModal.classList.remove('open', 'modal-open');
+    if (topModal.id === 'pwa-update-modal') topModal.style.display = 'none';
+    document.body.style.overflow = '';
+    e.preventDefault();
   }
 });
 

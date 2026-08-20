@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=119">
+  <link rel="stylesheet" href="style.css?v=121">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -436,8 +436,9 @@
               <div class="relative flex-1">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-theme-secondary"></i>
                 <input type="text" id="knowledge-search-input"
+                  aria-label="Search notes, quotes, and reflections"
                   class="w-full pl-9 pr-8 py-2.5 text-xs font-medium rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all placeholder:text-theme-tertiary"
-                  placeholder="Search notes & stories (e.g. Badašt, Tahirih, Covenant)..." />
+                  placeholder="Search notes &amp; stories (e.g. Badašt, Tahirih, Covenant)..." />
                 <button id="knowledge-search-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-theme-secondary hover:text-theme-primary">
                   <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -1524,6 +1525,7 @@
               <div class="relative flex-1">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
                 <input type="search" id="wishlist-search"
+                  aria-label="Search library by title, author, group, or collection"
                   class="input input-bordered glass-input w-full pl-10 text-xs"
                   placeholder="Search title, author, group, collection or notes…">
               </div>
@@ -1805,12 +1807,12 @@
                 <button id="btn-import-goodreads" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.99] transition-all text-xs font-bold text-theme-gold cursor-pointer">
                   <i class="fa-solid fa-book-bookmark text-theme-gold"></i> Import Goodreads CSV
                 </button>
-                <input type="file" id="goodreads-csv-input" accept=".csv" class="hidden">
+                <input type="file" id="goodreads-csv-input" aria-label="Goodreads CSV File Input" accept=".csv" class="hidden">
 
                 <button id="btn-import-kindle" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 active:scale-[0.99] transition-all text-xs font-bold text-sky-300 cursor-pointer">
                   <i class="fa-solid fa-tablet-screen-button text-sky-400"></i> Import Kindle Clippings
                 </button>
-                <input type="file" id="kindle-clippings-input" accept=".txt" class="hidden">
+                <input type="file" id="kindle-clippings-input" aria-label="Kindle Clippings Text File Input" accept=".txt" class="hidden">
               </div>
 
               <!-- Backup & Restore Row -->
@@ -1821,7 +1823,7 @@
                 <button id="acct-btn-import-json" class="flex items-center justify-center gap-2 p-3 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 active:scale-[0.99] transition-all text-xs font-bold text-theme-primary cursor-pointer">
                   <i class="fa-solid fa-file-import text-sky-400"></i> Import JSON
                 </button>
-                <input type="file" id="acct-json-file-input" accept=".json" class="hidden">
+                <input type="file" id="acct-json-file-input" aria-label="Backup JSON File Input" accept=".json" class="hidden">
               </div>
 
 
@@ -1864,7 +1866,7 @@
                 To transcribe scanned book pages into quotes automatically, enter your free <strong class="text-theme-gold">Gemini API Key</strong> from Google AI Studio.
               </p>
               <div class="flex items-center gap-2">
-                <input type="password" id="acct-gemini-api-key" placeholder="Paste AI Studio API Key (AIzaSy...)" class="input input-bordered glass-input flex-1 min-w-0 text-xs h-9 font-mono">
+                <input type="password" id="acct-gemini-api-key" aria-label="Google AI Studio Gemini API Key" placeholder="Paste AI Studio API Key (AIzaSy...)" class="input input-bordered glass-input flex-1 min-w-0 text-xs h-9 font-mono">
                 <button id="btn-save-gemini-key" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-95 transition-all cursor-pointer shrink-0">
                   Save Key
                 </button>
@@ -2025,17 +2027,17 @@
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Daily Pages</span></label>
           <div class="flex items-center gap-1">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-pages" data-step-dir="-1">-</button>
-            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-daily-pages" min="1" placeholder="20" onfocus="this.select()">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-pages" data-step-dir="1">+</button>
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-pages" data-step-dir="-1" aria-label="Decrease Daily Pages">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-daily-pages" aria-label="Daily Pages Goal" min="1" placeholder="20" onfocus="this.select()">
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-pages" data-step-dir="1" aria-label="Increase Daily Pages">+</button>
           </div>
         </div>
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Daily Minutes</span></label>
           <div class="flex items-center gap-1">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-minutes" data-step-dir="-1">-</button>
-            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-daily-minutes" min="1" placeholder="20" onfocus="this.select()">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-minutes" data-step-dir="1">+</button>
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-minutes" data-step-dir="-1" aria-label="Decrease Daily Minutes">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-daily-minutes" aria-label="Daily Minutes Goal" min="1" placeholder="20" onfocus="this.select()">
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-daily-minutes" data-step-dir="1" aria-label="Increase Daily Minutes">+</button>
           </div>
         </div>
       </div>
@@ -2046,22 +2048,22 @@
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Books</span></label>
           <div class="flex items-center gap-1">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-annual-books" data-step-dir="-1">-</button>
-            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-annual-books" min="1" max="365" placeholder="12" onfocus="this.select()">
-            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-annual-books" data-step-dir="1">+</button>
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-annual-books" data-step-dir="-1" aria-label="Decrease Annual Books">-</button>
+            <input type="number" class="input input-bordered glass-input w-full text-center px-1 h-11 min-h-[44px]" id="goal-annual-books" aria-label="Annual Books Goal" min="1" max="365" placeholder="12" onfocus="this.select()">
+            <button type="button" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 border border-theme text-theme-secondary font-bold hover:bg-white/10 active:scale-90 shrink-0 flex items-center justify-center text-lg" data-step-id="goal-annual-books" data-step-dir="1" aria-label="Increase Annual Books">+</button>
           </div>
         </div>
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Pages</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-pages" min="1" placeholder="3000" onfocus="this.select()">
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-pages" aria-label="Annual Pages Goal" min="1" placeholder="3000" onfocus="this.select()">
         </div>
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Sessions</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-sessions" min="1" placeholder="100" onfocus="this.select()">
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-sessions" aria-label="Annual Sessions Goal" min="1" placeholder="100" onfocus="this.select()">
         </div>
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Annual Minutes</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-minutes" min="1" placeholder="3000" onfocus="this.select()">
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-annual-minutes" aria-label="Annual Minutes Goal" min="1" placeholder="3000" onfocus="this.select()">
         </div>
       </div>
 
@@ -2069,13 +2071,13 @@
       <div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 border-b border-theme pb-1 pt-1">Monthly Targets</div>
       <div class="grid grid-cols-2 gap-3">
         <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Books</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-books" min="1" placeholder="1" onfocus="this.select()"></div>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-books" aria-label="Monthly Books Goal" min="1" placeholder="1" onfocus="this.select()"></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Pages</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-pages" min="1" placeholder="300" onfocus="this.select()"></div>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-pages" aria-label="Monthly Pages Goal" min="1" placeholder="300" onfocus="this.select()"></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Sessions</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-sessions" min="1" placeholder="10" onfocus="this.select()"></div>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-sessions" aria-label="Monthly Sessions Goal" min="1" placeholder="10" onfocus="this.select()"></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-[10px] font-bold uppercase tracking-wider">Monthly Minutes</span></label>
-          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-minutes" min="1" placeholder="300" onfocus="this.select()"></div>
+          <input type="number" class="input input-bordered glass-input w-full" id="goal-monthly-minutes" aria-label="Monthly Minutes Goal" min="1" placeholder="300" onfocus="this.select()"></div>
       </div>
 
       <button id="goals-modal-save"
@@ -3965,13 +3967,11 @@
 
   <script type="module">
     import { initPWAInstallPrompt } from './js/install-prompt.js';
-    import { initOfflineDB } from './js/offline-db.js';
     window.addEventListener('DOMContentLoaded', () => {
       initPWAInstallPrompt();
-      initOfflineDB().catch(err => console.warn('Offline DB init:', err));
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=119"></script>
+  <script type="module" src="app.js?v=121"></script>
 </body>
 </html>

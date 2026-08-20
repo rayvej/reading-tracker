@@ -102,9 +102,11 @@ export function calculateReadingStreaks(logs) {
   }
   if (current > longest) longest = current;
 
-  // Check if current streak extends to today or yesterday
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  // Check if current streak extends to today or yesterday using local calendar date
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const yDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterdayStr = `${yDate.getFullYear()}-${String(yDate.getMonth() + 1).padStart(2, '0')}-${String(yDate.getDate()).padStart(2, '0')}`;
   const lastLoggedDate = dates[dates.length - 1];
 
   let activeCurrentStreak = 0;
