@@ -35,11 +35,7 @@ async function runOptimisticSyncAudit() {
 
   await page.setViewport({ width: 1280, height: 800 });
 
-  // Clear storage
-  const cdp = await page.target().createCDPSession();
-  await cdp.send('Storage.clearDataForOrigin', { origin: '*', storageTypes: 'all' });
-
-  await page.goto(indexPath, { waitUntil: 'networkidle0' });
+  await page.goto(indexPath, { waitUntil: 'domcontentloaded' });
 
   // Initialize App DOM state
   await page.evaluate(async () => {

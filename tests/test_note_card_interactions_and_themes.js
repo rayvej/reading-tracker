@@ -27,18 +27,18 @@ async function run() {
 
   console.log('▶ STEP 1: Injecting test notes and verifying rendering...');
   await page.evaluate(() => {
-    booksCache = [
+    const testBooks = [
       {
         id: 'book-1',
         title: 'The Republic',
         author: 'Plato',
         category: 'Non-Bahá\'í',
         status: 'In Progress',
-        currentPage: 50,
-        totalPages: 300
+        current_page: 50,
+        total_pages: 300
       }
     ];
-    logsCache = [
+    const testLogs = [
       {
         id: 'log-1',
         book_title: 'The Republic',
@@ -51,13 +51,24 @@ async function run() {
         photo_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80'
       }
     ];
+    if (typeof window.setBooksCache === 'function') {
+      window.setBooksCache(testBooks);
+    } else {
+      window.booksCache = testBooks;
+    }
+    if (typeof window.setLogsCache === 'function') {
+      window.setLogsCache(testLogs);
+    } else {
+      window.logsCache = testLogs;
+    }
     window.showView('knowledge');
     window.renderKnowledgeView();
   });
   await new Promise(r => setTimeout(r, 500));
 
   const cardStats = await page.evaluate(() => {
-    const card = document.querySelector('.quote-card');
+    const cards = Array.from(document.querySelectorAll('.quote-card'));
+    const card = cards.find(c => c.textContent.includes('The Republic')) || cards[0];
     if (!card) return null;
     const titleEl = card.querySelector('span.font-bold');
     const authorEl = card.querySelector('.text-theme-primary');
@@ -71,10 +82,11 @@ async function run() {
 
     return {
       exists: true,
-      title: titleEl ? titleEl.innerText.trim() : '',
-      author: authorEl ? authorEl.innerText.trim() : '',
-      date: dateEl ? dateEl.innerText.trim() : '',
-      badge: badgeEl ? badgeEl.innerText.trim() : '',
+      html: card.innerHTML,
+      title: titleEl ? (titleEl.textContent || titleEl.innerText).trim() : '',
+      author: authorEl ? (authorEl.textContent || authorEl.innerText).trim() : '',
+      date: dateEl ? (dateEl.textContent || dateEl.innerText).trim() : '',
+      badge: badgeEl ? (badgeEl.textContent || badgeEl.innerText).trim() : '',
       hasEditBtn: !!editBtn,
       hasDeleteBtn: !!deleteBtn,
       hasShareBtn: !!shareBtn,
@@ -82,6 +94,7 @@ async function run() {
       hasCopyBtn: !!copyBtn
     };
   });
+  console.log('DEBUG CARD HTML:', cardStats ? cardStats.html : 'NO CARD');
 
   assert.ok(cardStats && cardStats.exists, 'Quote card rendered successfully');
   assert.equal(cardStats.title, 'The Republic', 'Full title rendered without clipping');
@@ -155,12 +168,8 @@ async function run() {
         window.setEditorialMode(mode);
         window.renderKnowledgeView();
       }, t, m);
-      await new Promise(r => setTimeout(r, 200));
-
-      const cardHandle = await page.$('.quote-card');
-      if (cardHandle) {
-        await cardHandle.screenshot({ path: `tests/screenshots/quote_card_${t}_${m}.png` });
-      }
+      await new Promise(r => setTimeout(r, 100));
+      await page.screenshot({ path: `tests/screenshots/quote_card_${t}_${m}.png` });
     }
   }
   console.log('  ✓ 8 high-res card screenshots captured across all theme and mode variations');
