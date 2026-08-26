@@ -71,6 +71,45 @@ test('Dashboard preferences synchronizes across both modal and account view cont
   assert.ok(appJsContent.includes('#pref-dash-contextual, #acct-pref-dash-contextual'), 'Contextual toggle mapped across views');
 });
 
+import { generateDailyReminderPayload } from '../scripts/send_daily_reminders.mjs';
+
+// ── 3. Latest Book Selection & Accurate Progress Calculation ──────────────────
+console.log('\n3. Verification of Latest Book Selection & Accurate Page Calculation:');
+
+test('generateDailyReminderPayload prioritizes the most recently read in-progress book', () => {
+  const books = [
+    { id: 'b1', title: 'A short history about everything', status: 'In Progress', total_pages: 500, current_page: 0 },
+    { id: 'b2', title: 'The Dawn-Breakers', status: 'In Progress', total_pages: 668, current_page: 0 }
+  ];
+
+  const logs = [
+    { book_id: 'b1', book_title: 'A short history about everything', start_page: 0, end_page: 15, pages_read: 15, date: '2026-05-10' },
+    { book_id: 'b2', book_title: 'The Dawn-Breakers', start_page: 240, end_page: 280, pages_read: 40, date: '2026-08-26', notes: 'Inspiring history' }
+  ];
+
+  const payload = generateDailyReminderPayload(books, logs);
+  assert.ok(payload, 'Payload must be returned');
+  assert.strictEqual(payload.bookId, 'b2', 'Must pick b2 (The Dawn-Breakers) as it has the most recent reading log');
+  assert.strictEqual(payload.currentPage, 280, 'Must compute current page 280 from active log end_page');
+  assert.strictEqual(payload.totalPages, 668, 'Must match total pages');
+  assert.strictEqual(payload.progressPct, 42, '280/668 = 42%');
+  assert.ok(payload.body.includes('Page 280 of 668'), 'Body must mention Page 280 of 668');
+  assert.ok(payload.body.includes('Inspiring history'), 'Body must include latest note');
+});
+
+test('generateDailyReminderPayload computes progress correctly when pages_read is in book or logs', () => {
+  const books = [
+    { id: 'b1', title: 'Atomic Habits', status: 'In Progress', total_pages: 300, pages_read: 120 }
+  ];
+  const logs = [];
+
+  const payload = generateDailyReminderPayload(books, logs);
+  assert.ok(payload);
+  assert.strictEqual(payload.currentPage, 120);
+  assert.strictEqual(payload.progressPct, 40);
+  assert.ok(payload.body.includes('Page 120 of 300'));
+});
+
 console.log('\n═══════════════════════════════════════════════════');
 console.log(` Results: ${passed} passed, ${failed} failed`);
 console.log('═══════════════════════════════════════════════════\n');
@@ -78,3 +117,4 @@ console.log('══════════════════════�
 if (failed > 0) {
   process.exit(1);
 }
+

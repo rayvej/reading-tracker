@@ -1803,60 +1803,154 @@ async function saveStarterBook(batchContinue) {
 
 
 
-// ── Daily Morning Reminders & Notifications ───────────────────────────────
+function getLogTimestamp(l) {
+  if (!l) return 0;
+  if (l.created_at && typeof l.created_at.toDate === 'function') {
+    return l.created_at.toDate().getTime();
+  }
+  if (l.created_at && l.created_at.seconds) {
+    return l.created_at.seconds * 1000;
+  }
+  if (l.timestamp) {
+    const t = new Date(l.timestamp).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  if (l.date) {
+    const d = new Date(l.date).getTime();
+    if (!isNaN(d) && d > 0) return d;
+  }
+  return 0;
+}
+
+function doesLogMatchBook(l, b) {
+  if (!l || !b) return false;
+  if (b.id && l.book_id && String(l.book_id) === String(b.id)) return true;
+  const bTitle = (b.title || '').trim().toLowerCase();
+  if (!bTitle) return false;
+  const lBookTitle = (l.book_title || '').trim().toLowerCase();
+  const lTitle = (l.title || '').trim().toLowerCase();
+  return (lBookTitle && lBookTitle === bTitle) || (lTitle && lTitle === bTitle);
+}
 
 function generateDailyReminderPayload(overrideBooks, overrideLogs) {
-  const booksToSearch = overrideBooks || booksCache || [];
-  const logsToSearch = overrideLogs || logsCache || [];
+  const booksToSearch = overrideBooks || (typeof booksCache !== 'undefined' ? booksCache : []) || [];
+  const logsToSearch = overrideLogs || (typeof logsCache !== 'undefined' ? logsCache : []) || [];
 
-  const activeBooks = booksToSearch.filter(b => b.status === 'In Progress');
-  if (activeBooks.length === 0 && booksToSearch.length === 0) return null;
+  if (booksToSearch.length === 0) return null;
 
-  const book = activeBooks.length > 0 ? activeBooks[0] : booksToSearch[0];
-  const activeLogs = logsToSearch.filter(l => l.book_id === book.id || (l.title && l.title.toLowerCase() === book.title.toLowerCase()));
+  // 1. Calculate each book's most recent reading activity timestamp
+  function getBookLastActivity(b) {
+    const bookLogs = logsToSearch.filter(l => doesLogMatchBook(l, b));
+    let latestTime = 0;
+    for (const l of bookLogs) {
+      const t = getLogTimestamp(l);
+      if (t > latestTime) latestTime = t;
+    }
+    if (latestTime > 0) return latestTime;
+    if (b.last_read) {
+      const t = new Date(b.last_read).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    if (b.updated_at) {
+      const t = new Date(b.updated_at).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    if (b.date_added) {
+      const t = new Date(b.date_added).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    return 0;
+  }
 
-  const currentPage = typeof getBookCurrentProgress === 'function' 
-    ? getBookCurrentProgress(book, activeLogs) 
-    : (book.current_page || 0);
-  const totalPages = Number(book.total_pages) || 1;
+  // 2. Select candidates prioritizing "In Progress" books, sorted by latest activity
+  const inProgressBooks = booksToSearch.filter(b => b.status === 'In Progress');
+  const candidateBooks = inProgressBooks.length > 0 ? [...inProgressBooks] : [...booksToSearch];
+
+  candidateBooks.sort((a, b) => getBookLastActivity(b) - getBookLastActivity(a));
+
+  const book = candidateBooks[0];
+  if (!book) return null;
+
+  const activeLogs = logsToSearch.filter(l => doesLogMatchBook(l, book));
+  const totalPages = Math.max(1, Number(book.total_pages) || 1);
+
+  // 3. Compute accurate current page progress
+  let currentPage = 0;
+  if (activeLogs.length > 0) {
+    const maxEnd = Math.max(...activeLogs.map(l => {
+      const end = parseInt(l.end_page || 0, 10);
+      const pages = parseInt(l.pages_read || 0, 10);
+      return Math.max(end, pages);
+    }));
+    const bookPagesRead = parseInt(book.pages_read || 0, 10);
+    const bookCurrentPage = parseInt(book.current_page || 0, 10);
+    const rawPage = Math.max(maxEnd, bookPagesRead, bookCurrentPage);
+    currentPage = (totalPages > 0 && rawPage > totalPages) ? (rawPage % totalPages === 0 ? totalPages : rawPage % totalPages) : rawPage;
+  } else {
+    const bookPagesRead = parseInt(book.pages_read || 0, 10);
+    const bookCurrentPage = parseInt(book.current_page || 0, 10);
+    currentPage = Math.max(bookPagesRead, bookCurrentPage);
+  }
+
+  currentPage = Math.min(totalPages, Math.max(0, currentPage));
   const remainingPages = Math.max(0, totalPages - currentPage);
   const progressPct = Math.min(100, Math.round((currentPage / totalPages) * 100));
 
-  // Calculate estimated completion date based on reading pace
-  const logsWithPages = activeLogs.filter(l => Number(l.pages_read) > 0);
-  let daysLeft = 7;
-  if (logsWithPages.length > 0) {
-    const totalPagesLogged = logsWithPages.reduce((sum, l) => sum + Number(l.pages_read), 0);
-    const uniqueDays = new Set(logsWithPages.map(l => (l.date || '').substring(0, 10))).size || 1;
-    const pagesPerDay = totalPagesLogged / uniqueDays;
-    daysLeft = pagesPerDay > 0 ? Math.ceil(remainingPages / pagesPerDay) : 7;
+  // 4. Calculate estimated completion pace / days
+  const timedLogs = activeLogs.filter(l => Number(l.minutes_spent) > 0 && Number(l.pages_read) > 0);
+  let estTimeText = "";
+
+  if (timedLogs.length > 0) {
+    const totalMins = timedLogs.reduce((sum, l) => sum + Number(l.minutes_spent), 0);
+    const totalPagesLogged = timedLogs.reduce((sum, l) => sum + Number(l.pages_read), 0);
+    const pagesPerMin = totalPagesLogged / (totalMins || 1);
+
+    if (pagesPerMin > 0 && remainingPages > 0) {
+      const estMinsRemaining = Math.round(remainingPages / pagesPerMin);
+      const hours = Math.floor(estMinsRemaining / 60);
+      const mins = estMinsRemaining % 60;
+      estTimeText = hours > 0 ? `Est. ${hours}h ${mins}m left` : `Est. ${mins}m left`;
+    } else if (remainingPages === 0) {
+      estTimeText = `Completed! 🎉`;
+    } else {
+      estTimeText = `Est. finish soon`;
+    }
   } else {
-    daysLeft = Math.ceil(remainingPages / 25);
+    const logsWithPages = activeLogs.filter(l => Number(l.pages_read) > 0);
+    let daysLeft = 7;
+    if (logsWithPages.length > 0) {
+      const totalPagesLogged = logsWithPages.reduce((sum, l) => sum + Number(l.pages_read), 0);
+      const uniqueDays = new Set(logsWithPages.map(l => (l.date || '').substring(0, 10))).size || 1;
+      const pagesPerDay = totalPagesLogged / uniqueDays;
+      daysLeft = pagesPerDay > 0 ? Math.ceil(remainingPages / pagesPerDay) : 7;
+    } else {
+      daysLeft = Math.ceil(remainingPages / 25);
+    }
+    estTimeText = daysLeft > 1 ? `Est. ${daysLeft} days left` : `Est. 1 day left`;
   }
 
-  const estFinishDate = new Date(Date.now() + Math.max(1, daysLeft) * 86400000);
-  const finishDateStr = estFinishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-  // Fetch the latest note from the latest log in the reading log section
+  // 5. Fetch the latest note from the latest log
   const logsWithNotes = activeLogs
     .filter(l => l.notes && l.notes.trim().length > 0 && !l.notes.startsWith('Historical cycle'))
-    .sort((a, b) => new Date(b.date || b.timestamp || 0) - new Date(a.date || a.timestamp || 0));
+    .sort((a, b) => getLogTimestamp(b) - getLogTimestamp(a));
 
   const latestLogNote = logsWithNotes.length > 0 ? logsWithNotes[0].notes.trim() : (book.notes ? book.notes.trim() : null);
 
-  const title = `📖 ${book.title} (${progressPct}% • Est. Finish: ${finishDateStr})`;
+  const title = `📖 ${book.title} (${progressPct}% • ${remainingPages} pg left)`;
 
   const savedSettings = (() => { try { return JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}'); } catch { return {}; } })();
   const customText = (savedSettings.customText || '').trim();
+  const includeQuote = savedSettings.includeQuote !== false;
 
   let body = "";
   if (customText) {
     body = customText;
-  } else if (latestLogNote) {
-    const cleanNote = latestLogNote.length > 150 ? latestLogNote.substring(0, 147) + "..." : latestLogNote;
-    body = `"${cleanNote}"`;
   } else {
-    body = `Page ${currentPage} of ${totalPages} (${remainingPages} pg remaining)`;
+    body = `Page ${currentPage} of ${totalPages} • ${estTimeText}`;
+    if (includeQuote && latestLogNote) {
+      const cleanNote = latestLogNote.length > 120 ? latestLogNote.substring(0, 117) + "..." : latestLogNote;
+      body += `\n\nRecent Note:\n"${cleanNote}"`;
+    }
   }
 
   return {
@@ -1866,7 +1960,7 @@ function generateDailyReminderPayload(overrideBooks, overrideLogs) {
     currentPage,
     totalPages,
     progressPct,
-    finishDateStr,
+    estTimeText,
     recentNote: latestLogNote,
     bookId: book.id
   };
