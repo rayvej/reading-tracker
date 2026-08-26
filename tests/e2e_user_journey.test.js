@@ -12,11 +12,55 @@
  */
 
 import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
-let browser, page;
+const APP_URL = process.env.APP_URL || 'http://127.0.0.1:3000';
+let browser, page, server;
+
+function startStaticServer(port = 3000) {
+  return new Promise((resolve) => {
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.svg': 'image/svg+xml'
+    };
+
+    server = http.createServer((req, res) => {
+      let reqPath = req.url.split('?')[0];
+      if (reqPath === '/') reqPath = '/index.html';
+      const filePath = path.join(path.resolve('docs'), reqPath);
+
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not Found');
+          return;
+        }
+        const ext = path.extname(filePath).toLowerCase();
+        res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
+
+    server.listen(port, '127.0.0.1', () => {
+      resolve();
+    });
+    server.on('error', () => {
+      // If port is already in use, assume external server is running
+      server = null;
+      resolve();
+    });
+  });
+}
 
 async function launchBrowser() {
+  await startStaticServer(3000);
   try {
     const puppeteer = await import('puppeteer-core');
     
@@ -49,12 +93,14 @@ async function launchBrowser() {
     await page.setViewport({ width: 375, height: 812 }); // iPhone viewport
   } catch (e) {
     console.log(`⚠ Puppeteer launch skipped: ${e.message}`);
+    if (server) server.close();
     process.exit(0);
   }
 }
 
 async function cleanup() {
   if (browser) await browser.close();
+  if (server) server.close();
 }
 
 let passed = 0;
@@ -100,10 +146,11 @@ try {
 
   // ── Test 3: Manifest is accessible ──────────────────────────────────
   await test('PWA manifest is accessible', async () => {
-    const manifestResult = await page.evaluate(async (url) => {
-      const res = await fetch(url);
+    await page.goto(`${APP_URL}/index.html`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    const manifestResult = await page.evaluate(async () => {
+      const res = await fetch('./manifest.json');
       return { status: res.status, data: await res.json() };
-    }, `${APP_URL}/manifest.json`);
+    });
     assert.equal(manifestResult.status, 200);
     const manifest = manifestResult.data;
     assert.equal(manifest.name, 'Reading Tracker');
