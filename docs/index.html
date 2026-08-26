@@ -1726,6 +1726,101 @@
               </div>
             </div>
 
+            <!-- Dashboard Section Customization -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-theme">
+              <div class="text-xs font-black uppercase tracking-wider text-theme-secondary flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-table-columns text-indigo-400"></i> Dashboard Layout &amp; Sections</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Display</span>
+              </div>
+              <div class="flex flex-col gap-2.5 p-3 rounded-2xl border border-theme bg-white/5 text-xs font-semibold">
+                <label class="flex items-center justify-between cursor-pointer">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-gauge-high text-amber-400"></i> Reading Pace &amp; Momentum</span>
+                  <input type="checkbox" id="acct-pref-dash-pace" class="toggle toggle-amber toggle-sm" checked>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-theme">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-table-cells text-indigo-400"></i> Reading Intensity Grid (Heatmap)</span>
+                  <input type="checkbox" id="acct-pref-dash-heatmap" class="toggle toggle-amber toggle-sm" checked>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-theme">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-left-right text-emerald-400"></i> YoY Comparison Card</span>
+                  <input type="checkbox" id="acct-pref-dash-yoy" class="toggle toggle-amber toggle-sm" checked>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer pt-2 border-t border-theme">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-clock text-rose-400"></i> Contextual Productivity Matrix</span>
+                  <input type="checkbox" id="acct-pref-dash-contextual" class="toggle toggle-amber toggle-sm" checked>
+                </label>
+              </div>
+            </div>
+
+            <!-- Daily Morning Reminders & Notifications Section -->
+            <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-theme">
+              <div class="text-xs font-black uppercase tracking-wider text-theme-secondary flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-bell text-theme-gold"></i> Daily Morning Reminders</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-theme-gold border border-amber-500/30">PWA Alerts</span>
+              </div>
+
+              <!-- Main Enable Toggle -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-theme bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-theme-gold flex items-center justify-center font-bold text-sm shrink-0">
+                    <i class="fa-solid fa-bell"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">Daily Reading Nudge</div>
+                    <div class="text-[10.5px] text-theme-secondary">Progress percentage, remaining pace &amp; recent note</div>
+                  </div>
+                </div>
+                <input type="checkbox" id="acct-setting-reminder-enable" aria-label="Enable Morning Reading Nudge Reminder" class="toggle toggle-amber toggle-sm" checked />
+              </div>
+
+              <!-- Time Picker -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-theme bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">Reminder Time</div>
+                    <div class="text-[10.5px] text-theme-secondary">Scheduled local delivery time</div>
+                  </div>
+                </div>
+                <input type="time" id="acct-setting-reminder-time" aria-label="Reminder Time" value="07:00" class="bg-theme-card text-theme-gold font-bold border border-theme rounded-xl px-2.5 py-1 text-xs focus:outline-none focus:border-amber-400" />
+              </div>
+
+              <!-- Include Recent Quote Toggle -->
+              <div class="flex items-center justify-between p-3 rounded-2xl border border-theme bg-white/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+                    <i class="fa-solid fa-quote-left"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-extrabold" style="color: var(--text-primary)">Include Latest Note / Quote</div>
+                    <div class="text-[10.5px] text-theme-secondary">Displays your recent highlight or thought</div>
+                  </div>
+                </div>
+                <input type="checkbox" id="acct-setting-reminder-quote" aria-label="Include Recent Note/Quote" class="toggle toggle-amber toggle-xs" checked />
+              </div>
+
+              <!-- Custom Text Override -->
+              <div class="flex flex-col gap-1.5 p-3 rounded-2xl border border-theme bg-white/5">
+                <label for="acct-setting-reminder-custom-text" class="text-xs font-bold text-theme-secondary flex justify-between">
+                  <span>Custom Notification Message</span>
+                  <span class="text-[10px] font-normal opacity-70">(Optional override)</span>
+                </label>
+                <input type="text" id="acct-setting-reminder-custom-text" placeholder="e.g. Time to read 15 pages today! 📖" class="bg-theme-card text-theme-primary border border-theme rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 placeholder:text-theme-tertiary" />
+              </div>
+
+              <!-- Push Permission & Test Buttons -->
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <button id="acct-btn-request-notification-permission" class="py-2.5 px-3 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-theme-gold text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-500/30 cursor-pointer">
+                  <i class="fa-solid fa-shield-halved text-[11px]"></i> Enable Push
+                </button>
+                <button id="acct-btn-test-notification" class="py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-theme-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-theme cursor-pointer">
+                  <i class="fa-solid fa-paper-plane text-[11px] text-amber-400"></i> Test Now
+                </button>
+              </div>
+            </div>
+
             <!-- Security & Protection Section -->
             <div class="glass-panel p-5 rounded-3xl flex flex-col gap-4 border border-theme">
               <div class="text-xs font-black uppercase tracking-wider text-theme-secondary flex items-center gap-2">

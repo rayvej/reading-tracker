@@ -1983,12 +1983,12 @@ async function registerWebPushSubscription() {
 }
 
 function setupNotificationSettingsUI() {
-  const enableToggle = $('setting-reminder-enable');
-  const timePicker = $('setting-reminder-time');
-  const quoteToggle = $('setting-reminder-quote');
-  const customTextInput = $('setting-reminder-custom-text');
-  const btnPush = $('btn-request-notification-permission');
-  const btnTest = $('btn-test-notification');
+  const enableToggles = document.querySelectorAll('#setting-reminder-enable, #acct-setting-reminder-enable');
+  const timePickers = document.querySelectorAll('#setting-reminder-time, #acct-setting-reminder-time');
+  const quoteToggles = document.querySelectorAll('#setting-reminder-quote, #acct-setting-reminder-quote');
+  const customTextInputs = document.querySelectorAll('#setting-reminder-custom-text, #acct-setting-reminder-custom-text');
+  const pushButtons = document.querySelectorAll('#btn-request-notification-permission, #acct-btn-request-notification-permission');
+  const testButtons = document.querySelectorAll('#btn-test-notification, #acct-btn-test-notification');
 
   const savedSettings = (() => { try { return JSON.parse(localStorage.getItem('rt_reminder_settings') || '{}'); } catch { return {}; } })();
   const isEnabled = savedSettings.enabled !== false;
@@ -1996,18 +1996,40 @@ function setupNotificationSettingsUI() {
   const includeQuote = savedSettings.includeQuote !== false;
   const customText = savedSettings.customText || '';
 
-  if (enableToggle) enableToggle.checked = isEnabled;
-  if (timePicker) timePicker.value = timeVal;
-  if (quoteToggle) quoteToggle.checked = includeQuote;
-  if (customTextInput) customTextInput.value = customText;
+  enableToggles.forEach(el => { el.checked = isEnabled; });
+  timePickers.forEach(el => { el.value = timeVal; });
+  quoteToggles.forEach(el => { el.checked = includeQuote; });
+  customTextInputs.forEach(el => { el.value = customText; });
 
-  function updateSavedSettings() {
+  function syncAllUI(settings) {
+    enableToggles.forEach(el => { el.checked = settings.enabled; });
+    timePickers.forEach(el => { el.value = settings.time; });
+    quoteToggles.forEach(el => { el.checked = settings.includeQuote; });
+    customTextInputs.forEach(el => { el.value = settings.customText; });
+  }
+
+  function updateSavedSettings(changedByEl) {
+    const activeEnabled = enableToggles.length > 0
+      ? (changedByEl && changedByEl.type === 'checkbox' && (changedByEl.id && changedByEl.id.includes('enable')) ? changedByEl.checked : enableToggles[0].checked)
+      : true;
+    const activeTime = timePickers.length > 0
+      ? (changedByEl && (changedByEl.type === 'time' || changedByEl.id.includes('time')) ? changedByEl.value : (timePickers[0].value || "07:00"))
+      : "07:00";
+    const activeQuote = quoteToggles.length > 0
+      ? (changedByEl && changedByEl.type === 'checkbox' && (changedByEl.id && changedByEl.id.includes('quote')) ? changedByEl.checked : quoteToggles[0].checked)
+      : true;
+    const activeCustomText = customTextInputs.length > 0
+      ? (changedByEl && (changedByEl.type === 'text' || changedByEl.id.includes('custom-text')) ? changedByEl.value.trim() : customTextInputs[0].value.trim())
+      : '';
+
     const newSettings = {
-      enabled: enableToggle ? enableToggle.checked : true,
-      time: timePicker ? timePicker.value || "07:00" : "07:00",
-      includeQuote: quoteToggle ? quoteToggle.checked : true,
-      customText: customTextInput ? customTextInput.value.trim() : ''
+      enabled: activeEnabled,
+      time: activeTime || "07:00",
+      includeQuote: activeQuote,
+      customText: activeCustomText
     };
+
+    syncAllUI(newSettings);
     localStorage.setItem('rt_reminder_settings', JSON.stringify(newSettings));
     if (typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid) {
       setDoc(doc(db, `users/${uid}/settings/notifications`), newSettings, { merge: true }).catch(err => {
@@ -2017,15 +2039,27 @@ function setupNotificationSettingsUI() {
     scheduleDailyReminderAlarm();
   }
 
-  if (enableToggle) enableToggle.addEventListener('change', updateSavedSettings);
-  if (timePicker) timePicker.addEventListener('change', () => {
-    updateSavedSettings();
-    showToast(`Daily reminder time set to ${timePicker.value}`, 'success');
+  enableToggles.forEach(el => {
+    el.addEventListener('change', () => updateSavedSettings(el));
   });
-  if (quoteToggle) quoteToggle.addEventListener('change', updateSavedSettings);
-  if (customTextInput) customTextInput.addEventListener('change', updateSavedSettings);
 
-  if (btnPush) {
+  timePickers.forEach(el => {
+    el.addEventListener('change', () => {
+      updateSavedSettings(el);
+      showToast(`Daily reminder time set to ${el.value}`, 'success');
+    });
+  });
+
+  quoteToggles.forEach(el => {
+    el.addEventListener('change', () => updateSavedSettings(el));
+  });
+
+  customTextInputs.forEach(el => {
+    el.addEventListener('input', () => updateSavedSettings(el));
+    el.addEventListener('change', () => updateSavedSettings(el));
+  });
+
+  pushButtons.forEach(btnPush => {
     btnPush.addEventListener('click', async () => {
       if (!('Notification' in window)) {
         showToast('Notifications are not supported in this browser.', 'warning');
@@ -2043,13 +2077,13 @@ function setupNotificationSettingsUI() {
         showToast('Notification permission denied in browser settings.', 'error');
       }
     });
-  }
+  });
 
-  if (btnTest) {
+  testButtons.forEach(btnTest => {
     btnTest.addEventListener('click', () => {
       triggerDailyReminder(true);
     });
-  }
+  });
 
   if ('Notification' in window && Notification.permission === 'granted') {
     registerWebPushSubscription();
@@ -13833,37 +13867,31 @@ function applyDashboardPreferences() {
   if (yoySec) yoySec.style.display = prefs.yoy !== false ? 'block' : 'none';
   if (contextualSec) contextualSec.style.display = prefs.contextual !== false ? 'flex' : 'none';
 
-  const cbPace = $('pref-dash-pace');
-  const cbHeatmap = $('pref-dash-heatmap');
-  const cbYoy = $('pref-dash-yoy');
-  const cbContextual = $('pref-dash-contextual');
-
-  if (cbPace) cbPace.checked = prefs.pace !== false;
-  if (cbHeatmap) cbHeatmap.checked = prefs.heatmap !== false;
-  if (cbYoy) cbYoy.checked = prefs.yoy !== false;
-  if (cbContextual) cbContextual.checked = prefs.contextual !== false;
+  document.querySelectorAll('#pref-dash-pace, #acct-pref-dash-pace').forEach(cb => { cb.checked = prefs.pace !== false; });
+  document.querySelectorAll('#pref-dash-heatmap, #acct-pref-dash-heatmap').forEach(cb => { cb.checked = prefs.heatmap !== false; });
+  document.querySelectorAll('#pref-dash-yoy, #acct-pref-dash-yoy').forEach(cb => { cb.checked = prefs.yoy !== false; });
+  document.querySelectorAll('#pref-dash-contextual, #acct-pref-dash-contextual').forEach(cb => { cb.checked = prefs.contextual !== false; });
 }
 
 function setupDashboardPreferencesListeners() {
   const cbs = [
-    { id: 'pref-dash-pace', key: 'pace' },
-    { id: 'pref-dash-heatmap', key: 'heatmap' },
-    { id: 'pref-dash-yoy', key: 'yoy' },
-    { id: 'pref-dash-contextual', key: 'contextual' }
+    { selector: '#pref-dash-pace, #acct-pref-dash-pace', key: 'pace' },
+    { selector: '#pref-dash-heatmap, #acct-pref-dash-heatmap', key: 'heatmap' },
+    { selector: '#pref-dash-yoy, #acct-pref-dash-yoy', key: 'yoy' },
+    { selector: '#pref-dash-contextual, #acct-pref-dash-contextual', key: 'contextual' }
   ];
 
-  cbs.forEach(cb => {
-    const el = $(cb.id);
-    if (el) {
+  cbs.forEach(cfg => {
+    document.querySelectorAll(cfg.selector).forEach(el => {
       el.addEventListener('change', () => {
         const prefs = getDashboardPreferences();
-        prefs[cb.key] = el.checked;
+        prefs[cfg.key] = el.checked;
         try {
           localStorage.setItem('rt_dash_preferences', JSON.stringify(prefs));
         } catch(e) { console.debug('[Dashboard] Prefs setup:', e); }
         applyDashboardPreferences();
       });
-    }
+    });
   });
 }
 
