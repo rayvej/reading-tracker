@@ -169,22 +169,32 @@ export async function testGeminiApiKey(apiKey) {
  * Parse JSON safely from Gemini response text (strips markdown codeblocks if present)
  */
 function parseGeminiJsonResponse(rawText) {
-  let cleaned = rawText.trim();
+  let cleaned = (rawText || '').trim();
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
+  
+  // Attempt regex match for JSON object if Gemini surrounded response with commentary
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {}
+  }
+
   try {
     return JSON.parse(cleaned);
   } catch (e) {
-    console.warn('Failed to parse Gemini JSON directly, raw response:', rawText);
+    console.warn('[Gemini Service] Could not parse JSON response, falling back to raw excerpt:', rawText);
+    const snippet = cleaned.replace(/\s+/g, ' ').slice(0, 45);
     return {
-      title: 'Starred Story Note',
-      summary: rawText.slice(0, 200),
-      quote: rawText,
+      title: snippet ? `${snippet}...` : 'Extracted Note',
+      summary: cleaned.slice(0, 200),
+      quote: cleaned,
       characters: [],
-      themes: ['Scholarship'],
+      themes: [],
       era: '',
       location: ''
     };
@@ -292,7 +302,7 @@ Return ONLY the corrected string. Do not add quotes, introductory text, or expla
 export function fallbackTransliterate(text) {
   if (!text) return text;
   const rules = [
-    [/\bBaha'u'llah\b/gi, "Bahá'u'lláh"],
+    [/\bBaha'?u'?llah\b/gi, "Bahá'u'lláh"],
     [/\bBaha'is?\b/gi, "Bahá'í"],
     [/\bBaha'i\b/gi, "Bahá'í"],
     [/\bAbdul-?Baha\b/gi, "‘Abdu’l-Bahá"],

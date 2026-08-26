@@ -6,11 +6,23 @@
 let _cachedMetrics = null;
 let _lastBooks = null;
 let _lastLogs = null;
+let _lastBooksLen = -1;
+let _lastLogsLen = -1;
+
+export function invalidateStatsCache() {
+  _cachedMetrics = null;
+  _lastBooks = null;
+  _lastLogs = null;
+}
 
 export function calculateReconciledMetrics(books, logs) {
-  if (_cachedMetrics && _lastBooks === books && _lastLogs === logs) {
+  const booksLen = (books || []).length;
+  const logsLen = (logs || []).length;
+  if (_cachedMetrics && _lastBooks === books && _lastLogs === logs && _lastBooksLen === booksLen && _lastLogsLen === logsLen) {
     return _cachedMetrics;
   }
+  _lastBooksLen = booksLen;
+  _lastLogsLen = logsLen;
 
   const activeLogs = (logs || []).filter(l => l && (!l.notes || !l.notes.startsWith('Historical cycle')));
 

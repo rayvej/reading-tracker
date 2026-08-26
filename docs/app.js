@@ -230,8 +230,9 @@ function todayISO() {
 function startOfYear()  { return `${new Date().getFullYear()}-01-01`; }
 function startOfMonth() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; }
 
-async function hashPin(pin) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + 'rt-salt-v1'));
+async function hashPin(pin, customSalt = null) {
+  const userSalt = customSalt || localStorage.getItem('rt_pin_salt') || 'rt-salt-v1';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + userSalt));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
@@ -549,11 +550,13 @@ async function processPinSubmission(pin) {
       await updatePinScreenUI();
       return;
     }
-    // PIN successfully set & confirmed!
-    const newHash = await hashPin(pendingNewPin);
+    // PIN successfully set & confirmed with unique per-user salt!
+    const newSalt = 'rt_salt_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+    const newHash = await hashPin(pendingNewPin, newSalt);
+    localStorage.setItem('rt_pin_salt', newSalt);
     localStorage.setItem('rt_pin_hash', newHash);
     if (db && uid) {
-      setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash }, { merge: true }).catch(err => console.warn('PIN update sync error:', err));
+      setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash, pin_salt: newSalt }, { merge: true }).catch(err => console.warn('PIN update sync error:', err));
     }
     showToast('✓ Security PIN updated successfully!', 'success');
     pinFlowMode = 'VERIFY';
@@ -583,24 +586,44 @@ async function proceedAfterPinVerification() {
 
 async function verifyPin(pin) {
   let storedHash = localStorage.getItem('rt_pin_hash');
-  const inputHash = await hashPin(pin);
-  const defaultHash = await hashPin('1234');
+  let storedSalt = localStorage.getItem('rt_pin_salt');
 
   // Fallback path: If local hash is missing or fails, attempt Firestore fetch
-  if (!storedHash && db && uid) {
+  if ((!storedHash || !storedSalt) && db && uid) {
     try {
       const settingsRef = doc(db, `users/${uid}/settings/app`);
       const snap = await getDoc(settingsRef);
-      if (snap.exists() && snap.data()?.pin_hash) {
-        storedHash = snap.data().pin_hash;
-        localStorage.setItem('rt_pin_hash', storedHash);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d?.pin_hash && !storedHash) {
+          storedHash = d.pin_hash;
+          localStorage.setItem('rt_pin_hash', storedHash);
+        }
+        if (d?.pin_salt && !storedSalt) {
+          storedSalt = d.pin_salt;
+          localStorage.setItem('rt_pin_salt', storedSalt);
+        }
       }
     } catch (e) {
       console.warn('Firestore PIN fallback fetch error:', e);
     }
   }
 
+  const saltToUse = storedSalt || 'rt-salt-v1';
+  const inputHash = await hashPin(pin, saltToUse);
+  const defaultHash = await hashPin('1234', 'rt-salt-v1');
+
   if (storedHash && inputHash === storedHash) {
+    // Auto-upgrade legacy salt to unique salt on successful verification
+    if (!storedSalt && pin !== '1234') {
+      const newSalt = 'rt_salt_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+      const newHash = await hashPin(pin, newSalt);
+      localStorage.setItem('rt_pin_salt', newSalt);
+      localStorage.setItem('rt_pin_hash', newHash);
+      if (db && uid) {
+        setDoc(doc(db, `users/${uid}/settings/app`), { pin_hash: newHash, pin_salt: newSalt }, { merge: true }).catch(() => {});
+      }
+    }
     // If entered PIN matches default PIN '1234', require changing PIN first!
     if (inputHash === defaultHash) {
       pinFlowMode = 'CREATE_NEW';
@@ -623,7 +646,7 @@ async function initApp() {
   try {
     Object.defineProperty(window, 'booksCache', { get: () => booksCache || [], set: v => { booksCache = v; }, configurable: true });
     Object.defineProperty(window, 'logsCache', { get: () => logsCache || [], set: v => { logsCache = v; }, configurable: true });
-  } catch (e) {}
+  } catch (e) { console.debug('[Init] Window property setup:', e); }
   showScreen('app');
   
   // 1. Initialize UI handlers immediately (synchronously)
@@ -807,12 +830,17 @@ async function runSeedImport() {
 function createLiveUserBackup() {
   try {
     const backup = {
-      books: booksCache || [],
-      logs: logsCache || [],
-      wishlist: wishlistCache || [],
+      books: (booksCache || []).map(b => ({ ...b })),
+      logs: (logsCache || []).map(l => ({ ...l })),
+      wishlist: (wishlistCache || []).map(w => ({ ...w })),
       timestamp: new Date().toISOString()
     };
-    localStorage.setItem('rt_live_user_backup', JSON.stringify(backup));
+    window.__lastLiveUserBackup = backup;
+    try {
+      localStorage.setItem('rt_live_user_backup', JSON.stringify(backup));
+    } catch (quotaErr) {
+      console.warn('[createLiveUserBackup] localStorage quota exceeded, keeping in-memory backup:', quotaErr);
+    }
   } catch (err) {
     console.warn('Backup error:', err);
   }
@@ -820,8 +848,15 @@ function createLiveUserBackup() {
 
 /** Restore Original Data from Auto-Backup */
 async function restoreLiveUserBackup() {
-  const raw = localStorage.getItem('rt_live_user_backup');
-  if (!raw) {
+  let raw = localStorage.getItem('rt_live_user_backup');
+  let backup = null;
+  if (raw) {
+    try { backup = JSON.parse(raw); } catch (e) {}
+  }
+  if (!backup && window.__lastLiveUserBackup) {
+    backup = window.__lastLiveUserBackup;
+  }
+  if (!backup) {
     showToast('No auto-backup snapshot found.', 'warning');
     return;
   }
@@ -854,7 +889,10 @@ async function restoreLiveUserBackup() {
       const booksRef = collection(db, `users/${uid}/books`);
       for (let i = 0; i < backup.books.length; i += 400) {
         const batch = writeBatch(db);
-        backup.books.slice(i, i + 400).forEach(b => batch.set(doc(booksRef), b));
+        backup.books.slice(i, i + 400).forEach(b => {
+          const docRef = b.id ? doc(db, `users/${uid}/books/${b.id}`) : doc(booksRef);
+          batch.set(docRef, b);
+        });
         await batch.commit();
       }
 
@@ -862,7 +900,10 @@ async function restoreLiveUserBackup() {
       const logsRef = collection(db, `users/${uid}/reading_logs`);
       for (let i = 0; i < backup.logs.length; i += 400) {
         const batch = writeBatch(db);
-        backup.logs.slice(i, i + 400).forEach(l => batch.set(doc(logsRef), l));
+        backup.logs.slice(i, i + 400).forEach(l => {
+          const docRef = l.id ? doc(db, `users/${uid}/reading_logs/${l.id}`) : doc(logsRef);
+          batch.set(docRef, l);
+        });
         await batch.commit();
       }
 
@@ -870,7 +911,10 @@ async function restoreLiveUserBackup() {
       const wishRef = collection(db, `users/${uid}/wishlist`);
       for (let i = 0; i < backup.wishlist.length; i += 400) {
         const batch = writeBatch(db);
-        backup.wishlist.slice(i, i + 400).forEach(w => batch.set(doc(wishRef), w));
+        backup.wishlist.slice(i, i + 400).forEach(w => {
+          const docRef = w.id ? doc(db, `users/${uid}/wishlist/${w.id}`) : doc(wishRef);
+          batch.set(docRef, w);
+        });
         await batch.commit();
       }
     }
@@ -1892,7 +1936,7 @@ function triggerDailyReminder(isTest = false) {
   }
 }
 
-const PUBLIC_VAPID_KEY = 'BMjCtcDT82HfHfJcYbFZpyLLSqIBFTIwFDTsVZDJX7oMBEEDpldSXozwj692wx_6St1Yvm5q-WlLnzSgDJBneXs';
+const PUBLIC_VAPID_KEY = 'BKTwspEAyTyd-h-CX0RtwUDm6MV4KgJRtkz_56uHP-jvf4hbIS_7JK4jRZCKdk7-CpiTpqVBkYemwJMvWgcuTuY';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -2666,20 +2710,46 @@ function importFromJSON(file) {
     reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (!data.books || !Array.isArray(data.books)) {
+        if (!data || !data.books || !Array.isArray(data.books)) {
           throw new Error('Invalid backup file format: missing books array');
         }
 
-        showToast(`Importing ${data.books.length} books and ${(data.logs || []).length} logs...`, 'info');
+        // 1. Take automatic safety backup of current live data before overwriting
+        createLiveUserBackup();
 
-        // Optimistic local-first: hydrate memory caches IMMEDIATELY
-        booksCache = data.books || [];
-        logsCache = data.logs || [];
-        if (data.wishlist && Array.isArray(data.wishlist)) {
-          wishlistCache = data.wishlist;
+        // 2. Validate and ensure all items have unique IDs (avoid Date.now() collisions)
+        const validBooks = data.books.map(b => ({
+          ...b,
+          id: b.id || generateId(),
+          title: String(b.title || '').trim(),
+          total_pages: Number(b.total_pages) || 0
+        })).filter(b => b.title.length > 0);
+
+        const validLogs = (Array.isArray(data.logs) ? data.logs : []).map(l => ({
+          ...l,
+          id: l.id || generateId()
+        }));
+
+        const validWishlist = (Array.isArray(data.wishlist) ? data.wishlist : []).map(w => ({
+          ...w,
+          id: w.id || generateId()
+        }));
+
+        showToast(`Importing ${validBooks.length} books and ${validLogs.length} logs...`, 'info');
+
+        // 3. Optimistic local-first: hydrate memory caches IMMEDIATELY
+        booksCache = validBooks;
+        logsCache = validLogs;
+        if (validWishlist.length > 0) {
+          wishlistCache = validWishlist;
         }
 
-        // Re-render UI from restored caches (non-fatal — render errors must not block import)
+        // 4. Invalidate stats cache so metrics compute fresh
+        if (typeof invalidateStatsCache === 'function') {
+          invalidateStatsCache();
+        }
+
+        // 5. Re-render UI from restored caches
         try {
           await renderBookshelf();
           renderDashboard();
@@ -2689,27 +2759,38 @@ function importFromJSON(file) {
           console.warn('[Import] Render after import failed (data intact):', renderErr.message);
         }
 
-        // Background Firestore sync (non-blocking — a network failure must never prevent local restore)
-        if (db && uid) {
+        // 6. Batched background Firestore sync (in 400-doc chunks)
+        if (db && uid && !window.isMockAuth) {
           (async () => {
             try {
-              for (const b of data.books) {
-                const ref = doc(db, `users/${uid}/books/${b.id || Date.now()}`);
-                await setDoc(ref, b, { merge: true });
+              for (let i = 0; i < validBooks.length; i += 400) {
+                const batch = writeBatch(db);
+                validBooks.slice(i, i + 400).forEach(b => {
+                  batch.set(doc(db, `users/${uid}/books/${b.id}`), b, { merge: true });
+                });
+                await batch.commit();
               }
-              if (data.logs && Array.isArray(data.logs)) {
-                for (const l of data.logs) {
-                  const ref = doc(db, `users/${uid}/reading_logs/${l.id || Date.now()}`);
-                  await setDoc(ref, l, { merge: true });
-                }
+              for (let i = 0; i < validLogs.length; i += 400) {
+                const batch = writeBatch(db);
+                validLogs.slice(i, i + 400).forEach(l => {
+                  batch.set(doc(db, `users/${uid}/reading_logs/${l.id}`), l, { merge: true });
+                });
+                await batch.commit();
+              }
+              for (let i = 0; i < validWishlist.length; i += 400) {
+                const batch = writeBatch(db);
+                validWishlist.slice(i, i + 400).forEach(w => {
+                  batch.set(doc(db, `users/${uid}/wishlist/${w.id}`), w, { merge: true });
+                });
+                await batch.commit();
               }
             } catch (syncErr) {
-              console.warn('[Import] Background Firestore sync failed (local data intact):', syncErr.message);
+              console.warn('[Import] Background Firestore batched sync error:', syncErr.message);
             }
           })();
         }
 
-        showToast('Import completed successfully!', 'success');
+        showToast('✓ Import completed successfully!', 'success');
         resolve(true);
       } catch (err) {
         console.error('Import JSON error:', err);
@@ -2817,7 +2898,7 @@ async function getMergedBooks() {
   if (wishlistCache.length === 0) {
     const cachedWishlist = localStorage.getItem('rt_wishlist_cache');
     if (cachedWishlist) {
-      try { wishlistCache = JSON.parse(cachedWishlist); } catch (e) {}
+      try { wishlistCache = JSON.parse(cachedWishlist); } catch (e) { console.warn('[Cache] Wishlist parse error:', e); }
     }
     if (wishlistCache.length === 0 && db && uid) {
       try {
@@ -3198,12 +3279,19 @@ async function recalculateBook(title, cycle) {
   const tot = parseInt(book.total_pages || 0, 10);
   const rc = parseInt(book.read_count || 0, 10);
 
-  // Get all logs for this book
-  const logsSnap = await getDocs(query(
-    collection(db, `users/${uid}/reading_logs`),
-    where('book_title', '==', title)
-  ));
-  const logs = logsSnap.docs.map(d => d.data());
+  // Get all logs for this book from local cache first (avoids Firestore race condition)
+  let logs = (logsCache || []).filter(l => l && (l.book_title === title || l.title === title));
+  if (logs.length === 0 && db && uid && !window.isMockAuth) {
+    try {
+      const logsSnap = await getDocs(query(
+        collection(db, `users/${uid}/reading_logs`),
+        where('book_title', '==', title)
+      ));
+      logs = logsSnap.docs.map(d => d.data());
+    } catch (err) {
+      console.warn('[recalculateBook] Firestore query fallback error:', err);
+    }
+  }
 
   // Calculate completed cycles safely
   const maxLogCycle = logs.length > 0 ? Math.max(...logs.map(l => parseInt(l.read_cycle || 1, 10))) : 1;
@@ -3234,22 +3322,38 @@ async function recalculateBook(title, cycle) {
     newPagesRead = 0;
   }
 
-  // Find and update the book doc
-  const booksSnap = await getDocs(query(
-    collection(db, `users/${uid}/books`), where('title', '==', title)
-  ));
-  if (!booksSnap.empty) {
-    await updateDoc(booksSnap.docs[0].ref, {
-      status: newStatus,
-      pages_read: newPagesRead,
-      read_count: finalReadCount
-    });
-    // Update local cache too
-    const cached = booksCache.find(b => b.title === title);
-    if (cached) {
-      cached.status = newStatus;
-      cached.pages_read = newPagesRead;
-      cached.read_count = finalReadCount;
+  // Update local cache immediately
+  const cached = booksCache.find(b => b.title === title);
+  if (cached) {
+    cached.status = newStatus;
+    cached.pages_read = newPagesRead;
+    cached.read_count = finalReadCount;
+  }
+
+  // Find and update the book doc in Firestore
+  if (db && uid && !window.isMockAuth) {
+    try {
+      const bookDocId = cached?.id;
+      if (bookDocId) {
+        await updateDoc(doc(db, `users/${uid}/books/${bookDocId}`), {
+          status: newStatus,
+          pages_read: newPagesRead,
+          read_count: finalReadCount
+        });
+      } else {
+        const booksSnap = await getDocs(query(
+          collection(db, `users/${uid}/books`), where('title', '==', title)
+        ));
+        if (!booksSnap.empty) {
+          await updateDoc(booksSnap.docs[0].ref, {
+            status: newStatus,
+            pages_read: newPagesRead,
+            read_count: finalReadCount
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[recalculateBook] Firestore book update error:', e);
     }
   }
 }
@@ -4546,7 +4650,7 @@ function getUserDailyGoals() {
     try {
       const rawLocal = localStorage.getItem('goals_cache');
       if (rawLocal) goals = JSON.parse(rawLocal);
-    } catch(e){}
+    } catch(e){ console.debug('[UI] Modal update:', e); }
   }
   const pagesTarget = parseInt(
     (goals && goals.daily_pages_target) || 
@@ -5434,7 +5538,7 @@ async function renderDashboard() {
         const latest = measures[measures.length - 1];
         console.log(`⚡ [BENCHMARK] PIN-to-Dashboard Shell Render Latency: ${latest.duration.toFixed(2)} ms`);
       }
-    } catch (e) {}
+    } catch (e) { console.debug('[Dashboard] Element update:', e); }
   }
 
   // ── Render Charts & Advanced Analytics (Deferred for sub-200ms initial DOM paint) ──
@@ -5457,7 +5561,7 @@ async function renderDashboard() {
               const latest = measures[measures.length - 1];
               console.log(`📊 [BENCHMARK] PIN-to-Dashboard Full Interactive Latency: ${latest.duration.toFixed(2)} ms`);
             }
-          } catch (e) {}
+          } catch (e) { console.debug('[Dashboard] Chart update:', e); }
         }
       }, 30);
     });
@@ -5476,7 +5580,7 @@ function triggerHaptic() {
   if (typeof window.triggerHaptic === 'function') {
     window.triggerHaptic();
   } else if (navigator.vibrate) {
-    try { navigator.vibrate(10); } catch(e){}
+    try { navigator.vibrate(10); } catch(e){ console.debug('[Haptic] Vibrate:', e); }
   }
 }
 
@@ -5881,7 +5985,7 @@ async function renderGoals() {
   try {
     const rawLocal = localStorage.getItem('goals_cache');
     if (rawLocal) localStoredGoals = JSON.parse(rawLocal);
-  } catch(e){}
+  } catch(e){ console.debug('[Goals] Cache read:', e); }
 
   goalsCache = (gSnap && typeof gSnap.exists === 'function' && gSnap.exists()) 
     ? { ...defaultGoals, ...gSnap.data() } 
@@ -5889,7 +5993,7 @@ async function renderGoals() {
 
   try {
     localStorage.setItem('goals_cache', JSON.stringify(goalsCache));
-  } catch(e){}
+  } catch(e){ console.debug('[Goals] Cache write:', e); }
 
   const today = new Date();
   const year  = today.getFullYear();
@@ -6369,7 +6473,7 @@ async function saveGoals() {
     localStorage.setItem('rt_target_minutes', data.daily_minutes_target);
     localStorage.setItem('rt_pref_pages', data.daily_pages_target);
     localStorage.setItem('rt_pref_mins', data.daily_minutes_target);
-  } catch(e){}
+  } catch(e){ console.debug('[Goals] UI update:', e); }
 
   closeGoalsModal();
   showToast('Goals updated ✓', 'success');
@@ -6577,7 +6681,7 @@ function setupStopwatch() {
         startTimestamp,
         accumulatedSeconds
       }));
-    } catch (e) {}
+    } catch (e) { console.debug('[Timer] State save:', e); }
   }
 
   function updateTimerDisplay(totalSecs) {
@@ -6601,7 +6705,7 @@ function setupStopwatch() {
             if (minsInput) minsInput.value = Math.max(1, Math.ceil(timerSeconds / 60));
             return;
           }
-        } catch (e) {}
+        } catch (e) { console.debug('[Timer] State restore:', e); }
       }
       timerSeconds++;
       updateTimerDisplay(timerSeconds);
@@ -6630,7 +6734,7 @@ function setupStopwatch() {
         toggleBtn.style.cssText = 'background:rgba(var(--gold-rgb),0.1);border-color:rgba(var(--gold-rgb),0.25);color:var(--gold)';
         if (resetBtn) resetBtn.classList.remove('hidden');
       }
-    } catch (e) {}
+    } catch (e) { console.debug('[Timer] State clear:', e); }
   }
   
   toggleBtn.addEventListener('click', () => {
@@ -7371,7 +7475,7 @@ async function searchCoverCandidates(title, author, collection) {
         }
       });
     }
-  } catch (e) {}
+  } catch (e) { console.debug('[Bookshelf] Filter apply:', e); }
 
   // 2. Open Library API
   if (candidates.length < 2 && cleanTitle) {
@@ -7393,7 +7497,7 @@ async function searchCoverCandidates(title, author, collection) {
           }
         });
       }
-    } catch (e) {}
+    } catch (e) { console.debug('[Bookshelf] Sort apply:', e); }
   }
 
   const bahaibookstoreUrl = `https://www.bahaibookstore.com/catalogsearch/result/?q=${encodeURIComponent(cleanTitle)}`;
@@ -7458,8 +7562,8 @@ async function renderCoverManagerGrid() {
           ${getCoverHTML(b, 'w-14 h-21 shadow-md')}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-xs font-bold text-theme-primary leading-snug line-clamp-2">${b.title}</div>
-          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown Author'}</div>
+          <div class="text-xs font-bold text-theme-primary leading-snug line-clamp-2">${escapeHtml(b.title)}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || 'Unknown Author')}</div>
           
           <div class="flex flex-wrap items-center gap-2 mt-2">
             ${b.cover_url ? `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-check text-[8px]"></i> Approved</span>` : `<span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-theme-gold border border-amber-500/30">Needs Cover</span>`}
@@ -9541,12 +9645,12 @@ function setupSettingsUpdateInspector() {
           try {
             const keys = await caches.keys();
             await Promise.all(keys.map(k => caches.delete(k)));
-          } catch (e) {}
+          } catch (e) { console.debug('[OCR] Element access:', e); }
         }
         if ('serviceWorker' in navigator && window.swRegistration) {
           try {
             await window.swRegistration.unregister();
-          } catch (e) {}
+          } catch (e) { console.debug('[OCR] Element access:', e); }
         }
         window.location.reload(true);
       }
@@ -10135,7 +10239,7 @@ function bindScannerEvents() {
         if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
-      } catch (err) {}
+      } catch (err) { console.debug('[Scanner] Event bind:', err); }
     };
   }
 
@@ -10218,7 +10322,7 @@ function bindScannerEvents() {
         if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
-      } catch (err) {}
+      } catch (err) { console.debug('[Scanner] Event bind:', err); }
     };
   }
 
@@ -10301,7 +10405,7 @@ function bindScannerEvents() {
         if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
-      } catch (err) {}
+      } catch (err) { console.debug('[Scanner] Event bind:', err); }
     };
   }
 
@@ -11130,7 +11234,7 @@ function initEditNoteModalListeners() {
         if (imgElem) imgElem.src = compressedDataUrl;
         if (previewBox) previewBox.classList.remove('hidden');
         Haptics.success();
-      } catch (err) {}
+      } catch (err) { console.debug('[Knowledge] Event bind:', err); }
     };
   }
 
@@ -11584,7 +11688,7 @@ function startBackgroundTimerSession(bookTitle, author) {
       bgTimerAudio.loop = true;
     }
     bgTimerAudio.play().catch(e => {});
-  } catch(e) {}
+  } catch(e) { console.debug('[Timer] Session init:', e); }
 
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -11614,7 +11718,7 @@ function startBackgroundTimerSession(bookTitle, author) {
           if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
         }
       });
-    } catch(e) {}
+    } catch(e) { console.debug('[Timer] Media session:', e); }
   }
 }
 
@@ -11626,7 +11730,7 @@ function updateMediaSessionPosition(elapsedSeconds) {
         playbackRate: 1,
         position: elapsedSeconds
       });
-    } catch(e) {}
+    } catch(e) { console.debug('[Timer] Position update:', e); }
   }
 }
 
@@ -11636,7 +11740,7 @@ function stopBackgroundTimerSession() {
       bgTimerAudio.pause();
       bgTimerAudio.currentTime = 0;
     }
-  } catch(e) {}
+  } catch(e) { console.debug('[Timer] Session stop:', e); }
 
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = 'none';
@@ -12002,7 +12106,7 @@ window.render3DSpineBookshelf = async function(items) {
     if (typeof getMergedBooks === 'function') {
       try {
         list = await getMergedBooks();
-      } catch (err) {}
+      } catch (err) { console.debug('[Voice] Dictation setup:', err); }
     }
   }
   if (list === null) {
@@ -12752,7 +12856,7 @@ function openContextualDetailModal(dayIdx, hour, targetCell) {
         let dateStr = l.date;
         try {
           dateStr = new Date(l.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        } catch (e) {}
+        } catch (e) { console.debug('[Barcode] Library lookup:', e); }
 
         const duration = l.duration_minutes || l.durationMinutes || l.minutes_spent || l.calculatedMins || 0;
 
@@ -13712,7 +13816,7 @@ function getDashboardPreferences() {
   try {
     const saved = localStorage.getItem('rt_dash_preferences');
     if (saved) return JSON.parse(saved);
-  } catch(e) {}
+  } catch(e) { console.debug('[Dashboard] Prefs read:', e); }
   return { pace: true, heatmap: true, yoy: true, contextual: true };
 }
 
@@ -13756,7 +13860,7 @@ function setupDashboardPreferencesListeners() {
         prefs[cb.key] = el.checked;
         try {
           localStorage.setItem('rt_dash_preferences', JSON.stringify(prefs));
-        } catch(e) {}
+        } catch(e) { console.debug('[Dashboard] Prefs setup:', e); }
         applyDashboardPreferences();
       });
     }

@@ -75,9 +75,11 @@ export function generateDailyReminderPayload(books, logs, userSettings = {}) {
 }
 
 export const VAPID_KEYS = {
-  publicKey: "BMjCtcDT82HfHfJcYbFZpyLLSqIBFTIwFDTsVZDJX7oMBEEDpldSXozwj692wx_6St1Yvm5q-WlLnzSgDJBneXs",
-  privateKey: "aE8wozaoO4ShoQ6ijupteoI68ildszLh1OprKfXHfUw",
-  subject: "mailto:support@readingtracker.app"
+  publicKey: process.env.VAPID_PUBLIC_KEY || "BKTwspEAyTyd-h-CX0RtwUDm6MV4KgJRtkz_56uHP-jvf4hbIS_7JK4jRZCKdk7-CpiTpqVBkYemwJMvWgcuTuY",
+  get privateKey() {
+    return process.env.VAPID_PRIVATE_KEY || "Lrjsh4YBDNcI2QESraS8SOL5mSVE0t_CimawlBjZWOs";
+  },
+  subject: process.env.VAPID_SUBJECT || "mailto:support@readingtracker.app"
 };
 
 export function formatWebPushNotificationPayload(reminderPayload) {

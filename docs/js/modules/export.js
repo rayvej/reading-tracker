@@ -114,12 +114,14 @@ ${n.notes || ''}
   });
 
   const content = await zip.generateAsync({ type: "blob" });
+  const blobUrl = URL.createObjectURL(content);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(content);
+  a.href = blobUrl;
   a.download = `Reading_Tracker_Vault_${new Date().toISOString().slice(0, 10)}.zip`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   showToast('✓ Markdown Vault ZIP downloaded!', 'success');
 }
 
@@ -142,12 +144,14 @@ export function exportBibTeX(booksCache) {
   });
 
   const blob = new Blob([bibtex], { type: 'text/plain;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = blobUrl;
   a.download = `Reading_Tracker_Citations_${new Date().toISOString().slice(0, 10)}.bib`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   showToast('✓ BibTeX (.bib) Citations Downloaded!', 'success');
 }
 

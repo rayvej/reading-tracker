@@ -3,8 +3,8 @@ const BASE = self.location.pathname.replace('/sw.js', '/');
 const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
-  BASE + 'style.css?v=121',
-  BASE + 'app.js?v=121',
+  BASE + 'style.css?v=122',
+  BASE + 'app.js?v=122',
   BASE + 'tailwind.min.css',
   BASE + 'js/install-prompt.js',
   BASE + 'js/seed10YearData.js',

@@ -20,3 +20,6 @@ tests/screenshots/
 # Editor folders
 .vscode/
 .idea/
+
+# Firebase credentials — keep private
+docs/firebase-config.js

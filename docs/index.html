@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Private reading tracker — log sessions, track progress, manage your library.">
   <meta name="theme-color" id="theme-color-meta" content="#0d0f14">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=121">
+  <link rel="stylesheet" href="style.css?v=122">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -58,11 +58,11 @@
 
   <div class="frosted-bg-overlay"></div>
 
-  <!-- ── Ambient background glow blobs ── -->
-  <div class="fixed inset-0 pointer-events-none z-[-2] overflow-hidden opacity-60 max-w-full w-full">
-    <div class="absolute -top-24 -left-24 w-[280px] h-[280px] max-w-full rounded-full bg-orange-500/12 blur-[120px] animate-float-1 overflow-hidden"></div>
-    <div class="absolute top-[40%] right-12 w-[240px] h-[240px] max-w-[40vw] rounded-full bg-rose-600/10 blur-[120px] animate-float-2 overflow-hidden"></div>
-    <div class="absolute -bottom-24 left-[5%] w-[260px] h-[260px] max-w-[80vw] rounded-full bg-amber-500/8 blur-[120px] animate-float-1 overflow-hidden"></div>
+  <!-- ── Ambient background glow blobs (Optimized GPU rendering) ── -->
+  <div class="fixed inset-0 pointer-events-none z-[-2] overflow-hidden opacity-50 max-w-full w-full">
+    <div class="absolute -top-24 -left-24 w-[280px] h-[280px] max-w-full rounded-full bg-orange-500/12 blur-[64px] will-change-transform animate-float-1 overflow-hidden"></div>
+    <div class="absolute top-[40%] right-12 w-[240px] h-[240px] max-w-[40vw] rounded-full bg-rose-600/10 blur-[64px] will-change-transform animate-float-2 overflow-hidden"></div>
+    <div class="absolute -bottom-24 left-[5%] w-[260px] h-[260px] max-w-[80vw] rounded-full bg-amber-500/8 blur-[64px] will-change-transform animate-float-1 overflow-hidden"></div>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
@@ -3972,6 +3972,6 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=121"></script>
+  <script type="module" src="app.js?v=122"></script>
 </body>
 </html>
