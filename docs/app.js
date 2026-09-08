@@ -131,6 +131,7 @@ let bookshelfStatusFilter = 'All';
 let bookshelfOwnershipFilter = 'All';
 let bookshelfSearchTerm   = '';
 let bookshelfSortOrder    = 'title-asc';
+let bookshelfCustomShelfFilter = 'all';
 let bookshelfViewMode     = 'list';   // 'list' | 'grid'
 if (typeof window !== 'undefined') {
   try {
@@ -142,6 +143,10 @@ if (typeof window !== 'undefined') {
 let bookshelfGrouping     = 'none';   // 'none' | 'group'
 let bookshelfSelectMode   = false;
 let bookshelfSelectedIds  = new Set();
+let customShelvesCache    = [];
+let lexiconCache          = [];
+let knowledgeCurrentTopic = 'all';
+let knowledgeCurrentMode  = 'feed';
 let pinBuffer = '';
 const PIN_LENGTH = 4;
 const SESSION_KEY = 'rt_session';
@@ -2820,12 +2825,15 @@ async function exportToJSON() {
   await loadBooksCache();
   await loadLogsCache();
 
-  const data = {
+    const data = {
     app: "Reading Tracker",
-    version: "2.5.0",
+    version: "2.6.0",
     exportDate: new Date().toISOString(),
     books: booksCache,
-    logs: logsCache
+    logs: logsCache,
+    wishlist: wishlistCache,
+    custom_shelves: customShelvesCache,
+    lexicon: lexiconCache
   };
 
   const jsonStr = JSON.stringify(data, null, 2);
@@ -2870,6 +2878,12 @@ function importFromJSON(file) {
           id: w.id || generateId()
         }));
 
+        const validShelves = Array.isArray(data.custom_shelves) ? data.custom_shelves : [];
+        const validLexicon = Array.isArray(data.lexicon) ? data.lexicon.map(item => ({
+          ...item,
+          id: item.id || generateId()
+        })) : [];
+
         showToast(`Importing ${validBooks.length} books and ${validLogs.length} logs...`, 'info');
 
         // 3. Optimistic local-first: hydrate memory caches IMMEDIATELY
@@ -2877,6 +2891,16 @@ function importFromJSON(file) {
         logsCache = validLogs;
         if (validWishlist.length > 0) {
           wishlistCache = validWishlist;
+        }
+        if (validShelves.length > 0) {
+          customShelvesCache = validShelves;
+          localStorage.setItem('rt_custom_shelves', JSON.stringify(customShelvesCache));
+          if (typeof updateCustomShelvesUI === 'function') updateCustomShelvesUI();
+        }
+        if (validLexicon.length > 0) {
+          lexiconCache = validLexicon;
+          localStorage.setItem('rt_lexicon_cache', JSON.stringify(lexiconCache));
+          if (typeof renderLexiconView === 'function') renderLexiconView();
         }
 
         // 4. Invalidate stats cache so metrics compute fresh
@@ -2890,6 +2914,7 @@ function importFromJSON(file) {
           renderDashboard();
           renderAccountView();
           populateBookDropdown();
+          if (typeof renderLexiconView === 'function') renderLexiconView();
         } catch (renderErr) {
           console.warn('[Import] Render after import failed (data intact):', renderErr.message);
         }
@@ -2918,6 +2943,16 @@ function importFromJSON(file) {
                   batch.set(doc(db, `users/${uid}/wishlist/${w.id}`), w, { merge: true });
                 });
                 await batch.commit();
+              }
+              for (let i = 0; i < validLexicon.length; i += 400) {
+                const batch = writeBatch(db);
+                validLexicon.slice(i, i + 400).forEach(term => {
+                  batch.set(doc(db, `users/${uid}/lexicon/${term.id}`), term, { merge: true });
+                });
+                await batch.commit();
+              }
+              if (validShelves.length > 0) {
+                await setDoc(doc(db, `users/${uid}/settings/shelves`), { shelves: validShelves }, { merge: true });
               }
             } catch (syncErr) {
               console.warn('[Import] Background Firestore batched sync error:', syncErr.message);
@@ -7244,6 +7279,15 @@ function toggleAddBookProgressField() {
     }
   }
 
+  const dnfContainer = $('ab-dnf-reason-container');
+  if (dnfContainer) {
+    if (status === 'Did Not Finish') {
+      dnfContainer.classList.remove('hidden');
+    } else {
+      dnfContainer.classList.add('hidden');
+    }
+  }
+
   updateAddBookProgressHint();
 }
 if (typeof window !== 'undefined') window.toggleAddBookProgressField = toggleAddBookProgressField;
@@ -7292,7 +7336,23 @@ function openAddBookModal() {
   if ($('ab-status')) $('ab-status').value = 'Not Started';
   if ($('ab-cover-url')) $('ab-cover-url').value = '';
   if ($('ab-cover-preview')) $('ab-cover-preview').innerHTML = `<i class="fa-solid fa-image"></i>`;
+  if ($('ab-dnf-reason')) $('ab-dnf-reason').value = '';
   toggleAddBookProgressField();
+  if (typeof renderShelvesPicker === 'function') {
+    renderShelvesPicker($('ab-shelves-picker'), []);
+  }
+  const abNewShelfBtn = $('ab-btn-new-shelf');
+  if (abNewShelfBtn) {
+    abNewShelfBtn.onclick = () => {
+      const sName = prompt('Enter new shelf name:');
+      if (sName && sName.trim()) {
+        createCustomShelf(sName.trim());
+        const curShelves = typeof getSelectedShelves === 'function' ? getSelectedShelves($('ab-shelves-picker')) : [];
+        if (!curShelves.includes(sName.trim())) curShelves.push(sName.trim());
+        if (typeof renderShelvesPicker === 'function') renderShelvesPicker($('ab-shelves-picker'), curShelves);
+      }
+    };
+  }
   const searchBtn = $('ab-btn-search-cover');
   if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('ab-title', 'ab-author', 'ab-cover-url', 'ab-cover-preview');
   
@@ -7319,6 +7379,40 @@ function setupBookshelf() {
     sortEl.addEventListener('change', e => {
       bookshelfSortOrder = e.target.value;
       renderBookshelf();
+    });
+  }
+
+  const shelfSelect = $('bookshelf-shelf-select');
+  if (shelfSelect) {
+    shelfSelect.addEventListener('change', e => {
+      bookshelfCustomShelfFilter = e.target.value;
+      renderBookshelf();
+    });
+  }
+
+  const manageShelvesBtn = $('btn-manage-shelves');
+  if (manageShelvesBtn) {
+    manageShelvesBtn.addEventListener('click', openManageShelvesModal);
+  }
+  const manageShelvesClose = $('manage-shelves-close');
+  if (manageShelvesClose) {
+    manageShelvesClose.addEventListener('click', () => $('manage-shelves-modal').classList.remove('open'));
+  }
+  const btnCreateShelf = $('btn-create-shelf');
+  const newShelfInput = $('new-shelf-name-input');
+  if (btnCreateShelf && newShelfInput) {
+    btnCreateShelf.addEventListener('click', () => {
+      const name = newShelfInput.value.trim();
+      if (name) {
+        createCustomShelf(name);
+        newShelfInput.value = '';
+      }
+    });
+    newShelfInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        btnCreateShelf.click();
+      }
     });
   }
 
@@ -7415,6 +7509,17 @@ function setupBookshelf() {
     });
   }
 
+  const batchShelfSelect = $('batch-shelf-select');
+  if (batchShelfSelect) {
+    batchShelfSelect.addEventListener('change', async e => {
+      const shelfName = e.target.value;
+      if (shelfName) {
+        await batchAssignShelf(shelfName);
+        e.target.value = '';
+      }
+    });
+  }
+
   const batchDelete = $('btn-batch-delete');
   if (batchDelete) batchDelete.addEventListener('click', batchDeleteBooks);
 
@@ -7494,6 +7599,8 @@ function resetBookshelfFilters() {
   if (ownEl) {
     ownEl.querySelectorAll('[data-bfo]').forEach(b => b.classList.toggle('active', b.dataset.bfo === 'All'));
   }
+  bookshelfCustomShelfFilter = 'all';
+  if ($('bookshelf-shelf-select')) $('bookshelf-shelf-select').value = 'all';
   if (typeof triggerHaptic === 'function') triggerHaptic();
   renderBookshelf();
 }
@@ -7544,10 +7651,19 @@ async function renderBookshelf(options = {}) {
       if (!['Finished', 'Owned and Read', 'Borrowed and Read', 'Gifted and Read'].includes(item.status)) return false;
     } else if (bookshelfStatusFilter === 'Wishlist') {
       if (item.ownership !== 'Wishlist') return false;
+    } else if (bookshelfStatusFilter === 'Next Up') {
+      if (item.status !== 'Next Up') return false;
+    } else if (bookshelfStatusFilter === 'DNF') {
+      if (!['Did Not Finish', 'DNF', 'On Hold', 'Set Aside'].includes(item.status)) return false;
     }
 
     if (bookshelfOwnershipFilter !== 'All') {
       if (item.ownership !== bookshelfOwnershipFilter) return false;
+    }
+
+    if (bookshelfCustomShelfFilter && bookshelfCustomShelfFilter !== 'all') {
+      const bookShelves = Array.isArray(item.shelves) ? item.shelves : [];
+      if (!bookShelves.includes(bookshelfCustomShelfFilter)) return false;
     }
 
     return true;
@@ -7595,6 +7711,9 @@ function renderActiveFilterChips() {
   if (bookshelfSearchTerm) chips.push(`Search: "${bookshelfSearchTerm}"`);
   if (bookshelfStatusFilter !== 'All') chips.push(`Status: ${bookshelfStatusFilter}`);
   if (bookshelfOwnershipFilter !== 'All') chips.push(`Ownership: ${bookshelfOwnershipFilter}`);
+  if (bookshelfCustomShelfFilter && bookshelfCustomShelfFilter !== 'all') {
+    chips.push(`Shelf: "${bookshelfCustomShelfFilter}"`);
+  }
   if (bookshelfSortOrder !== 'title-asc') {
     const sortLabels = { 'title-desc': 'Z-A', 'priority-high': 'Priority', 'progress-desc': 'Progress %', 'author-asc': 'Author' };
     chips.push(`Sort: ${sortLabels[bookshelfSortOrder] || bookshelfSortOrder}`);
@@ -7622,6 +7741,8 @@ function renderActiveFilterChips() {
     $('bookshelf-filter-status')?.querySelectorAll('[data-bsf]').forEach(b => b.classList.toggle('active', b.dataset.bsf === 'All'));
     bookshelfOwnershipFilter = 'All';
     $('bookshelf-filter-ownership')?.querySelectorAll('[data-bfo]').forEach(b => b.classList.toggle('active', b.dataset.bfo === 'All'));
+    bookshelfCustomShelfFilter = 'all';
+    if ($('bookshelf-shelf-select')) $('bookshelf-shelf-select').value = 'all';
     bookshelfSortOrder = 'title-asc';
     if ($('bookshelf-sort-select')) $('bookshelf-sort-select').value = 'title-asc';
     renderBookshelf();
@@ -7990,9 +8111,11 @@ function renderBookCard(b) {
   const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
   const isAct = b.status === 'In Progress';
   const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+  const isDnf = ['Did Not Finish', 'DNF', 'On Hold', 'Set Aside'].includes(b.status);
 
   let badgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
-  if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  if (isDnf) badgeColor = 'dnf-badge';
+  else if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
   else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
@@ -8015,6 +8138,9 @@ function renderBookCard(b) {
   const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
 
   const isChecked = bookshelfSelectedIds.has(b.id);
+  const shelvesHTML = (Array.isArray(b.shelves) && b.shelves.length > 0)
+    ? b.shelves.map(s => `<span class="shelf-chip"><i class="fa-solid fa-bookmark text-[8px]"></i> ${escapeHtml(s)}</span>`).join('')
+    : '';
 
   if (bookshelfViewMode === 'grid') {
     // 2-Column Compact Grid Card
@@ -8031,8 +8157,9 @@ function renderBookCard(b) {
           <div class="text-xs font-bold text-theme-primary leading-tight line-clamp-2">${escapeHtml(b.title)}</div>
           <div class="text-[10px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || 'Unknown')}</div>
           <div class="flex flex-wrap gap-1 mt-1.5">
-            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${b.status}</span>
+            <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${badgeColor}">${isDnf ? 'Set Aside' : escapeHtml(b.status)}</span>
             <span class="shrink-0 text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border ${prioBadge}">${escapeHtml(b.priority)}</span>
+            ${shelvesHTML}
           </div>
         </div>
       </div>
@@ -8042,9 +8169,10 @@ function renderBookCard(b) {
         </div>
       ` : ''}
       <div class="flex items-center justify-between border-t border-theme pt-1.5 mt-0.5 text-[10px] text-theme-secondary">
-        <span class="text-[9px] font-semibold">${isAct ? `${progressPct}%` : (isFin ? 'Finished' : (b.total_pages ? `${b.total_pages}p` : 'Unread'))}</span>
+        <span class="text-[9px] font-semibold">${isAct ? `${progressPct}%` : (isFin ? 'Finished' : (isDnf ? 'Set Aside' : (b.total_pages ? `${b.total_pages}p` : 'Unread')))}</span>
         <div class="flex items-center gap-1">
-          ${(!isAct && !isFin) ? `<button class="w-6 h-6 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="start-reading" title="Start Reading"><i class="fa-solid fa-play text-[8px]"></i></button>` : ''}
+          ${isDnf ? `<button class="w-6 h-6 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="resume-reading" title="Resume Reading"><i class="fa-solid fa-play text-[8px]"></i></button>` : ''}
+          ${(!isAct && !isFin && !isDnf) ? `<button class="w-6 h-6 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="start-reading" title="Start Reading"><i class="fa-solid fa-play text-[8px]"></i></button>` : ''}
           ${isAct ? `<button class="w-6 h-6 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="complete" title="Mark Complete"><i class="fa-solid fa-check text-[8px]"></i></button>` : ''}
           ${isFin ? `<button class="w-6 h-6 rounded-md bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="re-read" title="Re-Read"><i class="fa-solid fa-rotate-right text-[8px]"></i></button>` : ''}
           <button class="w-6 h-6 rounded-md bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme flex items-center justify-center text-[9px] cursor-pointer" data-action="edit" title="Edit"><i class="fa-solid fa-pen text-[8px]"></i></button>
@@ -8093,6 +8221,16 @@ function renderBookCard(b) {
     `;
   }
 
+  let dnfHTML = '';
+  if (isDnf && b.dnf_reason) {
+    dnfHTML = `
+      <div class="text-[11px] text-rose-400/90 italic px-3 py-1.5 rounded-xl bg-rose-500/5 border border-rose-500/15 flex items-center gap-1.5 mt-0.5">
+        <i class="fa-solid fa-pause text-[9px] text-rose-400"></i>
+        <span>Set Aside: ${escapeHtml(b.dnf_reason)}</span>
+      </div>
+    `;
+  }
+
   card.innerHTML = `
     <div class="flex items-start justify-between gap-3">
       ${bookshelfSelectMode ? `
@@ -8107,9 +8245,10 @@ function renderBookCard(b) {
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.group || 'Other'}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
+          ${shelvesHTML}
         </div>
       </div>
-      <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${b.status}</span>
+      <span class="shrink-0 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border ${badgeColor}">${isDnf ? 'Set Aside' : b.status}</span>
     </div>
 
     ${isAct ? `
@@ -8126,6 +8265,7 @@ function renderBookCard(b) {
 
     ${buyHTML}
     ${notesHTML}
+    ${dnfHTML}
 
     <div class="flex justify-between items-center text-[10px] text-theme-secondary border-t border-theme pt-2.5 font-semibold mt-1">
       <div class="flex gap-3">
@@ -8133,7 +8273,8 @@ function renderBookCard(b) {
         <span>Reads: <b class="text-theme-primary">${b.read_count || 0}</b></span>
       </div>
       <div class="flex gap-1.5">
-        ${(!isAct && !isFin) ? `<button class="btn btn-xs rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="start-reading"><i class="fa-solid fa-play text-[8px] mr-1"></i>Start Reading</button>` : ''}
+        ${isDnf ? `<button class="btn btn-xs rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="resume-reading"><i class="fa-solid fa-play text-[8px] mr-1"></i>Resume</button>` : ''}
+        ${(!isAct && !isFin && !isDnf) ? `<button class="btn btn-xs rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="start-reading"><i class="fa-solid fa-play text-[8px] mr-1"></i>Start Reading</button>` : ''}
         ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
         ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
         <button class="btn btn-xs rounded-lg bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
@@ -8158,6 +8299,11 @@ function renderBookCard(b) {
   return card;
 
   function bindCardActions(targetCard) {
+    const resumeBtn = targetCard.querySelector('[data-action="resume-reading"]');
+    if (resumeBtn) resumeBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await resumeReadingBook(b);
+    });
     const startBtn = targetCard.querySelector('[data-action="start-reading"]');
     if (startBtn) startBtn.addEventListener('click', async e => {
       e.stopPropagation();
@@ -8361,6 +8507,8 @@ async function saveNewBook() {
   const buyLink = $('ab-where-to-buy').value.trim() || '';
   const notes = $('ab-notes').value.trim() || '';
   const coverUrl = $('ab-cover-url')?.value?.trim() || null;
+  const dnfReason = $('ab-dnf-reason')?.value?.trim() || '';
+  const shelves = typeof getSelectedShelves === 'function' ? getSelectedShelves($('ab-shelves-picker')) : [];
   
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
   if (pages > 99999) { showToast('Page count seems unrealistic (max 99,999).', 'error'); return; }
@@ -8403,6 +8551,8 @@ async function saveNewBook() {
       where_to_buy: buyLink,
       notes: notes,
       cover_url: coverUrl,
+      dnf_reason: dnfReason,
+      shelves: shelves,
       date_added: todayISO()
     };
     
@@ -8505,6 +8655,32 @@ function openEditBookModal(b) {
   if ($('eb-cover-preview')) {
     $('eb-cover-preview').innerHTML = b.cover_url ? `<img src="${b.cover_url}" class="w-full h-full object-cover rounded-lg" loading="lazy" decoding="async">` : `<i class="fa-solid fa-image"></i>`;
   }
+  if ($('eb-dnf-reason')) $('eb-dnf-reason').value = b.dnf_reason || '';
+  const ebDnfContainer = $('eb-dnf-reason-container');
+  if (ebDnfContainer) {
+    ebDnfContainer.classList.toggle('hidden', b.status !== 'Did Not Finish');
+  }
+  const ebStatus = $('eb-status');
+  if (ebStatus) {
+    ebStatus.onchange = () => {
+      if (ebDnfContainer) ebDnfContainer.classList.toggle('hidden', ebStatus.value !== 'Did Not Finish');
+    };
+  }
+  if (typeof renderShelvesPicker === 'function') {
+    renderShelvesPicker($('eb-shelves-picker'), b.shelves || []);
+  }
+  const ebNewShelfBtn = $('eb-btn-new-shelf');
+  if (ebNewShelfBtn) {
+    ebNewShelfBtn.onclick = () => {
+      const sName = prompt('Enter new shelf name:');
+      if (sName && sName.trim()) {
+        createCustomShelf(sName.trim());
+        const curShelves = typeof getSelectedShelves === 'function' ? getSelectedShelves($('eb-shelves-picker')) : [];
+        if (!curShelves.includes(sName.trim())) curShelves.push(sName.trim());
+        if (typeof renderShelvesPicker === 'function') renderShelvesPicker($('eb-shelves-picker'), curShelves);
+      }
+    };
+  }
   const searchBtn = $('eb-btn-search-cover');
   if (searchBtn) searchBtn.onclick = () => autoFindSingleCover('eb-title', 'eb-author', 'eb-cover-url', 'eb-cover-preview');
   $('edit-book-modal').classList.add('open');
@@ -8529,6 +8705,8 @@ async function saveEditBook() {
   const buyLink = $('eb-where-to-buy').value.trim() || '';
   const notes = $('eb-notes').value.trim() || '';
   const coverUrl = $('eb-cover-url')?.value?.trim() || null;
+  const dnfReason = $('eb-dnf-reason')?.value?.trim() || '';
+  const shelves = typeof getSelectedShelves === 'function' ? getSelectedShelves($('eb-shelves-picker')) : [];
 
   if (!title) { showToast('Please enter a book title.', 'error'); return; }
   if (isNaN(pages) || pages <= 0) { showToast('Please enter a valid page length.', 'error'); return; }
@@ -8560,7 +8738,9 @@ async function saveEditBook() {
       est_cost: cost,
       where_to_buy: buyLink,
       notes: notes,
-      cover_url: coverUrl
+      cover_url: coverUrl,
+      dnf_reason: dnfReason,
+      shelves: shelves
     };
 
     if (isFinished && (!activeBookObjectForEdit || !activeBookObjectForEdit.finish_date)) {
@@ -8577,7 +8757,9 @@ async function saveEditBook() {
         est_pages: pages,
         est_cost: cost,
         where_to_buy: buyLink,
-        notes: notes
+        notes: notes,
+        dnf_reason: dnfReason,
+        shelves: shelves
       });
     } else {
       await updateDoc(doc(db, `users/${uid}/books/${id}`), updates);
@@ -9501,10 +9683,12 @@ function openBookDetailModal(b) {
   const isFin = ['Finished', 'Owned and Read', 'Borrowed and Read'].includes(b.status);
   const isAct = b.status === 'In Progress';
   const isWl = ['Want to Buy', 'Gifted', 'Borrowed', 'Wishlist'].includes(b.status) || b._isWishlist;
+  const isDnf = ['Did Not Finish', 'DNF', 'On Hold', 'Set Aside'].includes(b.status);
   
   // Badges
   let badgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
-  if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
+  if (isDnf) badgeColor = 'dnf-badge';
+  else if (isFin) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (isAct) badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
   else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
@@ -9521,12 +9705,22 @@ function openBookDetailModal(b) {
   };
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
   
+  const shelvesBadges = (Array.isArray(b.shelves) && b.shelves.length > 0)
+    ? b.shelves.map(s => `<span class="shelf-chip"><i class="fa-solid fa-bookmark text-[8px]"></i> ${escapeHtml(s)}</span>`).join('')
+    : '';
+
+  const dnfReasonHTML = (isDnf && b.dnf_reason)
+    ? `<div class="text-[11px] text-rose-400/90 italic px-3 py-1.5 rounded-xl bg-rose-500/5 border border-rose-500/20 flex items-center gap-2 mt-1 w-full"><i class="fa-solid fa-pause text-[10px] text-rose-400"></i><span>Set Aside Reason: ${escapeHtml(b.dnf_reason)}</span></div>`
+    : '';
+
   $('bd-badges').innerHTML = `
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${escapeHtml(b.status)}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${isDnf ? 'Set Aside' : escapeHtml(b.status)}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${escapeHtml(b.group || 'Other')}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${escapeHtml(b.priority)}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${escapeHtml(b.ownership)}</span>
+    ${shelvesBadges}
+    ${dnfReasonHTML}
   `;
   
   const pagesReadAccum = b.pages_read || 0;
@@ -9534,7 +9728,7 @@ function openBookDetailModal(b) {
   const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
   const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
   
-  $('bd-progress-text').textContent = `${isFin ? b.total_pages : currentCyclePages} / ${b.total_pages} pg`;
+  $('bd-progress-text').textContent = `${isFin ? b.total_pages : (isDnf ? currentCyclePages : currentCyclePages)} / ${b.total_pages} pg`;
   $('bd-cycles-text').textContent = `Cycle: ${readCycle} · Reads: ${b.read_count || 0}`;
   
   const circle = $('bd-progress-ring');
@@ -9704,6 +9898,28 @@ function openBookDetailModal(b) {
       $('book-detail-modal').classList.remove('open');
       openEditBookModal(b);
     });
+  }
+
+  const resumeBtn = $('bd-action-resume');
+  if (resumeBtn) {
+    if (isDnf) {
+      resumeBtn.classList.remove('hidden');
+      const newResumeBtn = resumeBtn.cloneNode(true);
+      resumeBtn.parentNode.replaceChild(newResumeBtn, resumeBtn);
+      newResumeBtn.addEventListener('click', async () => {
+        $('book-detail-modal').classList.remove('open');
+        await resumeReadingBook(b);
+      });
+    } else {
+      resumeBtn.classList.add('hidden');
+    }
+  }
+
+  if (typeof renderBookCyclesJournalSection === 'function') {
+    renderBookCyclesJournalSection(b);
+  }
+  if (typeof renderBookLexiconSection === 'function') {
+    renderBookLexiconSection(b);
   }
 
   $('book-detail-modal').classList.add('open');
@@ -9902,7 +10118,7 @@ function setupSettingsUpdateInspector() {
           if (!updateDiscovered && !reg.waiting && !reg.installing) {
             resetButton();
             const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-            const ver = badge ? badge.textContent : 'v125';
+            const ver = badge ? badge.textContent : 'v126';
             if (typeof showToast === 'function') {
               showToast(`You are running the latest version (${ver})`, 'success');
             }
@@ -11002,6 +11218,59 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     };
   }
 
+  // ── Topical Concordance Aggregation & Pills ──
+  const topicCounts = {};
+  notesList.forEach(n => {
+    const tags = typeof extractHashtags === 'function' ? extractHashtags(n.notes) : [];
+    tags.forEach(t => {
+      const lower = t.toLowerCase();
+      if (!topicCounts[lower]) {
+        topicCounts[lower] = { tag: t, count: 0 };
+      }
+      topicCounts[lower].count += 1;
+    });
+  });
+
+  const sortedTopics = Object.values(topicCounts).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+  const topicPillsContainer = $('knowledge-topic-pills');
+  const clearTopicBtn = $('kn-btn-clear-concordance');
+
+  if (topicPillsContainer) {
+    topicPillsContainer.innerHTML = '';
+    if (sortedTopics.length === 0) {
+      topicPillsContainer.innerHTML = `<span class="text-[11px] text-theme-tertiary italic px-1">Use #hashtags in notes to create topic concordance tags</span>`;
+    } else {
+      sortedTopics.forEach(({ tag, count }) => {
+        const pill = document.createElement('button');
+        const isActive = knowledgeCurrentTopic.toLowerCase() === tag.toLowerCase();
+        pill.className = `concordance-pill ${isActive ? 'active' : ''}`;
+        pill.dataset.topic = tag;
+        pill.innerHTML = `<i class="fa-solid fa-hashtag text-[9px]"></i> ${escapeHtml(tag.replace(/^#/, ''))} <span class="concordance-pill-count">${count}</span>`;
+        pill.onclick = () => {
+          if (knowledgeCurrentTopic.toLowerCase() === tag.toLowerCase()) {
+            knowledgeCurrentTopic = 'all';
+          } else {
+            knowledgeCurrentTopic = tag;
+          }
+          renderKnowledgeView();
+        };
+        topicPillsContainer.appendChild(pill);
+      });
+    }
+  }
+
+  if (clearTopicBtn) {
+    if (knowledgeCurrentTopic !== 'all') {
+      clearTopicBtn.classList.remove('hidden');
+      clearTopicBtn.onclick = () => {
+        knowledgeCurrentTopic = 'all';
+        renderKnowledgeView();
+      };
+    } else {
+      clearTopicBtn.classList.add('hidden');
+    }
+  }
+
   let filtered = notesList;
 
   if (knowledgeSelectedBook === 'standalone') {
@@ -11016,6 +11285,14 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     filtered = filtered.filter(n => !n.isQuote);
   } else if (selectedTag === 'favorites') {
     filtered = filtered.filter(n => n.isFavorite);
+  }
+
+  if (knowledgeCurrentTopic !== 'all') {
+    const targetTopic = knowledgeCurrentTopic.toLowerCase();
+    filtered = filtered.filter(n => {
+      const tags = (typeof extractHashtags === 'function' ? extractHashtags(n.notes) : []).map(t => t.toLowerCase());
+      return tags.includes(targetTopic);
+    });
   }
 
   if (searchQuery) {
@@ -11035,7 +11312,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   feed.innerHTML = '';
 
   if (filtered.length === 0) {
-    const isFiltered = knowledgeSelectedBook !== 'all' || selectedTag !== 'all' || searchQuery !== '';
+    const isFiltered = knowledgeSelectedBook !== 'all' || selectedTag !== 'all' || searchQuery !== '' || knowledgeCurrentTopic !== 'all';
     feed.innerHTML = `
       <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
         <i class="fa-solid fa-quote-left text-3xl text-theme-gold/40"></i>
@@ -11053,6 +11330,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     if (resetBtn) {
       resetBtn.onclick = () => {
         knowledgeSelectedBook = 'all';
+        knowledgeCurrentTopic = 'all';
         if (bookSelect) bookSelect.value = 'all';
         if (searchInput) searchInput.value = '';
         if (searchClear) searchClear.classList.add('hidden');
@@ -11088,7 +11366,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     card.innerHTML = `
       ${photoHTML}
       <blockquote class="italic text-sm font-medium leading-relaxed" style="color: var(--text-primary)">
-        "${escapeHtml(n.notes.replace(/^>\s*/, ''))}"
+        "${typeof linkifyHashtags === 'function' ? linkifyHashtags(escapeHtml(n.notes.replace(/^>\s*/, ''))) : escapeHtml(n.notes.replace(/^>\s*/, ''))}"
       </blockquote>
 
       <!-- Multi-Line Book & Citation Metadata Tier -->
@@ -11177,6 +11455,18 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
         });
       };
     }
+
+    card.querySelectorAll('.concordance-tag-link').forEach(tagLink => {
+      tagLink.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof Haptics !== 'undefined' && Haptics.selection) Haptics.selection();
+        const tag = tagLink.getAttribute('data-tag');
+        if (tag) {
+          knowledgeCurrentTopic = tag;
+          renderKnowledgeView(knowledgeCurrentTag);
+        }
+      };
+    });
 
     feed.appendChild(card);
   });
@@ -12764,6 +13054,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVoiceDictation('edit-note-text', 'edit-note-btn-dictate');
   setupVoiceDictation('ab-notes', 'ab-btn-dictate');
   setupVoiceDictation('eb-notes', 'eb-btn-dictate');
+  setupVoiceDictation('lex-add-def', 'lex-add-btn-dictate');
+  setupVoiceDictation('lex-edit-def', 'lex-edit-btn-dictate');
+  setupVoiceDictation('cr-notes-input', 'cr-btn-dictate');
 
   if (typeof initEditNoteModalListeners === 'function') {
     initEditNoteModalListeners();
@@ -13331,15 +13624,71 @@ let mindGraphAnimFrameId = null;
 let mindGraphState = null;
 
 function initKnowledgeModeToggle() {
-  const toggleBtns = document.querySelectorAll('#knowledge-view-mode-toggle .seg-btn');
+  const toggleBtns = document.querySelectorAll('#knowledge-view-mode-toggle button');
   const feedEl = document.getElementById('knowledge-quote-feed');
+  const graphEl = document.getElementById('knowledge-mind-graph-container');
+  const lexiconEl = document.getElementById('knowledge-lexicon-container');
+  const statsRow = document.getElementById('knowledge-stats-row');
+  const dailyCard = document.getElementById('knowledge-daily-card');
+  const topicConcordance = document.getElementById('knowledge-topic-concordance-wrapper');
+  const searchBar = document.getElementById('knowledge-feed-search-bar');
+  const tagBar = document.getElementById('knowledge-tag-bar');
+  const btnQuickNote = document.getElementById('btn-quick-note-open');
+  const btnAddLexicon = document.getElementById('btn-add-lexicon-open');
+
+  function switchMode(mode) {
+    knowledgeCurrentMode = mode;
+    toggleBtns.forEach(b => {
+      const isTarget = b.dataset.mode === mode;
+      b.classList.toggle('active', isTarget);
+    });
+
+    if (mode === 'feed') {
+      if (feedEl) feedEl.classList.remove('hidden');
+      if (statsRow) statsRow.classList.remove('hidden');
+      if (dailyCard) dailyCard.classList.remove('hidden');
+      if (topicConcordance) topicConcordance.classList.remove('hidden');
+      if (searchBar) searchBar.classList.remove('hidden');
+      if (tagBar) tagBar.classList.remove('hidden');
+      if (btnQuickNote) btnQuickNote.classList.remove('hidden');
+
+      if (graphEl) graphEl.classList.add('hidden');
+      if (lexiconEl) lexiconEl.classList.add('hidden');
+      if (btnAddLexicon) btnAddLexicon.classList.add('hidden');
+    } else if (mode === 'graph') {
+      if (graphEl) graphEl.classList.remove('hidden');
+
+      if (feedEl) feedEl.classList.add('hidden');
+      if (statsRow) statsRow.classList.add('hidden');
+      if (dailyCard) dailyCard.classList.add('hidden');
+      if (topicConcordance) topicConcordance.classList.add('hidden');
+      if (searchBar) searchBar.classList.add('hidden');
+      if (tagBar) tagBar.classList.add('hidden');
+      if (lexiconEl) lexiconEl.classList.add('hidden');
+      if (btnAddLexicon) btnAddLexicon.classList.add('hidden');
+      if (btnQuickNote) btnQuickNote.classList.add('hidden');
+      if (typeof renderMindGraph === 'function') renderMindGraph();
+    } else if (mode === 'lexicon') {
+      if (lexiconEl) lexiconEl.classList.remove('hidden');
+      if (btnAddLexicon) btnAddLexicon.classList.remove('hidden');
+
+      if (feedEl) feedEl.classList.add('hidden');
+      if (statsRow) statsRow.classList.add('hidden');
+      if (dailyCard) dailyCard.classList.add('hidden');
+      if (topicConcordance) topicConcordance.classList.add('hidden');
+      if (searchBar) searchBar.classList.add('hidden');
+      if (tagBar) tagBar.classList.add('hidden');
+      if (graphEl) graphEl.classList.add('hidden');
+      if (btnQuickNote) btnQuickNote.classList.add('hidden');
+      if (typeof renderLexiconView === 'function') renderLexiconView();
+    }
+  }
 
   toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      toggleBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      if (feedEl) feedEl.classList.remove('hidden');
+      if (typeof Haptics !== 'undefined' && Haptics.selection) Haptics.selection();
+      const mode = btn.dataset.mode || 'feed';
+      switchMode(mode);
     });
   });
 
@@ -14413,6 +14762,855 @@ window.exportQuoteCard = function(title, author, text) {
   if (typeof showToast === 'function') showToast('Quote card exported to downloads!', 'success');
 };
 
+// ════════════════════════════════════════════════════════════
+// ELITE SCHOLAR & LIBRARY ARCHITECTURE (v126)
+// ════════════════════════════════════════════════════════════
+
+// 1. TOPICAL CONCORDANCE & TAG INDEXING
+const HASHTAG_REGEX = /#[a-zA-Z0-9_\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u00C0-\u024F']+/g;
+
+function extractHashtags(text) {
+  if (!text || typeof text !== 'string') return [];
+  const matches = text.match(HASHTAG_REGEX);
+  if (!matches) return [];
+  const seen = new Set();
+  const result = [];
+  for (const m of matches) {
+    const clean = m.trim();
+    if (clean.length > 1 && !seen.has(clean.toLowerCase())) {
+      seen.add(clean.toLowerCase());
+      result.push(clean);
+    }
+  }
+  return result;
+}
+
+function linkifyHashtags(escapedText) {
+  if (!escapedText || typeof escapedText !== 'string') return '';
+  return escapedText.replace(HASHTAG_REGEX, (match) => {
+    return `<span class="concordance-tag-link cursor-pointer font-semibold text-theme-gold hover:underline" data-tag="${escapeHtml(match)}">${escapeHtml(match)}</span>`;
+  });
+}
+
+// 2. CUSTOM SHELVES & READING LISTS
+function loadCustomShelves() {
+  try {
+    const stored = localStorage.getItem('rt_custom_shelves');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        customShelvesCache = [...new Set(parsed.map(s => String(s).trim()).filter(Boolean))];
+      }
+    }
+  } catch (e) {
+    console.warn('Error loading custom shelves from localStorage:', e);
+  }
+  updateCustomShelvesUI();
+}
+
+function saveCustomShelves() {
+  try {
+    localStorage.setItem('rt_custom_shelves', JSON.stringify(customShelvesCache));
+  } catch (e) {
+    console.warn('Error saving custom shelves to localStorage:', e);
+  }
+  if (typeof uid !== 'undefined' && uid && typeof setDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+    setDoc(doc(db, 'users', uid), { custom_shelves: customShelvesCache }, { merge: true }).catch(err => {
+      console.warn('Firestore custom_shelves sync note:', err);
+    });
+  }
+  updateCustomShelvesUI();
+}
+
+function createCustomShelf(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) {
+    if (typeof showToast === 'function') showToast('Please enter a valid shelf name.', 'error');
+    return;
+  }
+  const exists = customShelvesCache.some(s => s.toLowerCase() === trimmed.toLowerCase());
+  if (exists) {
+    if (typeof showToast === 'function') showToast(`Shelf "${trimmed}" already exists.`, 'error');
+    return;
+  }
+  customShelvesCache.push(trimmed);
+  customShelvesCache.sort((a, b) => a.localeCompare(b));
+  saveCustomShelves();
+  if (typeof showToast === 'function') showToast(`Created shelf "${trimmed}"!`, 'success');
+}
+
+async function deleteCustomShelf(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return;
+  customShelvesCache = customShelvesCache.filter(s => s.toLowerCase() !== trimmed.toLowerCase());
+  saveCustomShelves();
+
+  // Clean shelf tag from books in booksCache
+  if (Array.isArray(booksCache)) {
+    let updatedCount = 0;
+    for (const b of booksCache) {
+      if (Array.isArray(b.shelves) && b.shelves.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
+        b.shelves = b.shelves.filter(s => s.toLowerCase() !== trimmed.toLowerCase());
+        updatedCount++;
+        if (typeof uid !== 'undefined' && uid && typeof updateDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined' && b.id) {
+          updateDoc(doc(db, `users/${uid}/books/${b.id}`), { shelves: b.shelves }).catch(console.warn);
+        }
+      }
+    }
+    if (updatedCount > 0 && typeof renderBookshelf === 'function') {
+      renderBookshelf();
+    }
+  }
+
+  if (bookshelfCustomShelfFilter && bookshelfCustomShelfFilter.toLowerCase() === trimmed.toLowerCase()) {
+    bookshelfCustomShelfFilter = 'all';
+    if (typeof renderBookshelf === 'function') renderBookshelf();
+  }
+
+  if (typeof showToast === 'function') showToast(`Deleted shelf "${trimmed}".`, 'info');
+}
+
+function updateCustomShelvesUI() {
+  // 1. Bookshelf filter select
+  const shelfSelect = $('bookshelf-shelf-select');
+  if (shelfSelect) {
+    const curVal = shelfSelect.value;
+    shelfSelect.innerHTML = `<option value="all">📚 All Shelves</option>`;
+    customShelvesCache.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = `🏷️ ${s}`;
+      if (s === bookshelfCustomShelfFilter) opt.selected = true;
+      shelfSelect.appendChild(opt);
+    });
+    if (curVal && curVal !== 'all' && customShelvesCache.includes(curVal)) {
+      shelfSelect.value = curVal;
+    }
+  }
+
+  // 2. Batch action shelf select
+  const batchShelfSelect = $('batch-shelf-select');
+  if (batchShelfSelect) {
+    batchShelfSelect.innerHTML = `<option value="">Add to Shelf...</option>`;
+    customShelvesCache.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      batchShelfSelect.appendChild(opt);
+    });
+  }
+
+  // 3. Manage shelves list
+  renderManageShelvesList();
+}
+
+function renderManageShelvesList() {
+  const listEl = $('manage-shelves-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  if (customShelvesCache.length === 0) {
+    listEl.innerHTML = `<div class="text-xs text-theme-tertiary italic text-center py-4">No custom shelves created yet. Add one above!</div>`;
+    return;
+  }
+
+  customShelvesCache.forEach(shelf => {
+    const count = (Array.isArray(booksCache) ? booksCache : []).filter(b => Array.isArray(b.shelves) && b.shelves.includes(shelf)).length;
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-2.5 rounded-xl bg-theme-input border border-theme';
+    row.innerHTML = `
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-bookmark text-xs text-purple-400"></i>
+        <span class="text-xs font-bold text-theme-primary">${escapeHtml(shelf)}</span>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/20">${count} book${count === 1 ? '' : 's'}</span>
+      </div>
+      <button class="w-7 h-7 rounded-lg text-theme-secondary hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center text-xs transition-all cursor-pointer" title="Delete shelf" data-shelf="${escapeHtml(shelf)}">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+    `;
+
+    const delBtn = row.querySelector('button');
+    if (delBtn) {
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete shelf "${shelf}"? Books on this shelf will not be deleted.`)) {
+          deleteCustomShelf(shelf);
+        }
+      };
+    }
+
+    listEl.appendChild(row);
+  });
+}
+
+function openManageShelvesModal() {
+  renderManageShelvesList();
+  const m = $('manage-shelves-modal');
+  if (m) m.classList.add('open');
+}
+
+function renderShelvesPicker(pickerEl, selectedShelves = []) {
+  if (!pickerEl) return;
+  pickerEl.innerHTML = '';
+  const selectedSet = new Set(selectedShelves || []);
+
+  if (customShelvesCache.length === 0) {
+    pickerEl.innerHTML = `<span class="text-[11px] text-theme-tertiary italic">No custom shelves yet. Click "+ New Shelf" to create one.</span>`;
+    return;
+  }
+
+  customShelvesCache.forEach(shelf => {
+    const isSelected = selectedSet.has(shelf);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.dataset.shelf = shelf;
+    chip.className = `shelf-picker-chip px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+      isSelected ? 'bg-purple-500/25 border-purple-500/50 text-purple-200 active-shelf' : 'bg-white/5 border-white/10 text-theme-secondary hover:text-theme-primary'
+    }`;
+    chip.innerHTML = `${isSelected ? '<i class="fa-solid fa-check text-[10px] mr-1"></i>' : ''}${escapeHtml(shelf)}`;
+    chip.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof triggerHaptic === 'function') triggerHaptic();
+      if (selectedSet.has(shelf)) {
+        selectedSet.delete(shelf);
+      } else {
+        selectedSet.add(shelf);
+      }
+      renderShelvesPicker(pickerEl, Array.from(selectedSet));
+    };
+    pickerEl.appendChild(chip);
+  });
+}
+
+function getSelectedShelves(pickerEl) {
+  if (!pickerEl) return [];
+  const chips = pickerEl.querySelectorAll('.shelf-picker-chip.active-shelf');
+  return Array.from(chips).map(c => c.dataset.shelf).filter(Boolean);
+}
+
+async function batchAssignShelf(shelfName) {
+  if (!shelfName || bookshelfSelectedIds.size === 0) return;
+  let count = 0;
+  for (const id of bookshelfSelectedIds) {
+    const book = booksCache.find(b => b.id === id);
+    if (book) {
+      book.shelves = book.shelves || [];
+      if (!book.shelves.includes(shelfName)) {
+        book.shelves.push(shelfName);
+        count++;
+        if (typeof uid !== 'undefined' && uid && typeof updateDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+          updateDoc(doc(db, `users/${uid}/books/${book.id}`), { shelves: book.shelves }).catch(console.warn);
+        }
+      }
+    }
+  }
+  if (typeof showToast === 'function') showToast(`Added ${count} book${count === 1 ? '' : 's'} to shelf "${shelfName}"!`, 'success');
+  renderBookshelf();
+  renderManageShelvesList();
+}
+
+// 3. GRACEFUL DNF & SET ASIDE SHELVING RESUME FLOW
+async function resumeReadingBook(b) {
+  if (!b) return;
+  b.status = 'In Progress';
+  if (typeof uid !== 'undefined' && uid && typeof updateDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined' && b.id) {
+    try {
+      await updateDoc(doc(db, `users/${uid}/books/${b.id}`), { status: 'In Progress' });
+    } catch (err) {
+      console.warn('Error resuming book in Firestore:', err);
+    }
+  }
+  if (typeof showToast === 'function') showToast(`Resumed reading "${b.title}"!`, 'success');
+  if (typeof renderBookshelf === 'function') renderBookshelf();
+  if (typeof openBookDetailModal === 'function') openBookDetailModal(b);
+}
+
+// 4. PERSONAL VOCABULARY & TERMINOLOGY LEXICON
+function loadLexiconCache() {
+  try {
+    const stored = localStorage.getItem('rt_lexicon_cache');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        lexiconCache = parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Error loading lexicon cache from localStorage:', e);
+  }
+
+  if (typeof uid !== 'undefined' && uid && typeof getDocs === 'function' && typeof collection === 'function' && typeof db !== 'undefined') {
+    getDocs(collection(db, `users/${uid}/lexicon`)).then(snapshot => {
+      if (!snapshot.empty) {
+        const remote = [];
+        snapshot.forEach(docSnap => {
+          remote.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        lexiconCache = remote;
+        try {
+          localStorage.setItem('rt_lexicon_cache', JSON.stringify(lexiconCache));
+        } catch (e) {}
+        if (typeof renderLexiconView === 'function' && knowledgeCurrentMode === 'lexicon') {
+          renderLexiconView();
+        }
+      }
+    }).catch(err => {
+      console.warn('Remote lexicon fetch note:', err);
+    });
+  }
+}
+
+async function saveLexiconTerm(termData) {
+  if (!termData || !termData.term || !termData.def) {
+    if (typeof showToast === 'function') showToast('Please enter both term and definition.', 'error');
+    return;
+  }
+
+  const id = termData.id || ('lex_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+  const entry = {
+    id,
+    term: termData.term.trim(),
+    lang: termData.lang || 'Arabic',
+    def: termData.def.trim(),
+    bookTitle: termData.bookTitle ? termData.bookTitle.trim() : '',
+    page: termData.page ? parseInt(termData.page, 10) : null,
+    context: termData.context ? termData.context.trim() : '',
+    updated_at: new Date().toISOString()
+  };
+
+  const idx = lexiconCache.findIndex(l => l.id === id);
+  if (idx >= 0) {
+    lexiconCache[idx] = entry;
+  } else {
+    lexiconCache.push(entry);
+  }
+
+  try {
+    localStorage.setItem('rt_lexicon_cache', JSON.stringify(lexiconCache));
+  } catch (e) {
+    console.warn('Error saving lexicon to localStorage:', e);
+  }
+
+  if (typeof uid !== 'undefined' && uid && typeof setDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+    setDoc(doc(db, `users/${uid}/lexicon/${id}`), entry, { merge: true }).catch(err => {
+      console.warn('Firestore lexicon setDoc error:', err);
+    });
+  }
+
+  if (typeof renderLexiconView === 'function') {
+    renderLexiconView();
+  }
+
+  if (entry.bookTitle && typeof renderBookLexiconSection === 'function') {
+    const activeBook = (Array.isArray(booksCache) ? booksCache : []).find(b => b.title === entry.bookTitle);
+    if (activeBook) renderBookLexiconSection(activeBook);
+  }
+
+  if (typeof showToast === 'function') showToast(`Term "${entry.term}" saved to lexicon!`, 'success');
+}
+
+async function deleteLexiconTerm(termId) {
+  if (!termId) return;
+  const entry = lexiconCache.find(l => l.id === termId);
+  lexiconCache = lexiconCache.filter(l => l.id !== termId);
+
+  try {
+    localStorage.setItem('rt_lexicon_cache', JSON.stringify(lexiconCache));
+  } catch (e) {
+    console.warn('Error updating lexicon cache on delete:', e);
+  }
+
+  if (typeof uid !== 'undefined' && uid && typeof deleteDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+    deleteDoc(doc(db, `users/${uid}/lexicon/${termId}`)).catch(err => {
+      console.warn('Firestore lexicon delete error:', err);
+    });
+  }
+
+  if (typeof renderLexiconView === 'function') {
+    renderLexiconView();
+  }
+
+  if (entry && entry.bookTitle && typeof renderBookLexiconSection === 'function') {
+    const activeBook = (Array.isArray(booksCache) ? booksCache : []).find(b => b.title === entry.bookTitle);
+    if (activeBook) renderBookLexiconSection(activeBook);
+  }
+
+  if (typeof showToast === 'function') showToast('Term removed from lexicon.', 'info');
+}
+
+function renderLexiconView() {
+  const listEl = $('lexicon-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  const searchInput = $('lexicon-search-input');
+  const searchClear = $('lexicon-search-clear');
+  const query = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+  const langSelect = $('lexicon-lang-select');
+  const selectedLang = (langSelect ? langSelect.value : 'all');
+
+  if (searchClear && searchInput) {
+    searchClear.classList.toggle('hidden', !searchInput.value);
+  }
+
+  let filtered = [...lexiconCache];
+  if (selectedLang !== 'all') {
+    filtered = filtered.filter(item => (item.lang || '').toLowerCase() === selectedLang.toLowerCase());
+  }
+  if (query) {
+    filtered = filtered.filter(item => {
+      const t = (item.term || '').toLowerCase();
+      const d = (item.def || '').toLowerCase();
+      const c = (item.context || '').toLowerCase();
+      const b = (item.bookTitle || '').toLowerCase();
+      return t.includes(query) || d.includes(query) || c.includes(query) || b.includes(query);
+    });
+  }
+
+  filtered.sort((a, b) => (a.term || '').localeCompare(b.term || ''));
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="glass-panel p-8 text-center rounded-3xl flex flex-col items-center gap-3">
+        <i class="fa-solid fa-spell-check text-3xl text-theme-gold/40"></i>
+        <div class="text-sm font-bold text-theme-primary">No Lexicon Terms Found</div>
+        <div class="text-xs text-theme-secondary max-w-sm">
+          ${query || selectedLang !== 'all' ? 'Try adjusting your search or language filter.' : 'Build your personal vocabulary bank. Record sacred, philosophical, and classical terms with precise definitions.'}
+        </div>
+        <button class="mt-2 px-4 py-2 rounded-2xl text-xs font-bold text-slate-950 transition-all active:scale-95 cursor-pointer shadow-md"
+                style="background: var(--gold)" onclick="openAddLexiconModal()">
+          <i class="fa-solid fa-plus text-xs mr-1"></i> Add First Term
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'lexicon-card animate-fade-in flex flex-col gap-2 relative';
+
+    let bookCitation = '';
+    if (item.bookTitle) {
+      bookCitation = `<div class="text-[11px] text-theme-secondary flex items-center gap-1 mt-0.5">
+        <i class="fa-solid fa-book text-[9px] text-theme-gold"></i>
+        <span class="font-medium italic text-theme-primary">${escapeHtml(item.bookTitle)}</span>
+        ${item.page ? `<span class="opacity-60">(p. ${item.page})</span>` : ''}
+      </div>`;
+    }
+
+    let contextHTML = '';
+    if (item.context) {
+      contextHTML = `<div class="lexicon-context italic text-xs text-theme-secondary mt-1 border-l-2 border-amber-400/40 pl-2">
+        "${escapeHtml(item.context)}"
+      </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="lexicon-term">${escapeHtml(item.term)}</span>
+          <span class="lexicon-lang-tag">${escapeHtml(item.lang || 'Term')}</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button class="w-7 h-7 rounded-lg text-theme-secondary hover:text-sky-400 hover:bg-sky-500/10 flex items-center justify-center text-xs transition-all cursor-pointer btn-edit-term" title="Edit Term" aria-label="Edit Term">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="w-7 h-7 rounded-lg text-theme-secondary hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center text-xs transition-all cursor-pointer btn-delete-term" title="Delete Term" aria-label="Delete Term">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+      <div class="lexicon-def text-xs font-normal leading-relaxed text-theme-primary">
+        ${escapeHtml(item.def)}
+      </div>
+      ${contextHTML}
+      ${bookCitation}
+    `;
+
+    const editBtn = card.querySelector('.btn-edit-term');
+    if (editBtn) {
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        openEditLexiconModal(item.id);
+      };
+    }
+
+    const delBtn = card.querySelector('.btn-delete-term');
+    if (delBtn) {
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete "${item.term}" from your lexicon?`)) {
+          deleteLexiconTerm(item.id);
+        }
+      };
+    }
+
+    listEl.appendChild(card);
+  });
+}
+
+function populateLexiconBookDropdown(selectEl, selectedTitle = '') {
+  if (!selectEl) return;
+  selectEl.innerHTML = `<option value="">General / No Specific Book</option>`;
+  const books = Array.isArray(booksCache) ? booksCache : [];
+  books.forEach(b => {
+    if (b && b.title) {
+      const opt = document.createElement('option');
+      opt.value = b.title;
+      opt.textContent = b.title;
+      if (b.title === selectedTitle) opt.selected = true;
+      selectEl.appendChild(opt);
+    }
+  });
+}
+
+function openAddLexiconModal(presetBookTitle = '', presetPage = '') {
+  populateLexiconBookDropdown($('lex-add-book'), presetBookTitle);
+  if ($('lex-add-term')) $('lex-add-term').value = '';
+  if ($('lex-add-lang')) $('lex-add-lang').value = 'Arabic';
+  if ($('lex-add-def')) $('lex-add-def').value = '';
+  if ($('lex-add-page')) $('lex-add-page').value = presetPage || '';
+  if ($('lex-add-context')) $('lex-add-context').value = '';
+
+  const modal = $('add-lexicon-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function openEditLexiconModal(termId) {
+  const item = lexiconCache.find(l => l.id === termId);
+  if (!item) return;
+
+  populateLexiconBookDropdown($('lex-edit-book'), item.bookTitle || '');
+  if ($('lex-edit-id')) $('lex-edit-id').value = item.id;
+  if ($('lex-edit-term')) $('lex-edit-term').value = item.term || '';
+  if ($('lex-edit-lang')) $('lex-edit-lang').value = item.lang || 'Arabic';
+  if ($('lex-edit-def')) $('lex-edit-def').value = item.def || '';
+  if ($('lex-edit-page')) $('lex-edit-page').value = item.page || '';
+  if ($('lex-edit-context')) $('lex-edit-context').value = item.context || '';
+
+  const modal = $('edit-lexicon-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function renderBookLexiconSection(b) {
+  const container = $('bd-book-lexicon-container');
+  const listEl = $('bd-book-lexicon-list');
+  const addBtn = $('bd-btn-add-term');
+  if (!container || !listEl) return;
+
+  if (addBtn) {
+    addBtn.onclick = () => {
+      openAddLexiconModal(b.title);
+    };
+  }
+
+  const bookTerms = (Array.isArray(lexiconCache) ? lexiconCache : []).filter(l => l.bookTitle && l.bookTitle.toLowerCase() === b.title.toLowerCase());
+
+  container.classList.remove('hidden');
+  listEl.innerHTML = '';
+
+  if (bookTerms.length === 0) {
+    listEl.innerHTML = `<span class="text-[11px] text-theme-tertiary italic">No lexicon terms linked to this book yet. Click "+ Add Term" to record new vocabulary.</span>`;
+    return;
+  }
+
+  bookTerms.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between p-2 rounded-xl bg-theme-input border border-theme text-xs';
+    row.innerHTML = `
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="font-bold text-theme-gold truncate">${escapeHtml(item.term)}</span>
+        <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-theme-gold border border-amber-500/20 shrink-0">${escapeHtml(item.lang || 'Term')}</span>
+        ${item.page ? `<span class="text-[10px] text-theme-secondary shrink-0">p. ${item.page}</span>` : ''}
+      </div>
+      <button class="w-6 h-6 rounded-md text-theme-secondary hover:text-sky-400 flex items-center justify-center text-xs shrink-0 cursor-pointer btn-edit-book-term" title="Edit Term">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+    `;
+
+    const editBtn = row.querySelector('.btn-edit-book-term');
+    if (editBtn) {
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        openEditLexiconModal(item.id);
+      };
+    }
+
+    listEl.appendChild(row);
+  });
+}
+
+// 5. MULTI-READ COMPARATIVE JOURNALING
+function renderBookCyclesJournalSection(b) {
+  const container = $('bd-comparative-journal-container');
+  const listEl = $('bd-cycles-journal-list');
+  const addReflectBtn = $('bd-btn-add-cycle-reflection');
+  if (!container || !listEl) return;
+
+  const readCount = parseInt(b.read_count || 1, 10);
+  const bookLogs = (Array.isArray(logsCache) ? logsCache : []).filter(l => l.book_title === b.title);
+
+  const cyclesSet = new Set();
+  for (let i = 1; i <= Math.max(readCount, 1); i++) cyclesSet.add(i);
+  bookLogs.forEach(l => {
+    const c = parseInt(l.read_cycle || 1, 10);
+    if (c > 0) cyclesSet.add(c);
+  });
+
+  const reflections = b.cycle_reflections || {};
+  Object.keys(reflections).forEach(c => {
+    const num = parseInt(c, 10);
+    if (num > 0) cyclesSet.add(num);
+  });
+
+  const hasMultiRead = cyclesSet.size > 1 || Object.keys(reflections).length > 0 || readCount > 1;
+
+  if (!hasMultiRead) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  listEl.innerHTML = '';
+
+  const sortedCycles = Array.from(cyclesSet).sort((a, b) => b - a);
+
+  if (addReflectBtn) {
+    addReflectBtn.onclick = () => {
+      const latestCycle = sortedCycles[0] || 1;
+      openCycleReflectionModal(b.id, latestCycle, reflections[latestCycle] || '');
+    };
+  }
+
+  sortedCycles.forEach(cycleNum => {
+    const cycleLogs = bookLogs.filter(l => parseInt(l.read_cycle || 1, 10) === cycleNum);
+    const cyclePages = cycleLogs.reduce((sum, l) => sum + Math.max(0, (parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10))), 0);
+    const cycleMins = cycleLogs.reduce((sum, l) => sum + (parseInt(l.minutes_spent || 0, 10)), 0);
+
+    let dateRange = 'No logs in cycle';
+    if (cycleLogs.length > 0) {
+      const dates = cycleLogs.map(l => l.date).filter(Boolean).sort();
+      dateRange = dates.length === 1 ? fmtDate(dates[0]) : `${fmtDate(dates[0])} – ${fmtDate(dates[dates.length - 1])}`;
+    }
+
+    const reflectionText = reflections[cycleNum] || reflections[String(cycleNum)] || '';
+    const isCurrent = (cycleNum === readCount && b.status === 'In Progress');
+
+    const card = document.createElement('div');
+    card.className = 'cycle-journal-card flex flex-col gap-2 p-3 rounded-xl bg-theme-input border border-theme';
+    card.innerHTML = `
+      <div class="cycle-journal-header flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="cycle-journal-badge px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isCurrent ? 'bg-amber-500/20 text-theme-gold border border-amber-500/30' : 'bg-white/10 text-theme-secondary'}">
+            Cycle ${cycleNum}${isCurrent ? ' • Current' : ''}
+          </span>
+          <span class="text-[11px] text-theme-secondary">${dateRange}</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-theme-secondary font-semibold">
+          <span>${cyclePages}p</span>
+          ${cycleMins > 0 ? `<span>• ${cycleMins}m</span>` : ''}
+        </div>
+      </div>
+      ${
+        reflectionText
+          ? `<div class="text-xs text-theme-primary italic leading-relaxed pt-1 border-t border-theme/40 flex items-start justify-between gap-2">
+               <span>"${escapeHtml(reflectionText)}"</span>
+               <button class="text-theme-secondary hover:text-theme-gold shrink-0 text-xs p-1 btn-edit-reflect cursor-pointer" title="Edit reflection">
+                 <i class="fa-solid fa-pen-to-square"></i>
+               </button>
+             </div>`
+          : `<div class="pt-1 border-t border-theme/40 flex items-center justify-between">
+               <span class="text-[11px] text-theme-tertiary italic">No comparative reflection written yet.</span>
+               <button class="text-[10px] font-bold text-theme-gold hover:underline cursor-pointer btn-add-reflect">
+                 + Write Reflection
+               </button>
+             </div>`
+      }
+    `;
+
+    const editBtn = card.querySelector('.btn-edit-reflect');
+    if (editBtn) {
+      editBtn.onclick = () => {
+        openCycleReflectionModal(b.id, cycleNum, reflectionText);
+      };
+    }
+
+    const addBtn = card.querySelector('.btn-add-reflect');
+    if (addBtn) {
+      addBtn.onclick = () => {
+        openCycleReflectionModal(b.id, cycleNum, '');
+      };
+    }
+
+    listEl.appendChild(card);
+  });
+}
+
+function openCycleReflectionModal(bookId, cycleNum, currentText = '') {
+  const book = (Array.isArray(booksCache) ? booksCache : []).find(b => b.id === bookId);
+  if (!book) return;
+
+  if ($('cr-book-id')) $('cr-book-id').value = bookId;
+  if ($('cr-cycle-num')) $('cr-cycle-num').value = cycleNum;
+  if ($('cr-notes-input')) $('cr-notes-input').value = currentText || '';
+  if ($('cr-modal-title')) {
+    $('cr-modal-title').innerHTML = `<i class="fa-solid fa-book-journal-whills text-theme-gold"></i> Cycle ${cycleNum} Reflection`;
+  }
+  if ($('cr-modal-subtitle')) {
+    $('cr-modal-subtitle').textContent = `Comparative notes & synthesis for "${book.title}"`;
+  }
+
+  const modal = $('cycle-reflection-modal');
+  if (modal) modal.classList.add('open');
+}
+
+async function saveCycleReflection() {
+  const bookId = $('cr-book-id') ? $('cr-book-id').value : '';
+  const cycleNum = $('cr-cycle-num') ? $('cr-cycle-num').value : '';
+  const notes = $('cr-notes-input') ? $('cr-notes-input').value.trim() : '';
+
+  if (!bookId || !cycleNum) return;
+  const book = (Array.isArray(booksCache) ? booksCache : []).find(b => b.id === bookId);
+  if (!book) return;
+
+  book.cycle_reflections = book.cycle_reflections || {};
+  if (notes) {
+    book.cycle_reflections[cycleNum] = notes;
+  } else {
+    delete book.cycle_reflections[cycleNum];
+  }
+
+  if (typeof uid !== 'undefined' && uid && typeof updateDoc === 'function' && typeof doc === 'function' && typeof db !== 'undefined') {
+    try {
+      await updateDoc(doc(db, `users/${uid}/books/${bookId}`), {
+        cycle_reflections: book.cycle_reflections
+      });
+    } catch (err) {
+      console.warn('Error saving cycle_reflections in Firestore:', err);
+    }
+  }
+
+  const modal = $('cycle-reflection-modal');
+  if (modal) modal.classList.remove('open');
+
+  renderBookCyclesJournalSection(book);
+  if (typeof showToast === 'function') showToast('Cycle reflection saved!', 'success');
+}
+
+// 6. SCHOLAR ARCHITECTURE MASTER INITIALIZATION
+function initEliteScholarArchitecture() {
+  loadCustomShelves();
+  loadLexiconCache();
+
+  // Lexicon Search & Filter
+  const lexSearchInput = $('lexicon-search-input');
+  if (lexSearchInput) {
+    lexSearchInput.addEventListener('input', () => {
+      renderLexiconView();
+    });
+  }
+
+  const lexSearchClear = $('lexicon-search-clear');
+  if (lexSearchClear) {
+    lexSearchClear.addEventListener('click', () => {
+      if (lexSearchInput) lexSearchInput.value = '';
+      lexSearchClear.classList.add('hidden');
+      renderLexiconView();
+    });
+  }
+
+  const lexLangSelect = $('lexicon-lang-select');
+  if (lexLangSelect) {
+    lexLangSelect.addEventListener('change', () => {
+      renderLexiconView();
+    });
+  }
+
+  // Add Lexicon Modal Triggers & Save
+  const btnAddLexOpen = $('btn-add-lexicon-open');
+  if (btnAddLexOpen) {
+    btnAddLexOpen.onclick = () => openAddLexiconModal();
+  }
+
+  const addLexClose = $('add-lexicon-close');
+  if (addLexClose) {
+    addLexClose.onclick = () => $('add-lexicon-modal').classList.remove('open');
+  }
+
+  const lexAddSaveBtn = $('lex-add-save-btn');
+  if (lexAddSaveBtn) {
+    lexAddSaveBtn.onclick = async () => {
+      const term = $('lex-add-term')?.value?.trim();
+      const lang = $('lex-add-lang')?.value;
+      const def = $('lex-add-def')?.value?.trim();
+      const bookTitle = $('lex-add-book')?.value;
+      const page = $('lex-add-page')?.value;
+      const context = $('lex-add-context')?.value?.trim();
+
+      if (!term || !def) {
+        showToast('Please enter both term and definition.', 'error');
+        return;
+      }
+
+      await saveLexiconTerm({ term, lang, def, bookTitle, page, context });
+      $('add-lexicon-modal').classList.remove('open');
+    };
+  }
+
+  // Edit Lexicon Modal Triggers & Save
+  const editLexClose = $('edit-lexicon-close');
+  if (editLexClose) {
+    editLexClose.onclick = () => $('edit-lexicon-modal').classList.remove('open');
+  }
+
+  const lexEditSaveBtn = $('lex-edit-save-btn');
+  if (lexEditSaveBtn) {
+    lexEditSaveBtn.onclick = async () => {
+      const id = $('lex-edit-id')?.value;
+      const term = $('lex-edit-term')?.value?.trim();
+      const lang = $('lex-edit-lang')?.value;
+      const def = $('lex-edit-def')?.value?.trim();
+      const bookTitle = $('lex-edit-book')?.value;
+      const page = $('lex-edit-page')?.value;
+      const context = $('lex-edit-context')?.value?.trim();
+
+      if (!id || !term || !def) {
+        showToast('Please enter both term and definition.', 'error');
+        return;
+      }
+
+      await saveLexiconTerm({ id, term, lang, def, bookTitle, page, context });
+      $('edit-lexicon-modal').classList.remove('open');
+    };
+  }
+
+  const lexEditDelBtn = $('lex-edit-delete-btn');
+  if (lexEditDelBtn) {
+    lexEditDelBtn.onclick = async () => {
+      const id = $('lex-edit-id')?.value;
+      if (id && confirm('Are you sure you want to delete this term?')) {
+        await deleteLexiconTerm(id);
+        $('edit-lexicon-modal').classList.remove('open');
+      }
+    };
+  }
+
+  // Cycle Reflection Modal Triggers & Save
+  const crClose = $('cycle-reflection-close');
+  if (crClose) {
+    crClose.onclick = () => $('cycle-reflection-modal').classList.remove('open');
+  }
+
+  const crSaveBtn = $('cr-save-btn');
+  if (crSaveBtn) {
+    crSaveBtn.onclick = async () => {
+      await saveCycleReflection();
+    };
+  }
+}
+
 // Master init for all extended feature modules
 document.addEventListener('DOMContentLoaded', () => {
   initHeatmapMetricListeners();
@@ -14421,6 +15619,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGoodreadsImporter();
   initKindleImporter();
   initScholarSuite();
+  initEliteScholarArchitecture();
 
   applyDashboardPreferences();
   setupDashboardPreferencesListeners();
@@ -14435,6 +15634,33 @@ if (typeof window !== 'undefined') {
   window.saveNewBook = saveNewBook;
   window.submitLog = submitLog;
   window.initApp = initApp;
+  window.extractHashtags = extractHashtags;
+  window.linkifyHashtags = linkifyHashtags;
+  window.loadCustomShelves = loadCustomShelves;
+  window.saveCustomShelves = saveCustomShelves;
+  window.createCustomShelf = createCustomShelf;
+  window.deleteCustomShelf = deleteCustomShelf;
+  window.updateCustomShelvesUI = updateCustomShelvesUI;
+  window.renderManageShelvesList = renderManageShelvesList;
+  window.openManageShelvesModal = openManageShelvesModal;
+  window.renderShelvesPicker = renderShelvesPicker;
+  window.getSelectedShelves = getSelectedShelves;
+  window.batchAssignShelf = batchAssignShelf;
+  window.resumeReadingBook = resumeReadingBook;
+  window.loadLexiconCache = loadLexiconCache;
+  window.saveLexiconTerm = saveLexiconTerm;
+  window.deleteLexiconTerm = deleteLexiconTerm;
+  window.renderLexiconView = renderLexiconView;
+  window.openAddLexiconModal = openAddLexiconModal;
+  window.openEditLexiconModal = openEditLexiconModal;
+  window.renderBookLexiconSection = renderBookLexiconSection;
+  window.renderBookCyclesJournalSection = renderBookCyclesJournalSection;
+  window.openCycleReflectionModal = openCycleReflectionModal;
+  window.saveCycleReflection = saveCycleReflection;
+  window.initEliteScholarArchitecture = initEliteScholarArchitecture;
+  window.showView = showView;
+  window.setEditorialMode = setEditorialMode;
+  window.openBookDetailModal = openBookDetailModal;
 }
 
 

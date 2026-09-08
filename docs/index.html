@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=125">
+  <link rel="stylesheet" href="style.css?v=126">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -383,6 +383,12 @@
                   title="Add Quick Note or Photo Quote">
                   <i class="fa-solid fa-plus text-xs"></i> Quick Note
                 </button>
+                <button id="btn-add-lexicon-open"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all active:scale-95 cursor-pointer text-slate-950 shadow-md hidden"
+                  style="background: var(--gold)"
+                  title="Add Term to Lexicon">
+                  <i class="fa-solid fa-plus text-xs"></i> Add Term
+                </button>
                 <button id="btn-scholarly-export-open"
                   class="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold border transition-all active:scale-95 cursor-pointer"
                   style="background: rgba(var(--gold-rgb),0.18); border-color: rgba(var(--gold-rgb),0.4); color: var(--gold)"
@@ -396,6 +402,8 @@
             <div class="flex justify-between items-center gap-2 flex-wrap">
               <div class="seg-control-micro" id="knowledge-view-mode-toggle">
                 <button class="seg-btn-micro active" data-mode="feed"><i class="fa-solid fa-list text-[8px]"></i> Feed View</button>
+                <button class="seg-btn-micro" data-mode="graph"><i class="fa-solid fa-diagram-project text-[8px]"></i> Mind Graph</button>
+                <button class="seg-btn-micro" data-mode="lexicon"><i class="fa-solid fa-spell-check text-[8px]"></i> Lexicon &amp; Terms</button>
               </div>
             </div>
 
@@ -431,8 +439,17 @@
               </div>
             </div>
 
+            <!-- Topical Concordance Tag Bar -->
+            <div id="knowledge-topic-concordance-wrapper" class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between text-[11px] font-bold text-theme-secondary px-0.5">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-tags text-theme-gold text-[10px]"></i> Topical Concordance</span>
+                <button id="kn-btn-clear-concordance" class="text-[10px] text-theme-gold hover:underline cursor-pointer hidden">Clear Topic Filter</button>
+              </div>
+              <div id="knowledge-topic-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
+            </div>
+
             <!-- Diacritic-Insensitive Search & Book Filter Bar -->
-            <div class="flex flex-col sm:flex-row gap-2.5">
+            <div id="knowledge-feed-search-bar" class="flex flex-col sm:flex-row gap-2.5">
               <div class="relative flex-1">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-theme-secondary"></i>
                 <input type="text" id="knowledge-search-input"
@@ -478,6 +495,41 @@
 
             <!-- Quote Feed Container -->
             <div class="flex flex-col gap-3" id="knowledge-quote-feed" aria-live="polite"></div>
+
+            <!-- Lexicon & Terms Container (Hidden when not in lexicon mode) -->
+            <div id="knowledge-lexicon-container" class="hidden flex flex-col gap-4">
+              <!-- Lexicon Search & Filter Bar -->
+              <div class="flex flex-col sm:flex-row gap-2.5">
+                <div class="relative flex-1">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-theme-secondary"></i>
+                  <input type="text" id="lexicon-search-input"
+                    aria-label="Search lexicon and terms"
+                    class="w-full pl-9 pr-8 py-2.5 text-xs font-medium rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all placeholder:text-theme-tertiary"
+                    placeholder="Search term, transliteration or definition (e.g. Isti'dad, Eudaimonia)..." />
+                  <button id="lexicon-search-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-theme-secondary hover:text-theme-primary">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <select id="lexicon-lang-select"
+                  class="py-2.5 px-3 text-xs font-semibold rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all cursor-pointer bg-theme-card">
+                  <option value="all">🌐 All Languages</option>
+                  <option value="Arabic">Arabic</option>
+                  <option value="Persian">Persian</option>
+                  <option value="Greek">Greek</option>
+                  <option value="Latin">Latin</option>
+                  <option value="Hebrew">Hebrew</option>
+                  <option value="English">English</option>
+                  <option value="Other">Other</option>
+                </select>
+                <select id="lexicon-book-select"
+                  class="py-2.5 px-3 text-xs font-semibold rounded-2xl glass-input border border-theme text-theme-primary focus:outline-none focus:border-amber-400/50 transition-all cursor-pointer bg-theme-card">
+                  <option value="all">📚 All Books</option>
+                </select>
+              </div>
+
+              <!-- Lexicon List Feed -->
+              <div id="lexicon-list" class="grid grid-cols-1 md:grid-cols-2 gap-3" aria-live="polite"></div>
+            </div>
 
           </div>
         </section>
@@ -1511,6 +1563,9 @@
                 <button id="btn-grouping-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary">
                   <i class="fa-solid fa-folder-tree text-[10px]"></i> <span id="btn-grouping-mode-text">Grouped</span>
                 </button>
+                <button id="btn-manage-shelves" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20" title="Manage Custom Shelves &amp; Lists">
+                  <i class="fa-solid fa-layer-group text-[10px]"></i> <span>Shelves</span>
+                </button>
                 <button id="btn-cover-manager" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-amber-500/10 border-amber-500/20 text-theme-gold hover:bg-amber-500/20">
                   <i class="fa-solid fa-image text-[10px]"></i> <span>Covers</span>
                 </button>
@@ -1523,15 +1578,18 @@
             <!-- Active Filter Chips Bar -->
             <div id="bookshelf-active-filters" class="flex flex-wrap gap-1.5 items-center hidden"></div>
 
-            <!-- Search & Sort -->
-            <div class="flex gap-2 items-center">
-              <div class="relative flex-1">
+            <!-- Search, Shelf & Sort -->
+            <div class="flex gap-2 items-center flex-wrap sm:flex-nowrap">
+              <div class="relative flex-1 min-w-[140px]">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
                 <input type="search" id="wishlist-search"
                   aria-label="Search library by title, author, group, or collection"
                   class="input input-bordered glass-input w-full pl-10 text-xs"
                   placeholder="Search title, author, group, collection or notes…">
               </div>
+              <select id="bookshelf-shelf-select" class="select select-bordered glass-input text-xs font-bold shrink-0 min-h-10 h-10 px-2.5" aria-label="Filter by custom shelf">
+                <option value="all">📂 All Shelves</option>
+              </select>
               <select id="bookshelf-sort-select" class="select select-bordered glass-input text-xs font-bold shrink-0 min-h-10 h-10 px-2.5" aria-label="Sort books">
                 <option value="title-asc">Sort: A-Z</option>
                 <option value="title-desc">Sort: Z-A</option>
@@ -1561,15 +1619,19 @@
             </div>
 
             <!-- Sticky Multi-Select Batch Actions Bar -->
-            <div id="bookshelf-batch-bar" class="sticky top-2 z-30 glass-panel p-3 rounded-2xl border border-gold/30 shadow-2xl flex items-center justify-between gap-2 hidden">
+            <div id="bookshelf-batch-bar" class="sticky top-2 z-30 glass-panel p-3 rounded-2xl border border-gold/30 shadow-2xl flex items-center justify-between gap-2 hidden flex-wrap">
               <span class="text-xs font-bold text-gold" id="batch-selected-count">0 selected</span>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <select id="batch-status-select" class="select select-bordered glass-input text-xs font-bold h-8 min-h-8 px-2 py-0">
                   <option value="" disabled selected>Move to…</option>
                   <option value="Not Started">Not Started</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Finished">Finished</option>
+                  <option value="Did Not Finish">Set Aside (DNF)</option>
                   <option value="Want to Buy">Wishlist</option>
+                </select>
+                <select id="batch-shelf-select" class="select select-bordered glass-input text-xs font-bold h-8 min-h-8 px-2 py-0">
+                  <option value="" disabled selected>Add to Shelf…</option>
                 </select>
                 <button id="btn-batch-delete" class="btn btn-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 h-8 min-h-8 px-2.5 font-bold">Delete</button>
                 <button id="btn-batch-cancel" class="btn btn-xs bg-white/10 hover:bg-white/20 text-theme-secondary border border-theme h-8 min-h-8 px-2 font-bold">Cancel</button>
@@ -1634,7 +1696,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v125</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v126</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2253,6 +2315,7 @@
             <option value="Not Started">Not Started</option>
             <option value="In Progress">In Progress</option>
             <option value="Finished">Finished (Direct Complete)</option>
+            <option value="Did Not Finish">Did Not Finish / On Hold</option>
             <option value="Want to Buy">Want to Buy (Wishlist)</option>
             <option value="Owned">Owned (Unread)</option>
             <option value="Gifted">Gifted</option>
@@ -2281,6 +2344,25 @@
           <span class="text-[10px] text-theme-secondary">Defaults to today</span>
         </label>
         <input type="date" class="input input-bordered glass-input w-full text-xs" id="ab-finish-date">
+      </div>
+      <div class="form-control hidden" id="ab-dnf-reason-container">
+        <label class="label py-1 flex items-center justify-between" for="ab-dnf-reason">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-pause"></i> Reason for Setting Aside / DNF (Optional)
+          </span>
+        </label>
+        <input type="text" class="input input-bordered glass-input w-full text-xs" id="ab-dnf-reason" placeholder="e.g. Too dense for now, paused for prerequisite study...">
+      </div>
+      <div class="form-control" id="ab-shelves-container">
+        <label class="label py-1 flex items-center justify-between">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-purple-400"></i> Custom Shelves &amp; Lists
+          </span>
+          <button type="button" id="ab-btn-new-shelf" class="text-[10px] text-purple-300 hover:underline cursor-pointer">+ New Shelf</button>
+        </label>
+        <div id="ab-shelves-picker" class="flex flex-wrap gap-1.5 p-2 rounded-xl glass-input min-h-10 items-center">
+          <span class="text-xs text-theme-tertiary">No custom shelves created yet.</span>
+        </div>
       </div>
       <div class="form-control"><label class="label py-1" for="ab-where-to-buy"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-where-to-buy" placeholder="Store name or URL"></div>
@@ -2368,6 +2450,7 @@
             <option value="Not Started">Not Started</option>
             <option value="In Progress">In Progress</option>
             <option value="Finished">Finished</option>
+            <option value="Did Not Finish">Did Not Finish / On Hold</option>
             <option value="Want to Buy">Want to Buy (Wishlist)</option>
             <option value="Owned">Owned (Unread)</option>
             <option value="Gifted">Gifted</option>
@@ -2375,6 +2458,25 @@
           </select></div>
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Active Progress</span></label>
           <input type="number" class="input input-bordered glass-input w-full" id="eb-progress" min="0"></div>
+      </div>
+      <div class="form-control hidden" id="eb-dnf-reason-container">
+        <label class="label py-1 flex items-center justify-between" for="eb-dnf-reason">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-pause"></i> Reason for Setting Aside / DNF (Optional)
+          </span>
+        </label>
+        <input type="text" class="input input-bordered glass-input w-full text-xs" id="eb-dnf-reason" placeholder="e.g. Too dense for now, paused for prerequisite study...">
+      </div>
+      <div class="form-control" id="eb-shelves-container">
+        <label class="label py-1 flex items-center justify-between">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-purple-400"></i> Custom Shelves &amp; Lists
+          </span>
+          <button type="button" id="eb-btn-new-shelf" class="text-[10px] text-purple-300 hover:underline cursor-pointer">+ New Shelf</button>
+        </label>
+        <div id="eb-shelves-picker" class="flex flex-wrap gap-1.5 p-2 rounded-xl glass-input min-h-10 items-center">
+          <span class="text-xs text-theme-tertiary">No custom shelves created yet.</span>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div class="form-control"><label class="label py-1"><span class="label-text text-xs font-bold uppercase tracking-wider">Priority</span></label>
@@ -2507,15 +2609,13 @@
             <b id="bd-calc-finish-date" class="text-theme-gold font-bold text-xs mt-0.5">—</b>
           </div>
         </div>
-      </div>
-          <div class="flex justify-between border-t border-theme pt-2">
-            <span class="text-theme-secondary">Total Reading Time:</span>
-            <span class="text-theme-primary font-bold" id="bd-calc-time">—</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-theme-secondary">Days to Finish (hist. avg):</span>
-            <span class="text-theme-primary font-bold" id="bd-calc-hist-days">—</span>
-          </div>
+        <div class="flex justify-between border-t border-theme pt-2 text-xs">
+          <span class="text-theme-secondary">Total Reading Time:</span>
+          <span class="text-theme-primary font-bold" id="bd-calc-time">—</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-theme-secondary">Days to Finish (hist. avg):</span>
+          <span class="text-theme-primary font-bold" id="bd-calc-hist-days">—</span>
         </div>
       </div>
 
@@ -2535,6 +2635,32 @@
         <div id="bd-buy-container"></div>
       </div>
 
+      <!-- Reading Cycles & Comparative Journal -->
+      <div id="bd-comparative-journal-container" class="glass-panel p-4 rounded-2xl flex flex-col gap-2.5 mt-1 hidden">
+        <div class="flex items-center justify-between">
+          <span class="text-[9px] font-extrabold uppercase tracking-wider text-theme-gold flex items-center gap-1.5">
+            <i class="fa-solid fa-book-journal-whills text-[10px]"></i> Reading Cycles &amp; Journal
+          </span>
+          <button id="bd-btn-add-cycle-reflection" class="text-[10px] font-bold text-theme-gold hover:underline cursor-pointer">
+            + Comparative Note
+          </button>
+        </div>
+        <div id="bd-cycles-journal-list" class="flex flex-col gap-2.5"></div>
+      </div>
+
+      <!-- Book Lexicon & Terminology -->
+      <div id="bd-book-lexicon-container" class="glass-panel p-4 rounded-2xl flex flex-col gap-2 mt-1 hidden">
+        <div class="flex items-center justify-between">
+          <span class="text-[9px] font-extrabold uppercase tracking-wider text-theme-secondary flex items-center gap-1.5">
+            <i class="fa-solid fa-spell-check text-[10px] text-theme-gold"></i> Book Terminology &amp; Lexicon
+          </span>
+          <button id="bd-btn-add-term" class="text-[10px] font-bold text-theme-gold hover:underline cursor-pointer">
+            + Add Term
+          </button>
+        </div>
+        <div id="bd-book-lexicon-list" class="flex flex-col gap-1.5"></div>
+      </div>
+
       <!-- Timeline of log sessions -->
       <div class="flex flex-col gap-2.5 mt-1 flex-1 overflow-y-auto">
         <span class="text-[9px] font-extrabold uppercase tracking-wider text-theme-secondary">Reading History &amp; Logs</span>
@@ -2542,7 +2668,8 @@
       </div>
       
       <!-- Footer actions -->
-      <div class="flex gap-2.5 mt-2 pt-3 border-t border-theme">
+      <div class="flex gap-2.5 mt-2 pt-3 border-t border-theme flex-wrap">
+        <button id="bd-action-resume" class="flex-1 py-3 rounded-xl font-bold text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all active:scale-[0.98] hidden"><i class="fa-solid fa-play text-[10px] mr-1"></i> Resume Reading</button>
         <button id="bd-action-reread" class="flex-1 py-3 rounded-xl font-bold text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 transition-all active:scale-[0.98] hidden">Start Re-Read</button>
         <button id="bd-action-edit" class="flex-1 py-3 rounded-xl font-bold text-xs bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme transition-all active:scale-[0.98]">Edit Book</button>
       </div>
@@ -2796,7 +2923,7 @@
             <div class="min-w-0">
               <div class="text-sm font-bold flex items-center gap-2">
                 <span class="truncate text-theme-primary">Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v125</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v126</span>
               </div>
               <div class="text-[11px] text-purple-700/80 dark:text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -3224,6 +3351,224 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       MANAGE CUSTOM SHELVES & READING LISTS MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="manage-shelves-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-md flex flex-col gap-4 relative z-10 max-h-[85vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-theme-primary flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-purple-400"></i> Custom Shelves &amp; Lists
+          </h3>
+          <p class="text-[11px] font-medium text-theme-secondary mt-0.5">Organize books into custom study lists or collections</p>
+        </div>
+        <button id="manage-shelves-close" class="w-8 h-8 rounded-full bg-theme-input hover:bg-theme-input-focus text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Add New Shelf Form -->
+      <div class="flex gap-2 items-center">
+        <input type="text" id="new-shelf-name-input" class="input input-bordered glass-input flex-1 text-xs font-semibold" placeholder="e.g. Summer 2026, Moral Philosophy..." maxlength="50" />
+        <button id="btn-create-shelf" class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-all active:scale-95 shrink-0 cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Add
+        </button>
+      </div>
+
+      <!-- Existing Shelves List -->
+      <div class="flex flex-col gap-2 mt-1" id="manage-shelves-list"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       ADD LEXICON / GLOSSARY TERM MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="add-lexicon-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-lg flex flex-col gap-4 relative z-10 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-theme-primary flex items-center gap-2">
+            <i class="fa-solid fa-spell-check text-theme-gold"></i> Add Vocabulary / Term
+          </h3>
+          <p class="text-[11px] font-medium text-theme-secondary mt-0.5">Save sacred, classical or philosophical definitions</p>
+        </div>
+        <button id="add-lexicon-close" class="w-8 h-8 rounded-full bg-theme-input hover:bg-theme-input-focus text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3.5">
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="form-control col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Term / Word *</span></label>
+            <input type="text" id="lex-add-term" class="input input-bordered glass-input w-full text-xs font-bold" placeholder="e.g. Isti'dád, Eudaimonia, Qayyúm..." />
+          </div>
+          <div class="form-control col-span-1">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Language</span></label>
+            <select id="lex-add-lang" class="select select-bordered glass-input w-full text-xs font-semibold bg-theme-card text-theme-primary">
+              <option value="Arabic">Arabic</option>
+              <option value="Persian">Persian</option>
+              <option value="Greek">Greek</option>
+              <option value="Latin">Latin</option>
+              <option value="Hebrew">Hebrew</option>
+              <option value="English">English</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-control">
+          <div class="flex items-center justify-between py-1">
+            <span class="label-text text-xs font-bold text-theme-secondary">Definition / Translation *</span>
+            <button type="button" id="lex-add-btn-dictate" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+            </button>
+          </div>
+          <textarea id="lex-add-def" class="textarea textarea-bordered glass-input w-full h-20 resize-none text-xs font-medium text-theme-primary" placeholder="Enter meaning, translation, or philosophical definition..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="form-control col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Book Association</span></label>
+            <select id="lex-add-book" class="select select-bordered glass-input w-full text-xs font-semibold bg-theme-card text-theme-primary">
+              <option value="">General / No Specific Book</option>
+            </select>
+          </div>
+          <div class="form-control col-span-1">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Page #</span></label>
+            <input type="number" id="lex-add-page" min="1" class="input input-bordered glass-input w-full text-xs" placeholder="e.g. 42" />
+          </div>
+        </div>
+
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Contextual Sentence / Passage</span></label>
+          <input type="text" id="lex-add-context" class="input input-bordered glass-input w-full text-xs italic" placeholder="e.g. Sentence where this term appeared..." />
+        </div>
+
+        <button id="lex-add-save-btn" class="w-full py-3 rounded-2xl font-bold text-xs bg-gold/90 hover:bg-gold text-slate-950 shadow-md transition-all active:scale-[0.98] mt-1 cursor-pointer">
+          Save Term to Lexicon
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       EDIT LEXICON / GLOSSARY TERM MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="edit-lexicon-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-lg flex flex-col gap-4 relative z-10 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-theme-primary flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-theme-gold"></i> Edit Lexicon Term
+          </h3>
+        </div>
+        <button id="edit-lexicon-close" class="w-8 h-8 rounded-full bg-theme-input hover:bg-theme-input-focus text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="lex-edit-id" />
+      <div class="flex flex-col gap-3.5">
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="form-control col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Term / Word *</span></label>
+            <input type="text" id="lex-edit-term" class="input input-bordered glass-input w-full text-xs font-bold" />
+          </div>
+          <div class="form-control col-span-1">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Language</span></label>
+            <select id="lex-edit-lang" class="select select-bordered glass-input w-full text-xs font-semibold bg-theme-card text-theme-primary">
+              <option value="Arabic">Arabic</option>
+              <option value="Persian">Persian</option>
+              <option value="Greek">Greek</option>
+              <option value="Latin">Latin</option>
+              <option value="Hebrew">Hebrew</option>
+              <option value="English">English</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-control">
+          <div class="flex items-center justify-between py-1">
+            <span class="label-text text-xs font-bold text-theme-secondary">Definition / Translation *</span>
+            <button type="button" id="lex-edit-btn-dictate" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+            </button>
+          </div>
+          <textarea id="lex-edit-def" class="textarea textarea-bordered glass-input w-full h-20 resize-none text-xs font-medium text-theme-primary"></textarea>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="form-control col-span-2">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Book Association</span></label>
+            <select id="lex-edit-book" class="select select-bordered glass-input w-full text-xs font-semibold bg-theme-card text-theme-primary">
+              <option value="">General / No Specific Book</option>
+            </select>
+          </div>
+          <div class="form-control col-span-1">
+            <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Page #</span></label>
+            <input type="number" id="lex-edit-page" min="1" class="input input-bordered glass-input w-full text-xs" />
+          </div>
+        </div>
+
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs font-bold text-theme-secondary">Contextual Sentence / Passage</span></label>
+          <input type="text" id="lex-edit-context" class="input input-bordered glass-input w-full text-xs italic" />
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button id="lex-edit-delete-btn" class="py-2.5 px-4 rounded-2xl font-bold text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition-all active:scale-[0.98] cursor-pointer">
+            Delete
+          </button>
+          <button id="lex-edit-save-btn" class="flex-1 py-2.5 rounded-2xl font-bold text-xs bg-gold/90 hover:bg-gold text-slate-950 shadow-md transition-all active:scale-[0.98] cursor-pointer">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       CYCLE COMPARATIVE REFLECTION MODAL
+       ════════════════════════════════════════════════════════════ -->
+  <div id="cycle-reflection-modal" class="ios-modal-overlay"
+       onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="ios-modal-card max-w-lg flex flex-col gap-4 relative z-10 max-h-[85vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-theme">
+        <div>
+          <h3 class="text-base font-black tracking-tight text-theme-primary flex items-center gap-2" id="cr-modal-title">
+            <i class="fa-solid fa-book-journal-whills text-theme-gold"></i> Cycle Reflection
+          </h3>
+          <p class="text-[11px] font-medium text-theme-secondary mt-0.5" id="cr-modal-subtitle">Synthesize insights from this reading cycle</p>
+        </div>
+        <button id="cycle-reflection-close" class="w-8 h-8 rounded-full bg-theme-input hover:bg-theme-input-focus text-theme-secondary flex items-center justify-center text-xs active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="cr-book-id" />
+      <input type="hidden" id="cr-cycle-num" />
+      <div class="form-control">
+        <label class="label py-1 flex items-center justify-between">
+          <span class="label-text text-xs font-bold text-theme-secondary">Comparative Notes &amp; Synthesis</span>
+          <button type="button" id="cr-btn-dictate" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-microphone text-[10px]"></i> Dictate
+          </button>
+        </label>
+        <textarea id="cr-notes-input" class="textarea textarea-bordered glass-input w-full h-32 resize-none text-xs font-medium text-theme-primary" placeholder="How did this reading compare to your previous reads? What new concepts stood out?"></textarea>
+      </div>
+
+      <button id="cr-save-btn" class="w-full py-3 rounded-2xl font-bold text-xs bg-gold/90 hover:bg-gold text-slate-950 shadow-md transition-all active:scale-[0.98] cursor-pointer">
+        Save Cycle Reflection
+      </button>
     </div>
   </div>
 
@@ -4079,6 +4424,6 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=125"></script>
+  <script type="module" src="app.js?v=126"></script>
 </body>
 </html>

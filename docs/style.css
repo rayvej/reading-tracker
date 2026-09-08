@@ -3004,5 +3004,182 @@ body.light-mode .modal-drag-handle:hover {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ELITE SCHOLAR & LIBRARY ARCHITECTURE
+   ══════════════════════════════════════════════════════════════ */
+
+/* Topical Concordance */
+.concordance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.concordance-pill:hover {
+  background: rgba(var(--gold-rgb), 0.15);
+  color: var(--gold);
+  border-color: rgba(var(--gold-rgb), 0.35);
+}
+.concordance-pill.active {
+  background: var(--gold);
+  color: #1a1207;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px rgba(var(--gold-rgb), 0.35);
+}
+.concordance-pill-count {
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.8;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.15);
+}
+.concordance-pill.active .concordance-pill-count {
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+}
+.concordance-tag-link {
+  color: var(--gold);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 0 2px;
+  transition: background 0.15s;
+}
+.concordance-tag-link:hover {
+  background: rgba(var(--gold-rgb), 0.2);
+  text-decoration: underline;
+}
+
+/* Lexicon & Terminology Bank */
+.lexicon-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.lexicon-card:hover {
+  border-color: rgba(var(--gold-rgb), 0.4);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+.lexicon-term {
+  font-family: Georgia, Cambria, "Times New Roman", serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.lexicon-lang-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(var(--gold-rgb), 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(var(--gold-rgb), 0.25);
+}
+.lexicon-def {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.lexicon-context {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-left: 2px solid rgba(var(--gold-rgb), 0.3);
+  padding-left: 8px;
+  margin-top: 4px;
+}
+
+/* Multi-Read Comparative Journaling */
+.cycle-journal-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cycle-journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cycle-journal-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(var(--gold-rgb), 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(var(--gold-rgb), 0.3);
+}
+
+/* Custom Shelves */
+.shelf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(147, 51, 234, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(147, 51, 234, 0.25);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+body.light-mode .shelf-chip {
+  background: rgba(147, 51, 234, 0.08);
+  color: #7e22ce;
+  border-color: rgba(147, 51, 234, 0.2);
+}
+.shelf-chip:hover {
+  background: rgba(147, 51, 234, 0.22);
+}
+
+/* DNF / Set Aside Badge */
+.dnf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.12);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+body.light-mode .dnf-badge {
+  background: rgba(244, 63, 94, 0.08);
+  color: #e11d48;
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+
 
 
