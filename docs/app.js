@@ -3330,7 +3330,7 @@ async function submitLog() {
 
   if (!title)                  { showToast('Please select a book.', 'error'); return; }
   if (!date)                   { showToast('Please enter a date.', 'error'); return; }
-  if (isNaN(start) || start < 0) { showToast('Start page cannot be negative.', 'error'); return; }
+  if (isNaN(start) || start < 0) { showToast('Please enter a valid start page number.', 'error'); return; }
   if (isNaN(end) || end <= 0) { showToast('Please enter a valid end page.', 'error'); return; }
   if (end <= start)            { showToast('End page must be greater than start page.', 'error'); return; }
   // Validate end page against book's total pages
@@ -4969,7 +4969,7 @@ function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
     if (dayLogs.length === 0) {
       contentEl.innerHTML = `
         <div class="text-center py-6 flex flex-col items-center gap-2">
-          <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-theme-tertiary text-sm"><i class="fa-solid fa-moon"></i></div>
+          <div class="w-10 h-10 rounded-full bg-theme-input flex items-center justify-center text-theme-tertiary text-sm"><i class="fa-solid fa-moon"></i></div>
           <p class="text-xs text-theme-secondary font-medium">No reading sessions recorded for this date.</p>
         </div>
       `;
@@ -4986,7 +4986,7 @@ function openHeatmapDayModal(dateStr, dayLogs, booksReadList) {
             <span>Pages ${l.start_page || 0} → ${l.end_page || 0}</span>
             <span>${l.minutes_spent ? `${l.minutes_spent} mins` : 'Unspecified duration'}</span>
           </div>
-          ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-white/5 p-2 rounded-xl mt-1 border border-theme">${escapeHtml(l.notes)}</div>` : ''}
+          ${l.notes ? `<div class="text-[10px] text-theme-secondary italic bg-theme-input p-2 rounded-xl mt-1 border border-theme">${escapeHtml(l.notes)}</div>` : ''}
         `;
         contentEl.appendChild(card);
       });
@@ -5788,7 +5788,7 @@ function renderDailyCard(activeLogs, dailyPagesTarget) {
         <span class="text-[8px] font-bold text-theme-secondary uppercase">${d.day}</span>
         <div class="w-5 h-5 rounded-full flex items-center justify-center transition-all ${
           d.active ? 'bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black shadow-sm shadow-amber-500/30 text-[10px]' : 
-          (d.isToday ? 'border border-amber-400/50 bg-amber-400/10 text-theme-gold text-[8px]' : 'bg-white/5 border border-theme text-slate-600 text-[8px]')
+          (d.isToday ? 'border border-amber-400/50 bg-amber-400/10 text-theme-gold text-[8px]' : 'bg-theme-input border border-theme text-slate-600 text-[8px]')
         }">
           ${d.active ? '✓' : ''}
         </div>
@@ -6041,7 +6041,7 @@ function setupGoalsPresetsAndSteppers() {
           b.classList.toggle('bg-amber-500/10', isSelected);
           b.classList.toggle('text-theme-gold', isSelected);
           b.classList.toggle('border-theme', !isSelected);
-          b.classList.toggle('bg-white/5', !isSelected);
+          b.classList.toggle('bg-theme-input', !isSelected);
           b.classList.toggle('text-theme-secondary', !isSelected);
         });
       });
@@ -6730,14 +6730,14 @@ function renderDonutChart() {
     <div class="flex items-center gap-2">
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c1}"></span>
       <div>
-        <div class="text-[10px] font-bold text-slate-350">Bahá'í</div>
+        <div class="text-[10px] font-bold text-theme-secondary">Bahá'í</div>
         <div class="text-xs font-black text-theme-primary">${pctBahai}% <span class="text-[9px] font-bold text-theme-secondary">(${fmtNum(bahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
     <div class="flex items-center gap-2">
       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c2}"></span>
       <div>
-        <div class="text-[10px] font-bold text-slate-350">Non-Bahá'í</div>
+        <div class="text-[10px] font-bold text-theme-secondary">Non-Bahá'í</div>
         <div class="text-xs font-black text-theme-primary">${pctNon}% <span class="text-[9px] font-bold text-theme-secondary">(${fmtNum(nonBahaiVal)} ${unitStr})</span></div>
       </div>
     </div>
@@ -7026,7 +7026,7 @@ function renderRecentLogs() {
       </div>
       <div class="flex items-center gap-2">
         <div class="text-xs font-bold text-theme-primary">${l.minutes_spent ? `${l.minutes_spent}m` : '—'}</div>
-        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-gold/20 hover:text-gold text-theme-secondary border border-theme flex items-center justify-center transition-all shrink-0" title="Edit Log">
+        <button data-edit-log-id="${l.id || ''}" class="w-7 h-7 rounded-lg bg-theme-input hover:bg-gold/20 hover:text-gold text-theme-secondary border border-theme flex items-center justify-center transition-all shrink-0" title="Edit Log">
           <i class="fa-solid fa-pen text-[10px]"></i>
         </button>
       </div>
@@ -7047,7 +7047,7 @@ function renderRecentLogs() {
   if (activeLogs.length > recentLogsLimit) {
     const remaining = activeLogs.length - recentLogsLimit;
     const loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
+    loadMoreBtn.className = 'w-full py-3 rounded-2xl border border-theme bg-theme-input hover:bg-theme-input-focus text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
     loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Logs (${remaining} remaining)`;
     loadMoreBtn.onclick = () => {
       recentLogsLimit += 35;
@@ -7897,7 +7897,7 @@ function renderBookCard(b) {
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
   else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
 
-  let ownBadgeColor = 'bg-theme-card/40 text-slate-350 border-theme';
+  let ownBadgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
   if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
@@ -7992,8 +7992,8 @@ function renderBookCard(b) {
         <div class="text-sm font-bold text-theme-primary leading-snug line-clamp-2">&#8203;${b.title}</div>
         <div class="text-[11px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
         <div class="flex flex-wrap gap-1.5 mt-2">
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.group || 'Other'}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.group || 'Other'}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${b.priority}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${b.ownership}</span>
         </div>
@@ -8024,7 +8024,7 @@ function renderBookCard(b) {
       <div class="flex gap-1.5">
         ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
         ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
-        <button class="btn btn-xs rounded-lg bg-white/5 hover:bg-white/10 text-slate-350 border border-theme text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
+        <button class="btn btn-xs rounded-lg bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
       </div>
     </div>
   `;
@@ -8160,7 +8160,7 @@ async function markBookComplete(b) {
       start_page: start,
       end_page: end,
       minutes_spent: null,
-      notes: "Manual library completion",
+      notes: "Historical cycle — marked complete from library",
       created_at: serverTimestamp()
     });
     
@@ -8271,7 +8271,7 @@ async function saveNewBook() {
         start_page: 0,
         end_page: pages,
         minutes_spent: null,
-        notes: "Historical starting complete",
+        notes: "Historical cycle — completed book added to library",
         created_at: serverTimestamp()
       };
       const savedHistLog = await optimisticSaveDoc('reading_logs', histLog);
@@ -8286,7 +8286,7 @@ async function saveNewBook() {
         start_page: 0,
         end_page: initialProgInput,
         minutes_spent: null,
-        notes: "Initial reading progress",
+        notes: "Historical cycle — initial progress imported",
         created_at: serverTimestamp()
       };
       const savedInitialLog = await optimisticSaveDoc('reading_logs', initialLog);
@@ -9011,14 +9011,14 @@ function renderCategoryPieChart(books, containerId) {
       segment.setAttribute('stroke-width', '12');
       overlayTotal.textContent = fmtNum(count);
       overlayLabel.textContent = cat;
-      legendItem.classList.add('bg-white/5', 'border-theme');
+      legendItem.classList.add('bg-theme-input', 'border-theme');
     });
 
     segment.addEventListener('mouseleave', () => {
       segment.setAttribute('stroke-width', '10');
       overlayTotal.textContent = fmtNum(total);
       overlayLabel.textContent = categoryChartMode === 'pages' ? 'Pages' : 'Books';
-      legendItem.classList.remove('bg-white/5', 'border-theme');
+      legendItem.classList.remove('bg-theme-input', 'border-theme');
     });
 
     legendItem.classList.add('cursor-pointer');
@@ -9349,7 +9349,7 @@ function openBookDetailModal(b) {
   else if (isWl) badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
   else if (b.status === 'Owned') badgeColor = 'bg-amber-500/10 text-theme-gold border-amber-500/10';
   
-  let ownBadgeColor = 'bg-theme-card/40 text-slate-350 border-theme';
+  let ownBadgeColor = 'bg-theme-card/40 text-theme-secondary border-theme';
   if (b.ownership === 'Owned') ownBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10';
   else if (b.ownership === 'Borrowed') ownBadgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/10';
   else if (b.ownership === 'Wishlist') ownBadgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/10';
@@ -9363,8 +9363,8 @@ function openBookDetailModal(b) {
   
   $('bd-badges').innerHTML = `
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}">${escapeHtml(b.status)}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-slate-350 border border-theme">${escapeHtml(b.group || 'Other')}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${escapeHtml(b.group || 'Other')}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${prioBadge}">Priority: ${escapeHtml(b.priority)}</span>
     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${ownBadgeColor}">${escapeHtml(b.ownership)}</span>
   `;
@@ -9483,7 +9483,7 @@ function openBookDetailModal(b) {
       let notesHTML = '';
       if (l.notes) {
         notesHTML = `
-          <div class="text-[11px] text-slate-350 italic px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] mt-1 whitespace-pre-wrap leading-relaxed">
+          <div class="text-[11px] text-theme-secondary italic px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] mt-1 whitespace-pre-wrap leading-relaxed">
             <i class="fa-solid fa-quote-left text-[8px] text-theme-tertiary mr-1 align-top"></i>${escapeHtml(l.notes)}
           </div>
         `;
@@ -10311,7 +10311,7 @@ function renderPendingShelfNotifiers() {
         <span class="text-xs text-white font-medium block truncate">Draft: ${escapeHtml(item.bookTitle)}</span>
       </div>
       <div class="flex gap-1.5 shrink-0">
-        <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-white/5 border border-theme text-xs"><i class="fa-solid fa-trash"></i></button>
+        <button onclick="discardScannedShelfItem(${idx})" class="text-neutral-400 hover:text-red-400 p-1.5 rounded-lg bg-theme-input border border-theme text-xs"><i class="fa-solid fa-trash"></i></button>
         <button onclick="loadScannedShelfItem(${idx})" class="bg-sky-500 hover:bg-sky-600 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg">Load Scan</button>
       </div>
     </div>
@@ -11024,7 +11024,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
   if (filtered.length > limit) {
     const remaining = filtered.length - limit;
     const loadMoreBtn = document.createElement('button');
-    loadMoreBtn.className = 'w-full py-3.5 rounded-2xl border border-theme bg-white/5 hover:bg-white/10 text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
+    loadMoreBtn.className = 'w-full py-3.5 rounded-2xl border border-theme bg-theme-input hover:bg-theme-input-focus text-xs font-bold text-theme-secondary transition-all cursor-pointer mt-2';
     loadMoreBtn.innerHTML = `<i class="fa-solid fa-chevron-down mr-1.5"></i> Load More Notes (${remaining} remaining)`;
     loadMoreBtn.onclick = () => {
       window.knowledgeFeedLimit = (window.knowledgeFeedLimit || 25) + 30;
@@ -12557,7 +12557,7 @@ function renderYearWrappedSlides(targetYear) {
       </div>
 
       <div class="my-auto flex flex-col items-center justify-center gap-2">
-        <div class="w-14 h-14 rounded-2xl bg-white/5 border border-theme flex items-center justify-center text-2xl shadow-xl">
+        <div class="w-14 h-14 rounded-2xl bg-theme-input border border-theme flex items-center justify-center text-2xl shadow-xl">
           <i class="fa-solid ${s.icon}"></i>
         </div>
         <div class="text-2xl sm:text-3xl font-black text-theme-gold leading-tight ${i === 4 ? 'italic font-serif text-base text-amber-100 max-h-36 overflow-y-auto px-2' : ''}">${s.bigVal}</div>
@@ -12710,7 +12710,7 @@ function openHeatmapDayDetailDrawer(dateStr) {
         const p = parseInt(l.pages_read_today, 10) || parseInt(l.pagesRead, 10) || Math.max(0, parseInt(l.end_page || 0, 10) - parseInt(l.start_page || 0, 10)) || 0;
         const dur = parseInt(l.minutes_spent || l.duration_minutes || l.durationMinutes || 0, 10);
         return `
-        <div class="p-3 rounded-xl bg-white/5 border border-theme text-xs flex flex-col gap-1">
+        <div class="p-3 rounded-xl bg-theme-input border border-theme text-xs flex flex-col gap-1">
           <div class="flex justify-between items-center font-bold text-theme-gold">
             <span>${escapeHtml(l.book_title || 'Session')}</span>
             <span>+${p} pgs (${dur > 0 ? `${dur}m` : 'Unspecified'})</span>
@@ -12894,7 +12894,7 @@ function openContextualDetailModal(dayIdx, hour, targetCell) {
   let level = 0;
   let levelText = 'No Activity Logged';
   let levelColor = 'text-theme-secondary';
-  let levelBg = 'bg-white/5';
+  let levelBg = 'bg-theme-input';
 
   if (val > 0 && maxVal > 0) {
     const ratio = val / maxVal;
@@ -12973,7 +12973,7 @@ function openContextualDetailModal(dayIdx, hour, targetCell) {
     if (slotLogs.length === 0) {
       html += `
         <div class="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-theme flex flex-col items-center gap-2">
-          <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-theme-tertiary text-lg"><i class="fa-solid fa-moon"></i></div>
+          <div class="w-12 h-12 rounded-full bg-theme-input flex items-center justify-center text-theme-tertiary text-lg"><i class="fa-solid fa-moon"></i></div>
           <p class="text-xs text-theme-primary font-bold">No Reading Activity</p>
           <p class="text-[11px] text-theme-secondary">No reading sessions have been logged on ${dayName}s between ${hStr} and ${nextHStr}.</p>
         </div>
@@ -14140,7 +14140,7 @@ function renderStreakCalendar() {
     const cell = document.createElement('button');
     cell.type = 'button';
     
-    let bgClasses = 'bg-white/5 border-white/5 text-theme-tertiary opacity-45 hover:opacity-100 hover:border-white/20';
+    let bgClasses = 'bg-theme-input border-white/5 text-theme-tertiary opacity-45 hover:opacity-100 hover:border-white/20';
     let badgeHTML = '';
 
     if (hasRead) {

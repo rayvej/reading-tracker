@@ -27,7 +27,7 @@ const appJsContent = fs.readFileSync(appJsPath, 'utf8');
 assert(appJsContent.includes('ab-progress'), 'app.js includes ab-progress input reference');
 assert(appJsContent.includes('toggleAddBookProgressField'), 'app.js includes toggleAddBookProgressField helper');
 assert(appJsContent.includes('updateAddBookProgressHint'), 'app.js includes updateAddBookProgressHint helper');
-assert(appJsContent.includes('Initial reading progress'), 'app.js creates initial log for in-progress books');
+assert(appJsContent.includes('Historical cycle — initial progress imported'), 'app.js creates initial log for in-progress books');
 
 // 2. Verify index.html contains ab-progress-container and handlers
 const indexHtmlPath = path.resolve('./docs/index.html');
