@@ -9742,7 +9742,7 @@ function setupSettingsUpdateInspector() {
           if (!updateDiscovered && !reg.waiting && !reg.installing) {
             resetButton();
             const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-            const ver = badge ? badge.textContent : 'v121';
+            const ver = badge ? badge.textContent : 'v123';
             if (typeof showToast === 'function') {
               showToast(`You are running the latest version (${ver})`, 'success');
             }
