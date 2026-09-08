@@ -58,14 +58,15 @@ assert(styleCss.includes('.bg-gold\\/10'), 'style.css defines .bg-gold/10');
 assert(styleCss.includes('.border-gold\\/30'), 'style.css defines .border-gold/30');
 assert(styleCss.includes('body.light-mode .book-spine-fallback'), 'style.css defines high-contrast light mode spine fallback');
 
-// 6. Release Version Bump to v124
-assert(swJs.includes("const CACHE_NAME = 'reading-tracker-v124';"), 'sw.js CACHE_NAME bumped to v124');
-assert(swJs.includes("style.css?v=124"), 'sw.js caches style.css?v=124');
-assert(swJs.includes("app.js?v=124"), 'sw.js caches app.js?v=124');
-assert(indexHtml.includes('style.css?v=124'), 'index.html references style.css?v=124');
-assert(indexHtml.includes('app.js?v=124'), 'index.html references app.js?v=124');
-assert(indexHtml.includes('>v124</span>'), 'index.html displays v124 badges');
-assert(appJs.includes("'v124'"), 'app.js reports v124 in update check');
+// 6. Release Version Bump to v125
+assert(swJs.includes("const CACHE_NAME = 'reading-tracker-v125';"), 'sw.js CACHE_NAME bumped to v125');
+assert(swJs.includes("style.css?v=125"), 'sw.js caches style.css?v=125');
+assert(swJs.includes("app.js?v=125"), 'sw.js caches app.js?v=125');
+assert(indexHtml.includes('style.css?v=125'), 'index.html references style.css?v=125');
+assert(indexHtml.includes('app.js?v=125'), 'index.html references app.js?v=125');
+assert(indexHtml.includes('>v125</span>'), 'index.html displays v125 badges');
+assert(appJs.includes("'v125'"), 'app.js reports v125 in update check');
+assert(appJs.includes("let bookshelfSortOrder"), 'app.js defines bookshelfSortOrder');
 
 console.log(`\n══════════════════════════════\nResults: ${passed} passed, ${failed} failed\n══════════════════════════════\n`);
 

@@ -130,6 +130,7 @@ let wishlistSearchTerm= '';
 let bookshelfStatusFilter = 'All';
 let bookshelfOwnershipFilter = 'All';
 let bookshelfSearchTerm   = '';
+let bookshelfSortOrder    = 'title-asc';
 let bookshelfViewMode     = 'list';   // 'list' | 'grid'
 if (typeof window !== 'undefined') {
   try {
@@ -3048,11 +3049,12 @@ async function getMergedBooks() {
   
   const wishlistMap = {};
   wishlistCache.forEach(w => {
-    wishlistMap[w.title.toLowerCase()] = w;
+    if (w && w.title) wishlistMap[String(w.title).toLowerCase()] = w;
   });
 
   const libraryItems = booksCache.map(b => {
-    const wl = wishlistMap[b.title.toLowerCase()];
+    const bTitle = b && b.title ? String(b.title).toLowerCase() : '';
+    const wl = bTitle ? wishlistMap[bTitle] : null;
     
     let ownership = 'Owned';
     if (b.status === 'Borrowed' || b.status === 'Borrowed and Read') {
@@ -3116,6 +3118,7 @@ async function getMergedBooks() {
 
   return libraryItems;
 }
+window.getMergedBooks = getMergedBooks;
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function setupNav() {
@@ -7582,6 +7585,7 @@ async function renderBookshelf(options = {}) {
     renderBookshelfContent(container, filtered);
   }
 }
+window.renderBookshelf = renderBookshelf;
 
 function renderActiveFilterChips() {
   const chipContainer = $('bookshelf-active-filters');
@@ -9898,7 +9902,7 @@ function setupSettingsUpdateInspector() {
           if (!updateDiscovered && !reg.waiting && !reg.installing) {
             resetButton();
             const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-            const ver = badge ? badge.textContent : 'v124';
+            const ver = badge ? badge.textContent : 'v125';
             if (typeof showToast === 'function') {
               showToast(`You are running the latest version (${ver})`, 'success');
             }
