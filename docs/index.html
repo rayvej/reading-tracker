@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=123">
+  <link rel="stylesheet" href="style.css?v=124">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1491,10 +1491,13 @@
             </div>
 
             <!-- 3D Spine Bookshelf Component -->
-            <div class="glass-panel p-4 rounded-3xl flex flex-col gap-2 border border-theme">
-              <div class="text-xs font-black uppercase tracking-wider text-theme-gold flex items-center justify-between">
+            <div id="bookshelf-3d-wrapper" class="glass-panel p-4 rounded-3xl flex flex-col gap-2 border border-theme">
+              <div id="bookshelf-3d-toggle-btn" class="text-xs font-black uppercase tracking-wider text-theme-gold flex items-center justify-between cursor-pointer select-none" role="button" aria-expanded="true" aria-controls="bookshelf-3d-shelf">
                 <span><i class="fa-solid fa-cubes text-theme-gold"></i> 3D Spine Bookshelf</span>
-                <span class="text-[10px] font-mono text-theme-secondary">PHYSICAL SPINES</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-mono text-theme-secondary">PHYSICAL SPINES</span>
+                  <i id="bookshelf-3d-chevron" class="fa-solid fa-chevron-down text-[10px] text-theme-secondary transition-transform duration-200"></i>
+                </div>
               </div>
               <div id="bookshelf-3d-shelf" class="bookshelf-3d-container" aria-live="polite"></div>
             </div>
@@ -1631,7 +1634,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v123</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v124</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2270,6 +2273,15 @@
           <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none font-medium">pages</span>
         </div>
       </div>
+      <div class="form-control hidden" id="ab-finish-date-container">
+        <label class="label py-1 flex items-center justify-between" for="ab-finish-date">
+          <span class="label-text text-xs font-bold uppercase tracking-wider text-theme-gold flex items-center gap-1.5">
+            <i class="fa-solid fa-calendar-check"></i> Date Finished (Historical)
+          </span>
+          <span class="text-[10px] text-theme-secondary">Defaults to today</span>
+        </label>
+        <input type="date" class="input input-bordered glass-input w-full text-xs" id="ab-finish-date">
+      </div>
       <div class="form-control"><label class="label py-1" for="ab-where-to-buy"><span class="label-text text-xs font-bold uppercase tracking-wider">Where to Buy / Buy Link</span></label>
         <input type="text" class="input input-bordered glass-input w-full" id="ab-where-to-buy" placeholder="Store name or URL"></div>
       <div class="form-control">
@@ -2784,7 +2796,7 @@
             <div class="min-w-0">
               <div class="text-sm font-bold flex items-center gap-2">
                 <span class="truncate text-theme-primary">Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v123</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v124</span>
               </div>
               <div class="text-[11px] text-purple-700/80 dark:text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -4067,6 +4079,6 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=123"></script>
+  <script type="module" src="app.js?v=124"></script>
 </body>
 </html>

@@ -130,8 +130,14 @@ let wishlistSearchTerm= '';
 let bookshelfStatusFilter = 'All';
 let bookshelfOwnershipFilter = 'All';
 let bookshelfSearchTerm   = '';
-let bookshelfSortOrder    = 'title-asc';
 let bookshelfViewMode     = 'list';   // 'list' | 'grid'
+if (typeof window !== 'undefined') {
+  try {
+    Object.defineProperty(window, 'bookshelfViewMode', { get: () => bookshelfViewMode, set: v => { bookshelfViewMode = v; }, configurable: true });
+  } catch (e) {
+    window.bookshelfViewMode = bookshelfViewMode;
+  }
+}
 let bookshelfGrouping     = 'none';   // 'none' | 'group'
 let bookshelfSelectMode   = false;
 let bookshelfSelectedIds  = new Set();
@@ -7211,6 +7217,7 @@ function setupAddBookCatalogEvents() {
 function toggleAddBookProgressField() {
   const statusEl = $('ab-status');
   const container = $('ab-progress-container');
+  const dateContainer = $('ab-finish-date-container');
   if (!statusEl || !container) return;
   const status = statusEl.value;
   if (status === 'In Progress' || status === 'Not Started') {
@@ -7221,6 +7228,19 @@ function toggleAddBookProgressField() {
       container.classList.add('hidden');
     }
   }
+
+  if (dateContainer) {
+    if (status === 'Finished') {
+      dateContainer.classList.remove('hidden');
+      const dateInput = $('ab-finish-date');
+      if (dateInput && !dateInput.value) {
+        dateInput.value = todayISO();
+      }
+    } else {
+      dateContainer.classList.add('hidden');
+    }
+  }
+
   updateAddBookProgressHint();
 }
 if (typeof window !== 'undefined') window.toggleAddBookProgressField = toggleAddBookProgressField;
@@ -7422,7 +7442,59 @@ function setupBookshelf() {
   if (editDelete) editDelete.addEventListener('click', () => {
     if (activeBookObjectForEdit) deleteBook(activeBookObjectForEdit);
   });
+
+  setup3DSpineBookshelfToggle();
 }
+
+function setup3DSpineBookshelfToggle() {
+  const toggleBtn = $('bookshelf-3d-toggle-btn');
+  const shelf = $('bookshelf-3d-shelf');
+  const chevron = $('bookshelf-3d-chevron');
+  if (!toggleBtn || !shelf) return;
+
+  const isCollapsed = localStorage.getItem('rt_3d_shelf_collapsed') === 'true';
+  if (isCollapsed) {
+    shelf.classList.add('collapsed');
+    if (chevron) chevron.classList.add('collapsed');
+    toggleBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  toggleBtn.onclick = () => {
+    const collapsed = shelf.classList.toggle('collapsed');
+    if (chevron) chevron.classList.toggle('collapsed', collapsed);
+    toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+    localStorage.setItem('rt_3d_shelf_collapsed', String(collapsed));
+    if (typeof triggerHaptic === 'function') triggerHaptic();
+  };
+}
+window.setup3DSpineBookshelfToggle = setup3DSpineBookshelfToggle;
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup3DSpineBookshelfToggle);
+  } else {
+    setup3DSpineBookshelfToggle();
+  }
+}
+
+function resetBookshelfFilters() {
+  bookshelfStatusFilter = 'All';
+  bookshelfOwnershipFilter = 'All';
+  bookshelfSearchTerm = '';
+  const searchInput = $('wishlist-search');
+  if (searchInput) searchInput.value = '';
+  
+  const statusEl = $('bookshelf-filter-status');
+  if (statusEl) {
+    statusEl.querySelectorAll('[data-bsf]').forEach(b => b.classList.toggle('active', b.dataset.bsf === 'All'));
+  }
+  const ownEl = $('bookshelf-filter-ownership');
+  if (ownEl) {
+    ownEl.querySelectorAll('[data-bfo]').forEach(b => b.classList.toggle('active', b.dataset.bfo === 'All'));
+  }
+  if (typeof triggerHaptic === 'function') triggerHaptic();
+  renderBookshelf();
+}
+window.resetBookshelfFilters = resetBookshelfFilters;
 
 function updateBatchBarUI() {
   const countEl = $('batch-selected-count');
@@ -7844,7 +7916,31 @@ function renderBookshelfContent(container, filtered) {
   container.innerHTML = '';
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="flex flex-col items-center justify-center p-12 text-center text-theme-tertiary gap-3"><span class="text-4xl">📚</span><div class="text-sm font-bold text-theme-secondary">No books found</div><p class="text-xs text-theme-tertiary">Try a different filter or add a new book</p></div>`;
+    const searchVal = $('wishlist-search')?.value?.trim() || '';
+    const hasFilter = bookshelfStatusFilter !== 'All' || bookshelfOwnershipFilter !== 'All' || !!searchVal;
+    
+    container.className = 'w-full';
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-12 px-4 text-center gap-3 animate-fade-in glass-panel rounded-3xl border border-theme my-2">
+        <div class="w-12 h-12 rounded-2xl bg-theme-input border border-theme flex items-center justify-center text-xl text-theme-gold shadow-sm">
+          <i class="fa-solid ${searchVal ? 'fa-magnifying-glass' : 'fa-book-open'}"></i>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-theme-primary">${searchVal ? 'No matching books found' : (hasFilter ? 'No books match current filter' : 'Your bookshelf is empty')}</div>
+          <p class="text-xs text-theme-secondary mt-0.5 max-w-xs">${searchVal ? `No titles, authors, or notes match "${escapeHtml(searchVal)}"` : (hasFilter ? 'Try resetting your active filters to see all books.' : 'Start building your digital library by adding your first book.')}</p>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          ${hasFilter ? `
+            <button type="button" onclick="resetBookshelfFilters()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme transition-all cursor-pointer flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate-left text-[10px]"></i> Reset Filters
+            </button>
+          ` : ''}
+          <button type="button" onclick="openAddBookModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-stone-900 transition-all shadow-md cursor-pointer flex items-center gap-1.5" style="background: linear-gradient(135deg, var(--gold), var(--gold-light))">
+            <i class="fa-solid fa-plus text-[10px]"></i> Add Book
+          </button>
+        </div>
+      </div>
+    `;
     return;
   }
 
@@ -7941,9 +8037,19 @@ function renderBookCard(b) {
           <div class="h-full transition-all" style="background: var(--emerald); width: ${progressPct}%"></div>
         </div>
       ` : ''}
+      <div class="flex items-center justify-between border-t border-theme pt-1.5 mt-0.5 text-[10px] text-theme-secondary">
+        <span class="text-[9px] font-semibold">${isAct ? `${progressPct}%` : (isFin ? 'Finished' : (b.total_pages ? `${b.total_pages}p` : 'Unread'))}</span>
+        <div class="flex items-center gap-1">
+          ${(!isAct && !isFin) ? `<button class="w-6 h-6 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="start-reading" title="Start Reading"><i class="fa-solid fa-play text-[8px]"></i></button>` : ''}
+          ${isAct ? `<button class="w-6 h-6 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="complete" title="Mark Complete"><i class="fa-solid fa-check text-[8px]"></i></button>` : ''}
+          ${isFin ? `<button class="w-6 h-6 rounded-md bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 flex items-center justify-center text-[9px] cursor-pointer" data-action="re-read" title="Re-Read"><i class="fa-solid fa-rotate-right text-[8px]"></i></button>` : ''}
+          <button class="w-6 h-6 rounded-md bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme flex items-center justify-center text-[9px] cursor-pointer" data-action="edit" title="Edit"><i class="fa-solid fa-pen text-[8px]"></i></button>
+        </div>
+      </div>
     `;
 
     card.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('a')) return;
       if (bookshelfSelectMode) {
         if (bookshelfSelectedIds.has(b.id)) bookshelfSelectedIds.delete(b.id);
         else bookshelfSelectedIds.add(b.id);
@@ -7954,6 +8060,7 @@ function renderBookCard(b) {
       openBookDetailModal(b);
     });
 
+    bindCardActions(card);
     return card;
   }
 
@@ -8022,6 +8129,7 @@ function renderBookCard(b) {
         <span>Reads: <b class="text-theme-primary">${b.read_count || 0}</b></span>
       </div>
       <div class="flex gap-1.5">
+        ${(!isAct && !isFin) ? `<button class="btn btn-xs rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="start-reading"><i class="fa-solid fa-play text-[8px] mr-1"></i>Start Reading</button>` : ''}
         ${isFin ? `<button class="btn btn-xs rounded-lg bg-gold/10 hover:bg-gold/20 text-gold border border-gold/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="re-read">Re-Read</button>` : ''}
         ${isAct ? `<button class="btn btn-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold h-6 min-h-6 px-2.5" data-action="complete">Complete</button>` : ''}
         <button class="btn btn-xs rounded-lg bg-theme-input hover:bg-theme-input-focus text-theme-secondary border border-theme text-[9px] font-bold h-6 min-h-6 px-2.5" data-action="edit">Edit</button>
@@ -8042,25 +8150,71 @@ function renderBookCard(b) {
     openBookDetailModal(b);
   });
 
-  const compBtn = card.querySelector('[data-action="complete"]');
-  if (compBtn) compBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
-  });
-
-  const rereadBtn = card.querySelector('[data-action="re-read"]');
-  if (rereadBtn) rereadBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
-  });
-
-  card.querySelector('[data-action="edit"]').addEventListener('click', e => {
-    e.stopPropagation();
-    openEditBookModal(b);
-  });
-
+  bindCardActions(card);
   return card;
+
+  function bindCardActions(targetCard) {
+    const startBtn = targetCard.querySelector('[data-action="start-reading"]');
+    if (startBtn) startBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await startReadingBook(b);
+    });
+
+    const compBtn = targetCard.querySelector('[data-action="complete"]');
+    if (compBtn) compBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Mark "${b.title}" completed? This adds a final cycle log session.`)) await markBookComplete(b);
+    });
+
+    const rereadBtn = targetCard.querySelector('[data-action="re-read"]');
+    if (rereadBtn) rereadBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (confirm(`Start re-reading "${b.title}"? Cycle ${(b.read_count || 1) + 1} will begin.`)) await startBookReRead(b);
+    });
+
+    const editBtn = targetCard.querySelector('[data-action="edit"]');
+    if (editBtn) editBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      openEditBookModal(b);
+    });
+  }
 }
+window.renderBookCard = renderBookCard;
+
+async function startReadingBook(b) {
+  if (!b) return;
+  try {
+    const today = todayISO();
+    if (b._isWishlist) {
+      await updateDoc(doc(db, `users/${uid}/wishlist/${b.id}`), {
+        status: 'In Progress',
+        start_date: today,
+        updated_at: serverTimestamp()
+      });
+      b.status = 'In Progress';
+      b.start_date = today;
+    } else {
+      await updateDoc(doc(db, `users/${uid}/books/${b.id}`), {
+        status: 'In Progress',
+        start_date: b.start_date || today,
+        updated_at: serverTimestamp()
+      });
+      b.status = 'In Progress';
+      b.start_date = b.start_date || today;
+    }
+
+    if (typeof triggerHaptic === 'function') triggerHaptic();
+    showToast(`Started reading "${b.title}"! Moved to In Progress.`, 'success');
+    booksCache = [];
+    wishlistCache = [];
+    await loadBooksCache();
+    await renderBookshelf();
+    populateBookDropdown();
+  } catch (e) {
+    showToast('Failed to start reading: ' + e.message, 'error');
+  }
+}
+window.startReadingBook = startReadingBook;
 
 // enableSwipeActions — removed (dead code, never called)
 
@@ -8225,6 +8379,7 @@ async function saveNewBook() {
     const isFinished = status === 'Finished';
     const isWishlistStatus = ['Want to Buy', 'Gifted', 'Borrowed', 'Owned'].includes(status);
     const initialPagesRead = isFinished ? pages : (status === 'In Progress' ? initialProgInput : 0);
+    const finishDateVal = isFinished ? ($('ab-finish-date')?.value || todayISO()) : null;
     
     const newBook = {
       title,
@@ -8239,7 +8394,7 @@ async function saveNewBook() {
       pages_read: initialPagesRead,
       current_page: initialPagesRead,
       read_count: isFinished ? 1 : 0,
-      finish_date: isFinished ? todayISO() : null,
+      finish_date: finishDateVal,
       est_cost: cost,
       where_to_buy: buyLink,
       notes: notes,
@@ -8265,7 +8420,7 @@ async function saveNewBook() {
     
     if (isFinished) {
       const histLog = {
-        date: todayISO(),
+        date: finishDateVal || todayISO(),
         book_title: title,
         read_cycle: 1,
         start_page: 0,
@@ -8309,6 +8464,7 @@ async function saveNewBook() {
     $('ab-cost').value = '';
     $('ab-where-to-buy').value = '';
     $('ab-notes').value = '';
+    if ($('ab-finish-date')) $('ab-finish-date').value = '';
     
     $('add-book-modal').classList.remove('open');
     showToast(`✓ Book "${title}" successfully registered!`, 'success');
@@ -9742,7 +9898,7 @@ function setupSettingsUpdateInspector() {
           if (!updateDiscovered && !reg.waiting && !reg.installing) {
             resetButton();
             const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-            const ver = badge ? badge.textContent : 'v123';
+            const ver = badge ? badge.textContent : 'v124';
             if (typeof showToast === 'function') {
               showToast(`You are running the latest version (${ver})`, 'success');
             }

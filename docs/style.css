@@ -1851,6 +1851,17 @@ body {
   text-overflow: ellipsis;
 }
 
+body.light-mode .book-spine-fallback {
+  background: linear-gradient(135deg, rgba(var(--gold-rgb), 0.18) 0%, rgba(var(--accent-rgb), 0.12) 100%);
+  border-left: 3px solid var(--gold);
+}
+body.light-mode .book-spine-fallback-title {
+  color: var(--text-primary);
+}
+body.light-mode .book-spine-fallback-author {
+  color: var(--text-secondary);
+}
+
 /* ── PWA & Mobile Polish Utilities ── */
 body {
   padding-bottom: env(safe-area-inset-bottom, 16px);
@@ -2366,6 +2377,24 @@ body.light-mode .fab-log-btn {
   border-radius: var(--radius-lg);
   margin-top: 16px;
   perspective: 800px;
+  max-height: 280px;
+  opacity: 1;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin 0.35s ease, padding 0.35s ease;
+}
+
+.bookshelf-3d-container.collapsed {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border-bottom-width: 0 !important;
+}
+
+#bookshelf-3d-chevron.collapsed {
+  transform: rotate(-90deg);
 }
 
 .book-spine-item {
@@ -2727,6 +2756,19 @@ body.light-mode .starter-prec-btn.active {
 .text-theme-emerald { color: var(--emerald) !important; }
 .text-theme-rose { color: var(--rose) !important; }
 .hover\:bg-theme-input-focus:hover { background: var(--bg-input-focus); }
+
+/* Theme Gold Utility Classes */
+.text-gold { color: var(--gold) !important; }
+.hover\:text-gold:hover { color: var(--gold) !important; }
+.bg-gold\/5 { background: rgba(var(--gold-rgb), 0.05) !important; }
+.bg-gold\/10 { background: rgba(var(--gold-rgb), 0.10) !important; }
+.bg-gold\/15 { background: rgba(var(--gold-rgb), 0.15) !important; }
+.bg-gold\/20 { background: rgba(var(--gold-rgb), 0.20) !important; }
+.hover\:bg-gold\/20:hover { background: rgba(var(--gold-rgb), 0.20) !important; }
+.border-gold\/20 { border-color: rgba(var(--gold-rgb), 0.20) !important; }
+.border-gold\/30 { border-color: rgba(var(--gold-rgb), 0.30) !important; }
+.border-gold\/40 { border-color: rgba(var(--gold-rgb), 0.40) !important; }
+.border-gold\/50 { border-color: rgba(var(--gold-rgb), 0.50) !important; }
 
 .bg-theme-card { background: var(--bg-card) !important; }
 .bg-theme-elevated { background: var(--bg-elevated) !important; }
