@@ -9970,6 +9970,19 @@ function handleBookSelection(selectedBookTitle, books, logs) {
 window.swRegistration = null;
 window.swWaitingWorker = null;
 
+function hardReloadApp() {
+  try {
+    const current = new URL(window.location.href);
+    current.searchParams.set('r', Date.now().toString());
+    window.location.replace(current.toString());
+  } catch (e) {
+    window.location.href = window.location.pathname + '?r=' + Date.now();
+  }
+  setTimeout(() => {
+    try { window.location.reload(); } catch (e) {}
+  }, 350);
+}
+
 function showUpdateModal(onDismissCallback = null) {
   const modal = document.getElementById('pwa-update-modal');
   if (!modal) {
@@ -9978,6 +9991,7 @@ function showUpdateModal(onDismissCallback = null) {
   }
 
   modal.style.display = 'flex';
+  modal.style.zIndex = '99999';
   modal.classList.add('open');
 
   const btnUpdate = document.getElementById('btn-pwa-update-now');
@@ -9993,8 +10007,8 @@ function showUpdateModal(onDismissCallback = null) {
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     }
     setTimeout(() => {
-      window.location.reload();
-    }, 300);
+      hardReloadApp();
+    }, 350);
   };
 
   const handleDismiss = () => {
@@ -10022,10 +10036,10 @@ function setupServiceWorkerUpdateSystem() {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (window.isMockAuth || refreshing) return;
     refreshing = true;
-    window.location.reload();
+    hardReloadApp();
   });
 
-  window.addEventListener('load', () => {
+  const registerSW = () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
       window.swRegistration = reg;
 
@@ -10050,26 +10064,52 @@ function setupServiceWorkerUpdateSystem() {
         }
       });
     }).catch(err => console.warn('SW register ignored error:', err));
-  });
+  };
+
+  if (document.readyState === 'complete') {
+    registerSW();
+  } else {
+    window.addEventListener('load', registerSW);
+  }
 }
 
 function setupSettingsUpdateInspector() {
   const checkBtns = document.querySelectorAll('#btn-check-sw-update, #btn-acct-check-sw-update');
   const forceBtns = document.querySelectorAll('#btn-force-reload-app, #btn-acct-force-reload-app');
 
+  const getActiveVersion = () => {
+    const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
+    return badge ? badge.textContent.trim() : 'v126';
+  };
+
   checkBtns.forEach(btnCheck => {
+    if (btnCheck.dataset.updateBound === 'true') return;
+    btnCheck.dataset.updateBound = 'true';
+
     btnCheck.addEventListener('click', async () => {
       checkBtns.forEach(b => {
         b.disabled = true;
         b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking...';
       });
 
+      let isDone = false;
       const resetButton = () => {
+        if (isDone) return;
+        isDone = true;
+        clearTimeout(safetyTimer);
         checkBtns.forEach(b => {
           b.disabled = false;
           b.innerHTML = '<i class="fa-solid fa-rotate text-[11px]"></i> Check Updates';
         });
       };
+
+      // Failsafe timer: spinner NEVER gets stuck
+      const safetyTimer = setTimeout(() => {
+        resetButton();
+        if (typeof showToast === 'function') {
+          showToast(`You are running the latest version (${getActiveVersion()})`, 'success');
+        }
+      }, 3000);
 
       if (!('serviceWorker' in navigator)) {
         resetButton();
@@ -10081,11 +10121,11 @@ function setupSettingsUpdateInspector() {
         const reg = window.swRegistration || await navigator.serviceWorker.getRegistration();
         if (!reg) {
           resetButton();
-          if (typeof showToast === 'function') showToast('You are running the latest version', 'success');
+          if (typeof showToast === 'function') showToast(`You are running the latest version (${getActiveVersion()})`, 'success');
           return;
         }
 
-        // 1. If a worker is already waiting, show update modal immediately
+        // 1. If worker waiting, show modal immediately
         if (reg.waiting) {
           window.swWaitingWorker = reg.waiting;
           resetButton();
@@ -10093,9 +10133,23 @@ function setupSettingsUpdateInspector() {
           return;
         }
 
-        // 2. Otherwise query network server for new sw.js
+        // 2. If worker installing, listen for it
+        if (reg.installing) {
+          const installingWorker = reg.installing;
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed') {
+              window.swWaitingWorker = installingWorker;
+              resetButton();
+              showUpdateModal();
+            } else if (installingWorker.state === 'redundant') {
+              resetButton();
+              if (typeof showToast === 'function') showToast('Update could not be installed. Try Force Refresh.', 'info');
+            }
+          });
+        }
+
+        // 3. Otherwise query network
         let updateDiscovered = false;
-        
         const onUpdateFound = () => {
           updateDiscovered = true;
           const installingWorker = reg.installing;
@@ -10105,22 +10159,30 @@ function setupSettingsUpdateInspector() {
                 window.swWaitingWorker = installingWorker;
                 resetButton();
                 showUpdateModal();
+              } else if (installingWorker.state === 'redundant') {
+                resetButton();
+                if (typeof showToast === 'function') showToast('Update check completed.', 'info');
               }
             });
           }
         };
 
         reg.addEventListener('updatefound', onUpdateFound, { once: true });
-        await reg.update();
 
-        // 3. If after 1.2s no update was found or installing, report latest version
+        try {
+          await Promise.race([
+            reg.update(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+          ]);
+        } catch (updateErr) {
+          console.debug('reg.update notice:', updateErr);
+        }
+
         setTimeout(() => {
           if (!updateDiscovered && !reg.waiting && !reg.installing) {
             resetButton();
-            const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-            const ver = badge ? badge.textContent : 'v126';
             if (typeof showToast === 'function') {
-              showToast(`You are running the latest version (${ver})`, 'success');
+              showToast(`You are running the latest version (${getActiveVersion()})`, 'success');
             }
           } else if (reg.waiting) {
             window.swWaitingWorker = reg.waiting;
@@ -10139,25 +10201,61 @@ function setupSettingsUpdateInspector() {
   });
 
   forceBtns.forEach(btnForce => {
+    if (btnForce.dataset.forceBound === 'true') return;
+    btnForce.dataset.forceBound = 'true';
+
     btnForce.addEventListener('click', async () => {
-      if (confirm('Force refresh app to download the latest updates directly from the server?')) {
+      if (!confirm('Force refresh app to download the latest updates directly from the server?')) return;
+
+      forceBtns.forEach(b => {
+        b.disabled = true;
+        b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Refreshing...';
+      });
+
+      const resetForceBtns = () => {
         forceBtns.forEach(b => {
-          b.disabled = true;
-          b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Refreshing...';
+          b.disabled = false;
+          b.innerHTML = '<i class="fa-solid fa-arrows-rotate text-[11px]"></i> Force Refresh';
         });
-        if ('caches' in window) {
-          try {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(k => caches.delete(k)));
-          } catch (e) { console.debug('[OCR] Element access:', e); }
+      };
+
+      const forceSafetyTimer = setTimeout(() => {
+        resetForceBtns();
+        hardReloadApp();
+      }, 3500);
+
+      if ('caches' in window) {
+        try {
+          const keys = await Promise.race([
+            caches.keys(),
+            new Promise(r => setTimeout(() => r([]), 1500))
+          ]);
+          await Promise.race([
+            Promise.all(keys.map(k => caches.delete(k))),
+            new Promise(r => setTimeout(r, 1500))
+          ]);
+        } catch (e) {
+          console.debug('Cache clear error:', e);
         }
-        if ('serviceWorker' in navigator && window.swRegistration) {
-          try {
-            await window.swRegistration.unregister();
-          } catch (e) { console.debug('[OCR] Element access:', e); }
-        }
-        window.location.reload(true);
       }
+
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await Promise.race([
+            navigator.serviceWorker.getRegistrations(),
+            new Promise(r => setTimeout(() => r([]), 1500))
+          ]);
+          await Promise.race([
+            Promise.all(registrations.map(r => r.unregister())),
+            new Promise(r => setTimeout(r, 1500))
+          ]);
+        } catch (e) {
+          console.debug('SW unregister error:', e);
+        }
+      }
+
+      clearTimeout(forceSafetyTimer);
+      hardReloadApp();
     });
   });
 }
@@ -10165,6 +10263,7 @@ function setupSettingsUpdateInspector() {
 setupServiceWorkerUpdateSystem();
 window.showUpdateModal = showUpdateModal;
 window.setupSettingsUpdateInspector = setupSettingsUpdateInspector;
+window.hardReloadApp = hardReloadApp;
 
 
 document.addEventListener('keydown', (e) => {
