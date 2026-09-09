@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Private reading tracker — log sessions, track progress, manage your library.">
   <meta name="theme-color" id="theme-color-meta" content="#0d0f14">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=127">
+  <link rel="stylesheet" href="style.css?v=128">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1500,8 +1500,8 @@
         <!-- ══════════════════════════════════════════════════════
              VIEW: BOOKSHELF & WISHLIST (Consolidated)
              ══════════════════════════════════════════════════════ -->
-        <section id="view-wishlist" class="view h-full overflow-y-auto no-scrollbar scroll-smooth safe-padding-bottom hidden">
-          <div class="p-5 flex flex-col gap-5 animate-fade-in">
+        <section id="view-wishlist" class="view h-full overflow-y-auto overflow-x-hidden no-scrollbar scroll-smooth safe-padding-bottom hidden">
+          <div class="p-4 sm:p-5 flex flex-col gap-5 animate-fade-in max-w-full w-full overflow-x-hidden">
 
             <!-- Header -->
             <div class="flex flex-col gap-3 pt-1">
@@ -1555,22 +1555,22 @@
             </div>
 
             <!-- Header Controls & Toggles -->
-            <div id="bookshelf-controls-bar" class="flex items-center justify-between gap-2">
-              <div class="flex gap-1.5">
-                <button id="btn-view-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary">
+            <div id="bookshelf-controls-bar" class="flex items-center justify-between gap-1.5 w-full flex-wrap sm:flex-nowrap">
+              <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                <button id="btn-view-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0">
                   <i class="fa-solid fa-list text-[10px]"></i> <span id="btn-view-mode-text">Grid</span>
                 </button>
-                <button id="btn-grouping-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary">
+                <button id="btn-grouping-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0">
                   <i class="fa-solid fa-folder-tree text-[10px]"></i> <span id="btn-grouping-mode-text">Grouped</span>
                 </button>
-                <button id="btn-manage-shelves" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20" title="Manage Custom Shelves &amp; Lists">
+                <button id="btn-manage-shelves" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20 shrink-0" title="Manage Custom Shelves &amp; Lists">
                   <i class="fa-solid fa-layer-group text-[10px]"></i> <span>Shelves</span>
                 </button>
-                <button id="btn-cover-manager" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-amber-500/10 border-amber-500/20 text-theme-gold hover:bg-amber-500/20">
+                <button id="btn-cover-manager" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-amber-500/10 border-amber-500/20 text-theme-gold hover:bg-amber-500/20 shrink-0">
                   <i class="fa-solid fa-image text-[10px]"></i> <span>Covers</span>
                 </button>
               </div>
-              <button id="btn-select-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary">
+              <button id="btn-select-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0 ml-auto sm:ml-0">
                 <i class="fa-solid fa-square-check text-[10px]"></i> <span id="btn-select-mode-text">Select</span>
               </button>
             </div>
@@ -1579,24 +1579,26 @@
             <div id="bookshelf-active-filters" class="flex flex-wrap gap-1.5 items-center hidden"></div>
 
             <!-- Search, Shelf & Sort -->
-            <div class="flex gap-2 items-center flex-wrap sm:flex-nowrap">
-              <div class="relative flex-1 min-w-[140px]">
+            <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full max-w-full">
+              <div class="relative flex-1 min-w-0">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-tertiary)"></i>
                 <input type="search" id="wishlist-search"
                   aria-label="Search library by title, author, group, or collection"
                   class="input input-bordered glass-input w-full pl-10 text-xs"
                   placeholder="Search title, author, group, collection or notes…">
               </div>
-              <select id="bookshelf-shelf-select" class="select select-bordered glass-input text-xs font-bold shrink-0 min-h-10 h-10 px-2.5" aria-label="Filter by custom shelf">
-                <option value="all">📂 All Shelves</option>
-              </select>
-              <select id="bookshelf-sort-select" class="select select-bordered glass-input text-xs font-bold shrink-0 min-h-10 h-10 px-2.5" aria-label="Sort books">
-                <option value="title-asc">Sort: A-Z</option>
-                <option value="title-desc">Sort: Z-A</option>
-                <option value="priority-high">Sort: Priority</option>
-                <option value="progress-desc">Sort: Progress %</option>
-                <option value="author-asc">Sort: Author</option>
-              </select>
+              <div class="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:w-auto shrink-0">
+                <select id="bookshelf-shelf-select" class="select select-bordered glass-input text-xs font-bold min-h-10 h-10 px-2.5 w-full sm:w-auto truncate" aria-label="Filter by custom shelf">
+                  <option value="all">📂 All Shelves</option>
+                </select>
+                <select id="bookshelf-sort-select" class="select select-bordered glass-input text-xs font-bold min-h-10 h-10 px-2.5 w-full sm:w-auto truncate" aria-label="Sort books">
+                  <option value="title-asc">Sort: A-Z</option>
+                  <option value="title-desc">Sort: Z-A</option>
+                  <option value="priority-high">Sort: Priority</option>
+                  <option value="progress-desc">Sort: Progress %</option>
+                  <option value="author-asc">Sort: Author</option>
+                </select>
+              </div>
             </div>
 
             <!-- Status Segment Control (Horizontal Scroll Pill Bar) -->
@@ -1696,7 +1698,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v127</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v128</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2923,7 +2925,7 @@
             <div class="min-w-0">
               <div class="text-sm font-bold flex items-center gap-2">
                 <span class="truncate text-theme-primary">Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v127</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v128</span>
               </div>
               <div class="text-[11px] text-purple-700/80 dark:text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -4424,6 +4426,6 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=127"></script>
+  <script type="module" src="app.js?v=128"></script>
 </body>
 </html>

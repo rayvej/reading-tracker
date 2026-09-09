@@ -44,6 +44,27 @@ import { testGeminiApiKey, analyzeNoteImage, analyzeVoiceTranscript, standardize
 
 window.categoryChartMode = 'pages';
 
+// ── Global Touch & Pinch-to-Zoom Prevention (Native PWA Feel) ───────────────
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  // Prevent iOS WebKit gesture pinch-zoom
+  document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('gesturechange', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('gestureend', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+
+  // Prevent multi-touch pinch zoom
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches && e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
 // Request persistent storage to prevent browser eviction
 if (navigator.storage && navigator.storage.persist) {
   navigator.storage.persist().then(granted => {
@@ -10079,8 +10100,8 @@ function setupSettingsUpdateInspector() {
 
   const getActiveVersion = () => {
     const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-    const ver = badge ? badge.textContent : 'v127';
-    return (ver || 'v127').trim();
+    const ver = badge ? badge.textContent : 'v128';
+    return (ver || 'v128').trim();
   };
 
   checkBtns.forEach(btnCheck => {

@@ -529,8 +529,9 @@ body {
 }
 
 /* Prevent absolute elements from bleeding beyond root viewport width */
-#app, #app-content, main, .view, .glass-panel, .ios-modal-overlay, .modal-box {
+#app, #app-content, main, .view, #view-wishlist, .glass-panel, .ios-modal-overlay, .modal-box {
   max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Mobile Horizontal Overflow Safeguards */
@@ -606,8 +607,11 @@ button:active,
 }
 
 /* Scroll lock, Rendering Containment & GPU Layer Hints */
-.view {
+.view, #view-wishlist {
   overscroll-behavior-y: contain;
+  overflow-x: hidden !important;
+  max-width: 100vw;
+  touch-action: pan-y;
 }
 
 .view.hidden {
@@ -718,6 +722,11 @@ input:focus, select:focus, textarea:focus, .glass-input:focus {
 *, *:before, *:after, html, body, button, input, select, textarea {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  touch-action: pan-y;
+  -webkit-text-size-adjust: 100%;
 }
 
 
@@ -1661,12 +1670,19 @@ body {
 .bookshelf-card-item {
   content-visibility: auto;
   contain-intrinsic-size: 1px 160px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  touch-action: pan-y;
 }
 
 .bookshelf-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .bookshelf-section-header {
@@ -2380,6 +2396,11 @@ body.light-mode .fab-log-btn {
   max-height: 280px;
   opacity: 1;
   transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin 0.35s ease, padding 0.35s ease;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  touch-action: pan-x;
+  contain: paint;
 }
 
 .bookshelf-3d-container.collapsed {
