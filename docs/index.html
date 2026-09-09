@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="tailwind.min.css">
 
   <!-- Custom iOS HIG design system -->
-  <link rel="stylesheet" href="style.css?v=128">
+  <link rel="stylesheet" href="style.css?v=129">
 </head>
 
 <body class="min-h-screen overflow-hidden relative">
@@ -1524,8 +1524,8 @@
                   <i class="fa-solid fa-barcode text-[10px]"></i> <span class="truncate">Scan ISBN</span>
                 </button>
                 <button id="btn-add-book-trigger"
-                  class="flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] sm:text-xs font-bold border transition-all active:scale-95 cursor-pointer text-center"
-                  style="background: rgba(var(--gold-rgb),0.08); border-color: rgba(var(--gold-rgb),0.25); color: var(--gold)" aria-label="Add Book to Library">
+                  class="flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] sm:text-xs font-bold border transition-all active:scale-95 cursor-pointer text-center shadow-sm"
+                  style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #1a1207; border-color: rgba(var(--gold-rgb),0.4);" aria-label="Add Book to Library">
                   <i class="fa-solid fa-plus text-[10px]"></i> <span class="truncate">Add Book</span>
                 </button>
               </div>
@@ -1554,24 +1554,22 @@
               <div id="bookshelf-3d-shelf" class="bookshelf-3d-container" aria-live="polite"></div>
             </div>
 
-            <!-- Header Controls & Toggles -->
-            <div id="bookshelf-controls-bar" class="flex items-center justify-between gap-1.5 w-full flex-wrap sm:flex-nowrap">
-              <div class="flex items-center gap-1.5 flex-wrap min-w-0">
-                <button id="btn-view-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0">
-                  <i class="fa-solid fa-list text-[10px]"></i> <span id="btn-view-mode-text">Grid</span>
-                </button>
-                <button id="btn-grouping-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0">
-                  <i class="fa-solid fa-folder-tree text-[10px]"></i> <span id="btn-grouping-mode-text">Grouped</span>
-                </button>
-                <button id="btn-manage-shelves" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20 shrink-0" title="Manage Custom Shelves &amp; Lists">
-                  <i class="fa-solid fa-layer-group text-[10px]"></i> <span>Shelves</span>
-                </button>
-                <button id="btn-cover-manager" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-amber-500/10 border-amber-500/20 text-theme-gold hover:bg-amber-500/20 shrink-0">
-                  <i class="fa-solid fa-image text-[10px]"></i> <span>Covers</span>
-                </button>
-              </div>
-              <button id="btn-select-mode" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 bg-theme-input border-theme text-theme-secondary shrink-0 ml-auto sm:ml-0">
-                <i class="fa-solid fa-square-check text-[10px]"></i> <span id="btn-select-mode-text">Select</span>
+            <!-- Header Controls & Toggles (Single-row 5-column grid) -->
+            <div id="bookshelf-controls-bar" class="bookshelf-controls-grid">
+              <button id="btn-view-mode" class="bookshelf-control-btn btn-theme-neutral active:scale-95" aria-label="Toggle Grid or List View">
+                <i class="fa-solid fa-list"></i> <span id="btn-view-mode-text">Grid</span>
+              </button>
+              <button id="btn-grouping-mode" class="bookshelf-control-btn btn-theme-neutral active:scale-95" aria-label="Toggle Shelves Grouping">
+                <i class="fa-solid fa-folder-tree"></i> <span id="btn-grouping-mode-text">Group</span>
+              </button>
+              <button id="btn-manage-shelves" class="bookshelf-control-btn btn-theme-shelves active:scale-95" title="Manage Custom Shelves &amp; Lists" aria-label="Manage Custom Shelves">
+                <i class="fa-solid fa-layer-group"></i> <span>Shelves</span>
+              </button>
+              <button id="btn-cover-manager" class="bookshelf-control-btn btn-theme-covers active:scale-95" title="Manage Book Covers" aria-label="Manage Book Covers">
+                <i class="fa-solid fa-image"></i> <span>Covers</span>
+              </button>
+              <button id="btn-select-mode" class="bookshelf-control-btn btn-theme-neutral active:scale-95" aria-label="Select Multiple Books">
+                <i class="fa-solid fa-square-check"></i> <span id="btn-select-mode-text">Select</span>
               </button>
             </div>
 
@@ -1698,7 +1696,7 @@
                   <div>
                     <div class="text-sm font-extrabold flex items-center gap-2" style="color: var(--text-primary)">
                       <span>Reading Tracker</span>
-                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v128</span>
+                      <span id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v129</span>
                     </div>
                     <div class="text-[11px] font-medium text-purple-300/80">App Updates &amp; Service Worker</div>
                   </div>
@@ -2925,7 +2923,7 @@
             <div class="min-w-0">
               <div class="text-sm font-bold flex items-center gap-2">
                 <span class="truncate text-theme-primary">Reading Tracker</span>
-                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v128</span>
+                <span id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v129</span>
               </div>
               <div class="text-[11px] text-purple-700/80 dark:text-purple-300/80 truncate" id="app-version-status">Progressive Web App (PWA)</div>
             </div>
@@ -4426,6 +4424,6 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script type="module" src="app.js?v=128"></script>
+  <script type="module" src="app.js?v=129"></script>
 </body>
 </html>

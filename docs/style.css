@@ -3201,6 +3201,121 @@ body.light-mode .dnf-badge {
   border-color: rgba(244, 63, 94, 0.2);
 }
 
+/* ==========================================================================
+   Bookshelf Controls Toolbar (Single row 5-button iOS-optimized grid)
+   ========================================================================== */
+.bookshelf-controls-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
 
+.bookshelf-control-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 0 4px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transition: all 0.15s ease !important;
+}
 
+.bookshelf-control-btn i {
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+}
 
+.bookshelf-control-btn span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+}
+
+/* Default state */
+.bookshelf-control-btn.btn-theme-neutral {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05)) !important;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+}
+
+.bookshelf-control-btn.btn-theme-neutral:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+
+/* Shelves accent */
+.bookshelf-control-btn.btn-theme-shelves {
+  background: rgba(168, 85, 247, 0.12) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  color: #c084fc !important;
+}
+
+.bookshelf-control-btn.btn-theme-shelves:hover {
+  background: rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Covers accent */
+.bookshelf-control-btn.btn-theme-covers {
+  background: rgba(var(--gold-rgb, 212, 163, 89), 0.12) !important;
+  border: 1px solid rgba(var(--gold-rgb, 212, 163, 89), 0.25) !important;
+  color: var(--gold, #d4a359) !important;
+}
+
+.bookshelf-control-btn.btn-theme-covers:hover {
+  background: rgba(var(--gold-rgb, 212, 163, 89), 0.2) !important;
+}
+
+/* Active highlights (for toggleable buttons like Group and Select) */
+.bookshelf-control-btn.active {
+  background: rgba(var(--gold-rgb, 212, 163, 89), 0.18) !important;
+  border-color: rgba(var(--gold-rgb, 212, 163, 89), 0.5) !important;
+  color: var(--gold, #d4a359) !important;
+  box-shadow: 0 0 0 1px rgba(var(--gold-rgb, 212, 163, 89), 0.2) !important;
+}
+
+/* Light mode adjustments */
+body.light-mode .bookshelf-control-btn.btn-theme-neutral {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #64748b !important;
+}
+
+body.light-mode .bookshelf-control-btn.btn-theme-neutral:hover {
+  background: rgba(0, 0, 0, 0.07) !important;
+  color: #0f172a !important;
+}
+
+body.light-mode .bookshelf-control-btn.btn-theme-shelves {
+  background: rgba(147, 51, 234, 0.08) !important;
+  border-color: rgba(147, 51, 234, 0.22) !important;
+  color: #7e22ce !important;
+}
+
+body.light-mode .bookshelf-control-btn.btn-theme-covers {
+  background: rgba(180, 130, 60, 0.1) !important;
+  border-color: rgba(180, 130, 60, 0.25) !important;
+  color: #966718 !important;
+}
+
+body.light-mode .bookshelf-control-btn.active {
+  background: rgba(180, 130, 60, 0.16) !important;
+  border-color: rgba(180, 130, 60, 0.45) !important;
+  color: #85580a !important;
+}

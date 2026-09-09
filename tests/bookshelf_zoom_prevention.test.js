@@ -54,12 +54,21 @@ test('#view-wishlist inner container has max-w-full and overflow-x-hidden', () =
   assert.ok(innerMatch[1].includes('max-w-full') || innerMatch[1].includes('w-full'), 'inner div constrained with max-w-full / w-full');
 });
 
-// 3. Header Controls Row Responsiveness
-test('#bookshelf-controls-bar includes flex-wrap to prevent horizontal blowout', () => {
+// 3. Header Controls Row Responsiveness & 5-Button Unified Alignment
+test('#bookshelf-controls-bar uses .bookshelf-controls-grid with 5 equal columns and zero wrapping', () => {
   const controlsMatch = indexHtml.match(/<div id="bookshelf-controls-bar"[^>]*class="([^"]*)"/);
   assert.ok(controlsMatch, 'Found #bookshelf-controls-bar');
-  assert.ok(controlsMatch[1].includes('flex-wrap'), '#bookshelf-controls-bar contains flex-wrap');
-  assert.ok(controlsMatch[1].includes('w-full'), '#bookshelf-controls-bar contains w-full');
+  assert.ok(controlsMatch[1].includes('bookshelf-controls-grid'), '#bookshelf-controls-bar has class bookshelf-controls-grid');
+  
+  // Style check
+  assert.ok(styleCss.includes('.bookshelf-controls-grid {'), 'style.css defines .bookshelf-controls-grid');
+  assert.ok(styleCss.includes('grid-template-columns: repeat(5, minmax(0, 1fr))'), 'grid-template-columns has 5 equal columns');
+
+  // Verify all 5 buttons are direct children
+  const buttonIds = ['btn-view-mode', 'btn-grouping-mode', 'btn-manage-shelves', 'btn-cover-manager', 'btn-select-mode'];
+  for (const id of buttonIds) {
+    assert.ok(indexHtml.includes(`id="${id}"`), `Controls bar contains #${id}`);
+  }
 });
 
 test('Search, shelf and sort row wraps safely on narrow screens', () => {
@@ -112,22 +121,22 @@ test('app.js prevents multi-touch pinch zoom on touchmove', () => {
   assert.ok(appJs.includes("touches.length > 1"), 'multi-touch length check present');
 });
 
-// 6. Release Synchronization (v128)
-test('sw.js CACHE_NAME is bumped to v128', () => {
-  assert.ok(swJs.includes("const CACHE_NAME = 'reading-tracker-v128';"), 'sw.js CACHE_NAME is reading-tracker-v128');
-  assert.ok(swJs.includes("style.css?v=128"), 'sw.js precaches style.css?v=128');
-  assert.ok(swJs.includes("app.js?v=128"), 'sw.js precaches app.js?v=128');
+// 6. Release Synchronization (v129)
+test('sw.js CACHE_NAME is bumped to v129', () => {
+  assert.ok(swJs.includes("const CACHE_NAME = 'reading-tracker-v129';"), 'sw.js CACHE_NAME is reading-tracker-v129');
+  assert.ok(swJs.includes("style.css?v=129"), 'sw.js precaches style.css?v=129');
+  assert.ok(swJs.includes("app.js?v=129"), 'sw.js precaches app.js?v=129');
 });
 
-test('index.html links style.css?v=128 and app.js?v=128 and displays v128 badges', () => {
-  assert.ok(indexHtml.includes('href="style.css?v=128"'), 'index.html links style.css?v=128');
-  assert.ok(indexHtml.includes('src="app.js?v=128"'), 'index.html loads app.js?v=128');
-  assert.ok(indexHtml.includes('id="acct-version-badge"') && indexHtml.includes('>v128</span>'), 'acct badge is v128');
-  assert.ok(indexHtml.includes('id="app-version-badge"') && indexHtml.includes('>v128</span>'), 'app badge is v128');
+test('index.html links style.css?v=129 and app.js?v=129 and displays v129 badges', () => {
+  assert.ok(indexHtml.includes('href="style.css?v=129"'), 'index.html links style.css?v=129');
+  assert.ok(indexHtml.includes('src="app.js?v=129"'), 'index.html loads app.js?v=129');
+  assert.ok(indexHtml.includes('id="acct-version-badge"') && indexHtml.includes('>v129</span>'), 'acct badge is v129');
+  assert.ok(indexHtml.includes('id="app-version-badge"') && indexHtml.includes('>v129</span>'), 'app badge is v129');
 });
 
-test('app.js reports v128 in update helper', () => {
-  assert.ok(appJs.includes("'v128'"), 'app.js includes v128 string');
+test('app.js reports v129 in update helper', () => {
+  assert.ok(appJs.includes("'v129'"), 'app.js includes v129 string');
 });
 
 // 7. Strict Confetti Exclusion Invariant

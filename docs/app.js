@@ -7484,7 +7484,8 @@ function setupBookshelf() {
   if (groupBtn) {
     groupBtn.addEventListener('click', () => {
       bookshelfGrouping = bookshelfGrouping === 'none' ? 'group' : 'none';
-      $('btn-grouping-mode-text').textContent = bookshelfGrouping === 'none' ? 'Grouped' : 'Flat';
+      $('btn-grouping-mode-text').textContent = bookshelfGrouping === 'none' ? 'Group' : 'Flat';
+      groupBtn.classList.toggle('active', bookshelfGrouping === 'group');
       groupBtn.classList.toggle('bg-gold/10', bookshelfGrouping === 'group');
       groupBtn.classList.toggle('text-gold', bookshelfGrouping === 'group');
       renderBookshelf();
@@ -7510,6 +7511,7 @@ function setupBookshelf() {
       bookshelfSelectMode = !bookshelfSelectMode;
       bookshelfSelectedIds.clear();
       $('btn-select-mode-text').textContent = bookshelfSelectMode ? 'Cancel' : 'Select';
+      selectBtn.classList.toggle('active', bookshelfSelectMode);
       selectBtn.classList.toggle('bg-gold/20', bookshelfSelectMode);
       selectBtn.classList.toggle('text-gold', bookshelfSelectMode);
       $('bookshelf-batch-bar').classList.toggle('hidden', !bookshelfSelectMode);
@@ -7549,7 +7551,7 @@ function setupBookshelf() {
     bookshelfSelectMode = false;
     bookshelfSelectedIds.clear();
     $('btn-select-mode-text').textContent = 'Select';
-    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('btn-select-mode').classList.remove('active', 'bg-gold/20', 'text-gold');
     $('bookshelf-batch-bar').classList.add('hidden');
     renderBookshelf();
   });
@@ -8409,7 +8411,7 @@ async function batchUpdateStatus(newStatus) {
     bookshelfSelectMode = false;
     bookshelfSelectedIds.clear();
     $('btn-select-mode-text').textContent = 'Select';
-    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('btn-select-mode').classList.remove('active', 'bg-gold/20', 'text-gold');
     $('bookshelf-batch-bar').classList.add('hidden');
     booksCache = [];
     wishlistCache = [];
@@ -8440,7 +8442,7 @@ async function batchDeleteBooks() {
     bookshelfSelectMode = false;
     bookshelfSelectedIds.clear();
     $('btn-select-mode-text').textContent = 'Select';
-    $('btn-select-mode').classList.remove('bg-gold/20', 'text-gold');
+    $('btn-select-mode').classList.remove('active', 'bg-gold/20', 'text-gold');
     $('bookshelf-batch-bar').classList.add('hidden');
     booksCache = [];
     wishlistCache = [];
@@ -10100,8 +10102,8 @@ function setupSettingsUpdateInspector() {
 
   const getActiveVersion = () => {
     const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-    const ver = badge ? badge.textContent : 'v128';
-    return (ver || 'v128').trim();
+    const ver = badge ? badge.textContent : 'v129';
+    return (ver || 'v129').trim();
   };
 
   checkBtns.forEach(btnCheck => {
