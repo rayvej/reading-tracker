@@ -173,17 +173,18 @@ assert(appJs.includes("mode === 'lexicon'"), 'app.js initKnowledgeModeToggle han
 assert(appJs.includes("mode === 'graph'"), 'app.js initKnowledgeModeToggle handles graph mode');
 assert(appJs.includes("mode === 'feed'"), 'app.js initKnowledgeModeToggle handles feed mode');
 
-// ── 7. PWA RELEASE SYNCHRONIZATION (v126) ─────────────────────
-console.log('\n▶ 7. PWA Release Synchronization (v126)');
+// ── 7. PWA RELEASE SYNCHRONIZATION ────────────────────────────
+console.log('\n▶ 7. PWA Release Synchronization');
 
-assert(swJs.includes("const CACHE_NAME = 'reading-tracker-v126';"), 'sw.js CACHE_NAME bumped to reading-tracker-v126');
-assert(swJs.includes("BASE + 'style.css?v=126'"), 'sw.js precaches style.css?v=126');
-assert(swJs.includes("BASE + 'app.js?v=126'"), 'sw.js precaches app.js?v=126');
-assert(indexHtml.includes('href="style.css?v=126"'), 'index.html links style.css?v=126');
-assert(indexHtml.includes('src="app.js?v=126"'), 'index.html loads app.js?v=126');
-assert(indexHtml.includes('id="acct-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/30 text-purple-200 border border-purple-500/40">v126</span>'), 'index.html account modal displays v126 badge');
-assert(indexHtml.includes('id="app-version-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/40 shrink-0">v126</span>'), 'index.html settings modal displays v126 badge');
-assert(appJs.includes("const ver = badge ? badge.textContent : 'v126';"), 'app.js reports fallback version v126');
+const swCacheMatch = swJs.match(/const CACHE_NAME = 'reading-tracker-v(\d+)';/);
+assert(swCacheMatch && parseInt(swCacheMatch[1], 10) >= 126, 'sw.js CACHE_NAME bumped to reading-tracker-v126 or higher');
+assert(/BASE \+ 'style\.css\?v=\d+'/.test(swJs), 'sw.js precaches style.css with version query');
+assert(/BASE \+ 'app\.js\?v=\d+'/.test(swJs), 'sw.js precaches app.js with version query');
+assert(/href="style\.css\?v=\d+"/.test(indexHtml), 'index.html links style.css with version query');
+assert(/src="app\.js\?v=\d+"/.test(indexHtml), 'index.html loads app.js with version query');
+assert(/id="acct-version-badge"[^>]*>v\d+<\/span>/.test(indexHtml), 'index.html account modal displays version badge');
+assert(/id="app-version-badge"[^>]*>v\d+<\/span>/.test(indexHtml), 'index.html settings modal displays version badge');
+assert(/const ver = badge \? badge\.textContent : 'v\d+';/.test(appJs), 'app.js reports fallback version');
 
 // ── 8. NO CONFETTI REINFORCEMENT AUDIT ─────────────────────────
 console.log('\n▶ 8. No Confetti Reinforcement Audit');

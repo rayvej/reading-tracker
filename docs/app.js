@@ -10079,8 +10079,8 @@ function setupSettingsUpdateInspector() {
 
   const getActiveVersion = () => {
     const badge = document.getElementById('app-version-badge') || document.getElementById('acct-version-badge');
-    const ver = badge ? badge.textContent : 'v126';
-    return (ver || 'v126').trim();
+    const ver = badge ? badge.textContent : 'v127';
+    return (ver || 'v127').trim();
   };
 
   checkBtns.forEach(btnCheck => {
