@@ -2,21 +2,65 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Only the authenticated owner can read/write their own data
-    match /users/{userId}/{document=**} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create, update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().size() <= 30
-        && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 500))
-        && (!('author' in request.resource.data) || (request.resource.data.author is string && request.resource.data.author.size() <= 500))
-        && (!('cover_url' in request.resource.data) || (request.resource.data.cover_url is string && request.resource.data.cover_url.size() <= 2000))
-        && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000))
-        && (!('total_pages' in request.resource.data) || request.resource.data.total_pages is number)
-        && (!('pages_read' in request.resource.data) || request.resource.data.pages_read is number)
-        && (!('current_page' in request.resource.data) || request.resource.data.current_page is number)
-        && (!('read_count' in request.resource.data) || request.resource.data.read_count is number)
-        && (!('minutes_spent' in request.resource.data) || request.resource.data.minutes_spent is number || request.resource.data.minutes_spent == null)
-        && (!('status' in request.resource.data) || (request.resource.data.status is string && request.resource.data.status.size() <= 50));
-      allow delete: if request.auth != null && request.auth.uid == userId;
+    match /users/{userId} {
+      match /books/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'title', 'author', 'collection', 'group', 'group_name', 'reading_group', 'total_pages', 'priority', 'status', 'pages_read', 'current_page', 'read_count', 'finish_date', 'est_cost', 'where_to_buy', 'notes', 'cover_url', 'dnf_reason', 'shelves', 'date_added', 'custom_shelf', 'year', 'format', 'category', 'added_at', 'updated_at', 'minutes_spent'])
+          && request.resource.data.keys().size() <= 30
+          && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 500))
+          && (!('author' in request.resource.data) || (request.resource.data.author is string && request.resource.data.author.size() <= 500))
+          && (!('cover_url' in request.resource.data) || (request.resource.data.cover_url is string && request.resource.data.cover_url.size() <= 2000))
+          && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000))
+          && (!('total_pages' in request.resource.data) || request.resource.data.total_pages is number)
+          && (!('pages_read' in request.resource.data) || request.resource.data.pages_read is number)
+          && (!('current_page' in request.resource.data) || request.resource.data.current_page is number)
+          && (!('read_count' in request.resource.data) || request.resource.data.read_count is number)
+          && (!('minutes_spent' in request.resource.data) || request.resource.data.minutes_spent is number || request.resource.data.minutes_spent == null)
+          && (!('status' in request.resource.data) || (request.resource.data.status is string && request.resource.data.status.size() <= 50));
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /reading_logs/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'book_title', 'date', 'start_page', 'end_page', 'minutes_spent', 'notes', 'read_cycle', 'createdAt', 'created_at', 'userId', '_retryCount', 'synced', 'ocr_text', 'session_minutes', 'type'])
+          && request.resource.data.keys().size() <= 30
+          && (!('book_title' in request.resource.data) || (request.resource.data.book_title is string && request.resource.data.book_title.size() <= 500))
+          && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000))
+          && (!('minutes_spent' in request.resource.data) || request.resource.data.minutes_spent is number || request.resource.data.minutes_spent == null);
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /wishlist/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'title', 'author', 'category', 'priority', 'status', 'est_pages', 'est_cost', 'where_to_buy', 'notes', 'cover_url', 'date_added', 'addedAt'])
+          && request.resource.data.keys().size() <= 30
+          && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 500))
+          && (!('author' in request.resource.data) || (request.resource.data.author is string && request.resource.data.author.size() <= 500))
+          && (!('notes' in request.resource.data) || (request.resource.data.notes is string && request.resource.data.notes.size() <= 10000));
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /settings/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'pin_hash', 'pin_salt', 'daily_reminder_time', 'dailyReminders', 'reminderTime', 'streakAlerts', 'theme', 'font', 'uid', 'updatedAt'])
+          && request.resource.data.keys().size() <= 30;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /goals/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'annual_books_target', 'annual_pages_target', 'monthly_books_target', 'monthly_pages_target', 'uid', 'updatedAt'])
+          && request.resource.data.keys().size() <= 30;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+      match /push_subscriptions/{document=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['id', 'endpoint', 'keys', 'createdAt', 'userAgent'])
+          && request.resource.data.keys().size() <= 30;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }

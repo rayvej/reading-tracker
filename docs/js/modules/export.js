@@ -4,6 +4,12 @@
 
 import { showToast } from './ui.js';
 
+function sanitizeCsvField(val) {
+  const s = String(val || '');
+  if (/^[=+\-@\t\r]/.test(s)) return "'" + s;
+  return s;
+}
+
 export function exportAllDataToCSV(booksCache, logsCache) {
   if (!booksCache.length && !logsCache.length) {
     showToast('No data available to export.', 'error');
@@ -16,8 +22,8 @@ export function exportAllDataToCSV(booksCache, logsCache) {
   booksCache.forEach(b => {
     const row = [
       'Book',
-      `"${(b.title || '').replace(/"/g, '""')}"`,
-      `"${(b.author || '').replace(/"/g, '""')}"`,
+      `"${sanitizeCsvField(b.title).replace(/"/g, '""')}"`,
+      `"${sanitizeCsvField(b.author).replace(/"/g, '""')}"`,
       b.total_pages || 0,
       `"${b.status || ''}"`,
       b.read_count || 0,
@@ -29,14 +35,14 @@ export function exportAllDataToCSV(booksCache, logsCache) {
   logsCache.forEach(l => {
     const row = [
       'Log',
-      `"${(l.book_title || '').replace(/"/g, '""')}"`,
+      `"${sanitizeCsvField(l.book_title).replace(/"/g, '""')}"`,
       '', '', '',
       l.read_cycle || 1,
       l.date || '',
       l.start_page || 0,
       l.end_page || 0,
       l.minutes_spent || '',
-      `"${(l.notes || '').replace(/"/g, '""')}"`
+      `"${sanitizeCsvField(l.notes).replace(/"/g, '""')}"`
     ];
     csvContent += row.join(",") + "\n";
   });

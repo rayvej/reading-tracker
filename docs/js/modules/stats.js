@@ -104,7 +104,7 @@ export function calculateReadingStreaks(logs) {
   let current = 1;
 
   for (let i = 1; i < dateObjects.length; i++) {
-    const diff = (dateObjects[i] - dateObjects[i - 1]) / (1000 * 60 * 60 * 24);
+    const diff = Math.round((dateObjects[i] - dateObjects[i - 1]) / 86400000);
     if (diff === 1) {
       current++;
     } else if (diff > 1) {

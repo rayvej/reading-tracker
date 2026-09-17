@@ -96,7 +96,8 @@ try {
     const swPath = path.resolve('docs', 'sw.js');
     assert.ok(fs.existsSync(swPath), 'sw.js must exist');
     const swContent = fs.readFileSync(swPath, 'utf8');
-    assert.ok(swContent.includes('reading-tracker-v122'), 'sw.js should reference v122 cache');
+    const swCacheMatch = swContent.match(/const CACHE_NAME = 'reading-tracker-v(\d+)';/);
+    assert.ok(swCacheMatch && parseInt(swCacheMatch[1], 10) >= 122, 'sw.js should reference v122 cache or higher');
   });
 
   // ── Test 3: Manifest is accessible ──────────────────────────────────

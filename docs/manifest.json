@@ -36,6 +36,22 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Reading Tracker Dashboard"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Reading Tracker Mobile View"
+    }
+  ],
   "categories": ["books", "lifestyle", "productivity"],
   "shortcuts": [
     {

@@ -115,7 +115,9 @@ self.addEventListener('fetch', event => {
           cache.put(event.request, clone);
           cache.keys().then(keys => {
             if (keys.length > 100) {
-              cache.delete(keys[0]);
+              const staticSet = new Set(STATIC_ASSETS.map(u => new URL(u, self.location).href));
+              const evictable = keys.find(k => !staticSet.has(k.url));
+              if (evictable) cache.delete(evictable);
             }
           });
         });

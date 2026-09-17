@@ -1607,15 +1607,7 @@ body {
   text-overflow: ellipsis;
 }
 
-.status-badge-fit {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
+/* Removed: .status-badge-fit (orphaned/unused) */
 
 /* Space-saving Bento Grid Container */
 .bento-grid {
@@ -1696,31 +1688,7 @@ body {
   border: 0.5px solid var(--border-strong);
 }
 
-.bookshelf-swipe-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-}
-
-.bookshelf-swipe-actions {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-right: 12px;
-  border-radius: 24px;
-  z-index: 1;
-}
-
-.bookshelf-swipe-card {
-  position: relative;
-  z-index: 2;
-  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-  touch-action: pan-y;
-}
+/* Removed: .bookshelf-swipe-wrapper, .bookshelf-swipe-actions, .bookshelf-swipe-card (orphaned/unused) */
 
 .filter-chip {
   display: inline-flex;
@@ -1753,11 +1721,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Deferred Offscreen Rendering for Heavy Tables ── */
-.heavy-section-deferred {
-  content-visibility: auto;
-  contain-intrinsic-size: auto none auto 250px;
-}
+/* Removed: .heavy-section-deferred (orphaned/unused) */
 
 /* ── Container Queries for Responsive Bento Layouts ── */
 .bento-grid {
@@ -2077,29 +2041,7 @@ body.light-mode .fab-log-btn {
 .font-sans { font-family: var(--font-body) !important; }
 .font-mono { font-family: var(--font-figures) !important; }
 
-/* Dynamic Cover Hero Card */
-.hero-book-card-editorial {
-  position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  padding: 20px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-card);
-}
-
-.hero-book-card-editorial::before {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 180px;
-  height: 180px;
-  background: var(--cover-glow-accent, radial-gradient(circle, rgba(212, 163, 89, 0.2) 0%, transparent 70%));
-  pointer-events: none;
-  border-radius: 50%;
-}
+/* Removed: .hero-book-card-editorial (orphaned/unused) */
 
 /* Full-Screen Distraction-Free Reading Timer Overlay */
 #timer-fullscreen-overlay {
@@ -2156,28 +2098,7 @@ body.light-mode .fab-log-btn {
   filter: brightness(1.25);
 }
 
-/* Target Finish Date Predictor Card */
-.predictor-badge-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-/* Priority CSV Exporter Section */
-.export-card-row {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
+/* Removed: .predictor-badge-card, .export-card-row (orphaned/unused) */
 
 /* ═══════════════════════════════════════════════════════════════
    FEATURE 1: COVER-ADAPTIVE MESH GLOW — Live Session Banner
@@ -2850,46 +2771,7 @@ body.light-mode .starter-prec-btn.active {
   transform: scale(0.92);
 }
 
-.story-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-.story-card:hover {
-  border-color: rgba(var(--gold-rgb), 0.4);
-  transform: translateY(-2px);
-}
-.story-card-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 700;
-  background: rgba(var(--gold-rgb), 0.12);
-  color: var(--gold);
-  border: 1px solid rgba(var(--gold-rgb), 0.25);
-}
-.character-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 700;
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent);
-  border: 1px solid rgba(var(--accent-rgb), 0.25);
-}
+/* Removed: .story-card, .story-card-tag, .character-badge (orphaned/unused) */
 
 .scholarly-tab-badge {
   font-size: 9px;

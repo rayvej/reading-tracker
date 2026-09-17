@@ -408,6 +408,7 @@ $('btn-signout').addEventListener('click', async () => {
   if (!confirm('Sign out?')) return;
   sessionStorage.removeItem(SESSION_KEY);
   booksCache = [];
+  logsCache = []; wishlistCache = []; customShelvesCache = []; lexiconCache = [];
   await signOut(auth);
   showScreen('auth-screen');
 });
@@ -674,6 +675,8 @@ async function verifyPin(pin) {
 
 // ── Seed Import ───────────────────────────────────────────────────────────────
 async function initApp() {
+  if (window._appInitialized) return;
+  window._appInitialized = true;
   window.booksCache = booksCache || [];
   window.logsCache = logsCache || [];
   try {
@@ -1173,6 +1176,9 @@ async function verifyDoublePinForReset() {
       const snap = await getDoc(doc(db, `users/${uid}/settings/app`));
       if (snap.exists() && snap.data()?.pin_hash) {
         storedHash = snap.data().pin_hash;
+        if (snap.data()?.pin_salt) {
+          localStorage.setItem('rt_pin_salt', snap.data().pin_salt);
+        }
       }
     } catch (err) {
       console.warn('Failed to fetch PIN hash from Firestore:', err);
@@ -1660,7 +1666,7 @@ async function saveStarterBook(batchContinue) {
       date: finishDate,
       pages_read: totalPages,
       read_cycle: 1,
-      note: notes ? `Finished in ${yr}: ${notes}` : `Finished in ${yr}`
+      notes: notes ? `Finished in ${yr}: ${notes}` : `Finished in ${yr}`
     });
   } else if (starterSelectedPrecision === 'finish') {
     finishDate = $('starter-input-finish-date')?.value || todayISO();
@@ -1669,7 +1675,7 @@ async function saveStarterBook(batchContinue) {
       date: finishDate,
       pages_read: totalPages,
       read_cycle: 1,
-      note: notes || 'Completed'
+      notes: notes || 'Completed'
     });
   } else if (starterSelectedPrecision === 'range') {
     startDate = $('starter-input-start-date')?.value || todayISO();
@@ -1681,7 +1687,7 @@ async function saveStarterBook(batchContinue) {
         date: finishDate,
         pages_read: totalPages,
         read_cycle: 1,
-        note: notes || 'Completed'
+        notes: notes || 'Completed'
       });
     } else {
       const halfPages = Math.max(1, Math.floor(totalPages / 2));
@@ -1690,13 +1696,13 @@ async function saveStarterBook(batchContinue) {
         date: startDate,
         pages_read: halfPages,
         read_cycle: 1,
-        note: 'Started reading'
+        notes: 'Started reading'
       });
       createdLogs.push({
         date: finishDate,
         pages_read: remPages,
         read_cycle: 1,
-        note: notes ? `Finished: ${notes}` : 'Completed'
+        notes: notes ? `Finished: ${notes}` : 'Completed'
       });
     }
   } else if (starterSelectedPrecision === 'detailed') {
@@ -1729,7 +1735,7 @@ async function saveStarterBook(batchContinue) {
           date: finishDate,
           pages_read: pagesRemaining,
           read_cycle: 1,
-          note: notes || 'Completed'
+          notes: notes || 'Completed'
         });
       }
     } else {
@@ -1737,7 +1743,7 @@ async function saveStarterBook(batchContinue) {
         date: finishDate,
         pages_read: totalPages,
         read_cycle: 1,
-        note: notes || 'Completed'
+        notes: notes || 'Completed'
       });
     }
   } else if (starterSelectedPrecision === 'unknown') {
@@ -1747,7 +1753,7 @@ async function saveStarterBook(batchContinue) {
       date: todayISO(),
       pages_read: totalPages,
       read_cycle: 1,
-      note: notes ? `Completed (Date Unknown): ${notes}` : 'Completed (Date Unknown)'
+      notes: notes ? `Completed (Date Unknown): ${notes}` : 'Completed (Date Unknown)'
     });
   }
 
@@ -1791,7 +1797,7 @@ async function saveStarterBook(batchContinue) {
         end_page: l.pages_read || totalPages,
         pages_read: l.pages_read,
         read_cycle: 1,
-        note: l.note || '',
+        notes: l.notes || l.note || '',
         created_at: serverTimestamp()
       });
       if (!logsCache.some(log => log.id === savedLog.id)) {
@@ -2644,7 +2650,7 @@ function setupAccountView() {
   if (btnClearCache) {
     btnClearCache.addEventListener('click', () => {
       // RES-04: Preserve critical keys during cache clear
-      const keysToPreserve = ['rt_pin_hash', 'rt_user_cached_uid', 'rt_gemini_api_key'];
+      const keysToPreserve = ['rt_pin_hash', 'rt_pin_salt', 'rt_user_cached_uid', 'rt_gemini_api_key'];
       const preserved = {};
       keysToPreserve.forEach(k => { preserved[k] = localStorage.getItem(k); });
       localStorage.clear();
@@ -5002,8 +5008,8 @@ function openChartDrilldownModal(categoryOrCollectionName, categoryBooksList) {
       const row = el('div', 'p-3 rounded-2xl bg-white/[0.03] border border-theme flex justify-between items-center gap-3 cursor-pointer hover:bg-white/[0.06] transition-all');
       row.innerHTML = `
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-theme-primary truncate">${b.title}</div>
-          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown'} · ${b.total_pages || 0} pg</div>
+          <div class="text-xs font-bold text-theme-primary truncate">${escapeHtml(b.title)}</div>
+          <div class="text-[10px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || 'Unknown')} · ${b.total_pages || 0} pg</div>
         </div>
         <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-${statusColor}-500/10 text-${statusColor}-400 border border-${statusColor}-500/20">${b.status}</span>
       `;
@@ -5140,13 +5146,6 @@ async function renderDashboard() {
   
   const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
   
-  let filteredLogs = logsCache;
-  let filteredActiveLogs = activeLogs;
-  if (selectedYear !== 'all') {
-    filteredLogs = logsCache.filter(l => l.date.startsWith(selectedYear));
-    filteredActiveLogs = activeLogs.filter(l => l.date.startsWith(selectedYear));
-  }
-  
   const mergedBooks = await getMergedBooks();
   const books = dashFilter === 'all' ? mergedBooks : mergedBooks.filter(b => b.collection === dashFilter);
   
@@ -5156,7 +5155,6 @@ async function renderDashboard() {
   const stats = getReconciledStats(mergedBooks, logsCache, selectedYear, dashFilter);
   dashboardStats = stats;
   const completions = stats.completions;
-  const filteredCompletions = completions;
   const totalReads = stats.totalReads;
   const pagesRead = stats.pagesRead;
   const titlesCount = stats.titlesCount;
@@ -5623,10 +5621,11 @@ async function renderDashboard() {
     } else {
       active.forEach(b => {
         const pagesReadAccum = b.pages_read || 0;
-        const currentCyclePages = pagesReadAccum % b.total_pages;
+        const remainder = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+        const currentCyclePages = (remainder === 0 && pagesReadAccum > 0) ? b.total_pages : remainder;
         const left = b.total_pages - currentCyclePages;
         const estDays = Math.ceil(left / 10);
-        const pct = Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100));
+        const pct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
         
         const card = el('div', 'glass-panel p-3.5 rounded-2xl flex flex-col gap-2 border border-theme transition-all cursor-pointer carousel-card');
         card.innerHTML = `
@@ -6464,7 +6463,7 @@ async function renderGoals() {
       card.innerHTML = `
         <div class="flex justify-between items-start gap-3">
           <div class="min-w-0 flex-1">
-            <div class="text-xs font-extrabold text-theme-primary truncate">${b.title}</div>
+            <div class="text-xs font-extrabold text-theme-primary truncate">${escapeHtml(b.title)}</div>
             <div class="text-[9px] text-theme-secondary mt-0.5">Last read: ${lastReadStr} · ${left} pages left (${pct}%)</div>
           </div>
           <span class="px-2 py-0.5 rounded-full text-[8px] font-black bg-amber-500/10 text-theme-gold border border-amber-500/10 uppercase shrink-0">${pct}%</span>
@@ -6820,19 +6819,6 @@ function renderDonutChart() {
 
 // ── SPARKLINE — weekly pages over last 12 weeks ───────────────────────────────
 function renderSparklineChart() {
-  const wrap = $('chart-sparkline-wrap');
-  if (!wrap) return;
-
-  const selectedYear = $('dash-year-select').value;
-  const activeLogs = logsCache.filter(l => !l.notes || !l.notes.startsWith('Historical cycle'));
-  
-  let yearLogs = selectedYear === 'all' ? activeLogs : activeLogs.filter(l => l.date.startsWith(selectedYear));
-  let filteredLogs = yearLogs.filter(l => {
-    const book = booksCache.find(b => b.title === l.book_title);
-    return !book || dashFilter === 'all' || book.collection === dashFilter;
-  });
-
-  // renderChronologicalSparkline removed (deprecated)
 }
 
 function renderBarChart() {
@@ -7774,8 +7760,8 @@ function renderActiveFilterChips() {
 
 // ── Book Cover System & Cover Manager ───────────────────────────────────────
 function getSpineFallbackHTML(title, author) {
-  const safeTitle = (title || 'Book').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const safeAuthor = (author || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const safeTitle = escapeHtml(title || 'Book');
+  const safeAuthor = escapeHtml(author || '');
   return `
     <div class="book-spine-fallback">
       <div class="book-spine-fallback-title">${safeTitle}</div>
@@ -7786,8 +7772,8 @@ function getSpineFallbackHTML(title, author) {
 
 function getCoverHTML(b, extraClasses = 'w-12 h-18') {
   if (!b) return '';
-  const safeTitle = (b.title || 'Book').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const safeAuthor = (b.author || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const safeTitle = escapeHtml(b.title || 'Book');
+  const safeAuthor = escapeHtml(b.author || '');
   if (b.cover_url) {
     return `
       <div class="book-cover-wrapper ${extraClasses}">
@@ -7989,6 +7975,7 @@ async function autoSearchAllCovers() {
     if (candidates.length > 0) {
       await saveBookCover(b.id, candidates[0].url, isWl);
       matchCount++;
+      await new Promise(r => setTimeout(r, 800));
     }
   }
   showToast(`Auto-matched and approved ${matchCount} cover(s)!`, 'success');
@@ -8156,7 +8143,8 @@ function renderBookCard(b) {
   const prioBadge = prioClasses[b.priority] || prioClasses['Low'];
 
   const pagesReadAccum = b.pages_read || 0;
-  const currentCyclePages = b.total_pages > 0 ? Math.min(pagesReadAccum, b.total_pages) : 0;
+  const remainder = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const currentCyclePages = (remainder === 0 && pagesReadAccum > 0) ? b.total_pages : remainder;
   const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
   const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
 
@@ -8261,8 +8249,8 @@ function renderBookCard(b) {
       ` : ''}
       ${getCoverHTML(b, 'w-14 h-21 shrink-0')}
       <div class="min-w-0 flex-1">
-        <div class="text-sm font-bold text-theme-primary leading-snug line-clamp-2">&#8203;${b.title}</div>
-        <div class="text-[11px] text-theme-secondary truncate mt-0.5">${b.author || 'Unknown Author'} · ${b.total_pages || 'N/A'} pg${costText}</div>
+        <div class="text-sm font-bold text-theme-primary leading-snug line-clamp-2">&#8203;${escapeHtml(b.title)}</div>
+        <div class="text-[11px] text-theme-secondary truncate mt-0.5">${escapeHtml(b.author || 'Unknown Author')} · ${b.total_pages || 'N/A'} pg${costText}</div>
         <div class="flex flex-wrap gap-1.5 mt-2">
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.collection === 'Bahai' ? "Bahá'í" : "Non-Bahá'í"}</span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-theme-card/40 text-theme-secondary border border-theme">${b.group || 'Other'}</span>
@@ -9228,8 +9216,8 @@ function showYearBooksPopup(year, completedBooksInYear) {
       const row = el('div', 'glass-panel p-3.5 rounded-2xl flex justify-between items-center border border-theme transition-all cursor-pointer');
       row.innerHTML = `
         <div class="min-w-0 pr-3 flex-1">
-          <div class="text-xs font-bold text-theme-primary truncate">${idx + 1}. ${c.title}</div>
-          <div class="text-[9px] text-theme-secondary truncate mt-0.5">${book ? book.author || 'Unknown' : 'Unknown'}</div>
+          <div class="text-xs font-bold text-theme-primary truncate">${idx + 1}. ${escapeHtml(c.title)}</div>
+          <div class="text-[9px] text-theme-secondary truncate mt-0.5">${book ? escapeHtml(book.author || 'Unknown') : 'Unknown'}</div>
         </div>
         <div class="text-right shrink-0">
           <div class="text-[10px] font-black text-emerald">${c.date}</div>
@@ -9747,7 +9735,8 @@ function openBookDetailModal(b) {
   `;
   
   const pagesReadAccum = b.pages_read || 0;
-  const currentCyclePages = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const remainder = b.total_pages > 0 ? pagesReadAccum % b.total_pages : 0;
+  const currentCyclePages = (remainder === 0 && pagesReadAccum > 0) ? b.total_pages : remainder;
   const progressPct = b.total_pages > 0 ? Math.min(100, Math.round((currentCyclePages / b.total_pages) * 100)) : 0;
   const readCycle = (b.read_count || 0) + (isAct ? 1 : 0);
   
@@ -10781,6 +10770,10 @@ async function processOfflineSyncQueue() {
       localStorage.setItem('scanned_shelf', JSON.stringify(localShelf));
       await deletePendingScan(scan.id);
     } catch (err) {
+      console.warn('Failed to process offline scan:', err);
+      if (typeof showToastNotification === 'function') {
+        showToastNotification('Failed to sync a pending scan.', 'error');
+      }
     }
   }
   Haptics.success();
@@ -11306,7 +11299,7 @@ function renderKnowledgeView(selectedTag = knowledgeCurrentTag) {
     let optionsHTML = `<option value="all">📚 All Books & Notes</option><option value="standalone">📝 Standalone Notes</option>`;
     bookTitles.forEach(t => {
       if (t !== 'Quick Note' && t !== 'Standalone Note') {
-        optionsHTML += `<option value="${t.replace(/"/g, '&quot;')}">📖 ${t}</option>`;
+        optionsHTML += `<option value="${t.replace(/"/g, '&quot;')}">📖 ${escapeHtml(t)}</option>`;
       }
     });
     bookSelect.innerHTML = optionsHTML;
@@ -11758,9 +11751,9 @@ async function saveEditedNote() {
             photo_url: editNotePhotoData || null,
             updated_at: serverTimestamp()
           });
+          matchedLog.notes = newText;
+          matchedLog.photo_url = editNotePhotoData || null;
         }
-        matchedLog.notes = newText;
-        matchedLog.photo_url = editNotePhotoData || null;
       } else if (matchedLog) {
         matchedLog.notes = newText;
         matchedLog.photo_url = editNotePhotoData || null;
@@ -11788,8 +11781,8 @@ async function saveEditedNote() {
             notes: newText,
             updated_at: serverTimestamp()
           });
+          matchedBook.notes = newText;
         }
-        matchedBook.notes = newText;
       } else if (matchedBook) {
         matchedBook.notes = newText;
       }
@@ -12838,8 +12831,8 @@ window.render3DSpineBookshelf = async function(items) {
     const width = Math.min(52, Math.max(22, Math.round(18 + (pages / 28))));
     const height = Math.min(210, Math.max(138, 138 + (pages % 70)));
     const grad = gradients[i % gradients.length];
-    const safeTitle = (b.title || 'Untitled').replace(/"/g, '&quot;');
-    const safeAuthor = (b.author || '').replace(/"/g, '&quot;');
+    const safeTitle = escapeHtml(b.title || 'Untitled');
+    const safeAuthor = escapeHtml(b.author || '');
     const fontSize = width < 26 ? '0.68rem' : '0.78rem';
     
     let pct = 0;
@@ -13096,7 +13089,7 @@ function renderYearWrappedSlides(targetYear) {
       title: 'Reading Record Highlights',
       badge: 'BOOK RECORDS',
       icon: 'fa-trophy text-emerald-400',
-      bigVal: longestBookTitle,
+      bigVal: escapeHtml(longestBookTitle),
       bigLabel: `Longest Book (${fmtNum(maxBookPages)} pages)`,
       subStats: [
         { label: 'Total Titles Read', val: `${booksFinishedYear} completed` },
@@ -13107,8 +13100,8 @@ function renderYearWrappedSlides(targetYear) {
       title: 'Quote of the Year',
       badge: 'MEMORABLE EXCERPT',
       icon: 'fa-quote-left text-theme-gold',
-      bigVal: `"${topQuote.replace(/^>\s*/, '')}"`,
-      bigLabel: `— Excerpt from ${topQuoteBook}`,
+      bigVal: `"${escapeHtml(topQuote.replace(/^>\s*/, ''))}"`,
+      bigLabel: `— Excerpt from ${escapeHtml(topQuoteBook)}`,
       subStats: [
         { label: 'Captured Year', val: `${targetYear}` },
         { label: 'Source', val: 'Reading Tracker Vault' }
@@ -13655,6 +13648,7 @@ async function fetchOpenLibraryISBN(isbn) {
 
   try {
     const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     const key = `ISBN:${isbn}`;
 
@@ -14504,10 +14498,11 @@ function initScholarSuite() {
   if (btnScholarlyExportOpen && modalExport) {
     btnScholarlyExportOpen.addEventListener('click', () => {
       if (exportBookSelect) {
-        exportBookSelect.innerHTML = '<option value="all">— All Books Summary —</option>';
+        let optionsHtml = '<option value="all">— All Books Summary —</option>';
         (booksCache || []).forEach(b => {
-          exportBookSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.title)} (${escapeHtml(b.author || 'Unknown')})</option>`;
+          optionsHtml += `<option value="${b.id}">${escapeHtml(b.title)} (${escapeHtml(b.author || 'Unknown')})</option>`;
         });
+        exportBookSelect.innerHTML = optionsHtml;
       }
       updateScholarlyExportPreview();
       modalExport.classList.add('open');

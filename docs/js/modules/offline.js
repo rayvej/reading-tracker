@@ -3,7 +3,7 @@
  */
 
 import { showToast } from './ui.js';
-import { getPendingLogs, removePendingLog } from '../offline-db.js';
+import { getPendingLogs, removePendingLog, savePendingLog } from '../offline-db.js';
 
 export function registerBackgroundSync() {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
